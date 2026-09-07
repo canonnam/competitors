@@ -28,12 +28,19 @@
 
 ## Railway 환경변수
 
-- `FEEDBACK_DB_PATH=/data/feedback.db`
-- `SLACK_FEEDBACK_WEBHOOK_URL` — 이 채널로 전송하는 Slack Incoming Webhook URL
-- `HERMES_FEEDBACK_WEBHOOK_URL` — Hermes `competitors-feedback` webhook URL
-- `HERMES_FEEDBACK_WEBHOOK_SECRET` — 해당 webhook의 HMAC secret
+Railway 서비스 → **Variables** → **Raw Editor**에 아래 키를 추가한다. 실제 secret은 채팅이나 Git에 저장하지 않는다.
 
-Railway에서 `/data`에 Volume을 마운트해야 피드백이 재배포 후에도 보존된다.
+```dotenv
+FEEDBACK_DB_PATH=/data/feedback.db
+SLACK_FEEDBACK_WEBHOOK_URL=https://hooks.slack.com/services/…
+HERMES_FEEDBACK_WEBHOOK_URL=https://<public-hermes-domain>/webhooks/competitors-feedback
+HERMES_FEEDBACK_WEBHOOK_SECRET=<competitors-feedback subscription secret>
+```
+
+- `SLACK_FEEDBACK_WEBHOOK_URL`: Slack 앱에서 이 경쟁사 채널을 대상으로 만든 Incoming Webhook URL이다.
+- `HERMES_FEEDBACK_WEBHOOK_URL`: `localhost`, `127.0.0.1`, `*.railway.internal`은 사용할 수 없다. Railway 컨테이너에서 접근 가능한 외부 HTTPS Hermes 주소여야 한다.
+- `HERMES_FEEDBACK_WEBHOOK_SECRET`: webhook 생성 시 반환된 route secret이다. 재발급 시 Railway 값도 함께 바꾼다.
+- Railway에서 `/data`에 Volume을 마운트해야 피드백이 재배포 후에도 보존된다.
 
 ## Hermes webhook 등록
 
