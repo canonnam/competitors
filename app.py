@@ -7,6 +7,8 @@ import hashlib, hmac, json, os, re, sqlite3, time, urllib.request
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
 MAX_BODY = 12_000
+RATE_LIMIT_SECONDS = 30
+LAST_FEEDBACK_BY_IP = {}
 
 
 def init_db():
@@ -45,6 +47,12 @@ class App(SimpleHTTPRequestHandler):
         if self.path != "/api/feedback":
             self.send_error(404)
             return
+        client_ip = self.client_address[0]
+        now = time.monotonic()
+        if now - LAST_FEEDBACK_BY_IP.get(client_ip, 0) < RATE_LIMIT_SECONDS:
+            self.send_error(429, "Please wait before sending another request")
+            return
+        LAST_FEEDBACK_BY_IP[client_ip] = now
         length = int(self.headers.get("Content-Length", "0"))
         if length <= 0 or length > MAX_BODY:
             self.send_error(400, "Invalid request size")
