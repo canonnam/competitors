@@ -81,10 +81,10 @@ class App(SimpleHTTPRequestHandler):
         raw = json.dumps(event, ensure_ascii=False, separators=(",", ":")).encode()
         headers = {}
         if secret:
-            headers["X-Hermes-Signature-256"] = "sha256=" + hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
+            headers["X-Hub-Signature-256"] = "sha256=" + hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
         hermes_ok = False
         if hermes_url:
-            request = urllib.request.Request(hermes_url, data=raw, headers={"Content-Type": "application/json", **headers}, method="POST")
+            request = urllib.request.Request(hermes_url, data=raw, headers={"Content-Type": "application/json", "User-Agent": "competitors-feedback/1.0", **headers}, method="POST")
             try:
                 with urllib.request.urlopen(request, timeout=10) as response:
                     hermes_ok = 200 <= response.status < 300
