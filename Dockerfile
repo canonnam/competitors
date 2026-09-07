@@ -1,6 +1,9 @@
-FROM nginx:1.27-alpine
+FROM python:3.13-alpine
 
-COPY index.html /usr/share/nginx/html/index.html
-COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+WORKDIR /app
+COPY app.py index.html competitors.html /app/
+COPY nginx /app/nginx
 
+ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
+CMD ["python", "app.py"]

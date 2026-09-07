@@ -1,2 +1,4 @@
 .git
 citations.json
+__pycache__
+*.pyc
