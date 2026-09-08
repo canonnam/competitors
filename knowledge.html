@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>지식 문서 관리 | 더비다 지식 창고</title>
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#1f63dc">
+  <meta property="og:type" content="website"><meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="더비다 지식 창고">
+  <meta property="og:title" content="지식 문서 관리 | 더비다 지식 창고">
+  <meta property="og:url" content="https://competitors-dev.up.railway.app/knowledge.html">
+  <meta property="og:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/knowledge.css"><script src="/assets/knowledge.js" defer></script>
+</head>
+<body>
+  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions"><a class="kb-home" href="/">홈으로 돌아가기</a></nav></div></header>
+  <main class="knowledge-main">
+    <div class="knowledge-heading"><div><p class="knowledge-eyebrow">관리자</p><h1>지식 문서 관리</h1></div><button id="logout" type="button" hidden>잠금</button></div>
+    <form id="login-form" class="knowledge-login"><label for="admin-key">관리자 키</label><div class="knowledge-login-row"><input id="admin-key" type="password" required autocomplete="off"><button type="submit">연결</button></div></form>
+    <p id="admin-status" role="status"></p>
+    <section id="knowledge-workspace" hidden>
+      <div class="knowledge-summary"><strong id="document-count"></strong><span id="connection-state"></span></div>
+      <form id="upload-form" class="knowledge-upload"><label for="document-files">문서 추가 · 갱신</label><div class="knowledge-upload-row"><input id="document-files" type="file" accept=".md,.txt,text/plain,text/markdown" multiple required><button type="submit"><img src="/assets/icons/upload.svg" alt="">등록</button></div><p id="upload-status" role="status"></p></form>
+      <div class="knowledge-toolbar"><h2>등록 문서</h2><input id="document-filter" type="search" placeholder="문서 검색" aria-label="등록 문서 검색"></div>
+      <div class="knowledge-table-wrap"><table><thead><tr><th>문서명</th><th>문서 갱신일</th><th>상태</th><th><span class="sr-only">관리</span></th></tr></thead><tbody id="document-list"></tbody></table></div>
+      <p id="empty-documents" hidden>등록된 문서가 없습니다.</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -7,6 +7,7 @@ import hashlib, hmac, json, os, re, sqlite3, time, urllib.request
 import urllib.parse
 import naver_ads
 import competitor_news
+import wiki_chat
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -50,6 +51,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if wiki_chat.handle(self, "GET"):
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/competitor-news":
             self.send_news_report()
             return
@@ -65,6 +68,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if wiki_chat.handle(self, "HEAD"):
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/competitor-news":
             self.send_news_report(head_only=True)
             return
@@ -156,19 +161,21 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html", "statistics.html"}
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
-        allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
+        allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
         if not (allowed_page or allowed_root_asset or allowed_asset) or not path.is_file():
             self.send_error(404)
             return None
         return super().send_head()
 
     def do_POST(self):
+        if wiki_chat.handle(self, "POST"):
+            return
         if self.path != "/api/feedback":
             self.send_error(404)
             return
@@ -224,6 +231,7 @@ class App(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
     scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())
     competitor_news.init_db(competitor_news.db_path())
