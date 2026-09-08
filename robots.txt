@@ -1,0 +1,5 @@
+# Crawlers must be able to read our noindex meta tags and X-Robots-Tag headers.
+# Disallow: / would hide those directives and can leave URLs in search results.
+# This site deliberately does not publish a sitemap.
+User-agent: *
+Allow: /

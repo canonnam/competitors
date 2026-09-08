@@ -41,6 +41,8 @@ class App(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
     def end_headers(self):
+        # Applies to HTML, images, API responses and errors, including HEAD/304.
+        self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet, noimageindex")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -104,8 +106,9 @@ class App(SimpleHTTPRequestHandler):
             self.path = "/index.html"
             path = ROOT / "index.html"
         allowed_page = path.parent == ROOT and path.name in public_pages
+        allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
-        if not (allowed_page or allowed_asset) or not path.is_file():
+        if not (allowed_page or allowed_root_asset or allowed_asset) or not path.is_file():
             self.send_error(404)
             return None
         return super().send_head()

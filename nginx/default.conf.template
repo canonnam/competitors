@@ -6,6 +6,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Preserve the same indexing policy if this legacy static-server config is used.
+    add_header X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" always;
+
     location / {
         try_files $uri $uri/ /index.html;
     }
