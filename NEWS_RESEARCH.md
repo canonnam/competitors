@@ -1,5 +1,19 @@
 # 경쟁사 뉴스 확인 기록
 
+## 매일 자동 수집 (2026-09-08 추가)
+
+- Railway `competitors` 서비스의 웹 프로세스에서 매일 **09:00 Asia/Seoul**에 실행한다. PC가 꺼져 있어도 수집하며 별도 Codex 예약 작업이나 API 키가 필요하지 않다. 기존 서비스는 1 replica, 상시 실행, `/data` Volume을 유지한다.
+- `competitor_news.py`가 `data/news_targets.json`의 18개 경쟁사별 Google 뉴스 RSS 검색을 조회한다. 최근 30일의 검색 결과에서 경쟁사명·운영사명과 관련 분야를 제목으로 대조한다. 한강시스템의 동명 금융 시스템, 일반 보행 보조 지팡이, 돌봄과 무관한 SKT 기사 등을 제외한다. Google 뉴스에 등록되지 않은 공지나 제목에 식별 정보가 없는 기사는 자동 수집되지 않을 수 있다.
+- 자동 기사는 **제목·발행처·게시일·Google 뉴스 경유 기사 링크**만 저장한다. RSS description, 본문과 사진을 복제하거나 기계 요약하지 않는다. 화면에서 `자동 수집`으로 표시한다. 원문을 확인한 기존 9건은 `data/competitor_news_seed.json`에 보존하고 `검토한 요약`으로 구분한다.
+- `/data/competitor-news.db`에 SQLite로 저장해 재배포 후 유지한다. 동일 링크 또는 같은 게시일의 정규화된 동일 제목은 중복 추가하지 않는다. 같은 사건에 관한 다른 제목의 보도는 함께 표시될 수 있다. 과거 수집 기사와 검토한 기존 기사는 계속 보존한다.
+- 첫 실행이나 누락 일정은 시작 시 보충한다. 전체 성공 시각과 마지막 시도 시각을 구분하며, 일부 검색이 실패해도 성공한 검색의 새 기사는 반영하고 실패한 검색과 기존 기사는 유지한다. 실패 시 30분 후 다시 시도하며, 홈 배지와 상세 화면에 수집 지연을 표시한다.
+- `GET /api/competitor-news`는 목록과 수집 상태를 반환한다. 홈은 `?summary=1`로 기사 수·최신 게시일·수집 상태만 조회한다. 브라우저는 첫 방문, 탭 복귀, 5분 간격으로 서버에 저장된 결과를 확인한다. 페이지 방문 자체는 외부 뉴스 수집을 실행하지 않는다.
+- 상태 확인: `updated_at`, `sync.enabled`, `sync.stale`, `sync.errors`, `sync.next_run`. 환경변수 `COMPETITOR_NEWS_DB_PATH` 기본값은 `/data/competitor-news.db`, `COMPETITOR_NEWS_SYNC_ENABLED` 기본값은 `true`이다. 로컬 미리보기는 별도 DB 경로를 지정한다.
+- 수동 수집: `python competitor_news.py --sync`. 상태만 출력: `python competitor_news.py`. 수동 실행 전 `COMPETITOR_NEWS_DB_PATH`를 대상 DB로 지정한다.
+- 검증: `python -m unittest discover`; `node --test test_*.cjs`. 실제 RSS 첫 수집에서 18개 검색 성공, 자동 기사 37건을 확인했다. UI에서 경쟁사 필터, 더 보기, 기사 링크 이동과 홈 집계를 확인했다.
+
+## 기존 검토 기사
+
 확인일: 2026-09-08 (KST). 기존 4건을 재확인하고, 원문 게시일과 내용을 확인한 5건을 추가했다. 타임라인은 총 9건이며 게시일 내림차순이다. 동일 날짜는 확인 가능한 게시 시각으로 정렬했다.
 
 | 게시일 | 대상 | 반영 내용 | 원문 |

@@ -1,0 +1,20 @@
+[
+  {"id":"easy","name":"이지케어","query":"(\"이지케어\" OR \"이지엠소프트\") (요양 OR ERP)","aliases":["이지케어","이지엠소프트"],"context":["요양","ERP","이지엠소프트"]},
+  {"id":"carefor","name":"케어포","query":"(\"케어포\" OR \"한강시스템\") (케어포 OR 요양 OR ERP)","aliases":["케어포","한강시스템"],"context":["케어포","요양","돌봄","ERP"],"exclude":["케어포인트"]},
+  {"id":"ecm","name":"EcM","query":"(\"누리뜰\" OR \"EcM\") (요양 OR ERP)","aliases":["누리뜰","EcM"],"context":["요양","ERP","누리뜰"]},
+  {"id":"angel","name":"엔젤시스템","query":"\"엔젤시스템\"","aliases":["엔젤시스템"]},
+  {"id":"allcare","name":"올케어ERP","query":"(\"올케어\" OR \"재무관리센터\") (요양 OR ERP)","aliases":["올케어","재무관리센터"],"context":["요양","ERP","재무관리센터"]},
+  {"id":"jipangi","name":"지팡이 ERP","query":"\"지팡이\" (ERP OR 요양프로그램 OR 요양시스템)","aliases":["지팡이"],"context":["ERP","프로그램","소프트웨어","전산","회계","요양시스템"]},
+  {"id":"salary","name":"케어샐러리","query":"(\"케어샐러리\" OR \"페어엠소프트\")","aliases":["케어샐러리","페어엠소프트"]},
+  {"id":"planner","name":"케어플래너","query":"\"케어플래너\" (요양 OR AI OR 서사도)","aliases":["케어플래너"],"context":["요양","급여제공계획","ERP","서사도"]},
+  {"id":"well","name":"웰파트너스","query":"\"웰파트너스\" (돌봄 OR 요양 OR 클린체크)","aliases":["웰파트너스"],"context":["돌봄","요양","클린체크","CleanCheck","간호","간병"]},
+  {"id":"aicareplus","name":"AI케어플러스","query":"(\"AI케어플러스\" OR \"코리아케어플랫폼\")","aliases":["AI케어플러스","코리아케어플랫폼"]},
+  {"id":"maeum","name":"마음손ERP","query":"\"마음손\" (ERP OR 요양 OR 회계)","aliases":["마음손"],"context":["ERP","요양","회계"]},
+  {"id":"yoyangsys","name":"요양시스","query":"(\"요양시스\" OR \"해리지앤디\")","aliases":["요양시스","해리지앤디"]},
+  {"id":"eroum","name":"이로움케어","query":"(\"이로움케어\" OR \"티에이치케이컴퍼니\")","aliases":["이로움케어","티에이치케이컴퍼니"]},
+  {"id":"hyodol","name":"효돌","query":"\"효돌\" (돌봄 OR 로봇 OR 어르신)","aliases":["효돌"],"context":["돌봄","로봇","어르신","시니어","노인"]},
+  {"id":"happy","name":"행복커넥트","query":"\"행복커넥트\"","aliases":["행복커넥트"]},
+  {"id":"skt","name":"SKT 인공지능 돌봄","query":"(\"SK텔레콤\" OR \"SKT\" OR \"케어비아\") (돌봄 OR 케어비아)","aliases":["SK텔레콤","SKT","케어비아"],"context":["돌봄","케어비아","누구오팔"]},
+  {"id":"caring","name":"케어링","query":"\"케어링\" (요양 OR 돌봄 OR 시니어)","aliases":["케어링"],"context":["요양","돌봄","시니어","어르신","주간보호","데이케어"]},
+  {"id":"caredoc","name":"케어닥","query":"\"케어닥\"","aliases":["케어닥"]}
+]
