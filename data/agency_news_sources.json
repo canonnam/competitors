@@ -1,0 +1,11 @@
+[
+  {"id":"nhis_B0152","agency":"국민건강보험공단","name":"평가 공지사항","board":"B0152","kind":"nhis","topic":"평가·점검","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002802&bKey=B0152&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"nhis_B0153","agency":"국민건강보험공단","name":"평가 매뉴얼","board":"B0153","kind":"nhis","topic":"평가·점검","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002804&bKey=B0153&prevPath=/npbs/e/d/320/nped320m01.web"},
+  {"id":"nhis_B0045","agency":"국민건강보험공단","name":"지역본부소식","board":"B0045","kind":"nhis","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002848&bKey=B0045&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"nhis_B0010","agency":"국민건강보험공단","name":"보도자료","board":"B0010","kind":"nhis","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002787&bKey=B0010&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"nhis_B0017","agency":"국민건강보험공단","name":"서식자료실","board":"B0017","kind":"nhis","topic":"서식·행정","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002790&bKey=B0017&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"nhis_B0018","agency":"국민건강보험공단","name":"법령자료실","board":"B0018","kind":"nhis","topic":"법령·고시","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002791&bKey=B0018&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"nhis_B0019","agency":"국민건강보험공단","name":"통계자료실","board":"B0019","kind":"nhis","topic":"통계·자료","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002793&bKey=B0019&prevPath=/npbs/d/m/000/moveBoardView"},
+  {"id":"mohw_0027","agency":"보건복지부","name":"보도자료","board":"0027","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027"},
+  {"id":"mohw_0003","agency":"보건복지부","name":"공지사항","board":"0003","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10501010100&bid=0003"}
+]
