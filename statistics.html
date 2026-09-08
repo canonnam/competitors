@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>통계자료 | 더비다 지식 창고</title>
+<!-- Shared brand metadata; search indexing is disabled for this entire site. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="theme-color" content="#1f63dc">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="더비다 지식 창고">
+<meta property="og:title" content="통계자료 | 더비다 지식 창고">
+<meta property="og:description" content="장기요양 운영과 돌봄 기술, 데이터를 함께 살펴보는 더비다의 지식 창고입니다.">
+<meta property="og:url" content="https://competitors-dev.up.railway.app/statistics.html">
+<meta property="og:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+<meta property="og:image:secure_url" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="통계자료 | 더비다 지식 창고">
+<meta name="twitter:description" content="장기요양 운영과 돌봄 기술, 데이터를 함께 살펴보는 더비다의 지식 창고입니다.">
+<meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+<meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+<link rel="stylesheet" href="/assets/statistics.css"><link rel="stylesheet" href="/assets/site.css"><script src="/assets/site.js" defer></script><script src="/assets/statistics-data.js" defer></script><script src="/assets/statistics.js" defer></script></head><body class="kb-detail" data-feedback-page="statistics">
+<header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><a class="kb-home" href="/">지식 창고 홈</a><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
+<main>
+  <section class="kb-page-heading">
+    <nav class="kb-breadcrumb" aria-label="현재 위치"><a href="/">지식 창고</a><span aria-hidden="true">/</span><span aria-current="page">통계자료</span></nav>
+    <p class="kb-eyebrow">DATA &amp; READING NOTES</p><h1>통계자료</h1>
+    <p class="kb-description">돌봄의 현장을 숫자로 읽습니다. 입소 상담부터 직원의 근무환경까지, 다시 찾아볼 표와 그래프를 책갈피로 모았습니다.</p>
+    <div class="library-meta"><span>선정 문서 5편</span><span>원문 책갈피 10개</span><span>자료 확인 2026.09.08</span><a href="https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html" target="_blank" rel="noopener noreferrer">보건복지 데이터포털 ↗</a></div>
+  </section>
+  <section class="start-here" aria-labelledby="start-title"><div class="section-label"><h2 id="start-title">먼저 펼쳐볼 세 가지</h2><span>대상과 기준은 책갈피에서 확인</span></div><div class="highlights" id="highlights"></div></section>
+  <section class="library-workspace" id="library" aria-label="통계자료 찾아보기">
+    <div class="library-tabs" role="group" aria-label="자료 보기 방식"><button class="library-tab" id="bookmarks-tab" aria-pressed="true" aria-controls="bookmarks-view">책갈피<span class="tab-count">10</span></button><button class="library-tab" id="documents-tab" aria-pressed="false" aria-controls="documents-view">원문 문서<span class="tab-count">5</span></button></div>
+    <div class="filter-row"><label class="search-box"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.6"/></svg><span class="sr-only">통계자료 검색</span><input id="statistics-search" type="search" placeholder="자료명, 관심 주제, 키워드 검색" autocomplete="off"></label><button class="saved-only" id="saved-only" aria-pressed="false">내가 저장한 책갈피 <span id="saved-count">0</span></button></div>
+    <div class="topics" id="topics" role="group" aria-label="관심 주제"></div>
+    <div class="results-header"><p id="results-count" role="status" aria-live="polite"></p><span id="results-hint"></span></div>
+    <div class="bookmark-grid" id="bookmarks-view"></div><div class="document-list" id="documents-view" hidden></div>
+    <div class="empty-state" id="empty-state" hidden><h3>표시할 자료가 없습니다</h3><p id="empty-message"></p><button class="reset-button" id="reset-filters">전체 자료 보기</button></div>
+    <noscript><p>책갈피 검색과 확대 보기는 자바스크립트를 켜면 이용할 수 있습니다. <a href="https://www.kihasa.re.kr/publish/regular/hsw/list">한국보건사회연구원에서 원문 자료 보기</a></p></noscript>
+  </section>
+  <aside class="reading-notes" aria-label="자료 이용 안내"><div><h2>조사 시점과 대상을 함께 읽어주세요</h2><p>2022년 장기요양실태조사와 2023년도 노인실태조사를 분석한 2024년 발간물에서 선정했습니다. 전국 조사 결과이며 안양점·인천점의 실적이나 현재 시장 전체를 나타내지 않습니다. 법정 기준은 최신 자료를 별도로 확인해야 합니다.</p></div><div><h2>원문과 활용 아이디어를 함께 담았습니다</h2><p>캡처는 발간물의 표·그래프를 직접 확인해 발췌했습니다. ‘현장에서 살펴볼 점’은 더비다를 위한 활용 아이디어입니다. 저장한 책갈피는 현재 브라우저에 보관되며, 원문 링크는 새 창에서 열리거나 내려받아집니다.</p></div></aside>
+</main>
+<dialog class="capture-dialog" id="capture-dialog" aria-labelledby="capture-title"><div class="dialog-head"><div><span class="topic-tag" id="capture-topic"></span><h2 id="capture-title"></h2></div><button class="dialog-close" id="close-capture" autofocus>닫기</button></div><div class="dialog-body" id="capture-content"></div></dialog>
+<div class="toast" id="save-status" role="status" aria-live="polite"></div>
+</body></html>

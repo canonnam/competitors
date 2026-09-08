@@ -132,7 +132,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html"}
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html", "statistics.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"

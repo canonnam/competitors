@@ -1,0 +1,181 @@
+{
+  "reviewedAt": "2026-09-08",
+  "scaleTo": 1800,
+  "documents": [
+    {
+      "id": "care",
+      "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=26092",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60132&volume=60128",
+      "sha256": "3d7c6dbc71f62aad3c1cc5e20d068eedc215a2e573b887baddf4bec286ae0c6f",
+      "pdfPages": 18,
+      "captures": [
+        {
+          "id": "choosing-a-home",
+          "pdfPage": 11,
+          "printedPage": 16,
+          "figure": "표 6",
+          "image": "/assets/statistics/choosing-a-home.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            585
+          ]
+        },
+        {
+          "id": "meal-support",
+          "pdfPage": 9,
+          "printedPage": 14,
+          "figure": "표 3",
+          "image": "/assets/statistics/meal-support.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            930
+          ]
+        }
+      ]
+    },
+    {
+      "id": "family",
+      "downloadUrl": "https://repository.kihasa.re.kr/bitstream/201002/44671/1/2024.02.No.328.03.pdf",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60134&volume=60128",
+      "sha256": "e174d82154c46ddeb36f96cac118ef8374849263290d910303e835393d6daffa",
+      "pdfPages": 14,
+      "captures": [
+        {
+          "id": "family-priorities",
+          "pdfPage": 11,
+          "printedPage": 32,
+          "figure": "그림 4",
+          "image": "/assets/statistics/family-priorities.png",
+          "capture": [
+            160,
+            1155,
+            1165,
+            1620
+          ]
+        },
+        {
+          "id": "family-education",
+          "pdfPage": 10,
+          "printedPage": 31,
+          "figure": "표 3",
+          "image": "/assets/statistics/family-education.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            625
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quality",
+      "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=26096",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60136&volume=60128",
+      "sha256": "88580f2743a9467448bdb8923dcdab7efb8f811ff012b334cf44d594ecb6eeec",
+      "pdfPages": 20,
+      "captures": [
+        {
+          "id": "extra-staffing",
+          "pdfPage": 9,
+          "printedPage": 42,
+          "figure": "표 5",
+          "image": "/assets/statistics/extra-staffing.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            870
+          ]
+        },
+        {
+          "id": "digital-care",
+          "pdfPage": 14,
+          "printedPage": 47,
+          "figure": "표 7",
+          "image": "/assets/statistics/digital-care.png",
+          "capture": [
+            160,
+            785,
+            1165,
+            1380
+          ]
+        }
+      ]
+    },
+    {
+      "id": "workforce",
+      "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=26098",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60138&volume=60128",
+      "sha256": "5a5dd75d73effec7f609aaadfdae8e579fec8711c43edff94ab1e3e015af8d4c",
+      "pdfPages": 19,
+      "captures": [
+        {
+          "id": "leave-coverage",
+          "pdfPage": 11,
+          "printedPage": 62,
+          "figure": "그림 2",
+          "image": "/assets/statistics/leave-coverage.png",
+          "capture": [
+            160,
+            965,
+            1165,
+            1570
+          ]
+        },
+        {
+          "id": "staff-rest",
+          "pdfPage": 14,
+          "printedPage": 65,
+          "figure": "표 6",
+          "image": "/assets/statistics/staff-rest.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            1050
+          ]
+        }
+      ]
+    },
+    {
+      "id": "housing",
+      "downloadUrl": "https://repository.kihasa.re.kr/bitstream/201002/46105/1/2024.11.No.337.06.pdf",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=65814&volume=65802",
+      "sha256": "347e78e33545675bfbdd2c6e03aaeea7bcaaff10aa1df88a91379ce8e8747644",
+      "pdfPages": 17,
+      "captures": [
+        {
+          "id": "housing-preference",
+          "pdfPage": 5,
+          "printedPage": 68,
+          "figure": "그림 1",
+          "image": "/assets/statistics/housing-preference.png",
+          "capture": [
+            160,
+            290,
+            1165,
+            780
+          ]
+        },
+        {
+          "id": "home-safety",
+          "pdfPage": 6,
+          "printedPage": 69,
+          "figure": "표 1",
+          "image": "/assets/statistics/home-safety.png",
+          "capture": [
+            160,
+            955,
+            1165,
+            1385
+          ]
+        }
+      ]
+    }
+  ]
+}
