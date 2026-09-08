@@ -49,6 +49,9 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path in {"/api/maps-config", "/api/nearby-facilities"}:
+            self.send_map_payload()
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/operating-report":
             self.send_operating_report()
             return
@@ -58,6 +61,9 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if urllib.parse.urlsplit(self.path).path in {"/api/maps-config", "/api/nearby-facilities"}:
+            self.send_map_payload(head_only=True)
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/operating-report":
             self.send_operating_report(head_only=True)
             return
@@ -65,6 +71,31 @@ class App(SimpleHTTPRequestHandler):
             self.send_ad_report(head_only=True)
             return
         super().do_HEAD()
+
+    def send_map_payload(self, head_only=False):
+        route = urllib.parse.urlsplit(self.path).path
+        status = 200
+        if route == "/api/maps-config":
+            # This is a browser key. Never expose REST, admin, or other service variables.
+            key = os.getenv("KAKAO_JAVASCRIPT_KEY", "").strip()
+            if re.fullmatch(r"[0-9a-fA-F]{32}", key):
+                payload = {"kakaoJavascriptKey": key}
+            else:
+                status, payload = 503, {"error": "지도를 불러올 수 없습니다."}
+            raw = json.dumps(payload, ensure_ascii=False).encode()
+        else:
+            try:
+                raw = (ROOT / "data" / "nearby_facilities.json").read_bytes()
+            except OSError:
+                status = 503
+                raw = json.dumps({"error": "시설목록을 불러올 수 없습니다."}, ensure_ascii=False).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store" if route == "/api/maps-config" else "public, max-age=300")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(raw)
 
     def send_operating_report(self, head_only=False):
         try:
@@ -101,7 +132,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html"}
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
