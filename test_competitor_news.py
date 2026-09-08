@@ -37,6 +37,8 @@ class NewsTests(unittest.TestCase):
         self.assertEqual(report['total'], 9)
         self.assertTrue(all(item['reviewed'] and item['summary'] for item in report['items']))
         self.assertNotIn('items', news.report(self.path, NOW, summary=True))
+        self.assertEqual(set(report['article_ids']), {item['id'] for item in report['items']})
+        self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], report['article_ids'])
 
     def test_real_rss_shape_cleans_markup_and_removes_tracking_query(self):
         item, = news.parse_feed(feed(title='<b>케어닥</b>, 새로운 돌봄 서비스 발표'), TARGET, NOW)
@@ -50,9 +52,11 @@ class NewsTests(unittest.TestCase):
 
     def test_duplicate_feed_url_and_normalized_headline_are_inserted_once(self):
         news.sync(self.path, NOW, lambda _: feed(), [TARGET])
+        first_ids = news.report(self.path, NOW, summary=True)['article_ids']
         news.sync(self.path, NOW, lambda _: feed(link='https://news.google.com/rss/articles/second-url'), [TARGET])
         news.sync(self.path, NOW, lambda _: feed(title='케어닥 : 새로운 돌봄 서비스 발표'), [TARGET])
         self.assertEqual(news.report(self.path, NOW)['total'], 10)
+        self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], first_ids)
 
     def test_rss_never_replaces_reviewed_summary(self):
         original = news.report(self.path, NOW)['items'][0]

@@ -22,6 +22,7 @@
   const $ = id => document.getElementById(id);
   const home = $('home-news-meta'), timeline = $('news-timeline');
   if (!home && !timeline) return;
+  const newMark=root.NewsBadge?.create('competitor',{badge:$('home-news-new'),detail:!!timeline});
   const date = value => value ? new Date(value).toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) : '확인 중';
   const collected = value => value ? new Date(value).toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}) : '';
@@ -100,6 +101,7 @@
       $('news-controls').hidden = false;
       drawList();
     }
+    newMark?.update(data.article_ids);
   }
   async function refresh() {
     if (loading) return;

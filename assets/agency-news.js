@@ -31,6 +31,7 @@
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id), home = $('home-agency-meta'), list = $('agency-list');
   if (!home && !list) return;
+  const newMark=root.NewsBadge?.create('agency',{badge:$('home-agency-new'),detail:!!list});
   const when = value => value ? new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}) : '확인 중';
   const make = (tag,cls,text) => { const node=document.createElement(tag); if(cls)node.className=cls; if(text!==undefined)node.textContent=text; return node; };
   const readKey='vida-support-read-v1';
@@ -115,7 +116,7 @@
   }
   function render(data) {
     if(!data?.sync||!Array.isArray(data.sources)||!Number.isInteger(data.total)||(list&&!Array.isArray(data.items)))throw new Error('Invalid agency data');
-    current=data;drawStatus(data);drawList();
+    current=data;drawStatus(data);drawList();newMark?.update(data.article_ids);
   }
   async function refresh() {
     if(loading)return;loading=true;

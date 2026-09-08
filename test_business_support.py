@@ -114,6 +114,7 @@ class SupportTests(unittest.TestCase):
             self.assertNotIn('annual_revenue',json.dumps(report))
             self.assertNotIn('items',news.report(path,NOW,summary=True))
             self.assertEqual(news.report(path,NOW+timedelta(days=70))['support']['active'],0)
+            self.assertEqual(news.report(path,NOW+timedelta(days=70),summary=True)['article_ids'],[])
 
     def test_failed_detail_keeps_archive_and_seen_for_retry(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -224,11 +224,12 @@ def report(path, now=None, summary=False):
         state = read_state(db)
         total = db.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
         latest = db.execute("SELECT MAX(published_at) FROM articles").fetchone()[0]
+        article_ids = [row[0] for row in db.execute("SELECT id FROM articles ORDER BY id")]
         rows = [] if summary else [json.loads(row[0]) for row in db.execute(
             "SELECT payload FROM articles ORDER BY published_at DESC, reviewed DESC, id")]
     last = timestamp(state.get("last_success"))
     active = enabled()
-    result = {"total": total, "latest_published_at": latest,
+    result = {"total": total, "latest_published_at": latest, "article_ids": article_ids,
               "updated_at": state.get("last_success"),
               "sync": {"enabled": active, "schedule": SCHEDULE,
                        "stale": last is None or last < due_at(now),

@@ -120,6 +120,8 @@ class AgencyNewsTests(unittest.TestCase):
         report = news.report(self.path, NOW)
         self.assertEqual(report['total'], 1)
         self.assertEqual(report['items'][0]['title'], '수정된 평가 안내')
+        self.assertEqual(report['article_ids'], ['nhis_B0152:1'])
+        self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], report['article_ids'])
 
     def test_failed_page_preserves_previous_success_archive_and_watermark(self):
         news.sync(self.path, NOW, lambda _: nhis_page([entry(1)]), [NHIS])

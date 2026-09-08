@@ -25,6 +25,7 @@ body.kb-detail>main{max-width:1248px;width:100%;margin:0 auto;padding:28px 24px 
 .kb-homepage .card-topline .icon{flex:1}
 .card-update-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border:1px solid #c8e5d9;border-radius:999px;background:#edf8f2;color:#176b4b;font-size:12px;line-height:1.5;font-weight:700;white-space:nowrap}
 .card-update-badge svg{flex:none}
+.kb-homepage .card-heading{display:flex;align-items:baseline;gap:8px}.news-new-mark{display:inline-flex;align-items:center;justify-content:center;flex:0 0 17px;height:17px;border-radius:4px;background:#e54438;color:#fff;font:800 10px/1 Arial,sans-serif;vertical-align:middle}.news-new-mark[hidden]{display:none}
 .keyword-signal{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.6;min-height:22px;color:#566571;margin:12px 0;overflow-wrap:anywhere}
 .keyword-dot{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#8a959d;margin-top:6px}
 .keyword-signal.is-top{color:#14765b}.is-top .keyword-dot{background:#159771;animation:keyword-pulse 2.2s ease-in-out infinite}

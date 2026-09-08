@@ -370,6 +370,7 @@ def report(path, now=None, summary=False):
     successes = [row.get('last_success') for row in source_status]
     updated = min(successes) if all(successes) else None
     result = {'total': total, 'latest_published_at': latest, 'updated_at': updated, 'sources': source_status,
+              'article_ids': [item['id'] for item in items if item.get('kind') != 'support' or item['application_status']['active']],
               'support': {'total': len(supports), 'active': sum(item['application_status']['active'] for item in supports),
                           'items': [{'id': item['id'], 'first_seen_at': item.get('first_seen_at', item['collected_at']),
                                      'active': item['application_status']['active']} for item in supports]},
