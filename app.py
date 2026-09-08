@@ -61,7 +61,10 @@ class App(SimpleHTTPRequestHandler):
             body = json.loads(self.rfile.read(length).decode("utf-8"))
             category = str(body.get("category", "general"))[:40]
             message = re.sub(r"\s+", " ", str(body.get("message", "")).strip())
-            page = str(body.get("page", "competitors"))[:120]
+            page_title = str(body.get("page", "competitors"))[:120]
+            page_url = str(body.get("page_url", ""))[:2048]
+            context = str(body.get("context", ""))[:240]
+            page = page_title
             if len(message) < 5 or len(message) > 4000:
                 raise ValueError("Message must be 5-4000 characters")
         except (ValueError, json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -73,9 +76,15 @@ class App(SimpleHTTPRequestHandler):
                             (created_at, category, message, page))
             feedback_id = cur.lastrowid
         event = {"feedback_id": feedback_id, "created_at": created_at, "category": category,
-                 "message": message, "page": page}
+                 "message": message, "page": page, "page_title": page_title,
+                 "page_url": page_url, "context": context}
         slack_url = os.getenv("SLACK_FEEDBACK_WEBHOOK_URL", "")
-        slack_ok = post_json(slack_url, {"text": f"📥 경쟁사 분석 개선요청 #{feedback_id}\n분류: {category}\n의견: {message}"})
+        location_lines = [f"페이지: {page_title}"]
+        if context:
+            location_lines.append(f"맥락: {context}")
+        if page_url:
+            location_lines.append(f"URL: {page_url}")
+        slack_ok = post_json(slack_url, {"text": f"📥 경쟁사 분석 개선요청 #{feedback_id}\n분류: {category}\n" + "\n".join(location_lines) + f"\n의견: {message}"})
         hermes_url = os.getenv("HERMES_FEEDBACK_WEBHOOK_URL", "")
         secret = os.getenv("HERMES_FEEDBACK_WEBHOOK_SECRET", "")
         raw = json.dumps(event, ensure_ascii=False, separators=(",", ":")).encode()
