@@ -16,6 +16,14 @@ class StaticPageDeploymentTests(unittest.TestCase):
         bundled = {name for group in copied_files for name in group.split()}
         self.assertTrue(linked_pages <= bundled, f"Deployment image omits: {sorted(linked_pages - bundled)}")
 
+    def test_every_competitor_card_shows_a_revenue_disclosure(self):
+        report = (ROOT / "competitors.html").read_text(encoding="utf-8")
+        cards = re.findall(r'<div class="card"\s+data-t="(?:erp|ai)">', report)
+        revenue_disclosures = re.findall(r'<div class="revenue-disclosure">', report)
+        self.assertGreater(len(cards), 0)
+        self.assertEqual(len(revenue_disclosures), len(cards))
+        self.assertNotIn("매출: 공개 확인 필요", report)
+
 
 if __name__ == "__main__":
     unittest.main()
