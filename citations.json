@@ -156,6 +156,42 @@
       "url": "https://koreacareplatform.com/education-service/",
       "title": "교육 서비스 – 코리아케어플랫폼",
       "accessed": "2026-09-08"
+    },
+    {
+      "id": 27,
+      "url": "https://www.newswire.co.kr/newsRead.php?no=1037844",
+      "title": "AI 돌봄로봇 효돌이, 독거노인 고립 해소 나선다… 부산 영도구 60가구 보급",
+      "publisher": "뉴스와이어",
+      "source_type": "official_press_release",
+      "published": "2026-07-02",
+      "accessed": "2026-09-08"
+    },
+    {
+      "id": 28,
+      "url": "https://news.sktelecom.com/226306",
+      "title": "AX는 현장에서 완성된다, 케어비아(CareVia)가 만들어 온 돌봄의 변화",
+      "publisher": "SK텔레콤 뉴스룸",
+      "source_type": "official_newsroom",
+      "published": "2026-06-10",
+      "accessed": "2026-09-08"
+    },
+    {
+      "id": 29,
+      "url": "https://www.newswire.co.kr/newsRead.php?no=1028490",
+      "title": "손주처럼 곁 지킨다… AI 반려로봇 효돌, 대규모 실증서 어르신 마음건강 개선 효과 확인",
+      "publisher": "뉴스와이어",
+      "source_type": "official_press_release",
+      "published": "2026-02-11",
+      "accessed": "2026-09-08"
+    },
+    {
+      "id": 30,
+      "url": "https://www.hankyung.com/article/202601064869i",
+      "title": "케어닥, 2026 시니어 산업 키워드 INFRA 선정",
+      "publisher": "한국경제",
+      "source_type": "media",
+      "published": "2026-01-07",
+      "accessed": "2026-09-08"
     }
   ]
 }
