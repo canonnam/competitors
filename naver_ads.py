@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 import logging
+import math
 import os
 from pathlib import Path
 import sqlite3
@@ -216,6 +217,90 @@ def due_target(now):
     return (local.date() - timedelta(days=days_back)).isoformat()
 
 
+def delivery_eligible(entity):
+    return entity.get("status") == "ELIGIBLE" and str(entity.get("userLock", False)).lower() not in {"true", "1", "y"}
+
+
+def sync_keywords(path, client, now=None):
+    """Seven-day reported rank, not a live SERP position or a bid estimate."""
+    now = now or datetime.now(KST)
+    end = now.astimezone(KST).date() - timedelta(days=1)
+    start = end - timedelta(days=6)
+    items = []
+    for campaign in entity_list(client.get("/ncc/campaigns"), "nccCampaignId"):
+        if campaign.get("campaignTp") != "WEB_SITE":
+            continue
+        for group in entity_list(client.get("/ncc/adgroups", {"nccCampaignId": campaign["nccCampaignId"]}), "nccAdgroupId"):
+            for keyword in entity_list(client.get("/ncc/keywords", {"nccAdgroupId": group["nccAdgroupId"]}), "nccKeywordId"):
+                items.append({"id": keyword["nccKeywordId"], "keyword": keyword.get("keyword", ""),
+                              "campaign": campaign.get("name", ""), "group": group.get("name", ""),
+                              "eligible": all(delivery_eligible(row) for row in (campaign, group, keyword)),
+                              "campaign_status": campaign.get("status", "UNKNOWN"),
+                              "group_status": group.get("status", "UNKNOWN"),
+                              "keyword_status": keyword.get("status", "UNKNOWN"),
+                              "impressions": 0, "clicks": 0, "cost": 0, "average_rank": None})
+    by_id = {item["id"]: item for item in items}
+    if len(by_id) != len(items):
+        raise ValueError("Duplicate keyword IDs")
+    for offset in range(0, len(items), 50):
+        batch_ids = {item["id"] for item in items[offset:offset + 50]}
+        response = client.get("/stats", {"ids": ",".join(sorted(batch_ids)),
+            "fields": json.dumps(["impCnt", "clkCnt", "salesAmt", "avgRnk"]),
+            "timeRange": json.dumps({"since": start.isoformat(), "until": end.isoformat()}), "timeIncrement": "allDays"})
+        if not isinstance(response, dict) or not isinstance(response.get("data"), list):
+            raise ValueError("Missing keyword statistics")
+        cycle = str(response.get("cycleBaseTm") or response.get("compTm") or "")
+        if len(cycle) >= 8 and cycle[:8].isdigit() and cycle[:8] < end.strftime("%Y%m%d"):
+            raise ValueError("Keyword statistics are not ready")
+        seen = set()
+        for row in response["data"]:
+            if not isinstance(row, dict) or row.get("id") not in batch_ids or row["id"] in seen:
+                raise ValueError("Unexpected keyword statistics row")
+            seen.add(row["id"])
+            values = [float(row[field]) for field in ("impCnt", "clkCnt", "salesAmt")]
+            rank = float(row["avgRnk"]) if row.get("avgRnk") is not None else 0
+            if not all(math.isfinite(value) and value >= 0 for value in values + [rank]) or 0 < rank < 1:
+                raise ValueError("Invalid keyword statistics")
+            imp, clicks, cost = values
+            by_id[row["id"]].update(impressions=int(imp), clicks=int(clicks), cost=cost,
+                                    average_rank=rank if rank >= 1 and imp > 0 else None)
+    snapshot = {"since": start.isoformat(), "through": end.isoformat(), "updated_at": now.isoformat(), "items": items}
+    with connect(path) as db:
+        set_state(db, keyword_snapshot=json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")),
+                  keyword_attempt=now.isoformat(), keyword_error="")
+    LOG.info("Naver keyword ranks updated through %s (%s keywords)", end, len(items))
+
+
+def refresh_keywords(path, client, now):
+    try:
+        sync_keywords(path, client, now)
+        return True
+    except Exception:
+        LOG.warning("Naver keyword refresh failed; last successful snapshot retained")
+        with connect(path) as db:
+            set_state(db, keyword_attempt=now.isoformat(), keyword_error="키워드 수집 실패: 마지막 정상 순위입니다. 30분 후 재시도합니다.")
+        return False
+
+
+def keyword_report(path, now=None, state=None):
+    now = now or datetime.now(KST)
+    if state is None:
+        with connect(path) as db:
+            state = state_dict(db)
+    snapshot = json.loads(state.get("keyword_snapshot", "{}"))
+    items = snapshot.get("items", [])
+    error = state.get("keyword_error", "")
+    stale = bool(error) or snapshot.get("through", "") < due_target(now)
+    ranked = [row for row in items if row["average_rank"] is not None]
+    top = [row for row in ranked if row["average_rank"] <= 3]
+    return {**snapshot, "items": items, "stale": stale, "error": error, "threshold": 3,
+            "target_date": due_target(now), "next_check": next_run(now),
+            "total": len(items), "ranked_count": len(ranked), "top_count": len(top),
+            "eligible_top_count": sum(row["eligible"] for row in top),
+            "method": "파워링크 등록 키워드 · 전일까지 최근 7일 평균 광고 노출순위 (avgRnk)",
+            "source": "https://github.com/naver/searchad-apidoc/wiki/FAQ-stat"}
+
+
 def next_run(now):
     local = now.astimezone(KST)
     scheduled = datetime.combine(local.date(), day_time(10, 30), KST)
@@ -237,6 +322,10 @@ def run_scheduler(path, config, stop):
                 LOG.warning("Naver report refresh failed; retry in 30 minutes")
                 with connect(path) as db:
                     set_state(db, last_attempt=now.isoformat(), last_error="수집 실패: 마지막 정상 데이터를 표시합니다. 30분 후 재시도합니다.")
+        keyword_due = keyword_report(path, now, state)["stale"]
+        keyword_retry = not state.get("keyword_attempt") or (now - datetime.fromisoformat(state["keyword_attempt"])).total_seconds() >= 1800
+        if keyword_due and keyword_retry:
+            refresh_keywords(path, client, now)
         stop.wait(30)
 
 
@@ -265,7 +354,7 @@ def report(path, now=None):
     archive = json.loads(archive_file.read_text(encoding="utf-8")) if archive_file.exists() else {}
     return {"branch": "더비다요양원 인천점", "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),
             "since": state.get("since"), "through": state.get("through"), "updated_at": state.get("updated_at"),
-            "daily": daily, "history": archive,
+            "daily": daily, "history": archive, "keywords": keyword_report(path, now, state),
             "sync": {"enabled": enabled, "next_run": next_run(now) if enabled else None,
                      "stale": state.get("through", "") < due_target(now), "error": state.get("last_error", ""),
                      "schedule": "매일 10:30 (한국시간)", "target_date": due_target(now)},
@@ -288,6 +377,8 @@ def main():
             sync(path, NaverClient(load_config()))
         except Exception as exc:
             raise SystemExit(f"Collection failed ({type(exc).__name__}); previous report retained") from None
+        if not refresh_keywords(path, NaverClient(load_config()), datetime.now(KST)):
+            raise SystemExit("Metrics updated; keyword refresh failed and its last good snapshot was retained")
     if args.export_seed:
         with connect(path) as db:
             data = {table: [list(row) for row in db.execute(f"SELECT * FROM {table}")] for table in ("entities", "metrics", "state")}

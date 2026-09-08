@@ -54,11 +54,21 @@ PORT=8080
 
 13개 그래프, 10개 동적 인사이트, 날짜 범위 선택, 월별·일별·유형·소재 표, 소재 정렬 및 선택 기간 일별 CSV 다운로드를 제공합니다. 브라우저 외부 CDN 호출 없이 Chart.js 4.5.1과 Lucide 아이콘을 로컬 자산으로 사용합니다.
 
-## 검증
+## 키워드 노출순위 (2026-09-08 추가)
+
+- `/ncc/keywords`의 인천점 파워링크 등록 키워드를 조회합니다. `/stats`의 `avgRnk`를 전일까지 최근 7일 구간으로 수집하며, 순위 견적이나 실시간 검색 결과를 사용하지 않습니다.
+- 평균 3위 이내를 상위 기준으로 표시합니다. 캠페인·광고그룹·키워드 상태가 모두 `ELIGIBLE`이고 수집이 정상인 경우에만 상태 점이 점멸합니다. 운영 상태 역시 수집 시점의 스냅샷이며 실시간 노출 보장은 아닙니다.
+- `avgRnk`가 0·미제공이거나 노출 수가 0이면 순위는 `null`입니다. 플레이스·자연검색의 키워드 순위와 혼합하지 않습니다. 노출 수가 적은 키워드는 순위 변동성이 클 수 있습니다.
+- 매일 10:30 한국시간에 독립적으로 갱신하며 실패 시 정상 순위를 보존하고 30분 후 재시도합니다. 키워드 수집 실패는 캠페인 지표를 되돌리지 않습니다.
+- `state.keyword_snapshot`에 최신 정상 집계를 저장합니다. 키워드 지표는 기존 캠페인·소재 합계에 더하지 않습니다.
+- 경량 API `/api/naver-ad-keywords`는 메인 카드의 상태와 상세 키워드 화면을 제공합니다. 브라우저가 열려 있으면 5분 간격으로 저장된 최신 상태를 다시 확인하며 Naver API를 직접 호출하지 않습니다.
+- 공식 지표 정의: https://github.com/naver/searchad-apidoc/wiki/FAQ-stat
+
+## 회귀 테스트
 
 ```sh
 python -m unittest discover -v
-node --test test_naver_ads_math.cjs
+node --test test_naver_ads_math.cjs test_naver_keywords.cjs
 node --check assets/naver-ads.js
 ```
 

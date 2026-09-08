@@ -131,7 +131,7 @@ class ReportTests(unittest.TestCase):
         try:
             with patch.object(ads,"db_path",return_value=self.path):
                 for method in ("GET","HEAD"):
-                    for path,status in (("/api/naver-ads",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
+                    for path,status in (("/api/naver-ads",200),("/api/naver-ad-keywords",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
                         with self.subTest(method=method,path=path):
                             connection=http.client.HTTPConnection("127.0.0.1",server.server_port,timeout=5)
                             connection.request(method,path)

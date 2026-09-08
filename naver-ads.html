@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>더비다요양원 네이버 광고분석 | Care Knowledge Base</title>
   <link rel="stylesheet" href="/assets/naver-ads.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/naver-keywords.js" defer></script>
   <script src="/assets/vendor/chart.umd.min.js" defer></script>
   <script src="/assets/naver-ads.js" defer></script>
 </head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="/">Care Knowledge Base</a>
-    <a class="back" href="/">지식 창고로 돌아가기</a>
-  </header>
+<body class="kb-detail">
+  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><a class="kb-home" href="/">지식 창고 홈</a><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
   <main>
-    <div class="page-heading">
-      <div><p class="eyebrow">더비다요양원 · 인천점</p><h1>네이버 광고분석</h1><p class="muted">안양점 운영 중단 · 인천점 성과 기준</p></div>
+    <section class="kb-page-heading">
+      <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">네이버 광고분석</span></nav>
+      <div class="kb-heading-row">
+      <div><p class="kb-eyebrow">더비다요양원 · 인천점</p><h1>네이버 광고분석</h1><p class="kb-description">안양점 운영 중단 · 인천점 성과 기준</p></div>
       <div class="tools">
         <button id="reload" class="icon-button" type="button" title="최신 보고서 불러오기" aria-label="최신 보고서 불러오기"><img src="/assets/icons/refresh-cw.svg" alt=""></button>
         <button id="download" type="button" disabled><img src="/assets/icons/download.svg" alt="">CSV 다운로드</button>
       </div>
-    </div>
+      </div>
+    </section>
     <div class="update-line"><span id="freshness" class="badge">불러오는 중</span><span id="updated" class="muted" role="status">광고 지표를 불러오고 있습니다.</span></div>
     <p id="notice" class="notice" role="status" hidden></p>
     <noscript><p class="notice">분석 화면을 보려면 JavaScript를 활성화해주세요.</p></noscript>
@@ -38,6 +41,7 @@
         <button id="tab-trends" role="tab" aria-selected="false" aria-controls="trends" data-tab="trends" tabindex="-1">일별·월별 추이</button>
         <button id="tab-channels" role="tab" aria-selected="false" aria-controls="channels" data-tab="channels" tabindex="-1">광고 유형 비교</button>
         <button id="tab-creatives" role="tab" aria-selected="false" aria-controls="creatives" data-tab="creatives" tabindex="-1">소재별 성과</button>
+        <button id="tab-keywords" role="tab" aria-selected="false" aria-controls="keywords" data-tab="keywords" tabindex="-1">키워드 노출순위</button>
         <button id="tab-history" role="tab" aria-selected="false" aria-controls="history" data-tab="history" tabindex="-1">이전 분석 기록</button>
       </nav>
       <section id="overview" role="tabpanel" aria-labelledby="tab-overview">
@@ -82,6 +86,16 @@
         </div>
         <div id="creative-table" class="table-scroll" tabindex="0" role="region" aria-label="소재별 상세 지표"></div>
         <p class="small muted">클릭률 구간은 Wilson 95% 신뢰구간입니다. 노출을 독립 시행으로 보는 근사이며 반복 노출·노출 위치·운영 기간 차이를 통제하지 않습니다. 소재 간 통계적 우월성이나 입소 효과의 검정 결과가 아닙니다.</p>
+      </section>
+      <section id="keywords" role="tabpanel" aria-labelledby="tab-keywords" hidden>
+        <div class="section-heading"><h2>키워드 평균 노출순위</h2><span class="muted small">최근 7일 고정 · 상단 조회 기간과 별개</span></div>
+        <p id="keyword-period" class="muted"></p>
+        <div id="keyword-summary" class="keyword-signal" role="status"></div>
+        <p class="small muted">순위는 실제 광고 노출의 기간 평균이며 실시간 검색 결과 순서나 자연검색 순위가 아닙니다. 상위 기준은 평균 3위 이내입니다. 점멸은 최근 집계가 정상이고 수집 당시 캠페인·광고그룹·키워드가 모두 집행 가능할 때만 표시됩니다. 이후 예산·스케줄 변경은 다음 수집에 반영됩니다.</p>
+        <div class="keyword-controls"><label>키워드 검색<input id="keyword-search" type="search" placeholder="키워드 또는 광고그룹"></label><label>상태<select id="keyword-filter"><option value="all">전체 키워드</option><option value="top">평균 3위 이내</option><option value="eligible">집행 가능</option><option value="unknown">순위 정보 없음</option></select></label><label>정렬<select id="keyword-sort"><option value="rank">평균 순위 높은 순</option><option value="impressions">노출 수 많은 순</option><option value="cost">광고비 많은 순</option><option value="name">키워드 이름순</option></select></label></div>
+        <div id="keyword-cards" class="keyword-grid"></div>
+        <details><summary>키워드 순위·성과 비교표</summary><div id="keyword-table" class="table-scroll" tabindex="0" role="region" aria-label="키워드 순위와 성과"></div></details>
+        <p class="small muted">플레이스 광고의 검색어별 위치는 이 등록 키워드 순위에 포함되지 않습니다. 순위 0·미제공 값은 순위 정보 없음으로 처리하며, 낮은 순위나 노출 중단으로 단정하지 않습니다. 평균 순위가 높아도 상담·입소 성과를 보장하지 않습니다. <a href="https://github.com/naver/searchad-apidoc/wiki/FAQ-stat" target="_blank" rel="noopener noreferrer">네이버 지표 정의</a></p>
       </section>
       <section id="history" role="tabpanel" aria-labelledby="tab-history" hidden>
         <div class="section-heading"><h2>이전 분석 기록</h2><span class="muted small">과거 시점의 기록 · 상단 기간 필터와 별개</span></div>

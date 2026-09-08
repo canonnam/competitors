@@ -47,20 +47,21 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if urllib.parse.urlsplit(self.path).path == "/api/naver-ads":
+        if urllib.parse.urlsplit(self.path).path in {"/api/naver-ads", "/api/naver-ad-keywords"}:
             self.send_ad_report()
             return
         super().do_GET()
 
     def do_HEAD(self):
-        if urllib.parse.urlsplit(self.path).path == "/api/naver-ads":
+        if urllib.parse.urlsplit(self.path).path in {"/api/naver-ads", "/api/naver-ad-keywords"}:
             self.send_ad_report(head_only=True)
             return
         super().do_HEAD()
 
     def send_ad_report(self, head_only=False):
         try:
-            payload = naver_ads.report(naver_ads.db_path())
+            reporter = naver_ads.keyword_report if urllib.parse.urlsplit(self.path).path == "/api/naver-ad-keywords" else naver_ads.report
+            payload = reporter(naver_ads.db_path())
             status = 200
         except (sqlite3.Error, OSError, ValueError):
             payload = {"error": "광고 보고서를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."}

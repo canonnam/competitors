@@ -158,7 +158,7 @@
 
   function renderTab() {
     if (!selected) return;
-    ({overview:renderOverview,trends:renderTrends,channels:renderChannels,creatives:renderCreatives,history:renderHistory})[activeTab]();
+    ({overview:renderOverview,trends:renderTrends,channels:renderChannels,creatives:renderCreatives,keywords:()=>AdKeywords.render(reportData.keywords),history:renderHistory})[activeTab]();
   }
 
   function applyRange() {
@@ -191,6 +191,7 @@
       const data=await response.json();
       if(!Array.isArray(data.daily))throw new Error('format');
       reportData=data;
+      AdKeywords.render(data.keywords);
       if(!data.through || !data.daily.length){$('dashboard').hidden=true;$('freshness').textContent='초기 수집 대기';$('updated').textContent='아직 수집된 지표가 없습니다.';$('notice').textContent='광고 계정 연결과 초기 데이터 수집이 필요합니다.';$('notice').hidden=false;return;}
       $('dashboard').hidden=false;$('download').disabled=false;
       $('freshness').textContent=data.sync.stale ? '갱신 지연' : '수집 완료';
@@ -233,5 +234,6 @@
     const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
     const link=document.createElement('a');link.href=url;link.download=`더비다_인천_광고_${selected.start}_${selected.end}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
+  if(location.hash==='#keywords')activateTab($('tab-keywords'));
   load();
 })(globalThis);
