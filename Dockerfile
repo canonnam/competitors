@@ -1,7 +1,7 @@
 FROM python:3.13-alpine
 
 WORKDIR /app
-COPY app.py index.html competitors.html ai-hub-data.html /app/
+COPY app.py index.html competitors.html competitor-news.html ai-hub-data.html /app/
 COPY assets /app/assets
 COPY nginx /app/nginx
 
