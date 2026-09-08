@@ -18,6 +18,7 @@ DETAIL_PATH = '/sii/siia/selectSIIA200Detail.do'
 ORIGIN = 'https://www.bizinfo.go.kr'
 BOOTSTRAP_PAGES = 10
 MAX_PAGES = 100
+POLICY_REVISION = '2026-09-09-regions-care-ai'
 
 
 def list_url(page=1):
@@ -107,14 +108,73 @@ def period_status(period, today):
     return {'label': '접수 여부 확인', 'deadline': None, 'days_left': None, 'active': True}
 
 
-REGIONS = ('서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원',
-           '충북', '충남', '전북', '전남', '경북', '경남', '제주')
-CARE = ('장기요양', '요양원', '돌봄', '시니어', '고령친화', '에이지테크', 'Age-Tech', '에이징테크', '복지시설')
+REGIONS = {
+    '서울': ('서울', '서울특별시'), '부산': ('부산', '부산광역시'),
+    '대구': ('대구', '대구광역시'), '인천': ('인천', '인천시', '인천광역시'),
+    '광주': ('광주', '광주광역시'), '대전': ('대전', '대전광역시'),
+    '울산': ('울산', '울산광역시'), '세종': ('세종', '세종시', '세종특별자치시'),
+    '경기': ('경기', '경기도'), '강원': ('강원', '강원도', '강원특별자치도'),
+    '충북': ('충북', '충청북도'), '충남': ('충남', '충청남도'),
+    '전북': ('전북', '전라북도', '전북특별자치도'), '전남': ('전남', '전라남도'),
+    '경북': ('경북', '경상북도'), '경남': ('경남', '경상남도'),
+    '제주': ('제주', '제주도', '제주특별자치도'),
+}
+CARE = ('장기요양', '요양원', '돌봄', '시니어', '고령친화', '고령자', '노인복지', '사회복지',
+        '에이지테크', 'Age-Tech', '에이징테크', '복지시설')
+AX = ('AX', 'AI전환', '인공지능전환', 'AI도입', 'AI활용', '인공지능도입', '인공지능활용', '지능화')
+PHYSICAL_AI = ('피지컬AI', 'Physical AI', '돌봄로봇', '케어로봇', '재활로봇', '서비스로봇')
+LOCATION = ('위치정보', '위치기반서비스', '위치기반사업', 'LBS', 'GPS')
+GYEONGGI_CITIES = ('수원', '용인', '고양', '성남', '화성', '부천', '남양주', '안산', '평택', '안양',
+                  '시흥', '파주', '김포', '의정부', '광주', '하남', '광명', '군포', '양주', '오산',
+                  '이천', '안성', '구리', '의왕', '포천', '양평', '여주', '동두천', '과천', '가평', '연천')
 SOFTWARE = ('SaaS', '클라우드', '소프트웨어', '정보통신', 'ICT', '디지털헬스', '헬스케어', '플랫폼개발', '플랫폼서비스', '서비스개발', 'ERP')
 STARTUP = ('창업기업', '초기창업', '스타트업', '창업도약', '액셀러레이', '액셀러레이터', '창업사업화', '오픈이노베이션')
 RESEARCH = ('연구개발', 'R&D', '기술개발', '산학연', '기업부설연구소', '연구인력', '기술사업화', '기술실증')
 GENERAL = ('지식재산', '특허', '상표', '고용', '채용', '일자리', '인건비', '직무교육', '직업훈련', '직장어린이집',
            '경영컨설팅', '경영지원', '경영안정', '정책자금', '육성자금', '보증', '이자지원', '이차보전', '수출바우처', '디지털전환')
+
+
+def named_regions(text, compact=False):
+    # Bizinfo combines neighboring regions in labels such as [전남광주] and [대구경북].
+    left = '' if compact else r'(?<![가-힣])'
+    right = r'(?=$|[^가-힣]|소재|지역|관내|내|에' + ('|' + '|'.join(REGIONS) if compact else '') + ')'
+    return {region for region, aliases in REGIONS.items() if any(
+        re.search(left + re.escape(alias) + right, text)
+        for alias in aliases)}
+
+
+def geography_allowed(item, title, target, profile):
+    allowed = set(profile['regions'])
+    # Regional governments' programs remain out of scope even when recruiting nationwide.
+    bracket = re.match(r'^\[([^]]+)\]', title)
+    regional_scope = named_regions(item.get('department', ''))
+    regional_scope |= named_regions(bracket.group(1), compact=True) if bracket else named_regions(title)
+    if regional_scope and not regional_scope & allowed:
+        return False
+    target_scope = named_regions(target)
+    if target_scope and not target_scope & allowed:
+        return False
+    # City-specific programs within Gyeonggi are not province-wide programs.
+    cities = set(re.findall(r'(?<![가-힣])([가-힣]{2,6}(?:시|군))\s*(?:소재|관내|지역|내|에|중소기업|기업)', target))
+    city_title = re.match(r'^(?:\[[^]]+\]\s*)?([가-힣]{2,6}(?:시|군))\s', title)
+    if city_title:
+        cities.add(city_title.group(1))
+    for label in (item.get('department', ''), bracket.group(1) if bracket else ''):
+        cities.update(re.findall(r'(?<![가-힣])([가-힣]{2,6}(?:시|군))(?=$|[^가-힣])', label))
+    province_names = {alias for aliases in REGIONS.values() for alias in aliases if alias.endswith('시')}
+    cities -= province_names
+    if cities and not cities & set(profile['cities']):
+        return False
+    city_names = {city for city in GYEONGGI_CITIES if re.search(
+        r'(?<![가-힣])' + city + r'(?:시|군)?(?=$|[^가-힣]|소재|지역|관내|내|에)', title+' '+target)}
+    company_cities = {city.removesuffix('시') for city in profile['cities']}
+    if city_names and not city_names & company_cities:
+        return False
+    local_hq = re.search(r'(성남|안양|인천)[^.;☞]{0,35}(본사|본점)', target)
+    if local_hq and local_hq.group(1) != profile['headquarters_city'].removesuffix('시'):
+        if not matches(target, ('또는', '사업장', '지점', '연구소')):
+            return False
+    return True
 
 
 def assess(item, detail, today, profile=PROFILE):
@@ -124,24 +184,12 @@ def assess(item, detail, today, profile=PROFILE):
     status = period_status(detail['application_period'], today)
     if not status['active']:
         return None
-    region = re.match(r'^\[([^]]+)\]', title)
-    region_text = region.group(1) if region else ''
-    named_regions = [name for name in REGIONS if name in region_text]
-    nationwide = matches(target, ('전국', '지역제한없', '소재지무관'))
-    relevant_regions = profile['regions']
-    if named_regions and not any(name in relevant_regions for name in named_regions) and not nationwide:
+    if not geography_allowed(item, title, target, profile):
         return None
-    target_regions = [name for name in REGIONS if re.search(re.escape(name)+r'(?:도|시|광역시|특별시|특별자치도|통합특별시)?\s*(?:지역|내|소재|에\s*소재)', target)]
-    if target_regions and not any(name in relevant_regions for name in target_regions) and not nationwide:
+    if matches(text, LOCATION):
         return None
-    # A provincial fund is often limited to one city, rather than every business in that province.
-    city_match = re.search(r'\]\s*([가-힣]+(?:시|군))\s', title)
-    if city_match and city_match.group(1) not in profile['cities'] and not nationwide:
+    if matches(target, ('비영리법인', '사회복지법인')) and not matches(target, ('영리기업', '중소기업', '창업기업', '요양기관', '요양원', '사회복지시설')):
         return None
-    local_hq = re.search(r'(성남|안양|인천)[^.;☞]{0,35}(본사|본점)', target)
-    if local_hq and local_hq.group(1) != profile['headquarters_city'].removesuffix('시'):
-        if not matches(target, ('또는', '사업장', '지점', '연구소')):
-            return None
     if matches(target, ('예비창업자', '창업예정자')) and not matches(target, ('기창업', '창업기업', '스타트업', '중소기업')):
         return None
     # Narrow sectors do not become applicable just because they use technology or support startups.
@@ -160,7 +208,12 @@ def assess(item, detail, today, profile=PROFILE):
         return None
     focus = title + ' ' + target
     if matches(focus, CARE):
-        topics.append('요양원·돌봄 사업'); reasons.append('요양원 운영 경험과 돌봄 현장을 활용할 수 있는 사업입니다.')
+        topics.append('시니어·사회복지·장기요양'); reasons.append('더비다 요양원 운영 경험과 시니어·사회복지·장기요양 현장에 연결되는 사업입니다.')
+    if matches(focus, AX):
+        topics.append('AI·AX 전환'); reasons.append('장기요양 업무의 AI 활용과 SaaS 플랫폼 고도화에 적용할 수 있는지 검토할 사업입니다.')
+    if matches(focus, PHYSICAL_AI):
+        topics.append('피지컬 AI·돌봄 로봇'); reasons.append('요양 현장의 피지컬 AI·돌봄 로봇 실증 또는 SaaS 연계 가능성을 검토할 사업입니다.')
+        checks.append('돌봄 현장 적용 분야, 로봇·장비 개발 역량, 실증기관 또는 협력기업 참여 조건을 확인하세요.')
     if matches(focus, SOFTWARE):
         topics.append('SaaS·디지털 기술'); reasons.append('개발 중인 장기요양기관 SaaS 플랫폼과 기술 분야가 연결됩니다.')
     if matches(focus, STARTUP):
@@ -175,7 +228,7 @@ def assess(item, detail, today, profile=PROFILE):
         topics.append('기업 운영·인력'); reasons.append('기업의 인력·지식재산·운영 비용을 지원하는 사업 후보입니다.')
     if not topics:
         return None
-    if region_text and not nationwide:
+    if named_regions(title+' '+target+' '+item.get('department', '')) or re.search(r'(?:성남|안양|인천)', target):
         checks.append('본사(성남), 연구소(안양), 사업장(안양·인천) 중 공고가 인정하는 소재지 기준을 확인하세요.')
     if matches(target, ('본사', '본점')):
         checks.append('본사 소재지 요건은 성남시 분당구를 기준으로 확인해야 합니다.')
@@ -193,9 +246,9 @@ def assess(item, detail, today, profile=PROFILE):
         reasons.append('보유한 벤처기업 확인을 활용할 수 있는 분야입니다. 유효기간은 확인이 필요합니다.')
     if matches(target, ('창업기업확인', 'TIPS', '중소기업확인', '소상공인')):
         checks.append('필수 기업확인서·선정 이력과 중소기업/소상공인 규모 요건을 확인하세요.')
-    if matches(title+' '+target+' '+body.split('☞')[0], ('AI', '인공지능', '딥테크', '수출', '해외', '투자유치')):
+    if matches(title+' '+target+' '+body.split('☞')[0], AX + PHYSICAL_AI + ('AI', '인공지능', '딥테크', '수출', '해외', '투자유치')):
         checks.append('요구하는 기술 수준·실증 준비도·수출 또는 투자 실적이 현재 사업과 맞는지 확인하세요.')
-    if matches(target, ('위치정보', '위치기반서비스', '정보보호인증', '혁신제품', '국가전략기술', '선정기업', '지정기업')):
+    if matches(target, ('정보보호인증', '혁신제품', '국가전략기술', '선정기업', '지정기업', '사회적기업인증')):
         checks.append('특정 기술·제품 인증·기존 선정기업 대상입니다. 현재 SaaS의 기능과 보유 인증이 해당하는지 먼저 확인하세요.')
     if matches(title, ('오픈이노베이션', '밋업')):
         checks.append('수요기업이 제시한 세부 협업 과제와 자사 SaaS의 연관성을 첨부 공고문에서 확인하세요.')
@@ -210,15 +263,30 @@ def assess(item, detail, today, profile=PROFILE):
             'checks': list(dict.fromkeys(checks)), 'recommendation': '검토 후보 · 조건 확인',
             'target': target[:600], 'benefit': detail['benefit'][:600],
             'application_period': detail['application_period'], 'application_status': status,
-            'score': 20*len(topics) + (15 if any(topic in topics for topic in ('요양원·돌봄 사업','SaaS·디지털 기술')) else 0)}
+            'score': 20*len(topics) + (15 if any(topic in topics for topic in ('시니어·사회복지·장기요양','SaaS·디지털 기술','AI·AX 전환','피지컬 AI·돌봄 로봇')) else 0)}
 
 
 def fingerprint(item):
     return hashlib.sha256(json.dumps([item['title'], item['published_at'], item['application_period']], ensure_ascii=False).encode()).hexdigest()
 
 
-def collect(source, seen, now, fetcher, stop=None):
+def collect(source, seen, now, fetcher, stop=None, review=False, archive=()):
     selected, scanned = {}, {}
+
+    def consider(row):
+        detail = parse_detail(fetcher(row['url']))
+        row = {**row, 'title': detail['title']}
+        match = assess(row, detail, now.date())
+        if match:
+            row.update(match, withdrawn=False, collected_at=now.isoformat(), first_seen_at=now.isoformat())
+            selected[row['id']] = row
+        elif row['id'] in seen or row.get('kind') == 'support' and row.get('collected_at'):
+            row.update(withdrawn=True, application_period=detail['application_period'],
+                       target=detail['target'], benefit=detail['benefit'], collected_at=now.isoformat())
+            selected[row['id']] = row
+        if stop and stop.wait(0.15):
+            raise InterruptedError()
+
     for page in range(1, MAX_PAGES+1):
         if stop and stop.is_set():
             raise InterruptedError()
@@ -229,21 +297,16 @@ def collect(source, seen, now, fetcher, stop=None):
                 continue
             signature = fingerprint(row)
             scanned[row['id']] = signature
-            if seen.get(row['id']) == signature:
+            if not review and seen.get(row['id']) == signature:
                 continue
-            detail = parse_detail(fetcher(row['url']))
-            row['title'] = detail['title']
-            match = assess(row, detail, now.date())
-            if match:
-                row.update(match, collected_at=now.isoformat(), first_seen_at=now.isoformat())
-                selected[row['id']] = row
-            elif row['id'] in seen:
-                row.update(withdrawn=True, application_period=detail['application_period'],
-                           target=detail['target'], benefit=detail['benefit'], collected_at=now.isoformat())
-                selected[row['id']] = row
-            if stop and stop.wait(0.15):
-                raise InterruptedError()
+            consider(row)
         # Require a full known page, and overlap at least two pages for same-day ordering changes.
-        if not following or (not seen and page >= BOOTSTRAP_PAGES) or (seen and page >= 2 and reached_seen):
+        if not following or (not seen and page >= BOOTSTRAP_PAGES) or (seen and page >= (BOOTSTRAP_PAGES if review else 2) and reached_seen):
+            # Reassess older saved recommendations even when they are outside the latest pages.
+            for old in archive if review else ():
+                if stop and stop.is_set():
+                    raise InterruptedError()
+                if old['id'] not in scanned:
+                    consider(old)
             return list(selected.values()), scanned
     raise ValueError('Bizinfo pagination limit reached before previous records; retry required')

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import agency_news as news
 import business_support as biz
@@ -64,10 +65,50 @@ class SupportTests(unittest.TestCase):
                              ('[경기] 안양시 창업 지원','안양시에 본사를 둔 기업'),
                              ('[인천] 창업 지원','인천 소재 본사 기업')]:
             self.assertIsNone(self.assess(detail(title,target)),title)
-        self.assertIsNotNone(self.assess(detail('[충남] 스타트업 밋업','전국 창업기업')))
+        self.assertIsNone(self.assess(detail('[충남] 스타트업 밋업','전국 창업기업')))
         match=self.assess(detail('[경기] 안양시 SaaS 연구개발','안양시에 본사 또는 연구소를 둔 기업'))
         self.assertIsNotNone(match)
         self.assertTrue(any('소재지' in check for check in match['checks']))
+
+    def test_other_regional_authorities_full_names_and_city_restrictions(self):
+        for authority in ('충청남도', '강원특별자치도', '전북특별자치도', '서울특별시'):
+            self.assertIsNone(biz.assess({'department':authority},detail('전국 스타트업 밋업'),NOW.date(),self.profile))
+        for scope in ('전남광주','대구경북','광주시','경상남도'):
+            self.assertIsNone(self.assess(detail('['+scope+'] 기술닥터 지원','지역 내 중소기업')),scope)
+        self.assertIsNone(biz.assess({'department':'수원시'},detail(),NOW.date(),self.profile))
+        for target in ('충청북도 소재 창업기업', '경상남도 내 중소기업', '경기도 수원시 관내 기업',
+                       '광주시 소재 소프트웨어 기업', '춘천시에 소재한 창업기업', '용인 소재 중소기업'):
+            self.assertIsNone(self.assess(detail(target=target)),target)
+        for title,target in [('[경기] 성남시 SaaS 지원','성남시 내 기업'),
+                             ('전국 AX 실증 지원','전국 중소기업'),
+                             ('인천광역시 돌봄 실증','인천광역시 소재 사업장'),
+                             ('경기도 연구개발 지원','경기도 내 기업부설연구소 보유 기업')]:
+            self.assertIsNotNone(self.assess(detail(title,target)),title)
+        self.assertIsNone(self.assess(detail('2026년 서울 창업 지원','전국 창업기업')))
+
+    def test_location_information_excluded_even_with_care_and_software(self):
+        for location in ('위치정보', '위치 기반 서비스', 'LBS', 'GPS'):
+            self.assertIsNone(self.assess(detail(location+' SaaS 개발 지원')),location)
+            self.assertIsNone(self.assess(detail('돌봄 기술 지원', '전국 '+location+' 사업자')),location)
+        candidate=detail('시니어 SaaS 지원')
+        candidate['overview']+=' 위치정보 사업 육성'
+        self.assertIsNone(self.assess(candidate))
+
+    def test_senior_welfare_ax_and_physical_ai_topics(self):
+        for title,topic in [('시니어 현장 실증','시니어·사회복지·장기요양'),
+                            ('사회복지 현장 디지털 서비스','시니어·사회복지·장기요양'),
+                            ('장기요양 AX 실증','AI·AX 전환'),
+                            ('AI 전환 바우처','AI·AX 전환'),
+                            ('피지컬 AI 현장 실증','피지컬 AI·돌봄 로봇'),
+                            ('Physical AI 돌봄 현장 실증','피지컬 AI·돌봄 로봇'),
+                            ('돌봄 로봇 도입','피지컬 AI·돌봄 로봇')]:
+            matched=self.assess(detail(title,'전국 중소기업','사업비 지원'))
+            self.assertIsNotNone(matched,title)
+            self.assertIn(topic,matched['topics'])
+        for title,target in [('사회복지 지원','비영리법인만 신청 가능'),
+                             ('제조업 AX 바우처','공장등록 제조기업'),
+                             ('MAX 컨퍼런스','전국 중소기업')]:
+            self.assertIsNone(self.assess(detail(title,target,'사업비 지원')),title)
 
     def test_wrong_sectors_and_incidental_platform_keywords(self):
         for title,target in [('반려동물 온라인 플랫폼 입점','반려동물 제조ㆍ수출 기업'),
@@ -154,6 +195,75 @@ class SupportTests(unittest.TestCase):
             self.assertEqual(report['support']['active'],0)
             self.assertEqual(report['total'],1)
             self.assertEqual(report['items'][0]['application_status']['label'],'추천 제외')
+
+    def test_policy_change_reviews_known_nonmatches_and_older_recommendations(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'agency.db';news.init_db(path)
+            old=detail('위치정보 컨설팅','전국 위치정보 사업자')
+            def fetch(url):
+                if 'View.do' in url:return listing([2,1])
+                return detail_html(old if url.endswith('_1') else detail('장기요양 AX 실증','전국 중소기업'))
+            original=biz.assess
+            def old_assess(item,data,today):
+                return original(item,detail(),today) if item['id'].endswith('_1') else None
+            with patch.object(biz,'POLICY_REVISION','previous'),patch.object(biz,'assess',side_effect=old_assess):
+                news.sync(path,NOW,fetch,[SOURCE])
+            before=news.report(path,NOW)['items'][0]
+            calls=[]
+            def current(url):
+                calls.append(url)
+                # Former recommendation is now outside the list; it must still be reviewed.
+                return listing([2]) if 'View.do' in url else fetch(url)
+            result=news.sync(path,NOW+timedelta(minutes=1),current,[SOURCE],force=False)
+            self.assertEqual(result[0]['policy_revision'],biz.POLICY_REVISION)
+            self.assertEqual(result[0]['last_added'],1)
+            report=news.report(path,NOW)
+            self.assertEqual(report['support']['active'],1)
+            self.assertEqual(report['article_ids'],['bizinfo:PBLN_2'])
+            archived=next(item for item in report['items'] if item['id'].endswith('_1'))
+            self.assertTrue(archived['withdrawn'])
+            self.assertEqual(archived['first_seen_at'],before['first_seen_at'])
+            self.assertTrue(any(url.endswith('_1') for url in calls))
+            self.assertEqual(news.sync(path,NOW+timedelta(minutes=2),current,[SOURCE],force=False),[])
+
+    def test_failed_policy_review_is_atomic_and_retries_after_thirty_minutes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'agency.db';news.init_db(path)
+            fetch=lambda url:listing([1]) if 'View.do' in url else detail_html(detail())
+            with patch.object(biz,'POLICY_REVISION','previous'):
+                news.sync(path,NOW,fetch,[SOURCE])
+            before=news.report(path,NOW)['items']
+            def failure(url):
+                if 'View.do' in url:return listing([2,1])
+                if url.endswith('_1'):raise TimeoutError('test policy retry')
+                return detail_html(detail())
+            result=news.sync(path,NOW+timedelta(minutes=1),failure,[SOURCE],force=False)
+            self.assertEqual(result[0]['policy_revision'],'previous')
+            self.assertTrue(result[0]['error'])
+            self.assertEqual(news.report(path,NOW)['items'],before)
+            with news.connect(path) as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM seen').fetchone()[0],1)
+            self.assertEqual(news.sync(path,NOW+timedelta(minutes=2),fetch,[SOURCE],force=False),[])
+            retried=news.sync(path,NOW+timedelta(minutes=31),fetch,[SOURCE],force=False)
+            self.assertEqual(retried[0]['policy_revision'],biz.POLICY_REVISION)
+            self.assertFalse(retried[0]['error'])
+
+    def test_policy_review_reaches_later_known_pages_and_preserves_original_seen_time(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'agency.db';news.init_db(path)
+            calls=[]
+            def fetch(url):
+                if 'Detail.do' in url:return detail_html(detail())
+                page=int(biz.urllib.parse.parse_qs(biz.urllib.parse.urlsplit(url).query)['cpage'][0])
+                calls.append(page)
+                return listing([page],page+1 if page<3 else None)
+            with patch.object(biz,'POLICY_REVISION','previous'):
+                news.sync(path,NOW,fetch,[SOURCE])
+            calls.clear()
+            first_seen={item['id']:item['first_seen_at'] for item in news.report(path,NOW)['items']}
+            result=news.sync(path,NOW+timedelta(minutes=1),fetch,[SOURCE],force=False)
+            self.assertEqual(calls,[1,2,3])
+            self.assertEqual(result[0]['last_added'],0)
+            self.assertEqual({item['id']:item['first_seen_at'] for item in news.report(path,NOW)['items']},first_seen)
 
 
 if __name__=='__main__':unittest.main()

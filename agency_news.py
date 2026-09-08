@@ -285,9 +285,19 @@ def due_at(now):
     return today if now >= today else today-timedelta(days=1)
 
 
-def next_run(state, now):
+def policy_revision(source):
+    if source and source['kind'] == 'bizinfo':
+        import business_support
+        return business_support.POLICY_REVISION
+    return None
+
+
+def next_run(state, now, source=None):
     if state.get('error') and state.get('last_attempt'):
         return timestamp(state['last_attempt']) + timedelta(minutes=30)
+    revision = policy_revision(source)
+    if revision and state.get('policy_revision') != revision:
+        return now
     last = timestamp(state.get('last_success'))
     return now if last is None or last < due_at(now) else due_at(now)+timedelta(days=1)
 
@@ -308,11 +318,20 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
             with connect(path) as db:
                 state = states(db).get(source['id'], {})
                 seen = {row['id']: row['signature'] for row in db.execute('SELECT id,signature FROM seen WHERE source_id=?', (source['id'],))}
-            if not force and now < next_run(state, now):
+                revision = policy_revision(source)
+                review = bool(revision and state.get('policy_revision') != revision)
+                archive = [json.loads(row[0]) for row in db.execute('SELECT payload FROM articles')] if review else []
+                archive = [item for item in archive if item.get('source_id') == source['id']]
+            if not force and now < next_run(state, now, source):
                 continue
             state = {**state, 'last_attempt': now.isoformat(), 'error': '', 'last_added': 0}
             try:
-                items, scanned = collect(source, seen, now, fetcher, stop)
+                if revision:
+                    import business_support
+                    items, scanned = business_support.collect(source, seen, now, fetcher, stop, review=review, archive=archive)
+                else:
+                    items, scanned = collect(source, seen, now, fetcher, stop)
+                added = 0
                 with connect(path) as db:
                     for item in items:
                         exists = db.execute('SELECT payload FROM articles WHERE id=?', (item['id'],)).fetchone()
@@ -320,19 +339,22 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
                             if not exists:
                                 continue
                             item = {**json.loads(exists[0]), **item,
-                                    'recommendation': '추천 제외 · 공고 변경',
-                                    'reasons': ['공고 조건이 변경되어 현재 추천 대상에서 제외했습니다.'],
-                                    'checks': ['변경된 대상과 신청 조건을 원문에서 확인해주세요.']}
+                                    'recommendation': '추천 제외 · 현재 기준 미충족',
+                                    'reasons': ['현재 회사 조건·추천 기준 또는 접수기간에 해당하지 않아 추천에서 제외했습니다.'],
+                                    'checks': ['소재지, 사업 분야와 신청 조건은 원문에서 확인해주세요.']}
                         if exists and item.get('kind') == 'support':
                             previous = json.loads(exists[0])
                             item['first_seen_at'] = previous.get('first_seen_at', previous['collected_at'])
-                        state['last_added'] += int(not exists)
+                        added += int(not exists)
                         db.execute('INSERT OR REPLACE INTO articles VALUES(?,?,?)',
                                    (item['id'], item['published_at'], json.dumps(item, ensure_ascii=False)))
                     db.executemany('INSERT OR REPLACE INTO seen VALUES(?,?,?)',
                                    [(source['id'], identity, signature) for identity, signature in scanned.items()])
-                    state.update(last_success=now.isoformat(), checked_posts=len(scanned))
-                    db.execute('INSERT OR REPLACE INTO sources VALUES(?,?)', (source['id'], json.dumps(state)))
+                    completed = {**state, 'last_success': now.isoformat(), 'checked_posts': len(scanned), 'last_added': added}
+                    if revision:
+                        completed['policy_revision'] = revision
+                    db.execute('INSERT OR REPLACE INTO sources VALUES(?,?)', (source['id'], json.dumps(completed)))
+                state = completed
             except InterruptedError:
                 break
             except Exception:
@@ -365,8 +387,9 @@ def report(path, now=None, summary=False):
     for source in SOURCES:
         state = saved.get(source['id'], {})
         last = timestamp(state.get('last_success'))
-        source_status.append({**source, **state, 'stale': last is None or last < due_at(now),
-                              'next_run': next_run(state, now).isoformat() if enabled() else None})
+        revision = policy_revision(source)
+        source_status.append({**source, **state, 'stale': last is None or last < due_at(now) or bool(revision and state.get('policy_revision') != revision),
+                              'next_run': next_run(state, now, source).isoformat() if enabled() else None})
     successes = [row.get('last_success') for row in source_status]
     updated = min(successes) if all(successes) else None
     result = {'total': total, 'latest_published_at': latest, 'updated_at': updated, 'sources': source_status,
