@@ -26,6 +26,7 @@
   });
   const fact = (key, labels) => data[key].facts.find(([label]) => labels.includes(label))?.[1] || '공개 확인 불가';
   const source = (url, label) => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${escape(label)} ↗</a>`;
+  const priceEvidence = price => `${escape(price.checked)} 재확인 · ${escape(price.v)}<br>${source(price.s,'공식 가격 근거')}${(price.links || []).map(([label,url]) => ' · ' + source(url,label)).join('')}`;
   function filterCards() {
     const role = $('role-filter').value;
     const terms = normalize($('service-search').value).split(' ').filter(Boolean);
@@ -115,7 +116,7 @@
     const item = data[key], price = item.price50;
     // The dedicated price panel contains the later, explicitly conditioned price research.
     const facts = item.facts.filter(([label]) => label !== '가격');
-    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">근거: ${source(item.url,item.src)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 가정</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="small">기존 조사 시점의 공개 조건 · ${source(price.s,'공식 가격 근거')}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,'공식 사이트 열기')}</p>`;
+    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">근거: ${source(item.url,item.src)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,'공식 사이트 열기')}</p>`;
     showDialog($('modal'));
     $('modal').scrollTop = 0;
   };
@@ -128,7 +129,8 @@
       ['공개 기능', key => escape(fact(key,['핵심 기능','핵심 공개 내용']))],
       ['50인 가정 가격', key => `<strong>${escape(data[key].price50.m)}</strong>`],
       ['초기 비용', key => escape(data[key].price50.o)],
-      ['가격 적용 조건', key => escape(data[key].price50.u) + `<p>${source(data[key].price50.s,'가격 원문')}</p>`],
+      ['가격 적용 조건', key => escape(data[key].price50.u)],
+      ['산출·검증 근거', key => escape(data[key].price50.b) + `<p>${priceEvidence(data[key].price50)}</p>`],
       ['도입·고객 지표', key => escape(fact(key,['고객수','고객/도입 지표']))],
       ['직영 기관 운영', key => escape(fact(key,['직영 기관 운영']))],
       ['운영사 매출', key => $('revenue-'+key).innerHTML],

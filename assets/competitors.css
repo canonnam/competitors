@@ -16,4 +16,5 @@ body.kb-detail.competitor-page>main{padding-bottom:100px}section[id]{scroll-marg
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 @media print{body{background:#fff}.section-nav,.explorer-toolbar,.card-actions,.compare-tray,.role-link,.dialog-close{display:none!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card,.box{break-inside:avoid}.analysis-dialog{max-height:none;overflow:visible}.comparison-scroll{max-height:none;overflow:visible}}
 
+.price-panel .price-basis{font-size:13px;padding-top:10px;margin-top:10px;border-top:1px solid #cddfeb;color:#435e72}.price-panel .price-evidence{margin-top:12px;line-height:1.9}.price-panel strong{font-size:18px;font-variant-numeric:tabular-nums}
 .mobile-scroll-hint{display:none}@media(max-width:700px){.mobile-scroll-hint{display:block;margin-top:8px;font-size:12px;color:#35607c}}
