@@ -3,6 +3,89 @@
   "scaleTo": 1800,
   "documents": [
     {
+      "id": "ltc-evaluation",
+      "downloadUrl": "https://nabo.go.kr/board/file/down.do?fid=33318949",
+      "sourceUrl": "https://nabo.go.kr/ko/report/evaluationView.do?idx=8990&key=2509110003",
+      "sha256": "80ab12ab149974a1d1f75e9a08eef7122edc0cce61d0021b0e4d0aa00972548e",
+      "pdfPages": 171,
+      "captures": [
+        {
+          "id": "facility-evaluation",
+          "pdfPage": 140,
+          "printedPage": 101,
+          "figure": "최근 5년간 장기요양기관 평가 결과",
+          "image": "/assets/statistics/facility-evaluation.png",
+          "capture": [
+            215,
+            270,
+            1060,
+            800
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ltc-safety",
+      "downloadUrl": "https://sri.kostat.go.kr/boardDownload.es?bid=12074&list_no=428235&seq=1",
+      "sourceUrl": "https://www.kihasa.re.kr/library/10120/contents/5861393",
+      "sha256": "ae2509e711ca976469bad8986e4dba0e72acbc87cd5c130b03ba231f1d1fc729",
+      "pdfPages": 922,
+      "captures": [
+        {
+          "id": "facility-safety",
+          "pdfPage": 571,
+          "printedPage": 545,
+          "figure": "표 5-55",
+          "image": "/assets/statistics/facility-safety.png",
+          "capture": [
+            210,
+            265,
+            1145,
+            1015
+          ]
+        },
+        {
+          "id": "fall-repeat",
+          "pdfPage": 577,
+          "printedPage": 551,
+          "figure": "표 5-58",
+          "image": "/assets/statistics/fall-repeat.png",
+          "capture": [
+            210,
+            265,
+            1145,
+            1040
+          ]
+        },
+        {
+          "id": "accident-types",
+          "pdfPage": 575,
+          "printedPage": 549,
+          "figure": "표 5-57",
+          "image": "/assets/statistics/accident-types.png",
+          "capture": [
+            210,
+            265,
+            1145,
+            1090
+          ]
+        },
+        {
+          "id": "accident-costs",
+          "pdfPage": 580,
+          "printedPage": 554,
+          "figure": "표 5-60",
+          "image": "/assets/statistics/accident-costs.png",
+          "capture": [
+            185,
+            630,
+            1125,
+            1435
+          ]
+        }
+      ]
+    },
+    {
       "id": "care",
       "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=26092",
       "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60132&volume=60128",

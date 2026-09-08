@@ -14,7 +14,7 @@
       const doc = view === 'documents' ? item : docs.get(item.documentId);
       if (topic && !(view === 'documents' ? item.topics.includes(topic) : item.topic === topic)) return false;
       if (view === 'bookmarks' && ((savedOnly && !saved.has(item.id)) || (documentId && item.documentId !== documentId))) return false;
-      const haystack = normalize([doc.title, doc.author, doc.survey, doc.published, doc.summary, ...(doc.topics || []), item.title, item.insight, item.action, item.figure, item.metric, item.metricLabel].join(' '));
+      const haystack = normalize([doc.title, doc.author, doc.publisher, doc.survey, doc.published, doc.summary, ...(doc.topics || []), item.title, item.insight, item.action, item.figure, item.metric, item.metricLabel].join(' '));
       return words.every(word => haystack.includes(word));
     });
   }
@@ -30,6 +30,10 @@
   const saveButton = item => `<button class="save-button" data-save="${item.id}" aria-pressed="${saved.has(item.id)}" aria-label="${escape(item.title)} ${saved.has(item.id) ? '저장 해제' : '책갈피 저장'}">${icon}<span>${saved.has(item.id) ? '저장됨' : '저장'}</span></button>`;
   const pdfLink = item => docs.get(item.documentId).downloadUrl + '#page=' + item.pdfPage;
   const external = (url, label, cls='') => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${escape(label)}</a>`;
+  const publisher = doc => doc.publisher || '한국보건사회연구원';
+  const publication = doc => doc.publication || '보건복지포럼';
+  const period = (doc, item) => (item && item.periodLabel) || doc.periodLabel || `조사 ${doc.year}년`;
+  const relatedSource = doc => doc.relatedUrl ? `<div class="related-source">${external(doc.relatedUrl,doc.relatedLabel)}<p>${escape(doc.relatedNote)}</p></div>` : '';
   function bookmarkCard(item) {
     const doc = docs.get(item.documentId);
     return `<article class="bookmark-card" id="${item.id}">
@@ -37,13 +41,13 @@
       <div class="bookmark-content"><div class="bookmark-top"><span class="topic-tag">${item.topic}</span>${saveButton(item)}</div>
       <h3><button data-open="${item.id}">${item.title}</button></h3><p class="insight">${item.insight}</p>
       <div class="application"><strong>현장에서 살펴볼 점</strong>${item.action}</div><p class="caveat">${item.caveat}</p>
-      <div class="bookmark-source"><span>${doc.survey} · ${doc.author} · 발행 ${doc.published}</span>${external(pdfLink(item), `원문 ${item.printedPage}쪽 · ${item.figure} 보기 ↗`)}<span>PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · 한국보건사회연구원</span></div></div></article>`;
+      <div class="bookmark-source"><span>${doc.survey} · ${doc.author} · 발행 ${doc.published}</span>${external(pdfLink(item), `원문 ${item.printedPage}쪽 · ${item.figure} 보기 ↗`)}<span>PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · ${publisher(doc)}</span></div>${relatedSource(doc)}</div></article>`;
   }
   function documentCard(doc) {
     const count = data.bookmarks.filter(item => item.documentId === doc.id).length;
     return `<article class="document-card"><div class="doc-number" aria-hidden="true">${String(data.documents.indexOf(doc)+1).padStart(2,'0')}</div><div>
-      <div class="doc-meta">보건복지포럼 · 한국보건사회연구원 · ${doc.author}</div><h3>${doc.title}</h3><p>${doc.summary}</p>
-      <div class="doc-meta">조사 ${doc.year}년 · 발행 ${doc.published} · 본문 ${doc.pages}쪽 · PDF ${doc.pdfPages}페이지</div><p>${doc.scope}</p>
+      <div class="doc-meta">${publication(doc)} · ${publisher(doc)} · ${doc.author}</div><h3>${doc.title}</h3><p>${doc.summary}</p>
+      <div class="doc-meta">${period(doc)} · 발행 ${doc.published} · 본문 ${doc.pages}쪽 · PDF ${doc.pdfPages}페이지</div><p>${doc.scope}</p>${relatedSource(doc)}
       <div>${doc.topics.map(topic => `<span class="topic-tag">${topic}</span>`).join(' ')}</div></div><div class="doc-actions">
       ${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link primary')}${external(doc.sourceUrl,'발행기관 자료 페이지 ↗','action-link')}<button data-document="${doc.id}">선정한 책갈피 ${count}개 보기 →</button></div></article>`;
   }
@@ -67,7 +71,7 @@
     $('documents-tab').setAttribute('aria-pressed',String(!isBookmarks));
     document.querySelectorAll('[data-topic]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.topic === state.topic)));
     $('results-count').textContent = `${state.documentId ? docs.get(state.documentId).title + ' · ' : ''}${isBookmarks ? '책갈피' : '문서'} ${items.length}개`;
-    $('results-hint').textContent = isBookmarks ? '표·그래프를 누르면 크게 볼 수 있습니다.' : '원문은 한국보건사회연구원에서 열립니다.';
+    $('results-hint').textContent = isBookmarks ? '표·그래프를 누르면 크게 볼 수 있습니다.' : '원문은 공식 자료 제공 사이트에서 열립니다.';
     $(isBookmarks ? 'bookmarks-view' : 'documents-view').innerHTML = items.map(isBookmarks ? bookmarkCard : documentCard).join('');
     $('empty-state').hidden = items.length !== 0;
     $('empty-message').textContent = state.savedOnly && !saved.size ? '마음에 드는 자료에서 저장 버튼을 눌러보세요. 이 브라우저에 보관됩니다.' : '검색어를 줄이거나 다른 주제를 선택해 보세요.';
@@ -79,9 +83,9 @@
     activeBookmark = item;
     const doc = docs.get(item.documentId);
     $('capture-title').textContent = item.title;
-    $('capture-topic').textContent = `${item.topic} · 조사 ${doc.year}년`;
-    $('capture-content').innerHTML = `<figure class="dialog-figure"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}"><figcaption>${doc.author}, 「${doc.title}」, 보건복지포럼 ${doc.published}, 한국보건사회연구원.<br>본문 ${item.printedPage}쪽 ${item.figure} · PDF ${item.pdfPage}페이지 / ${doc.pdfPages}. 제목·단위·주석을 포함한 원문 발췌.</figcaption></figure>
-      <div class="dialog-copy"><p class="insight">${item.insight}</p><div class="application"><strong>현장에서 살펴볼 점 · 더비다의 활용 아이디어</strong>${item.action}</div><p class="caveat">${item.caveat}</p><p class="dialog-document">${doc.scope}</p></div>
+    $('capture-topic').textContent = `${item.topic} · ${period(doc,item)}`;
+    $('capture-content').innerHTML = `<figure class="dialog-figure"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}"><figcaption>${doc.author}, 「${doc.title}」, ${publication(doc)} ${doc.published}, ${publisher(doc)}.<br>본문 ${item.printedPage}쪽 ${item.figure} · PDF ${item.pdfPage}페이지 / ${doc.pdfPages}. 제목·단위·주석을 포함한 원문 발췌.</figcaption></figure>
+      <div class="dialog-copy"><p class="insight">${item.insight}</p><div class="application"><strong>현장에서 살펴볼 점 · 더비다의 활용 아이디어</strong>${item.action}</div><p class="caveat">${item.caveat}</p><p class="dialog-document">${doc.scope}</p>${relatedSource(doc)}</div>
       <div class="dialog-actions">${external(pdfLink(item),'해당 페이지 원문 ↗','action-link primary')}${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link')}${external(item.image,'캡처 크게 열기 ↗','action-link')}${saveButton(item)}</div>`;
     const dialog = $('capture-dialog');
     if (!dialog.open) dialog.showModal();
@@ -101,9 +105,14 @@
     notify(persistent ? (saved.has(id) ? '이 브라우저에 책갈피를 저장했습니다.' : '저장한 책갈피를 해제했습니다.') : '브라우저 저장이 제한되어 이번 화면에서만 유지됩니다.');
   }
   $('topics').innerHTML = ['',...data.topics].map(topic => `<button class="topic-button" data-topic="${topic}" aria-pressed="${!topic}">${topic || '전체'}</button>`).join('');
-  $('highlights').innerHTML = ['choosing-a-home','family-priorities','housing-preference'].map(id => {
+  $('document-total').textContent = `선정 문서 ${data.documents.length}편`;
+  $('bookmark-total').textContent = `원문 책갈피 ${data.bookmarks.length}개`;
+  $('documents-tab').querySelector('.tab-count').textContent = data.documents.length;
+  $('bookmarks-tab').querySelector('.tab-count').textContent = data.bookmarks.length;
+  const highlights = {'choosing-a-home':'입소 상담','facility-evaluation':'기관평가의 분포','fall-repeat':'낙상 기록'};
+  $('highlights').innerHTML = Object.keys(highlights).map(id => {
     const item = data.bookmarks.find(entry => entry.id === id), doc = docs.get(item.documentId);
-    return `<button class="highlight" data-open="${id}"><small>${id === 'choosing-a-home' ? '입소 상담' : id === 'family-priorities' ? '보호자의 기대' : '주거 선택'}</small><strong>${item.metric}</strong><span>${item.metricLabel}</span><em>조사 ${doc.year}년 · 원문과 해석 보기 ↗</em></button>`;
+    return `<button class="highlight" data-open="${id}"><small>${highlights[id]}</small><strong>${item.metric}</strong><span>${item.metricLabel}</span><em>${period(doc,item)} · 원문과 해석 보기 ↗</em></button>`;
   }).join('');
   $('statistics-search').addEventListener('input', event => {state.query = event.target.value; state.documentId = ''; render();});
   document.addEventListener('click', event => {

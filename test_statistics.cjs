@@ -15,8 +15,13 @@ assert.deepEqual(filterItems({query:'  물리적   환경  '}).map(x=>x.id), ['c
 assert.deepEqual(filterItems({query:'ＩＣＴ'}).map(x=>x.id), ['digital-care']);
 assert.equal(filterItems({query:'없는통계검색어'}).length, 0);
 assert.equal(filterItems({documentId:'housing'}).length, 2);
-assert.equal(filterItems({view:'documents',query:'2023'}).length, 1);
+assert.deepEqual(filterItems({view:'documents',query:'2023'}).map(x=>x.id), ['ltc-evaluation','housing']);
 assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 2);
+assert.deepEqual(filterItems({topic:'기관평가'}).map(x=>x.id), ['facility-evaluation']);
+assert.equal(filterItems({topic:'안전·사고'}).length, 4);
+assert.deepEqual(filterItems({topic:'안전·사고',query:'낙상 재발'}).map(x=>x.id), ['fall-repeat']);
+assert.deepEqual(filterItems({view:'documents',query:'국회예산정책처'}).map(x=>x.id), ['ltc-evaluation']);
+assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing-a-home','fall-repeat']);
 
 // Every displayed source and crop has reproducible provenance and valid dimensions.
 assert.equal(new Set(data.documents.map(x=>x.id)).size,data.documents.length);
@@ -27,10 +32,10 @@ for (const doc of data.documents) {
   assert.equal(source.downloadUrl,doc.downloadUrl);
   assert.equal(source.pdfPages,doc.pdfPages);
   assert.match(source.sha256,/^[a-f0-9]{64}$/);
-  for (const url of [doc.downloadUrl,doc.sourceUrl]) {
+  for (const url of [doc.downloadUrl,doc.sourceUrl,doc.relatedUrl].filter(Boolean)) {
     const parsed = new URL(url);
     assert.equal(parsed.protocol,'https:');
-    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr'].includes(parsed.hostname));
+    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr'].includes(parsed.hostname));
   }
   assert.ok(doc.year <= Number(doc.published.slice(0,4)));
 }

@@ -20,11 +20,16 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--download', action='store_true', help='Download missing source PDFs from their official links.')
+    parser.add_argument('--document', action='append', help='Only rebuild this document ID (repeatable).')
     args = parser.parse_args()
     manifest = json.loads((ROOT / 'data/statistics_sources.json').read_text(encoding='utf-8'))
+    if args.document and not set(args.document) <= {doc['id'] for doc in manifest['documents']}:
+        parser.error('Unknown document ID')
     cache = ROOT / '.local/statistics'
     cache.mkdir(parents=True, exist_ok=True)
     for doc in manifest['documents']:
+        if args.document and doc['id'] not in args.document:
+            continue
         pdf = cache / (doc['id'] + '.pdf')
         if not pdf.exists() and args.download:
             request = urllib.request.Request(doc['downloadUrl'], headers={'User-Agent': 'Mozilla/5.0', 'Referer': doc['sourceUrl']})
