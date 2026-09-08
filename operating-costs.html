@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>더비다요양원 운영비 분석 | Care Knowledge Base</title>
+  <meta name="description" content="안양점과 인천점의 월별 수입, 비용, 운영 손익을 한눈에 비교합니다.">
+  <link rel="stylesheet" href="/assets/operating-costs.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/vendor/chart.umd.min.js" defer></script>
+  <script src="/assets/operating-model.js" defer></script>
+  <script src="/assets/operating-costs.js" defer></script>
+</head>
+<body class="kb-detail" data-feedback-page="operating-costs">
+  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><a class="kb-home" href="/">지식 창고 홈</a><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
+  <main>
+    <section class="kb-page-heading"><nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">운영비 분석</span></nav><div class="kb-heading-row"><div><p class="kb-eyebrow">더비다요양원 · 안양점 & 인천점</p><h1>더비다요양원 운영비 분석</h1><p class="kb-description">얼마를 벌고, 어디에 썼을까요?<br class="mobile-break"> 안양점과 인천점의 한 달을 함께 살펴봅니다.</p></div><button id="download" class="secondary" disabled>월별 내역 다운로드 ↓</button></div></section>
+    <p id="status" role="status" class="notice">운영비 자료를 불러오고 있습니다.</p>
+    <button id="retry" type="button" hidden>다시 불러오기</button>
+    <noscript><p class="notice">분석 내용을 보려면 JavaScript를 활성화해주세요.</p></noscript>
+    <div id="dashboard" hidden>
+      <div class="toolbar"><div class="filters"><label for="year">추이 기간</label><select id="year"></select><span class="divider"></span><label for="month">분석할 달</label><select id="month"></select></div><div class="source-status"><span class="dot"></span><span id="coverage"></span></div></div>
+      <p class="basis">운영 손익 = 운영수입 − 운영비용 <span>· 실제 입출금 기준 · 이자 포함 · 이월금, 차입·원금 상환, 시설 투자, 오입금·반환 및 기타 자금 이동 제외</span></p>
+      <section class="summary-banner" aria-labelledby="summary-title"><div><p class="eyebrow">이달의 흐름</p><h2 id="summary-title"></h2><p id="summary-text"></p></div><a href="#changes">변화의 이유 살펴보기 <span>↘</span></a></section>
+      <section id="kpis" class="kpis" aria-label="두 지점 합산"></section>
+      <section class="branch-grid" id="branches" aria-label="지점별 월간 성과" aria-live="polite"></section>
+      <section class="section" aria-labelledby="trend-title"><div class="section-heading"><div><p class="eyebrow">01 / MONTHLY TREND</p><h2 id="trend-title">월별로 얼마나 남았을까요?</h2></div><div class="legend"><span><i class="anyang"></i>안양점</span><span><i class="incheon"></i>인천점</span></div></div>
+        <div class="chart-panel"><div class="chart-meta"><span>운영 손익 · 단위: 만원</span><span>막대를 누르면 해당 월 분석으로 이동합니다.</span></div><div class="chart trend"><canvas id="profit-chart" role="img" aria-label="안양점과 인천점의 월별 운영 손익 비교. 같은 수치는 아래 월별 내역 표에서 확인할 수 있습니다."></canvas></div></div>
+      </section>
+      <section class="section" id="changes" aria-labelledby="changes-title"><div class="section-heading"><div><p class="eyebrow">02 / WHAT CHANGED</p><h2 id="changes-title">손익이 달라진 이유</h2></div><span class="small muted">전월 대비 변화 · 금액은 손익에 미친 영향</span></div><div id="drivers" class="branch-grid"></div></section>
+      <section class="section" aria-labelledby="cost-title"><div class="section-heading"><div><p class="eyebrow">03 / COST BREAKDOWN</p><h2 id="cost-title">비용은 어디에 쓰였을까요?</h2></div><span class="small muted">선택한 달 · 단위: 만원</span></div><div class="cost-layout"><div class="chart-panel"><div class="chart costs"><canvas id="cost-chart" role="img" aria-label="선택한 달의 지점별 비용 구성. 상세 항목과 금액은 오른쪽 비용 상세에서 확인할 수 있습니다."></canvas></div></div><div id="cost-detail" class="panel"></div></div></section>
+      <section class="section" aria-labelledby="cash-title"><div class="section-heading"><div><p class="eyebrow">04 / CASH MOVEMENT</p><h2 id="cash-title">손익과 자금 증감, 왜 다를까요?</h2></div></div><p class="section-note">운영에서 남은 돈에 대출·상환, 시설 투자, 오입금·반환을 더하면 실제 자금 증감이 됩니다. 이월금은 이번 달 새로 들어온 돈에서 제외합니다.</p><div id="cash-bridge" class="branch-grid"></div></section>
+      <section class="section" aria-labelledby="history-title"><div class="section-heading"><div><p class="eyebrow">05 / MONTHLY DETAILS</p><h2 id="history-title">월별 내역 한눈에 보기</h2></div><span class="small muted">단위: 만원 · 월을 누르면 상세 분석</span></div><div class="table-wrap"><table class="history"><thead><tr><th rowspan="2" scope="col">월</th><th colspan="3" scope="colgroup" class="anyang-text">안양점</th><th colspan="3" scope="colgroup" class="incheon-text">인천점</th></tr><tr><th scope="col">운영수입</th><th scope="col">운영비용</th><th scope="col">운영손익</th><th scope="col">운영수입</th><th scope="col">운영비용</th><th scope="col">운영손익</th></tr></thead><tbody id="history"></tbody></table></div></section>
+      <section class="methodology"><details><summary>자료 범위와 계산 방법</summary><div id="methodology"></div><p>운영 손익은 자료의 입출금 날짜로 계산한 관리 지표입니다. 미수금·미지급금, 감가상각을 반영한 회계상 순이익과는 차이가 있습니다. 자료가 없는 달은 0원으로 간주하지 않습니다. 인원·입소율 자료가 없어 1인당 비용이나 입소율에 따른 손익은 계산하지 않았습니다.</p><p>환급·취소의 음수 금액은 원본 부호를 유지합니다. 생계급여 지급과 보조금은 각각 비용과 수입에 포함하며, 귀속 월로 임의 이동하지 않습니다. 오류 입금·반환과 대여금은 계정과 거래 설명을 함께 확인해 별도 분류했습니다. 투자 지출은 시설비·자산취득비 계정 기준입니다.</p><p>안양점 2025년 10월의 일부 입금은 2026년 반환 설명에 기재된 원입금 날짜·금액과 대조해 오입금으로 분류했습니다. 인천점 2025년 9월의 해당 입금도 같은 달 반환 기록과 대조했습니다. 상환인지 이자인지 설명이 상충하는 항목은 원본 계정을 유지하고 해당 월에 표시합니다.</p><p>원본 거래 설명과 개인 이름은 제공하지 않으며, 지점·월·비용 항목별 합계만 표시합니다. 이 화면은 2026년 9월 8일 제공 자료의 분석본이며 자동으로 새 거래를 수집하지 않습니다.</p><div id="source-details"></div></details></section>
+      <footer>THE VIDA <span>매달의 숫자를, 더 선명하게.</span></footer>
+    </div>
+  </main>
+</body>
+</html>

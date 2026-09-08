@@ -16,7 +16,7 @@ if (typeof window.openFeedback !== 'function') {
         button.disabled = true; status.textContent = '접수 중';
         try {
           const fields = new FormData(form);
-          const response = await fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, signal:AbortSignal.timeout(20000), body:JSON.stringify({category:fields.get('category'), message:fields.get('message'), page:'naver-ads'})});
+          const response = await fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, signal:AbortSignal.timeout(20000), body:JSON.stringify({category:fields.get('category'), message:fields.get('message'), page:document.body.dataset.feedbackPage || 'naver-ads'})});
           if (!response.ok) throw new Error('request');
           const data = await response.json();
           status.textContent = `개선요청 #${data.id}가 접수되었습니다.`; form.reset();

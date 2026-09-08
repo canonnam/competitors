@@ -47,16 +47,37 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/operating-report":
+            self.send_operating_report()
+            return
         if urllib.parse.urlsplit(self.path).path in {"/api/naver-ads", "/api/naver-ad-keywords"}:
             self.send_ad_report()
             return
         super().do_GET()
 
     def do_HEAD(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/operating-report":
+            self.send_operating_report(head_only=True)
+            return
         if urllib.parse.urlsplit(self.path).path in {"/api/naver-ads", "/api/naver-ad-keywords"}:
             self.send_ad_report(head_only=True)
             return
         super().do_HEAD()
+
+    def send_operating_report(self, head_only=False):
+        try:
+            raw = (ROOT / "data" / "operating_report.json").read_bytes()
+            status = 200
+        except OSError:
+            raw = json.dumps({"error": "운영비 자료를 불러오지 못했습니다."}, ensure_ascii=False).encode()
+            status = 503
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(raw)
 
     def send_ad_report(self, head_only=False):
         try:
@@ -78,7 +99,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html"}
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
