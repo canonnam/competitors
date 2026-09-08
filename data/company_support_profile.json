@@ -1,0 +1,16 @@
+{
+  "company": "주식회사 콤파스원",
+  "brand": "더비다 요양원",
+  "established_year": 2024,
+  "female_representative": true,
+  "headquarters_city": "성남시",
+  "headquarters_district": "분당구",
+  "regions": ["경기", "인천"],
+  "cities": ["성남시", "안양시", "인천시", "인천광역시"],
+  "research_center_city": "안양시",
+  "business": ["장기요양기관 운영", "요양원 인천점·안양점", "장기요양기관 운영 SaaS 플랫폼 개발"],
+  "industry_code": null,
+  "employees": null,
+  "annual_revenue": null,
+  "certifications": {"women_enterprise": null, "venture": null, "startup": null}
+}

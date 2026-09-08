@@ -44,10 +44,10 @@ class AgencyNewsTests(unittest.TestCase):
             return news.states(db)
 
     def test_requested_nine_sources_and_distinct_board_identifiers(self):
-        self.assertEqual(len(news.SOURCES), 9)
-        self.assertEqual({s['board'] for s in news.SOURCES}, {'B0152','B0153','B0045','B0010','B0017','B0018','B0019','0027','0003'})
+        self.assertEqual(len(news.SOURCES), 10)
+        self.assertEqual({s['board'] for s in news.SOURCES}, {'B0152','B0153','B0045','B0010','B0017','B0018','B0019','0027','0003','bizinfo'})
         self.assertIn('/npbs/e/d/320/nped320m01.web', news.SOURCES[1]['url'])
-        self.assertEqual(len({s['id'] for s in news.SOURCES}), 9)
+        self.assertEqual(len({s['id'] for s in news.SOURCES}), 10)
 
     def test_nhis_self_closing_title_cells_pins_and_next_page(self):
         raw = nhis_page([entry(100, pinned=True), entry(99)], 2)
@@ -162,8 +162,8 @@ class AgencyNewsTests(unittest.TestCase):
                     self.assertIn('noindex',response.headers['X-Robots-Tag'])
                     if method=='HEAD':self.assertEqual(raw,b'')
                     else:
-                        body=json.loads(raw);self.assertEqual(len(body['sources']),9);self.assertEqual('items' in body,'summary' not in route)
-                for route in ['/agency_news.py','/data/agency_news_sources.json']:
+                        body=json.loads(raw);self.assertEqual(len(body['sources']),10);self.assertEqual('items' in body,'summary' not in route)
+                for route in ['/agency_news.py','/data/agency_news_sources.json','/business_support.py','/data/company_support_profile.json']:
                     conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request('GET',route)
                     response=conn.getresponse();response.read();conn.close();self.assertEqual(response.status,404)
         finally:server.shutdown();server.server_close();thread.join(5)

@@ -7,5 +7,6 @@
   {"id":"nhis_B0018","agency":"국민건강보험공단","name":"법령자료실","board":"B0018","kind":"nhis","topic":"법령·고시","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002791&bKey=B0018&prevPath=/npbs/d/m/000/moveBoardView"},
   {"id":"nhis_B0019","agency":"국민건강보험공단","name":"통계자료실","board":"B0019","kind":"nhis","topic":"통계·자료","url":"https://www.longtermcare.or.kr/npbs/d/m/000/moveBoardView?menuId=npe0000002793&bKey=B0019&prevPath=/npbs/d/m/000/moveBoardView"},
   {"id":"mohw_0027","agency":"보건복지부","name":"보도자료","board":"0027","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027"},
-  {"id":"mohw_0003","agency":"보건복지부","name":"공지사항","board":"0003","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10501010100&bid=0003"}
+  {"id":"mohw_0003","agency":"보건복지부","name":"공지사항","board":"0003","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10501010100&bid=0003"},
+  {"id":"bizinfo","agency":"기업마당","name":"정부 지원사업 공고","board":"bizinfo","kind":"bizinfo","url":"https://www.bizinfo.go.kr/sii/siia/selectSIIA200View.do"}
 ]

@@ -2,6 +2,7 @@
 .news-sync-status.is-warning,.news-home-update.is-warning{color:#875719}
 .card-update-badge.is-warning{background:#fff7e8;border-color:#ebd7ad;color:#875719}
 .news-home-update{font-size:12px;line-height:1.6;color:#657481;margin-top:4px}
+.support-home-status{font-size:12px;line-height:1.6;color:#657481;margin-top:7px}.support-home-status.has-new{color:#176b4b;font-weight:700}
 .news-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;flex-wrap:wrap}
 .news-controls[hidden],.news-more[hidden]{display:none}
 .news-controls label{display:flex;align-items:center;gap:12px;margin:0;font-size:14px}

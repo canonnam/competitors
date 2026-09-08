@@ -1,4 +1,4 @@
-"""Read the nine public NHIS/MOHW boards daily without executing page scripts."""
+"""Read NHIS/MOHW boards and relevant Bizinfo announcements daily."""
 from __future__ import annotations
 
 import argparse
@@ -24,7 +24,7 @@ BOOTSTRAP_PAGES = 2
 MAX_BYTES = 2_000_000
 LOG = logging.getLogger('agency_news')
 SYNC_LOCK = threading.Lock()
-ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr'}
+ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr'}
 
 
 class Node:
@@ -225,6 +225,9 @@ def fingerprint(item):
 
 
 def collect(source, seen, now, fetcher=fetch_html, stop=None):
+    if source['kind'] == 'bizinfo':
+        import business_support
+        return business_support.collect(source, seen, now, fetcher, stop)
     url = listing_url(source)
     selected, scanned = {}, {}
     cutoff = (now - timedelta(days=90)).date().isoformat()
@@ -312,7 +315,17 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
                 items, scanned = collect(source, seen, now, fetcher, stop)
                 with connect(path) as db:
                     for item in items:
-                        exists = db.execute('SELECT 1 FROM articles WHERE id=?', (item['id'],)).fetchone()
+                        exists = db.execute('SELECT payload FROM articles WHERE id=?', (item['id'],)).fetchone()
+                        if item.get('withdrawn'):
+                            if not exists:
+                                continue
+                            item = {**json.loads(exists[0]), **item,
+                                    'recommendation': '추천 제외 · 공고 변경',
+                                    'reasons': ['공고 조건이 변경되어 현재 추천 대상에서 제외했습니다.'],
+                                    'checks': ['변경된 대상과 신청 조건을 원문에서 확인해주세요.']}
+                        if exists and item.get('kind') == 'support':
+                            previous = json.loads(exists[0])
+                            item['first_seen_at'] = previous.get('first_seen_at', previous['collected_at'])
                         state['last_added'] += int(not exists)
                         db.execute('INSERT OR REPLACE INTO articles VALUES(?,?,?)',
                                    (item['id'], item['published_at'], json.dumps(item, ensure_ascii=False)))
@@ -339,7 +352,15 @@ def report(path, now=None, summary=False):
         saved = states(db)
         total = db.execute('SELECT COUNT(*) FROM articles').fetchone()[0]
         latest = db.execute('SELECT MAX(published_at) FROM articles').fetchone()[0]
-        items = [] if summary else [json.loads(row[0]) for row in db.execute('SELECT payload FROM articles ORDER BY published_at DESC,id DESC')]
+        items = [json.loads(row[0]) for row in db.execute('SELECT payload FROM articles ORDER BY published_at DESC,id DESC')]
+    import business_support
+    supports = []
+    for item in items:
+        if item.get('kind') == 'support':
+            item['application_status'] = business_support.period_status(item['application_period'], now.date())
+            if item.get('withdrawn'):
+                item['application_status'].update(active=False, label='추천 제외')
+            supports.append(item)
     source_status = []
     for source in SOURCES:
         state = saved.get(source['id'], {})
@@ -349,6 +370,9 @@ def report(path, now=None, summary=False):
     successes = [row.get('last_success') for row in source_status]
     updated = min(successes) if all(successes) else None
     result = {'total': total, 'latest_published_at': latest, 'updated_at': updated, 'sources': source_status,
+              'support': {'total': len(supports), 'active': sum(item['application_status']['active'] for item in supports),
+                          'items': [{'id': item['id'], 'first_seen_at': item.get('first_seen_at', item['collected_at']),
+                                     'active': item['application_status']['active']} for item in supports]},
               'sync': {'enabled': enabled(), 'schedule': SCHEDULE, 'target_count': len(SOURCES),
                        'stale': any(row['stale'] for row in source_status),
                        'errors': [row['agency']+' '+row['name'] for row in source_status if row.get('error')],
