@@ -2,7 +2,10 @@
 """Railway service for static competitor dashboard and feedback intake."""
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from contextlib import closing
 import hashlib, hmac, json, os, re, sqlite3, time, urllib.request
+import urllib.parse
+import naver_ads
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -13,7 +16,7 @@ LAST_FEEDBACK_BY_IP = {}
 
 def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as db:
+    with closing(sqlite3.connect(DB_PATH)) as db, db:
         db.execute("""CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL,
             category TEXT NOT NULL, message TEXT NOT NULL, page TEXT NOT NULL,
@@ -43,6 +46,48 @@ class App(SimpleHTTPRequestHandler):
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         super().end_headers()
 
+    def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/naver-ads":
+            self.send_ad_report()
+            return
+        super().do_GET()
+
+    def do_HEAD(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/naver-ads":
+            self.send_ad_report(head_only=True)
+            return
+        super().do_HEAD()
+
+    def send_ad_report(self, head_only=False):
+        try:
+            payload = naver_ads.report(naver_ads.db_path())
+            status = 200
+        except (sqlite3.Error, OSError, ValueError):
+            payload = {"error": "광고 보고서를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."}
+            status = 503
+        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(raw)
+
+    def send_head(self):
+        # Only public pages/assets are served; never source, local env or report DBs.
+        path = Path(self.translate_path(self.path)).resolve()
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "ai-hub-data.html", "naver-ads.html"}
+        if path == ROOT:
+            self.path = "/index.html"
+            path = ROOT / "index.html"
+        allowed_page = path.parent == ROOT and path.name in public_pages
+        allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
+        if not (allowed_page or allowed_asset) or not path.is_file():
+            self.send_error(404)
+            return None
+        return super().send_head()
+
     def do_POST(self):
         if self.path != "/api/feedback":
             self.send_error(404)
@@ -68,7 +113,7 @@ class App(SimpleHTTPRequestHandler):
             self.send_error(400, str(exc))
             return
         created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        with sqlite3.connect(DB_PATH) as db:
+        with closing(sqlite3.connect(DB_PATH)) as db, db:
             cur = db.execute("INSERT INTO feedback(created_at,category,message,page) VALUES (?,?,?,?)",
                             (created_at, category, message, page))
             feedback_id = cur.lastrowid
@@ -99,5 +144,13 @@ class App(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    naver_ads.init_db(naver_ads.db_path())
+    scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())
     port = int(os.getenv("PORT", "8080"))
-    ThreadingHTTPServer(("0.0.0.0", port), App).serve_forever()
+    server = ThreadingHTTPServer(("0.0.0.0", port), App)
+    print(f"Local: http://localhost:{port}", flush=True)
+    try:
+        server.serve_forever()
+    finally:
+        scheduler_stop.set()
+        server.server_close()

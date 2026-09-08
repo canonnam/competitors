@@ -1,0 +1,248 @@
+{
+  "full_period": {
+    "start": "2025-02-01",
+    "end": "2026-08-22",
+    "total": {
+      "impressions": 2835757,
+      "clicks": 2019,
+      "cost": 511238
+    },
+    "creative_coverage": {
+      "impressions": 34.18409969542524,
+      "clicks": 58.296186230807336,
+      "cost": 76.32179141613103
+    },
+    "monthly": [
+      {
+        "month": "2025-02",
+        "impressions": 152,
+        "clicks": 4,
+        "cost": 352
+      },
+      {
+        "month": "2025-03",
+        "impressions": 445,
+        "clicks": 25,
+        "cost": 3707
+      },
+      {
+        "month": "2025-04",
+        "impressions": 329,
+        "clicks": 20,
+        "cost": 2211
+      },
+      {
+        "month": "2025-05",
+        "impressions": 278,
+        "clicks": 11,
+        "cost": 1012
+      },
+      {
+        "month": "2025-06",
+        "impressions": 419,
+        "clicks": 11,
+        "cost": 1100
+      },
+      {
+        "month": "2025-07",
+        "impressions": 234,
+        "clicks": 6,
+        "cost": 616
+      },
+      {
+        "month": "2025-08",
+        "impressions": 343,
+        "clicks": 8,
+        "cost": 1023
+      },
+      {
+        "month": "2025-09",
+        "impressions": 245,
+        "clicks": 6,
+        "cost": 506
+      },
+      {
+        "month": "2025-10",
+        "impressions": 306,
+        "clicks": 6,
+        "cost": 814
+      },
+      {
+        "month": "2025-11",
+        "impressions": 415,
+        "clicks": 7,
+        "cost": 913
+      },
+      {
+        "month": "2025-12",
+        "impressions": 2569069,
+        "clicks": 932,
+        "cost": 84513
+      },
+      {
+        "month": "2026-01",
+        "impressions": 156633,
+        "clicks": 133,
+        "cost": 37345
+      },
+      {
+        "month": "2026-02",
+        "impressions": 6062,
+        "clicks": 99,
+        "cost": 32131
+      },
+      {
+        "month": "2026-03",
+        "impressions": 8603,
+        "clicks": 87,
+        "cost": 32027
+      },
+      {
+        "month": "2026-04",
+        "impressions": 6868,
+        "clicks": 43,
+        "cost": 18148
+      },
+      {
+        "month": "2026-05",
+        "impressions": 21976,
+        "clicks": 147,
+        "cost": 59204
+      },
+      {
+        "month": "2026-06",
+        "impressions": 26413,
+        "clicks": 166,
+        "cost": 96709
+      },
+      {
+        "month": "2026-07",
+        "impressions": 18500,
+        "clicks": 105,
+        "cost": 48767
+      },
+      {
+        "month": "2026-08",
+        "impressions": 18467,
+        "clicks": 203,
+        "cost": 90140
+      }
+    ],
+    "creatives": [
+      {
+        "title": "재활 중심 더비다요양원 | 미추홀구 숭의동 요양원, 기능유지 중심 돌봄, 부모님 신체/일상생활 돕는 요양원",
+        "channel": "파워링크",
+        "impressions": 5448,
+        "clicks": 78,
+        "cost": 37300
+      },
+      {
+        "title": "인천 더비다요양원 | 어르신 한 분 한 분께 정성을 담아, 따뜻한 일상을 만들어갑니다",
+        "channel": "파워링크",
+        "impressions": 6814,
+        "clicks": 87,
+        "cost": 49893
+      },
+      {
+        "title": "더비다요양원 인천 | 신설, 재활, 간호사 원장",
+        "channel": "플레이스",
+        "impressions": 29393,
+        "clicks": 286,
+        "cost": 59661
+      },
+      {
+        "title": "더비다요양원 인천 | 미추홀구 요양원, 부모님 모시기 전 꼭 확인할 체크리스트",
+        "channel": "파워링크",
+        "impressions": 3824,
+        "clicks": 33,
+        "cost": 17707
+      },
+      {
+        "title": "간호사 원장 직접 케어 | 매주 주치의 회진, 전문 간호진의 밀착 케어! 보호자님이 추천하는 안심 요양원",
+        "channel": "파워링크",
+        "impressions": 37367,
+        "clicks": 225,
+        "cost": 133523
+      },
+      {
+        "title": "신설/재활/간호사원장 케어 | 물리치료사 1:1 재활, 25년 리모델링 깨끗한 시설, 정형외과주치의 회진",
+        "channel": "파워링크",
+        "impressions": 886532,
+        "clicks": 468,
+        "cost": 92102
+      },
+      {
+        "title": "인천 더비다요양원 | 어르신 한 분 한 분께 정성을 담아, 따뜻한 일상을 만들어갑니다",
+        "channel": "파워링크",
+        "impressions": 0,
+        "clicks": 0,
+        "cost": 0
+      }
+    ]
+  },
+  "change": {
+    "recorded_at": "2026-09-01",
+    "reported": [
+      "인천점만 운영",
+      "안양점은 잠시 미운영",
+      "이전 분석 이후 인천점 일요일/월요일 광고 노출 제외",
+      "플레이스 일 광고비 두 배 증액"
+    ],
+    "before": {
+      "start": "2026-08-18",
+      "end": "2026-08-22",
+      "impressions": 3807,
+      "clicks": 42,
+      "cost": 16610
+    },
+    "after": {
+      "start": "2026-08-25",
+      "end": "2026-08-29",
+      "impressions": 2519,
+      "clicks": 32,
+      "cost": 15335
+    },
+    "channels": {
+      "baseline_8d": [
+        {
+          "channel": "파워링크",
+          "impressions": 3538,
+          "clicks": 30,
+          "cost": 13993
+        },
+        {
+          "channel": "플레이스",
+          "impressions": 269,
+          "clicks": 12,
+          "cost": 2617
+        },
+        {
+          "channel": "파워컨텐츠",
+          "impressions": 0,
+          "clicks": 0,
+          "cost": 0
+        }
+      ],
+      "after": [
+        {
+          "channel": "파워링크",
+          "impressions": 2321,
+          "clicks": 22,
+          "cost": 11338
+        },
+        {
+          "channel": "플레이스",
+          "impressions": 198,
+          "clicks": 10,
+          "cost": 3997
+        },
+        {
+          "channel": "파워컨텐츠",
+          "impressions": 0,
+          "clicks": 0,
+          "cost": 0
+        }
+      ]
+    }
+  }
+}

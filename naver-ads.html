@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>더비다요양원 네이버 광고분석 | Care Knowledge Base</title>
+  <link rel="stylesheet" href="/assets/naver-ads.css">
+  <script src="/assets/vendor/chart.umd.min.js" defer></script>
+  <script src="/assets/naver-ads.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Care Knowledge Base</a>
+    <a class="back" href="/">지식 창고로 돌아가기</a>
+  </header>
+  <main>
+    <div class="page-heading">
+      <div><p class="eyebrow">더비다요양원 · 인천점</p><h1>네이버 광고분석</h1><p class="muted">안양점 운영 중단 · 인천점 성과 기준</p></div>
+      <div class="tools">
+        <button id="reload" class="icon-button" type="button" title="최신 보고서 불러오기" aria-label="최신 보고서 불러오기"><img src="/assets/icons/refresh-cw.svg" alt=""></button>
+        <button id="download" type="button" disabled><img src="/assets/icons/download.svg" alt="">CSV 다운로드</button>
+      </div>
+    </div>
+    <div class="update-line"><span id="freshness" class="badge">불러오는 중</span><span id="updated" class="muted" role="status">광고 지표를 불러오고 있습니다.</span></div>
+    <p id="notice" class="notice" role="status" hidden></p>
+    <noscript><p class="notice">분석 화면을 보려면 JavaScript를 활성화해주세요.</p></noscript>
+    <div id="dashboard" hidden>
+      <form id="filters" class="filters">
+        <label>조회 기간<select id="period"><option value="30">최근 30일</option><option value="7">최근 7일</option><option value="month">이번 달</option><option value="lastmonth">지난달</option><option value="all">전체 기간</option><option value="custom">직접 선택</option></select></label>
+        <label>시작일<input id="start" type="date" required></label><span class="date-separator">~</span><label>종료일<input id="end" type="date" required></label>
+        <button type="submit">조회</button><span id="range-label" class="muted"></span>
+      </form>
+      <p id="validation" class="validation" role="alert"></p>
+      <section class="kpis" id="kpis" aria-label="핵심 지표"></section>
+      <p id="comparison-label" class="small muted"></p>
+      <nav class="tabs" aria-label="분석 항목" role="tablist">
+        <button id="tab-overview" role="tab" aria-selected="true" aria-controls="overview" data-tab="overview">경영 요약</button>
+        <button id="tab-trends" role="tab" aria-selected="false" aria-controls="trends" data-tab="trends" tabindex="-1">일별·월별 추이</button>
+        <button id="tab-channels" role="tab" aria-selected="false" aria-controls="channels" data-tab="channels" tabindex="-1">광고 유형 비교</button>
+        <button id="tab-creatives" role="tab" aria-selected="false" aria-controls="creatives" data-tab="creatives" tabindex="-1">소재별 성과</button>
+        <button id="tab-history" role="tab" aria-selected="false" aria-controls="history" data-tab="history" tabindex="-1">이전 분석 기록</button>
+      </nav>
+      <section id="overview" role="tabpanel" aria-labelledby="tab-overview">
+        <div class="section-heading"><h2>현재 성과와 판단 근거</h2><span class="muted small">선택 기간 기준</span></div>
+        <p id="executive" class="executive"></p>
+        <div class="chart-grid">
+          <figure><figcaption>01 · 일별 광고비 <span>원 · 부가세 포함</span></figcaption><div class="chart"><canvas id="daily-cost" role="img" aria-label="일별 광고비 추이"></canvas></div></figure>
+          <figure><figcaption>02 · 일별 클릭 수 <span>회</span></figcaption><div class="chart"><canvas id="daily-clicks" role="img" aria-label="일별 클릭 수 추이"></canvas></div></figure>
+        </div>
+        <h2>의사결정 인사이트</h2><ol id="insights" class="insights"></ol>
+        <div class="conversion-note"><strong>상담에서 입소까지의 성과</strong><p>광고별 상담 전화·방문 상담·입소 전환 데이터가 아직 연결되지 않았습니다. 이전에 공유한 상담 전화 약 2건은 광고 유입 여부가 확인되지 않아 상담 획득비용이나 투자수익률로 계산하지 않습니다.</p></div>
+      </section>
+      <section id="trends" role="tabpanel" aria-labelledby="tab-trends" hidden>
+        <div class="section-heading"><h2>일별·월별 성과 추이</h2><span class="muted small">진행 중인 달과 선택 범위 일부만 포함된 달은 부분 집계</span></div>
+        <div class="chart-grid">
+          <figure><figcaption>03 · 일별 클릭률 <span>%</span></figcaption><div class="chart"><canvas id="daily-ctr" role="img" aria-label="일별 클릭률"></canvas></div></figure>
+          <figure><figcaption>04 · 일별 클릭당 비용 <span>원/클릭</span></figcaption><div class="chart"><canvas id="daily-cpc" role="img" aria-label="일별 클릭당 비용"></canvas></div></figure>
+          <figure><figcaption>05 · 월별 광고비 <span>원</span></figcaption><div class="chart"><canvas id="monthly-cost" role="img" aria-label="월별 광고비"></canvas></div></figure>
+          <figure><figcaption>06 · 월별 클릭 수 <span>회</span></figcaption><div class="chart"><canvas id="monthly-clicks" role="img" aria-label="월별 클릭 수"></canvas></div></figure>
+          <figure><figcaption>07 · 월별 노출 수 <span>회</span></figcaption><div class="chart"><canvas id="monthly-impressions" role="img" aria-label="월별 노출 수"></canvas></div></figure>
+        </div>
+        <h2>월별 상세 지표</h2><div id="monthly-table" class="table-scroll" tabindex="0" role="region" aria-label="월별 상세 지표"></div>
+        <details><summary>일별 상세 지표</summary><div id="daily-table" class="table-scroll" tabindex="0" role="region" aria-label="일별 상세 지표"></div></details>
+      </section>
+      <section id="channels" role="tabpanel" aria-labelledby="tab-channels" hidden>
+        <div class="section-heading"><h2>파워링크·플레이스 비교</h2><span class="muted small">동일 조회 기간</span></div>
+        <p class="muted">광고 유형마다 노출 위치와 검색 의도가 다릅니다. 아래 수치는 클릭 효율 비교이며 입소 효과의 우열을 뜻하지 않습니다.</p>
+        <div class="chart-grid">
+          <figure><figcaption>08 · 유형별 광고비 <span>원</span></figcaption><div class="chart"><canvas id="channel-cost" role="img" aria-label="유형별 광고비"></canvas></div></figure>
+          <figure><figcaption>09 · 비용·클릭 비중 <span>%</span></figcaption><div class="chart"><canvas id="channel-share" role="img" aria-label="광고비 비중과 클릭 비중 비교"></canvas></div></figure>
+          <figure><figcaption>10 · 유형별 클릭률 <span>%</span></figcaption><div class="chart"><canvas id="channel-ctr" role="img" aria-label="유형별 클릭률"></canvas></div></figure>
+          <figure><figcaption>11 · 유형별 클릭당 비용 <span>원/클릭</span></figcaption><div class="chart"><canvas id="channel-cpc" role="img" aria-label="유형별 클릭당 비용"></canvas></div></figure>
+        </div>
+        <div id="channel-table" class="table-scroll" tabindex="0" role="region" aria-label="광고 유형 비교표"></div>
+      </section>
+      <section id="creatives" role="tabpanel" aria-labelledby="tab-creatives" hidden>
+        <div class="section-heading"><h2>소재별 성과</h2><label class="sort-label">정렬<select id="creative-sort"><option value="clicks">클릭 수 높은 순</option><option value="cost">광고비 높은 순</option><option value="ctr">클릭률 높은 순</option><option value="cpc">클릭당 비용 낮은 순</option></select></label></div>
+        <p id="coverage" class="muted"></p>
+        <div class="chart-grid">
+          <figure><figcaption>12 · 소재별 클릭 수 <span>회 · 상위 8개</span></figcaption><div class="chart"><canvas id="creative-clicks" role="img" aria-label="소재별 클릭 수"></canvas></div></figure>
+          <figure><figcaption>13 · 소재별 클릭당 비용 <span>원/클릭 · 상위 8개</span></figcaption><div class="chart"><canvas id="creative-cpc" role="img" aria-label="소재별 클릭당 비용"></canvas></div></figure>
+        </div>
+        <div id="creative-table" class="table-scroll" tabindex="0" role="region" aria-label="소재별 상세 지표"></div>
+        <p class="small muted">클릭률 구간은 Wilson 95% 신뢰구간입니다. 노출을 독립 시행으로 보는 근사이며 반복 노출·노출 위치·운영 기간 차이를 통제하지 않습니다. 소재 간 통계적 우월성이나 입소 효과의 검정 결과가 아닙니다.</p>
+      </section>
+      <section id="history" role="tabpanel" aria-labelledby="tab-history" hidden>
+        <div class="section-heading"><h2>이전 분석 기록</h2><span class="muted small">과거 시점의 기록 · 상단 기간 필터와 별개</span></div>
+        <div id="history-content"></div>
+      </section>
+      <footer class="methodology"><h2>집계 기준</h2><ul id="notes"></ul><p><a href="https://naver.github.io/searchad-apidoc/" target="_blank" rel="noopener noreferrer">네이버 검색광고 API 문서</a> · 검색량은 광고 노출 수와 다른 지표로 이 보고서에 포함하지 않습니다.</p></footer>
+    </div>
+  </main>
+</body>
+</html>
