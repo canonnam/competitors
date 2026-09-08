@@ -15,7 +15,7 @@ fs.mkdirSync(output, {recursive: true});
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin, {waitUntil: 'networkidle'});
-    const launcher = page.getByRole('button', {name: '위키에게 질문하기', exact: true});
+    const launcher = page.getByRole('button', {name: '장기요양 지식 질문하기', exact: true});
     await launcher.click();
     await page.waitForFunction(() => document.querySelector('.wiki-state').textContent.includes('111'));
     await page.getByRole('button', {name: '물리치료사 대신 작업치료사를 배치해도 되나요?', exact: true}).click();

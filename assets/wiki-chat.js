@@ -5,10 +5,10 @@ const icon = name => `<img src="/assets/icons/${name}.svg" alt="" aria-hidden="t
 const launcher = document.createElement('button');
 launcher.className = 'wiki-launcher';
 launcher.type = 'button';
-launcher.setAttribute('aria-label', '위키에게 질문하기');
+launcher.setAttribute('aria-label', '장기요양 지식 질문하기');
 launcher.setAttribute('aria-expanded', 'false');
 launcher.setAttribute('aria-controls', 'wiki-chat-panel');
-launcher.title = '위키에게 질문하기';
+launcher.title = '장기요양 지식 질문하기';
 launcher.innerHTML = icon('message-circle');
 const panel = document.createElement('dialog');
 panel.id = 'wiki-chat-panel';
@@ -16,7 +16,7 @@ panel.className = 'wiki-panel';
 panel.setAttribute('aria-labelledby', 'wiki-chat-title');
 panel.innerHTML = `
   <div class="wiki-topbar">
-    <div class="wiki-title-group"><h2 id="wiki-chat-title">위키에게 질문하기</h2><p class="wiki-state" role="status">연결 확인 중</p></div>
+    <div class="wiki-title-group"><h2 id="wiki-chat-title">장기요양 지식 질문하기</h2><p class="wiki-state" role="status">연결 확인 중</p></div>
     <button class="wiki-icon-button wiki-reset" type="button" title="새 대화" aria-label="새 대화">${icon('rotate-ccw')}</button>
     <a class="wiki-icon-button" href="/knowledge.html" title="지식 문서 관리" aria-label="지식 문서 관리">${icon('settings')}</a>
     <button class="wiki-icon-button wiki-close" type="button" title="대화창 닫기" aria-label="대화창 닫기">${icon('x')}</button>
