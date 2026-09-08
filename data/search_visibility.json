@@ -1,0 +1,15 @@
+{
+  "brand": "더비다요양원",
+  "aliases": ["더비다요양원", "더비다 요양원"],
+  "owned_urls": ["https://blog.naver.com/vida25"],
+  "place_ids": ["1671277974", "2000549036"],
+  "map_search_url": "https://map.naver.com/p/search/%EB%8D%94%EB%B9%84%EB%8B%A4%EC%9A%94%EC%96%91%EC%9B%90?c=15.00,0,0,0,dh",
+  "ai_queries": [
+    {"keyword": "인천 요양원 추천", "city": "Incheon"},
+    {"keyword": "인천 미추홀구 요양원 추천", "city": "Incheon"},
+    {"keyword": "인천 치매 요양원 추천", "city": "Incheon"},
+    {"keyword": "안양 요양원 추천", "city": "Anyang"},
+    {"keyword": "안양 만안구 요양원 추천", "city": "Anyang"},
+    {"keyword": "안양 재활 요양원 추천", "city": "Anyang"}
+  ]
+}

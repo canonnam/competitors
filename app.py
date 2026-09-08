@@ -9,6 +9,7 @@ import naver_ads
 import competitor_news
 import wiki_chat
 import agency_news
+import search_visibility
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -52,6 +53,9 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/search-visibility":
+            self.send_visibility()
+            return
         if wiki_chat.handle(self, "GET"):
             return
         if urllib.parse.urlsplit(self.path).path == "/api/agency-news":
@@ -72,6 +76,9 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/search-visibility":
+            self.send_visibility(head_only=True)
+            return
         if wiki_chat.handle(self, "HEAD"):
             return
         if urllib.parse.urlsplit(self.path).path == "/api/agency-news":
@@ -182,10 +189,26 @@ class App(SimpleHTTPRequestHandler):
         if not head_only:
             self.wfile.write(raw)
 
+    def send_visibility(self, head_only=False):
+        try:
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+            payload = search_visibility.report(search_visibility.db_path(), summary=query.get('summary') == ['1'])
+            status = 200
+        except (sqlite3.Error, OSError, ValueError):
+            payload, status = {'error': '검색노출 현황을 불러오지 못했습니다. 잠시 후 다시 확인해주세요.'}, 503
+        raw = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode()
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Content-Length', str(len(raw)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(raw)
+
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
+        public_pages = {"index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
@@ -262,6 +285,8 @@ if __name__ == "__main__":
     news_scheduler_stop = competitor_news.start_scheduler(competitor_news.db_path())
     agency_news.init_db(agency_news.db_path())
     agency_scheduler_stop = agency_news.start_scheduler(agency_news.db_path())
+    search_visibility.init_db(search_visibility.db_path())
+    visibility_scheduler_stop = search_visibility.start_scheduler(search_visibility.db_path())
     port = int(os.getenv("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), App)
     print(f"Local: http://localhost:{port}", flush=True)
@@ -271,4 +296,5 @@ if __name__ == "__main__":
         scheduler_stop.set()
         news_scheduler_stop.set()
         agency_scheduler_stop.set()
+        visibility_scheduler_stop.set()
         server.server_close()
