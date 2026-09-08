@@ -20,7 +20,7 @@ body.kb-detail>main{max-width:1248px;width:100%;margin:0 auto;padding:28px 24px 
 .kb-heading-row>div:first-child{min-width:0}
 .kb-homepage .card.hub{background:#fff;border:1px solid #dde3e8;color:#202b36;box-shadow:0 2px 8px #202b3605}
 .kb-homepage .card.hub p{color:#647181}.kb-homepage .card.hub a{color:#275b93}
-.kb-homepage .card{border-radius:8px}.kb-homepage .card .icon{background:#f0f4f6}
+.kb-homepage .card{border-radius:8px}
 .kb-homepage .card-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .kb-homepage .card-topline .icon{flex:1}
 .card-update-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border:1px solid #c8e5d9;border-radius:999px;background:#edf8f2;color:#176b4b;font-size:12px;line-height:1.5;font-weight:700;white-space:nowrap}
