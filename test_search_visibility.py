@@ -71,6 +71,13 @@ class VisibilityTests(unittest.TestCase):
         rows,_=v.parse_naver(html,v.search_url(QUERY['keyword'])+'&page=2',2)
         self.assertEqual(rows[0]['page'],2)
 
+    def test_indexed_pdf_result_is_counted_without_downloading_the_document(self):
+        pdf=page('안양 노인전문 요양원',5,url='https://memory.library.kr/dext/file/view/resource/126941').replace('data-heatmap-target=".link"','data-heatmap-target=".pdf"')
+        rows,_=v.parse_naver(pdf,v.search_url('안양치매요양원')+'&page=5',5)
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['title'],'안양 노인전문 요양원')
+        self.assertEqual((rows[0]['page'],rows[0]['position']),(5,1))
+
     def test_only_explicit_first_page_search_correction_is_followed_and_disclosed(self):
         corrected='인천시 요양원 추천'
         url=urllib.parse.urlencode({'query':corrected,'page':2})

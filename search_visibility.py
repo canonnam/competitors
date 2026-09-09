@@ -175,6 +175,14 @@ def search_url(keyword):
     return NAVER_ORIGIN + '/search.naver?' + urllib.parse.urlencode({'where': 'nexearch', 'query': keyword})
 
 
+def public_result_links(doc):
+    # Naver marks ordinary web results as .link and indexed PDF results as .pdf.
+    links = [a for a in doc.all('a') if a.attrs.get('data-heatmap-target') in {'.link', '.pdf'} and safe_url(a.attrs.get('href'))]
+    if len(links) < 2:
+        raise ValueError('Search result layout changed')
+    return links
+
+
 def parse_naver(html, url, expected_page=1):
     root = Document(html).root
     text = root.text()
@@ -191,9 +199,7 @@ def parse_naver(html, url, expected_page=1):
     for doc in root.all('div'):
         if not doc.has_class('fds-web-doc-root'):
             continue
-        links = [a for a in doc.all('a') if a.attrs.get('data-heatmap-target') == '.link' and safe_url(a.attrs.get('href'))]
-        if len(links) < 2:
-            raise ValueError('Search result layout changed')
+        links = public_result_links(doc)
         title = links[1].text().removesuffix(' 새 창 열림')
         results.append({'area': 'web', 'title': title, 'url': links[1].attrs['href'],
                         'snippet': doc.text()[:1200], 'position': len(results)+1, 'page': page})

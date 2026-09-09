@@ -119,9 +119,7 @@ def fetch_source(source, now, fetcher=visibility.fetch_html, feed_fetcher=news.f
         for block in visibility.Document(html).root.all('div'):
             if not block.has_class('fds-web-doc-root'):
                 continue
-            links = [a for a in block.all('a') if a.attrs.get('data-heatmap-target') == '.link' and visibility.safe_url(a.attrs.get('href'))]
-            if len(links) < 2:
-                raise ValueError('Incomplete public result')
+            links = visibility.public_result_links(block)
             # Do not use the publisher's AI-generated knowledge-panel description.
             item = document(links[1].text(), ' '.join(a.text() for a in links[2:]), links[1].attrs['href'], source)
             if item and (item['id'] not in found or len(item['excerpt']) > len(found[item['id']]['excerpt'])):
