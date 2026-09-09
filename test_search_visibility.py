@@ -71,6 +71,20 @@ class VisibilityTests(unittest.TestCase):
         rows,_=v.parse_naver(html,v.search_url(QUERY['keyword'])+'&page=2',2)
         self.assertEqual(rows[0]['page'],2)
 
+    def test_only_explicit_first_page_search_correction_is_followed_and_disclosed(self):
+        corrected='인천시 요양원 추천'
+        url=urllib.parse.urlencode({'query':corrected,'page':2})
+        first=page(following=True).replace('<a aria-current="page"',
+            '<a href="?'+urllib.parse.urlencode({'query':corrected})+'" aria-current="page"')
+        first=first.replace(escape(urllib.parse.urlencode({'query':QUERY['keyword'],'page':2})),escape(url))
+        with self.assertRaises(ValueError):v.parse_naver(first,v.search_url(QUERY['keyword']))
+        first+='<p>'+corrected+' 으로 검색한 결과입니다.</p>'
+        calls=[]
+        def fetch(url):calls.append(url);return first if len(calls)==1 else page(number=2)
+        result=v.collect_naver(QUERY,self.config,fetch)
+        self.assertEqual(result['pages_checked'],2)
+        self.assertEqual(result['search_correction'],{'from':QUERY['keyword'],'to':corrected})
+
     def test_paid_ads_do_not_count_as_organic_visibility(self):
         html=page()+'<a class="lnk_tit" href="https://adcr.naver.com/click">더비다요양원 광고</a>'
         result=v.collect_naver(QUERY,self.config,lambda _:html)

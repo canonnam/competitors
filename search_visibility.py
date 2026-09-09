@@ -224,13 +224,19 @@ def parse_naver(html, url, expected_page=1):
         parsed = urllib.parse.urlsplit(next_url)
         params = urllib.parse.parse_qs(parsed.query)
         original = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query).get('query')
-        if parsed.netloc != 'search.naver.com' or parsed.path != '/search.naver' or params.get('query') != original or params.get('page') != [str(page+1)]:
+        corrected = params.get('query', [])
+        current_query = urllib.parse.parse_qs(urllib.parse.urlsplit(current.attrs.get('href', '')).query).get('query') if current else None
+        explicit_correction = (page == 1 and len(corrected) == 1 and current_query == corrected
+                               and normalized(corrected[0]+'으로 검색한 결과입니다') in normalized(text))
+        if (parsed.scheme != 'https' or parsed.netloc != 'search.naver.com' or parsed.path != '/search.naver'
+                or params.get('page') != [str(page+1)] or corrected != original and not explicit_correction):
             raise ValueError('Unexpected search pagination')
     return results, next_url
 
 
 def collect_naver(query, config, fetcher=fetch_html, stop=None):
     url, matches, evidence, visited = search_url(query['keyword']), [], [], set()
+    correction = None
     for page in range(1, config['max_pages']+1):
         if stop and stop.is_set():
             raise InterruptedError()
@@ -245,11 +251,14 @@ def collect_naver(query, config, fetcher=fetch_html, stop=None):
                 matches.append({**row, 'owned': owned})
         if not following:
             break
+        corrected = urllib.parse.parse_qs(urllib.parse.urlsplit(following).query)['query'][0]
+        if page == 1 and corrected != query['keyword']:
+            correction = {'from': query['keyword'], 'to': corrected}
         url = following
         if stop and stop.wait(0.4):
             raise InterruptedError()
     organic = [row for row in matches if row['area'] in {'web', 'place'}]
-    return {'matches': matches, 'evidence': evidence, 'pages_checked': len(evidence),
+    return {'matches': matches, 'evidence': evidence, 'pages_checked': len(evidence), 'search_correction': correction,
             'mentioned': bool(organic), 'first_page': min((row['page'] for row in organic), default=None),
             'method': 'PC 비로그인 공개 검색 · 웹문서 및 첫 화면 플레이스 · 광고 별도 표시'}
 
