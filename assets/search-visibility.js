@@ -24,13 +24,13 @@
       const lines=data.branches.map(branch=>{
         const scoped=scopeData(data,branch.id),naver=scoped.providers.find(p=>p.id==='naver'),ai=scoped.providers.filter(p=>p.kind==='ai'&&p.configured);
         const checked=ai.reduce((s,p)=>s+p.checked,0),mentioned=ai.reduce((s,p)=>s+p.mentioned,0);
-        return `${branch.name} · 네이버 첫 페이지(광고 제외) ${naver.checked?`${naver.first_page}/${naver.checked}개`:'측정 대기'} · AI 언급 ${checked?`${mentioned}/${checked}건`:'측정 대기'}`;
+        return `${branch.name} · 네이버 첫 페이지(광고 제외) ${naver.checked?`${naver.first_page}/${naver.checked}개`:'측정 대기'} · AI API 언급 ${checked?`${mentioned}/${checked}건`:'측정 대기'}`;
       });
       return {text:lines.join('\n'),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
     }
     const naver=data.providers.find(p=>p.id==='naver'),ai=data.providers.filter(p=>p.kind==='ai'&&p.configured);
     const checked=ai.reduce((sum,p)=>sum+p.checked,0),mentioned=ai.reduce((sum,p)=>sum+p.mentioned,0);
-    const parts=[naver?.checked?`네이버 첫 페이지(광고 제외) ${naver.first_page}/${naver.checked}개`:naver?.items.some(item=>item.status==='error')?'네이버 측정 불가':'네이버 측정 대기',checked?`AI 언급 ${mentioned}/${checked}건`:'AI 측정 대기'];
+    const parts=[naver?.checked?`네이버 첫 페이지(광고 제외) ${naver.first_page}/${naver.checked}개`:naver?.items.some(item=>item.status==='error')?'네이버 측정 불가':'네이버 측정 대기',checked?`AI API 언급 ${mentioned}/${checked}건`:'AI 측정 대기'];
     return {text:parts.join(' · '),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
   }
   function citedAnswer(item){
@@ -60,11 +60,11 @@
     });
     if(current)drawAI();
   }).catch(()=>{});
-  function history(item){return `<div class="visibility-history" aria-label="최근 관측 기록">${(item.history||[]).slice().reverse().map(day=>`<span class="visibility-day ${day.mentioned?'is-found':''}" title="${esc(date(day.at))} · ${day.mentioned?'노출 확인':'미확인'}" aria-label="${esc(date(day.at))} ${day.mentioned?'노출 확인':'미확인'}"></span>`).join('')}</div><span class="visibility-small">${(item.history||[]).length}회 관측 · 초록색은 ${esc(selectedName()||'브랜드')} ${item.query?.source?'웹·플레이스 노출 확인(광고 제외)':'언급 확인'}</span>`;}
+  function history(item){return `<div class="visibility-history" aria-label="최근 관측 기록">${(item.history||[]).slice().reverse().map(day=>`<span class="visibility-day ${day.mentioned?'is-found':''}" title="${esc(date(day.at))} · ${day.mentioned?'노출 확인':'미확인'}" aria-label="${esc(date(day.at))} ${day.mentioned?'노출 확인':'미확인'}"></span>`).join('')}</div><span class="visibility-small">${(item.history||[]).length}회 ${item.query?.source?'관측':'API 표본'} · 초록색은 ${esc(selectedName()||'브랜드')} ${item.query?.source?'웹·플레이스 노출 확인(광고 제외)':'언급 확인'}</span>`;}
   function overview(){
     $('visibility-overview').innerHTML=current.providers.map(p=>{
       const ai=p.kind==='ai',metric=!p.configured?'연결 필요':!p.checked?(p.items.some(item=>item.status==='error')?'측정 불가':'측정 대기'):`${ai?p.mentioned:p.first_page}<small> / ${p.checked}</small>`;
-      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.id==='openai'?'ChatGPT 계열 · OpenAI API':p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'답변 속 언급':'첫 페이지 · 광고 제외'}<br>${p.configured?`${p.expected}개 중 ${p.checked}개 정상 측정`:'API 연결 후 매일 측정'}</p></article>`;
+      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.id==='openai'?'OpenAI API 검색':p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'API 표본 속 언급':'첫 페이지 · 광고 제외'}<br>${p.configured?`${p.expected}개 중 ${p.checked}개 정상 측정`:'API 연결 후 매일 측정'}</p></article>`;
     }).join('');
     const naverError=current.providers.find(p=>p.id==='naver')?.items.find(item=>item.error)?.error;
     const aiErrors=current.providers.filter(p=>p.kind==='ai'&&p.configured).map(p=>{const error=p.items.find(item=>item.error)?.error;return error?`${p.name}: ${error}.`:'';}).filter(Boolean).join(' ');
@@ -87,9 +87,9 @@
   function drawAI(){
     const opened=new Set([...$('visibility-ai-grid').querySelectorAll('.visibility-ai-card')].filter(el=>el.querySelector('details[open]')).map(el=>el.querySelector('h3').textContent));
     const provider=current.providers.find(p=>p.id===$('visibility-provider').value);
-    $('visibility-ai-status').textContent=provider.configured?`${selectedName()||'전체 지점'} · ${provider.model} · ${provider.expected}개 질문 중 ${provider.checked}개 정상 측정 · ${provider.mentioned}개 답변에서 ${selectedName()||'브랜드'} 언급`:`${provider.name}은 API 연결 후 측정을 시작합니다. 아직 노출 여부를 판단할 수 없습니다.`;
+    $('visibility-ai-status').textContent=provider.configured?`${selectedName()||'전체 지점'} · ${provider.model} · ${provider.expected}개 질문 중 ${provider.checked}개 정상 측정 · ${provider.mentioned}개 API 표본에서 ${selectedName()||'브랜드'} 언급`:`${provider.name}은 API 연결 후 측정을 시작합니다. 아직 노출 여부를 판단할 수 없습니다.`;
     $('visibility-ai-grid').innerHTML=provider.items.map(item=>{
-      const label=fresh(item)?(item.mentioned?`${selectedName()||'브랜드'} 언급`:item.branch_unconfirmed?'브랜드 언급 · 지점 미확인':`${selectedName()||'브랜드'} 미언급`):stateLabel(item);
+      const label=fresh(item)?(item.mentioned?'API 표본에 언급':item.branch_unconfirmed?'API 표본 · 지점 미확인':'API 표본에 미언급'):stateLabel(item);
       const tone=!fresh(item)?'is-warning':item.mentioned?'':'is-absent';
       const citations=(item.citations||[]).filter(c=>safeUrl(c.url));
       return `<article class="visibility-ai-card"><div class="visibility-ai-top"><h3>${esc(item.keyword)}</h3>${tag(label,tone)}</div><p>${esc(date(item.observed_at))}${item.answer?` · ${esc(item.model)}${item.owned_cited?' · 공식 주소 인용':''}`:''}${item.error?'<br>'+esc(item.error):''}</p>${item.answer?`<details${opened.has(item.keyword)?' open':''}><summary>실제 답변과 검색 근거 보기</summary>${!fresh(item)?'<p class="visibility-small">정상 집계에서 제외된 이전 관측 또는 근거 부족 답변입니다.</p>':''}<div class="visibility-answer${markdownRenderer?' is-markdown':''}">${answerHtml(item)}</div><ol class="visibility-citations">${citations.map(c=>`<li><a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>${(item.search_suggestions||[]).map(s=>`<iframe class="visibility-suggestions" title="Google 검색 제안" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="${esc(s.html)}"></iframe>`).join('')}<p class="visibility-small">보낸 질문: ${esc(item.prompt)}</p></details>`:'<p>수집된 답변이 없습니다.</p>'}${history(item)}</article>`;
