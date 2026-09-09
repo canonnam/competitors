@@ -3,13 +3,31 @@
   "aliases": ["더비다요양원", "더비다 요양원"],
   "owned_urls": ["https://blog.naver.com/vida25"],
   "place_ids": ["1671277974", "2000549036"],
+  "branches": [
+    {"id": "incheon", "name": "인천점", "city": "Incheon", "place_ids": ["1671277974"], "location_terms": ["인천", "미추홀", "숭의동"]},
+    {"id": "anyang", "name": "안양점", "city": "Anyang", "place_ids": ["2000549036"], "location_terms": ["안양", "만안구", "명학역"]}
+  ],
+  "naver_queries": [
+    {"keyword": "안양요양원", "branch": "anyang"},
+    {"keyword": "안양요양원추천", "branch": "anyang"},
+    {"keyword": "안양만안구요양원", "branch": "anyang"},
+    {"keyword": "만안구요양원", "branch": "anyang"},
+    {"keyword": "안양동요양원", "branch": "anyang"},
+    {"keyword": "명학역요양원", "branch": "anyang"},
+    {"keyword": "안양동안구요양원", "branch": "anyang"},
+    {"keyword": "동안구요양원", "branch": "anyang"},
+    {"keyword": "안양노인요양원", "branch": "anyang"},
+    {"keyword": "안양치매요양원", "branch": "anyang"},
+    {"keyword": "안양재활요양원", "branch": "anyang"},
+    {"keyword": "안양고급요양원", "branch": "anyang"}
+  ],
   "map_search_url": "https://map.naver.com/p/search/%EB%8D%94%EB%B9%84%EB%8B%A4%EC%9A%94%EC%96%91%EC%9B%90?c=15.00,0,0,0,dh",
   "ai_queries": [
-    {"keyword": "인천 요양원 추천", "city": "Incheon"},
-    {"keyword": "인천 미추홀구 요양원 추천", "city": "Incheon"},
-    {"keyword": "인천 치매 요양원 추천", "city": "Incheon"},
-    {"keyword": "안양 요양원 추천", "city": "Anyang"},
-    {"keyword": "안양 만안구 요양원 추천", "city": "Anyang"},
-    {"keyword": "안양 재활 요양원 추천", "city": "Anyang"}
+    {"keyword": "인천 요양원 추천", "city": "Incheon", "branch": "incheon"},
+    {"keyword": "인천 미추홀구 요양원 추천", "city": "Incheon", "branch": "incheon"},
+    {"keyword": "인천 치매 요양원 추천", "city": "Incheon", "branch": "incheon"},
+    {"keyword": "안양 요양원 추천", "city": "Anyang", "branch": "anyang"},
+    {"keyword": "안양 만안구 요양원 추천", "city": "Anyang", "branch": "anyang"},
+    {"keyword": "안양 재활 요양원 추천", "city": "Anyang", "branch": "anyang"}
   ]
 }

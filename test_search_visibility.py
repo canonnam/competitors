@@ -223,6 +223,51 @@ class VisibilityTests(unittest.TestCase):
         self.assertEqual(v.next_daily(boundary-timedelta(seconds=1)),boundary)
         self.assertEqual(v.next_daily(boundary),boundary+timedelta(days=1))
 
+    def test_regional_queries_remain_collectable_when_ad_inventory_is_stale(self):
+        queries, inventory=v.naver_queries(self.adpath,NOW,self.config)
+        regional=[q for q in queries if q['source']=='regional']
+        self.assertEqual(len(regional),12)
+        self.assertTrue(all(q['branch']=='anyang' and q['average_ad_rank'] is None and q['eligible'] is None for q in regional))
+        with patch.object(v.naver_ads,'keyword_report',return_value={**inventory,'stale':True}):
+            collectable,_=v.naver_queries(self.adpath,NOW,self.config)
+            self.assertEqual(collectable,regional)
+            v.sync_provider(self.path,'naver',regional[:1],self.config,NOW,fetcher=lambda _:page('더비다요양원 안양'))
+            rows=self.report()['providers'][0]['items']
+            target=next(row for row in rows if row['keyword']==regional[0]['keyword'])
+            self.assertEqual(target['status'],'ready')
+            self.assertTrue(target['branch_result']['mentioned'])
+            self.assertTrue(next(row for row in rows if row['query']['source']=='ad_account')['stale'])
+
+    def test_branch_metadata_reuses_existing_observation_without_paid_calls(self):
+        query={'keyword':'안양 요양원 추천','city':'Anyang'}
+        enriched={**query,'branch':'anyang'}
+        self.assertEqual(v.query_signature('openai',query,self.config),v.query_signature('openai',enriched,self.config))
+        v.sync_provider(self.path,'openai',[query],self.config,NOW,requester=lambda *args:response('더비다요양원 안양점을 확인하세요.'))
+        with patch.object(v,'collect_ai') as collector:
+            v.sync_provider(self.path,'openai',[enriched],self.config,NOW)
+            collector.assert_not_called()
+        row=next(row for row in self.report()['providers'][1]['items'] if row['keyword']==query['keyword'])
+        self.assertEqual(row['branch'],'anyang')
+        self.assertTrue(row['branch_result']['mentioned'])
+        self.assertTrue(row['branch_result']['history'][0]['mentioned'])
+
+    def test_other_branch_and_generic_brand_do_not_count_as_anyang(self):
+        def match(title,url='https://example.com/facility',area='web'):
+            return {'title':title,'snippet':title,'url':url,'area':area,'page':1,'position':1}
+        observed={'matches':[match('더비다요양원 인천'),match('더비다요양원 안내'),
+                              match('더비다요양원','https://map.naver.com/p/entry/place/2000549036',area='place')]}
+        result=v.branch_observation(observed,'anyang',self.config)
+        self.assertTrue(result['mentioned']);self.assertEqual(len(result['matches']),1)
+        self.assertEqual(result['matches'][0]['area'],'place')
+        self.assertEqual(len(result['unconfirmed_matches']),1)
+        self.assertTrue(result['branch_unconfirmed'])
+        for answer in ('안양 요양원 추천\n더비다요양원 인천점', '안양 지역 추천\n더비다요양원입니다.'):
+            result=v.branch_observation({'answer':answer,'mentioned':True},'anyang',self.config)
+            self.assertFalse(result['mentioned'])
+        self.assertTrue(result['branch_unconfirmed'])
+        result=v.branch_observation({'matches':[match('더비다요양원 인천',area='ad')]},'incheon',self.config)
+        self.assertFalse(result['mentioned']);self.assertIsNone(result['first_page'])
+
     def test_gemini_and_perplexity_grounded_answers(self):
         text='더비다요양원을 확인하세요.'
         data={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':text}]},'groundingMetadata':{

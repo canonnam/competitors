@@ -378,6 +378,64 @@ def keyword_queries(ad_path, now):
     return list(queries.values()), report
 
 
+def naver_queries(ad_path, now, config, show_stale=False):
+    queries, inventory = keyword_queries(ad_path, now)
+    if show_stale and not queries:
+        queries = [{'keyword': item['keyword'], 'average_ad_rank': item.get('average_rank'),
+                    'eligible': item['eligible'], 'groups': [item['group']]} for item in inventory.get('items', [])]
+    combined = {(q['keyword'], 'incheon'): {**q, 'branch': 'incheon', 'source': 'ad_account'} for q in queries}
+    for query in config.get('naver_queries', []):
+        keyword, branch = query['keyword'].strip(), query['branch']
+        if keyword:
+            combined.setdefault((keyword, branch), {**query, 'keyword': keyword, 'source': 'regional',
+                                                    'groups': [], 'average_ad_rank': None, 'eligible': None})
+    return list(combined.values()), inventory
+
+
+def evidence_branch(text, url, config):
+    """Use evidence identity, never the search keyword, to identify a branch."""
+    branches = config.get('branches', [])
+    if safe_url(url):
+        place = [b['id'] for b in branches if is_owned(url, {'place_ids': b.get('place_ids', [])})]
+        if len(place) == 1:
+            return place[0]
+    if not brand_mentioned(text, config):
+        return None
+    # Other facilities elsewhere in the answer must not supply our branch's city.
+    aliases = '|'.join(re.escape(normalized(alias)) for alias in config['aliases'])
+    found = set()
+    for line in text.splitlines():
+        value = normalized(line)
+        for match in re.finditer(aliases, value):
+            context = value[max(0, match.start()-40):match.end()+80]
+            found.update(b['id'] for b in branches if any(normalized(term) in context for term in b['location_terms']))
+    return next(iter(found)) if len(found) == 1 else None
+
+
+def branch_observation(observation, branch, config):
+    """Derive a branch view from saved evidence without repeating paid checks."""
+    if 'matches' in observation:
+        matches, unknown = [], []
+        for row in observation.get('matches', []):
+            identity = evidence_branch(row['title'], row['url'], config)
+            if not identity:
+                identity = evidence_branch(row['title']+'\n'+row.get('snippet', ''), row['url'], config)
+            if identity == branch:
+                matches.append(row)
+            elif not identity:
+                unknown.append(row)
+        organic = [row for row in matches if row['area'] in {'web', 'place'}]
+        return {'matches': matches, 'unconfirmed_matches': unknown, 'mentioned': bool(organic),
+                'first_page': min((row['page'] for row in organic), default=None),
+                'branch_unconfirmed': any(row['area'] in {'web', 'place'} for row in unknown)}
+    identity = evidence_branch(observation.get('answer', ''), '', config)
+    return {'mentioned': bool(observation.get('mentioned') and identity == branch),
+            'branch_unconfirmed': bool(observation.get('mentioned') and not identity),
+            'owned_cited': any(is_owned(c['url'], {'place_ids': b['place_ids']})
+                               for b in config.get('branches', []) if b['id'] == branch
+                               for c in observation.get('citations', []))}
+
+
 def query_signature(provider, query, config):
     fields = [VERSION, provider, query['keyword'], query.get('city') if provider != 'naver' else None, model_for(provider), config['aliases'], config.get('owned_urls'), config.get('place_ids'),
               ['public-pages-v2', config['max_pages'], bool(os.getenv('SERPAPI_KEY'))] if provider == 'naver' else [ai_prompt(query), OPENAI_MAX_SEARCHES if provider == 'openai' else None]]
@@ -474,18 +532,14 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
 
 def report(path, ad_path=None, now=None, summary=False):
     now, config = now or datetime.now(KST), settings()
-    ad_queries, ad_report = keyword_queries(ad_path or naver_ads.db_path(), now)
-    if not ad_queries:
-        # Show the last inventory during an upstream outage, explicitly marked stale.
-        ad_queries = [{'keyword': item['keyword'], 'average_ad_rank': item.get('average_rank'), 'eligible': item['eligible'], 'groups': [item['group']]} for item in ad_report.get('items', [])]
-        ad_queries = list({query['keyword']: query for query in ad_queries}.values())
+    search_queries, ad_report = naver_queries(ad_path or naver_ads.db_path(), now, config, show_stale=True)
     ai_queries = config['ai_queries'][:config['ai_limit']]
     with connect(path) as db:
         states = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT * FROM checks')}
         history = [json.loads(row['payload']) for row in db.execute('SELECT payload FROM observations WHERE day>=? ORDER BY day DESC', ((now-timedelta(days=30)).date().isoformat(),))]
     providers = []
     for provider, metadata in PROVIDERS.items():
-        queries = ad_queries if provider == 'naver' else ai_queries
+        queries = search_queries if provider == 'naver' else ai_queries
         connected = configured(provider)
         items = []
         for query in queries:
@@ -495,7 +549,7 @@ def report(path, ad_path=None, now=None, summary=False):
             state = states.get(check_id(provider, query, config), {})
             fresh = bool(connected and observation and timestamp(observation['observed_at']) >= due_at(now) and not state.get('error')
                          and (provider == 'naver' or observation.get('grounded')))
-            if provider == 'naver' and ad_report.get('stale'):
+            if provider == 'naver' and query['source'] == 'ad_account' and ad_report.get('stale'):
                 fresh = False
             status = 'ready' if fresh else 'unconfigured' if not connected else 'error' if state.get('error') else 'running' if state.get('running') else 'pending'
             if observation and provider != 'naver' and not observation.get('grounded') and not state.get('error'):
@@ -504,11 +558,17 @@ def report(path, ad_path=None, now=None, summary=False):
             if not fresh and cooldown and cooldown.get('serpapi', False) == bool(os.getenv('SERPAPI_KEY')) and timestamp(cooldown['until']) > now:
                 status = 'error'
                 state = {**state, 'error': cooldown['error']}
-            item = {**observation, 'keyword': query['keyword'], 'query': query, 'status': status, 'stale': not fresh,
+            branch = query.get('branch') or next((b['id'] for b in config.get('branches', []) if b['city'] == query.get('city')), None)
+            branch_result = branch_observation(observation, branch, config)
+            branch_result['history'] = [{'at': row['observed_at'], **{k: value for k, value in branch_observation(row, branch, config).items()
+                                                                   if k in {'mentioned', 'first_page'}}}
+                                        for row in records[:30] if provider == 'naver' or row.get('grounded')]
+            item = {**observation, 'keyword': query['keyword'], 'query': query, 'branch': branch, 'branch_result': branch_result, 'status': status, 'stale': not fresh,
                     'error': state.get('error', ''), 'last_attempt': state.get('last_attempt'),
                     'history': [{'at': row['observed_at'], 'mentioned': row['mentioned'], 'first_page': row.get('first_page')} for row in records[:30] if provider == 'naver' or row.get('grounded')]}
             if summary:
-                item = {key: item.get(key) for key in ('keyword', 'status', 'stale', 'mentioned', 'first_page', 'observed_at')}
+                item = {key: item.get(key) for key in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'first_page', 'observed_at')}
+                item['branch_result'] = {k: value for k, value in branch_result.items() if k in {'mentioned', 'first_page', 'branch_unconfirmed'}}
             items.append(item)
         checked = [item for item in items if item['status'] == 'ready']
         providers.append({'id': provider, **metadata, 'configured': connected, 'model': model_for(provider),
@@ -517,8 +577,11 @@ def report(path, ad_path=None, now=None, summary=False):
     return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_daily(now).isoformat(),
             'naver_collection': 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
             'max_pages': config['max_pages'], 'owned_urls': config.get('owned_urls', []), 'providers': providers,
-            'keyword_source': {'updated_at': ad_report.get('updated_at'), 'stale': ad_report.get('stale'), 'total': len(ad_queries),
-                               'method': '연결된 네이버 인천 광고 계정의 등록 파워링크 키워드'},
+            'branches': [{'id': b['id'], 'name': b['name']} for b in config.get('branches', [])],
+            'keyword_source': {'updated_at': ad_report.get('updated_at'), 'stale': ad_report.get('stale'), 'total': len(search_queries),
+                               'ad_count': sum(q['source'] == 'ad_account' for q in search_queries),
+                               'regional_count': sum(q['source'] == 'regional' for q in search_queries),
+                               'method': '인천 광고 계정 등록 키워드와 안양 지역 점검 키워드'},
             'ai_queries': ai_queries, 'generated_at': now.isoformat()}
 
 
@@ -529,7 +592,7 @@ def start_scheduler(path, ad_path=None):
         while not stop.is_set():
             try:
                 config = settings()
-                queries = keyword_queries(ad_path or naver_ads.db_path(), datetime.now(KST))[0] if provider == 'naver' else config['ai_queries'][:config['ai_limit']]
+                queries = naver_queries(ad_path or naver_ads.db_path(), datetime.now(KST), config)[0] if provider == 'naver' else config['ai_queries'][:config['ai_limit']]
                 sync_provider(path, provider, queries, config, stop=stop)
             except Exception:
                 LOG.warning('Visibility scheduler retry: %s', provider)
