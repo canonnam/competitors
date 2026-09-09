@@ -1,3 +1,9 @@
+FROM node:22-alpine AS knowledge
+WORKDIR /build
+COPY assets/competitors-data.js ./assets/competitors-data.js
+COPY scripts/build_competitor_knowledge.cjs ./scripts/build_competitor_knowledge.cjs
+RUN mkdir -p data && node scripts/build_competitor_knowledge.cjs
+
 FROM python:3.13-alpine
 
 WORKDIR /app
@@ -7,6 +13,8 @@ COPY app.py naver_ads.py competitor_news.py wiki_chat.py agency_news.py business
 COPY assets /app/assets
 COPY robots.txt favicon.ico /app/
 COPY data /app/data
+COPY service_knowledge.py /app/
+COPY --from=knowledge /build/data/competitor_knowledge.json /app/data/competitor_knowledge.json
 COPY nginx /app/nginx
 
 ENV PYTHONUNBUFFERED=1

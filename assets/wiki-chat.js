@@ -44,12 +44,20 @@ function save() {
 }
 function scroll() { messages.scrollTop = messages.scrollHeight; }
 function refreshSend() { send.disabled = !input.value.trim() || pending; }
+function safeSourceUrl(value) {
+  if (typeof value !== 'string' || value.length > 3000 || /[\s\\\u0000-\u001f]/u.test(value)) return null;
+  if (['/competitors.html', '/competitor-news.html', '/operating-costs.html'].includes(value)) return value;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
+  } catch { return null; }
+}
 function renderMessage(message) {
   const article = document.createElement('article');
   article.className = `wiki-message wiki-message-${message.role}`;
   const label = document.createElement('p');
   label.className = 'wiki-message-label';
-  label.textContent = message.role === 'user' ? '나' : '더비다 위키';
+  label.textContent = message.role === 'user' ? '나' : '더비다 지식';
   const body = document.createElement('div');
   body.className = 'wiki-text';
   if (message.role === 'user') body.textContent = message.content;
@@ -63,7 +71,7 @@ function renderMessage(message) {
     sources.className = 'wiki-sources';
     const heading = document.createElement('p');
     heading.className = 'wiki-sources-heading';
-    heading.textContent = '참고한 위키 문서';
+    heading.textContent = '참고 자료';
     sources.append(heading);
     for (const source of message.sources) {
       const detail = document.createElement('details');
@@ -72,10 +80,20 @@ function renderMessage(message) {
       title.textContent = `[${source.number}] ${source.title}`;
       const date = document.createElement('p');
       date.className = 'wiki-source-date';
-      date.textContent = `문서 갱신 ${source.updated}${source.status === 'needs-review' ? ' · 검토 필요' : ''}`;
+      date.textContent = `${source.sourceLabel || '위키 문서'} · ${source.updated || '기준일 미확인'}${source.status === 'needs-review' ? ' · 검토 필요' : ''}`;
       const excerpt = document.createElement('pre');
       excerpt.textContent = source.excerpt;
       detail.append(title, date, excerpt);
+      const href = safeSourceUrl(source.url);
+      if (href) {
+        const link = document.createElement('a');
+        link.className = 'wiki-source-link';
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '출처 열기';
+        detail.append(link);
+      }
       sources.append(detail);
     }
     article.append(sources);
@@ -104,7 +122,7 @@ function render() {
     welcome.className = 'wiki-welcome';
     welcome.innerHTML = `${icon('book-open')}<h3>어떤 업무가 궁금하세요?</h3><div class="wiki-suggestions"></div>`;
     welcome.querySelector('img').className = 'wiki-book';
-    for (const question of ['물리치료사 대신 작업치료사를 배치해도 되나요?', '요양원 CCTV 해상도 기준은 무엇인가요?', '인력 가산·감산 기준을 알려주세요']) {
+    for (const question of ['인력 가산·감산 기준을 알려주세요', '케어포와 이지케어의 기능과 50인 가격을 비교해주세요', '경쟁사 최신 뉴스 3건을 알려주세요', '더비다 안양점과 인천점의 최근 운영손익을 비교해주세요']) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = question;
@@ -119,7 +137,8 @@ async function checkStatus() {
     const response = await fetch('/api/chat/status', {signal: AbortSignal.timeout(15000)});
     if (!response.ok) throw new Error();
     const data = await response.json();
-    state.textContent = data.ready ? `위키 문서 ${data.documentCount}개 연결됨` : (data.documentCount ? `위키 ${data.documentCount}개 · 답변 연결 준비 중` : '지식 문서 등록 대기 중');
+    const count = Array.isArray(data.datasets) ? data.datasets.filter(item => item.available).length : 0;
+    state.textContent = data.ready ? `위키 ${data.documentCount}개${count ? ` · 서비스 자료 ${count}종` : ''}` : '답변 연결 준비 중';
   } catch { state.textContent = '연결을 확인해주세요'; }
 }
 function close() { panel.close(); launcher.setAttribute('aria-expanded', 'false'); launcher.focus(); }
@@ -149,7 +168,7 @@ panel.querySelector('form').onsubmit = async event => {
   const loading = document.createElement('div');
   loading.className = 'wiki-thinking';
   loading.setAttribute('role', 'status');
-  loading.textContent = '위키에서 근거를 찾아 답변을 작성하고 있습니다';
+  loading.textContent = '연결된 자료를 확인하고 있습니다';
   messages.append(loading); scroll();
   controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 85000);
