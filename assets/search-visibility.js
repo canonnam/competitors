@@ -30,7 +30,18 @@
   const $=id=>document.getElementById(id),date=value=>value?new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'미측정';
   const tag=(text,tone='')=>`<span class="visibility-tag ${tone}">${esc(text)}</span>`;
   const areaName={web:'웹문서',place:'플레이스',ad:'파워링크 광고',place_ad:'플레이스 광고'};
-  let current;
+  let current,markdownRenderer;
+  function answerHtml(item){
+    const content=citedAnswer(item);
+    return markdownRenderer?markdownRenderer(content):content;
+  }
+  if($('visibility-ai-grid'))Promise.all([import('/assets/vendor/marked.esm.js'),import('/assets/vendor/purify.es.mjs')]).then(([{marked},{default:purify}])=>{
+    markdownRenderer=content=>purify.sanitize(marked.parse(content),{
+      ALLOWED_TAGS:['p','br','strong','em','ul','ol','li','h1','h2','h3','h4','blockquote','a','code'],
+      ALLOWED_ATTR:['href','title','target','rel','class'],ALLOWED_URI_REGEXP:/^https?:\/\//i
+    });
+    if(current)drawAI();
+  }).catch(()=>{});
   function history(item){return `<div class="visibility-history" aria-label="최근 관측 기록">${(item.history||[]).slice().reverse().map(day=>`<span class="visibility-day ${day.mentioned?'is-found':''}" title="${esc(date(day.at))} · ${day.mentioned?'노출 확인':'미확인'}" aria-label="${esc(date(day.at))} ${day.mentioned?'노출 확인':'미확인'}"></span>`).join('')}</div><span class="visibility-small">${(item.history||[]).length}일 관측 · 초록색은 브랜드 노출 확인</span>`;}
   function overview(){
     $('visibility-overview').innerHTML=current.providers.map(p=>{
@@ -59,7 +70,7 @@
       const label=fresh(item)?(item.mentioned?'브랜드 언급':'브랜드 미언급'):stateLabel(item);
       const tone=!fresh(item)?'is-warning':item.mentioned?'':'is-absent';
       const citations=(item.citations||[]).filter(c=>safeUrl(c.url));
-      return `<article class="visibility-ai-card"><div class="visibility-ai-top"><h3>${esc(item.keyword)}</h3>${tag(label,tone)}</div><p>${esc(date(item.observed_at))}${item.answer?` · ${esc(item.model)}${item.owned_cited?' · 공식 주소 인용':''}`:''}${item.error?'<br>'+esc(item.error):''}</p>${item.answer?`<details><summary>실제 답변과 검색 근거 보기</summary>${!fresh(item)?'<p class="visibility-small">정상 집계에서 제외된 이전 관측 또는 근거 부족 답변입니다.</p>':''}<div class="visibility-answer">${citedAnswer(item)}</div><ol class="visibility-citations">${citations.map(c=>`<li><a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>${(item.search_suggestions||[]).map(s=>`<iframe class="visibility-suggestions" title="Google 검색 제안" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="${esc(s.html)}"></iframe>`).join('')}<p class="visibility-small">보낸 질문: ${esc(item.prompt)}</p></details>`:'<p>수집된 답변이 없습니다.</p>'}${history(item)}</article>`;
+      return `<article class="visibility-ai-card"><div class="visibility-ai-top"><h3>${esc(item.keyword)}</h3>${tag(label,tone)}</div><p>${esc(date(item.observed_at))}${item.answer?` · ${esc(item.model)}${item.owned_cited?' · 공식 주소 인용':''}`:''}${item.error?'<br>'+esc(item.error):''}</p>${item.answer?`<details><summary>실제 답변과 검색 근거 보기</summary>${!fresh(item)?'<p class="visibility-small">정상 집계에서 제외된 이전 관측 또는 근거 부족 답변입니다.</p>':''}<div class="visibility-answer${markdownRenderer?' is-markdown':''}">${answerHtml(item)}</div><ol class="visibility-citations">${citations.map(c=>`<li><a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>${(item.search_suggestions||[]).map(s=>`<iframe class="visibility-suggestions" title="Google 검색 제안" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="${esc(s.html)}"></iframe>`).join('')}<p class="visibility-small">보낸 질문: ${esc(item.prompt)}</p></details>`:'<p>수집된 답변이 없습니다.</p>'}${history(item)}</article>`;
     }).join('');
   }
   function render(data){current=data;overview();drawNaver();drawAI();const measured=current.providers.reduce((s,p)=>s+p.checked,0);$('visibility-run').textContent=`${current.enabled?current.schedule:'자동 수집 중지'} · 정상 측정 ${measured}건 · 다음 점검 ${date(current.next_run)}`;}

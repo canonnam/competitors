@@ -65,6 +65,12 @@ class VisibilityTests(unittest.TestCase):
             with self.assertRaises(ValueError):v.parse_naver(html,v.search_url(QUERY['keyword']))
         with self.assertRaises(ValueError):v.parse_naver(page()+'자동입력 방지',v.search_url(QUERY['keyword']))
 
+    def test_current_page_can_be_visible_text_without_an_aria_label(self):
+        html=page(number=2).replace('<a aria-current="page" aria-label="2페이지">2</a>',
+                                   '<a href="?page=2" aria-current="page">2 페이지</a>')
+        rows,_=v.parse_naver(html,v.search_url(QUERY['keyword'])+'&page=2',2)
+        self.assertEqual(rows[0]['page'],2)
+
     def test_paid_ads_do_not_count_as_organic_visibility(self):
         html=page()+'<a class="lnk_tit" href="https://adcr.naver.com/click">더비다요양원 광고</a>'
         result=v.collect_naver(QUERY,self.config,lambda _:html)
@@ -108,7 +114,7 @@ class VisibilityTests(unittest.TestCase):
         self.assertTrue(result['mentioned']);self.assertTrue(result['grounded'])
         raw=json.dumps(calls,ensure_ascii=False)
         self.assertNotIn('더비다',raw);self.assertNotIn('vida25',raw)
-        self.assertEqual(calls[0][1]['max_tool_calls'],1)
+        self.assertEqual(calls[0][1]['max_tool_calls'],3)
         self.assertEqual(calls[0][1]['input'],QUERY['keyword'])
         self.assertEqual(calls[0][1]['tool_choice'],{'type':'web_search'})
 
@@ -161,6 +167,13 @@ class VisibilityTests(unittest.TestCase):
         queries=[QUERY,{'keyword':'안양 요양원 추천'}]
         v.sync_provider(self.path,'naver',queries,self.config,NOW,fetcher=failure)
         v.sync_provider(self.path,'naver',queries,self.config,NOW+timedelta(minutes=31),fetcher=failure)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(self.report()['providers'][0]['items'][0]['status'],'error')
+
+    def test_naver_security_check_html_stops_remaining_queries(self):
+        calls=[]
+        def blocked(url):calls.append(url);return '<html>자동입력 방지</html>'
+        v.sync_provider(self.path,'naver',[QUERY,{'keyword':'다른 키워드'}],self.config,NOW,fetcher=blocked)
         self.assertEqual(len(calls),1)
         self.assertEqual(self.report()['providers'][0]['items'][0]['status'],'error')
 

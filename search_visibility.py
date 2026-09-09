@@ -31,6 +31,11 @@ PROVIDERS = {
 }
 PROVIDER_KEYS = {'openai': 'OPENAI_API_KEY', 'gemini': 'GEMINI_API_KEY', 'perplexity': 'PERPLEXITY_API_KEY'}
 LOCKS = {provider: threading.Lock() for provider in PROVIDERS}
+OPENAI_MAX_SEARCHES = 3
+
+
+class SearchAccessLimited(ValueError):
+    pass
 
 
 def settings():
@@ -174,11 +179,12 @@ def parse_naver(html, url, expected_page=1):
     root = Document(html).root
     text = root.text()
     if any(marker in text for marker in ('자동입력 방지', '비정상적인 접근', '접근이 제한', '보안 확인을 완료')):
-        raise ValueError('Search access unavailable')
-    current = next((a for a in root.all('a') if a.attrs.get('aria-current') == 'page' and re.fullmatch(r'\d+페이지', a.attrs.get('aria-label', ''))), None)
+        raise SearchAccessLimited('Search access unavailable')
+    current = next((a for a in root.all('a') if a.attrs.get('aria-current') == 'page'
+                    and re.fullmatch(r'\d+\s*페이지', a.attrs.get('aria-label') or a.text())), None)
     if expected_page > 1 and not current:
         raise ValueError('Search page number is not verifiable')
-    page = int(re.search(r'\d+', current.attrs['aria-label']).group()) if current else expected_page
+    page = int(re.search(r'\d+', current.attrs.get('aria-label') or current.text()).group()) if current else expected_page
     if page != expected_page:
         raise ValueError('Search returned a different page')
     results = []
@@ -321,9 +327,9 @@ def collect_ai(provider, query, config, requester=post_json):
     if provider == 'openai':
         data = requester('https://api.openai.com/v1/responses', {
             'model': model, 'input': query['keyword'], 'instructions': AI_INSTRUCTIONS, 'store': False, 'max_output_tokens': 1600,
-            'tools': [{'type': 'web_search', 'search_context_size': 'low', 'user_location': {
+            'tools': [{'type': 'web_search', 'search_context_size': 'medium', 'user_location': {
                 'type': 'approximate', 'country': 'KR', 'city': query.get('city', 'Incheon'), 'timezone': 'Asia/Seoul'}}],
-            'tool_choice': {'type': 'web_search'}, 'max_tool_calls': 1,
+            'tool_choice': {'type': 'web_search'}, 'max_tool_calls': OPENAI_MAX_SEARCHES,
         }, {'Authorization': 'Bearer ' + key})
         text, citations, suggestions = parse_openai(data)
     elif provider == 'gemini':
@@ -362,7 +368,7 @@ def keyword_queries(ad_path, now):
 
 def query_signature(provider, query, config):
     fields = [VERSION, provider, query['keyword'], query.get('city') if provider != 'naver' else None, model_for(provider), config['aliases'], config.get('owned_urls'), config.get('place_ids'),
-              [config['max_pages'], bool(os.getenv('SERPAPI_KEY'))] if provider == 'naver' else ai_prompt(query)]
+              ['public-pages-v2', config['max_pages'], bool(os.getenv('SERPAPI_KEY'))] if provider == 'naver' else [ai_prompt(query), OPENAI_MAX_SEARCHES if provider == 'openai' else None]]
     return hashlib.sha256(json.dumps(fields, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -429,7 +435,7 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
                 with connect(path) as db:
                     db.execute('INSERT OR REPLACE INTO checks VALUES(?,?)', (identity, json.dumps(state, ensure_ascii=False)))
                 LOG.warning('Visibility check failed: %s %s %s', provider, query['keyword'], state['error'])
-                if provider == 'naver' and isinstance(exc, urllib.error.HTTPError) and exc.code in {403, 429}:
+                if provider == 'naver' and (isinstance(exc, SearchAccessLimited) or isinstance(exc, urllib.error.HTTPError) and exc.code in {403, 429}):
                     with connect(path) as db:
                         db.execute('INSERT OR REPLACE INTO checks VALUES(?,?)', (provider+':cooldown', json.dumps({
                             'until': next_daily(now).isoformat(), 'serpapi': bool(os.getenv('SERPAPI_KEY')),
