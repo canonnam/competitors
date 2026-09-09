@@ -11,6 +11,7 @@ vm.runInNewContext(source, context, {timeout: 2000});
 const items = Object.entries(context.window.competitorData).map(([id, row]) => ({
   id, name: row.n, type: row.type, source: row.src, url: row.url,
   facts: row.facts, note: row.note, price50: row.price50,
+  ...(row.sources ? {sources: row.sources} : {}),
 }));
 if (!items.length || items.some(row => !row.name || !row.price50?.checked)) throw new Error('Invalid competitor data');
 const output = JSON.stringify({schemaVersion: 1, sourceHash: crypto.createHash('sha256').update(source).digest('hex'), items}, null, 2) + '\n';

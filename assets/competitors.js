@@ -7,11 +7,12 @@
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
-    supply: {name:'복지용구', keys:['eroum']}
+    safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank']}
   };
   const roleOf = Object.fromEntries(Object.entries(roles).flatMap(([role, group]) => group.keys.map(key => [key, role])));
   const $ = id => document.getElementById(id);
   const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const evidenceSources = item => (item.sources || [[item.src, item.url]]).map(([label,url]) => source(url,label)).join('<br>');
   const normalize = value => value.normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g,' ').trim();
   const selected = new Set();
   const cards = [...document.querySelectorAll('#cards > .card')].map(element => {
@@ -116,7 +117,7 @@
     const item = data[key], price = item.price50;
     // The dedicated price panel contains the later, explicitly conditioned price research.
     const facts = item.facts.filter(([label]) => label !== '가격');
-    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">근거: ${source(item.url,item.src)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,'공식 사이트 열기')}</p>`;
+    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">근거: ${evidenceSources(item)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,'공식 사이트 열기')}</p>`;
     showDialog($('modal'));
     $('modal').scrollTop = 0;
   };
@@ -127,6 +128,10 @@
       ['주된 역할', key => escape(roles[roleOf[key]].name) + `<p>${escape(data[key].type)}</p>`],
       ['운영사', key => escape(fact(key,['운영사']))],
       ['공개 기능', key => escape(fact(key,['핵심 기능','핵심 공개 내용']))],
+      ['감지 방식', key => escape(fact(key,['감지 방식']))],
+      ['요양시설 도입', key => escape(fact(key,['요양시설 도입']))],
+      ['도입 상태', key => escape(fact(key,['도입 상태']))],
+      ['알림·대응', key => escape(fact(key,['알림·대응']))],
       ['50인 가정 가격', key => `<strong>${escape(data[key].price50.m)}</strong>`],
       ['초기 비용', key => escape(data[key].price50.o)],
       ['가격 적용 조건', key => escape(data[key].price50.u)],
@@ -135,7 +140,7 @@
       ['직영 기관 운영', key => escape(fact(key,['직영 기관 운영']))],
       ['운영사 매출', key => $('revenue-'+key).innerHTML],
       ['분석 메모', key => escape(data[key].note)],
-      ['확인 출처', key => source(data[key].url,data[key].src)]
+      ['확인 출처', key => evidenceSources(data[key])]
     ];
     $('selection-table').innerHTML = `<caption class="small">선택한 ${keys.length}개 서비스 · 공개 자료 기준 비교</caption><thead><tr><th scope="col">비교 항목</th>${keys.map(key => `<th scope="col">${escape(data[key].n)}<p class="comparison-role">${escape(roles[roleOf[key]].name)}</p></th>`).join('')}</tr></thead><tbody>${rows.map(([label,render]) => `<tr><th scope="row">${label}</th>${keys.map(key => `<td>${render(key)}</td>`).join('')}</tr>`).join('')}</tbody>`;
     $('selection-table').style.minWidth = keys.length === 3 ? '860px' : '660px';

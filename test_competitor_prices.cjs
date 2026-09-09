@@ -35,10 +35,10 @@ test('50 recipients are not silently treated as employees or a smaller plan', ()
 });
 
 test('every record exposes dated evidence and one consistent price to search', () => {
-  assert.equal(Object.keys(data).length, 18);
+  assert.equal(Object.keys(data).length, 20);
   for (const item of Object.values(data)) {
     const price = item.price50;
-    assert.equal(price.checked, '2026-09-08', item.n);
+    assert.match(price.checked, /^2026-09-0[89]$/, item.n);
     for (const field of ['m','o','u','b','v','s']) assert.ok(price[field], `${item.n}: ${field}`);
     assert.equal(new URL(price.s).protocol, 'https:');
     const facts = item.facts.filter(([label]) => label === '가격');

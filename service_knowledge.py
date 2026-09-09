@@ -24,7 +24,10 @@ ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어�
            "ecm": ["ecm", "누리뜰"], "angel": ["엔젤시스템", "엔젤"], "allcare": ["올케어"],
            "salary": ["케어샐러리"], "planner": ["케어플래너"], "well": ["웰파트너스"],
            "happy": ["행복커넥트"], "skt": ["누구오팔", "skt"], "maeum": ["마음손"],
-           "aicareplus": ["아이케어플러스"], "caredoc": ["케어닥", "shos"]}
+           "aicareplus": ["아이케어플러스"], "caredoc": ["케어닥", "shos"],
+           "cleverus": ["클레버러스", "비클레버", "be:clever"],
+           "inzinious": ["인지니어스", "incare24"],
+           "spacebank": ["스페이스뱅크", "aiot wright", "휴먼케어"]}
 
 
 def compact(text):
@@ -291,7 +294,7 @@ def news_evidence(question, selected, today):
     with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=3)) as db:
         db.execute("PRAGMA query_only=ON")
         db.execute("BEGIN")
-        records = [json.loads(r[0]) for r in db.execute("SELECT payload FROM articles ORDER BY published_at DESC,id")]
+        records = competitor_news.active_articles(db)
         state = {r[0]: json.loads(r[1]) for r in db.execute("SELECT key,value FROM state")}
     ids = {row["id"] for row in selected}
     if ids:

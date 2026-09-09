@@ -77,10 +77,30 @@ def init_db(path):
             CREATE INDEX IF NOT EXISTS news_date ON articles(published_at DESC);
             CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         """)
-        if not db.execute("SELECT 1 FROM state WHERE key='seeded'").fetchone():
-            for item in json.loads((ROOT / "data/competitor_news_seed.json").read_text(encoding="utf-8")):
-                put_article(db, item)
-            db.execute("INSERT INTO state VALUES('seeded','true')")
+        seed = (ROOT / "data/competitor_news_seed.json").read_bytes()
+        revision = hashlib.sha256(seed).hexdigest()
+        state = read_state(db)
+        if state.get("seed_revision") != revision:
+            for item in json.loads(seed):
+                # A reviewed update can enrich a previously collected headline.
+                key = title_key(item["title"], item["published_at"])
+                existing = db.execute("SELECT id FROM articles WHERE url=? OR title_key=?",
+                                      (item["url"], key)).fetchone()
+                if existing:
+                    item = {**item, "id": existing[0]}
+                    db.execute("UPDATE articles SET title_key=?,published_at=?,reviewed=?,payload=? WHERE id=?",
+                               (key, item["published_at"], int(item["reviewed"]),
+                                json.dumps(item, ensure_ascii=False), existing[0]))
+                else:
+                    put_article(db, item)
+            write_state(db, "seeded", True)
+            write_state(db, "seed_revision", revision)
+        target_revision = hashlib.sha256(json.dumps(TARGETS, sort_keys=True).encode()).hexdigest()
+        if state.get("target_revision") != target_revision:
+            # New suppliers must be collected even if today's old target set ran.
+            write_state(db, "target_revision", target_revision)
+            write_state(db, "last_success", None)
+            write_state(db, "errors", [])
 
 
 class PlainText(HTMLParser):
@@ -218,15 +238,25 @@ def sync(path, now=None, fetcher=fetch_feed, targets=None, stop=None):
         SYNC_LOCK.release()
 
 
+def active_articles(db):
+    ids = [target["id"] for target in TARGETS]
+    if not ids:
+        return []
+    # Retain retired suppliers' history on disk, excluding it from every live view.
+    placeholders = ",".join("?" for _ in ids)
+    return [json.loads(row[0]) for row in db.execute(
+        f"SELECT payload FROM articles WHERE json_extract(payload, '$.competitor_id') IN ({placeholders}) "
+        "ORDER BY published_at DESC, reviewed DESC, id", ids)]
+
+
 def report(path, now=None, summary=False):
     now = now or datetime.now(KST)
     with connect(path) as db:
         state = read_state(db)
-        total = db.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
-        latest = db.execute("SELECT MAX(published_at) FROM articles").fetchone()[0]
-        article_ids = [row[0] for row in db.execute("SELECT id FROM articles ORDER BY id")]
-        rows = [] if summary else [json.loads(row[0]) for row in db.execute(
-            "SELECT payload FROM articles ORDER BY published_at DESC, reviewed DESC, id")]
+        rows = active_articles(db)
+        total = len(rows)
+        latest = rows[0]["published_at"] if rows else None
+        article_ids = sorted(row["id"] for row in rows)
     last = timestamp(state.get("last_success"))
     active = enabled()
     result = {"total": total, "latest_published_at": latest, "article_ids": article_ids,

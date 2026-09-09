@@ -41,7 +41,7 @@ class ServiceKnowledgeTest(unittest.TestCase):
 
     def test_competitor_data_matches_dashboard_and_revenue(self):
         rows = service.competitor_catalog()
-        self.assertEqual(len(rows), 18)
+        self.assertEqual(len(rows), 20)
         found = service.retrieve("케어포와 이지케어의 50인 가격과 매출을 비교", today=TODAY)
         self.assertEqual(len(found), 2)
         carefor = next(r for r in found if r["title"].startswith("케어포"))
@@ -57,6 +57,15 @@ class ServiceKnowledgeTest(unittest.TestCase):
         for row in service.competitor_catalog():
             self.assertIn(row["name"], result[0]["content"])
         self.assertIn("단순 순위 비교할 수 없습니다", result[0]["content"])
+
+    def test_safety_supplier_names_resolve_to_new_catalog_entries(self):
+        catalog = service.competitor_catalog()
+        self.assertNotIn('eroum', {row['id'] for row in catalog})
+        for name, expected in [('클레버러스', 'cleverus'), ('비클레버', 'cleverus'),
+                               ('인지니어스', 'inzinious'), ('InCare24', 'inzinious'),
+                               ('스페이스뱅크', 'spacebank')]:
+            rows = service.matched_companies(name + ' 도입 사례', catalog)
+            self.assertEqual([row['id'] for row in rows], [expected])
 
     def test_operating_totals_match_known_month_and_exclude_private_fields(self):
         report = service.load_json("operating_report.json")

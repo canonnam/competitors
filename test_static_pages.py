@@ -43,7 +43,7 @@ class StaticPageDeploymentTests(unittest.TestCase):
 
     def test_new_revenue_entries_keep_scope_year_and_sources(self):
         report = (ROOT / "competitors.html").read_text(encoding="utf-8")
-        for key in ('easy', 'carefor', 'angel', 'jipangi', 'yoyangsys', 'eroum', 'happy', 'skt'):
+        for key in ('easy', 'carefor', 'angel', 'jipangi', 'yoyangsys', 'happy', 'skt'):
             block = re.search(r'id="revenue-' + key + r'">(.*?)</div>', report).group(1)
             self.assertRegex(block, r'운영사 매출 · 20\d{2}년')
             self.assertIn('재확인: 2026-09-08', block)

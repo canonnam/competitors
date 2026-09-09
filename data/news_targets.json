@@ -11,10 +11,12 @@
   {"id":"aicareplus","name":"AI케어플러스","query":"(\"AI케어플러스\" OR \"코리아케어플랫폼\")","aliases":["AI케어플러스","코리아케어플랫폼"]},
   {"id":"maeum","name":"마음손ERP","query":"\"마음손\" (ERP OR 요양 OR 회계)","aliases":["마음손"],"context":["ERP","요양","회계"]},
   {"id":"yoyangsys","name":"요양시스","query":"(\"요양시스\" OR \"해리지앤디\")","aliases":["요양시스","해리지앤디"]},
-  {"id":"eroum","name":"이로움케어","query":"(\"이로움케어\" OR \"티에이치케이컴퍼니\")","aliases":["이로움케어","티에이치케이컴퍼니"]},
   {"id":"hyodol","name":"효돌","query":"\"효돌\" (돌봄 OR 로봇 OR 어르신)","aliases":["효돌"],"context":["돌봄","로봇","어르신","시니어","노인"]},
   {"id":"happy","name":"행복커넥트","query":"\"행복커넥트\"","aliases":["행복커넥트"]},
   {"id":"skt","name":"SKT 인공지능 돌봄","query":"(\"SK텔레콤\" OR \"SKT\" OR \"케어비아\") (돌봄 OR 케어비아)","aliases":["SK텔레콤","SKT","케어비아"],"context":["돌봄","케어비아","누구오팔"]},
   {"id":"caring","name":"케어링","query":"\"케어링\" (요양 OR 돌봄 OR 시니어)","aliases":["케어링"],"context":["요양","돌봄","시니어","어르신","주간보호","데이케어"]},
-  {"id":"caredoc","name":"케어닥","query":"\"케어닥\"","aliases":["케어닥"]}
+  {"id":"caredoc","name":"케어닥","query":"\"케어닥\"","aliases":["케어닥"]},
+  {"id":"cleverus","name":"클레버러스","query":"(\"클레버러스\" OR \"비클레버\")","aliases":["클레버러스","비클레버","Be:Clever"]},
+  {"id":"inzinious","name":"인지니어스","query":"(\"인지니어스\" OR \"InCare24\") (레이더 OR 낙상 OR 환자 OR 요양)","aliases":["인지니어스","InCare24","Inzinious"],"context":["레이더","낙상","환자","요양","생체신호","InCare24"],"exclude":["보드게임"]},
+  {"id":"spacebank","name":"스페이스뱅크","query":"\"스페이스뱅크\" (휴먼케어 OR 낙상 OR 요양 OR 돌봄)","aliases":["스페이스뱅크"],"context":["휴먼케어","HumanCare","낙상","요양","돌봄"]}
 ]

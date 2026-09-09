@@ -28,6 +28,34 @@
     "via": ""
   },
   {
+    "id": "6e62ae7b2d4d951a18807d6dab75d2913477907c80130f74b403499ff56fcd17",
+    "title": "클레버러스, 서초빌리지 기존 CCTV 58대에 비클레버 적용",
+    "summary": "클레버러스 공식 보도자료에 따르면 서초빌리지에 기존 CCTV를 활용한 낙상·침상 이탈 감지 시스템이 적용됐습니다. 스테이션 PC, 휴대전화, 스마트워치로 알림을 제공하며 VLM으로 위험 장면을 재검수합니다.",
+    "competitor": "클레버러스",
+    "competitor_id": "cleverus",
+    "source": "클레버러스 공식 보도자료(디지털타임스 재게시)",
+    "url": "https://www.cleverus-ai.com/news/37/",
+    "published_at": "2026-09-04T00:00:00+09:00",
+    "collected_at": "2026-09-09",
+    "reviewed": true,
+    "kind": "언론 보도",
+    "via": ""
+  },
+  {
+    "id": "63a847016238899eff286d3d3c0c35ebd4767eb061211c22393f5ad2fa68ef98",
+    "title": "클레버러스, AI 스마트 사회복지시설 실증 컨소시엄 참여",
+    "summary": "9월 3일 공개 자료는 8월 26일 열린 컨소시엄 착수회의에 클레버러스가 참여했다고 전했습니다. 국민건강보험공단서울요양원과 수원시립노인전문요양원이 실증기관으로 참여하며, 상용화 지원을 위한 실증 계획을 논의한 단계입니다.",
+    "competitor": "클레버러스",
+    "competitor_id": "cleverus",
+    "source": "클레버러스 공식 보도자료(IT비즈뉴스 재게시)",
+    "url": "https://www.cleverus-ai.com/news/38/",
+    "published_at": "2026-09-03T00:00:00+09:00",
+    "collected_at": "2026-09-09",
+    "reviewed": true,
+    "kind": "언론 보도",
+    "via": ""
+  },
+  {
     "id": "2e4d21655b73c864df05b363148f54dfc284985f7d89b0d0652a954d1517da55",
     "title": "케어포, 병원동행 시범사업 참여기관용 모바일 서비스 공개",
     "summary": "케어포가 통합재가기관의 병원동행 시범서비스 기록을 위한 모바일 웹을 공개했습니다. 예약, 이동·돌봄 기록, 전자서명과 서식 출력을 지원하며 기존 계정으로 이용합니다. 현재는 기존 케어포 프로그램과 분리된 시범사업용 서비스입니다.",
@@ -37,6 +65,20 @@
     "url": "https://www.carefor.co.kr/cs/view_notice.php?calmgno=46856&rtnUrl=%2Fcs%2Flist_notice.php",
     "published_at": "2026-08-31T00:00:00+09:00",
     "collected_at": "2026-09-08",
+    "reviewed": true,
+    "kind": "공식 발표",
+    "via": ""
+  },
+  {
+    "id": "cb476a63fb83f4504df47278deb053e7773a610ca32aa2ff76ce1b6952b8f620",
+    "title": "클레버러스, 파주 솔밭요양원 CCTV 49대 연동 사례 공개",
+    "summary": "공식 도입사례에 따르면 포레스트케어홈즈가 운영하는 솔밭요양원에 전용 AI 서버와 기존 CCTV 49대를 연결했습니다. 8월 27일 현장 최적화를 마친 뒤 입소자 안전사고 모니터링을 시작했다고 밝혔습니다.",
+    "competitor": "클레버러스",
+    "competitor_id": "cleverus",
+    "source": "클레버러스 공식 도입사례",
+    "url": "https://www.cleverus-ai.com/news/15/",
+    "published_at": "2026-08-27T00:00:00+09:00",
+    "collected_at": "2026-09-09",
     "reviewed": true,
     "kind": "공식 발표",
     "via": ""
@@ -84,6 +126,34 @@
     "via": ""
   },
   {
+    "id": "c925c7b5ae02ee2589a0ddaf1ecc792cd92fa258a3afedea782ff7b4b3f846f0",
+    "title": "인지니어스, 인피니언·TESA와 레이더 환자 모니터링 개발 협약",
+    "summary": "인지니어스가 6월 18일 인피니언·태국 TESA와 레이더 기반 환자 모니터링 및 낙상감지 솔루션 개발 협약을 맺었습니다. 병원·요양시설 등의 실증과 사업화를 추진하는 협력 계획이며, 신규 납품 완료 실적을 발표한 것은 아닙니다.",
+    "competitor": "인지니어스",
+    "competitor_id": "inzinious",
+    "source": "헤럴드경제",
+    "url": "https://biz.heraldcorp.com/article/10783883",
+    "published_at": "2026-06-22T00:00:00+09:00",
+    "collected_at": "2026-09-09",
+    "reviewed": true,
+    "kind": "언론 보도",
+    "via": ""
+  },
+  {
+    "id": "34a83313b4f6aa92eebc092d0c173c5684873cd96cd17cb020c2d295e8323832",
+    "title": "스페이스뱅크, 부천·의왕 시립요양원 휴먼케어 구축 추진",
+    "summary": "스페이스뱅크 공식 6월 소식은 부천시립요양원과 의왕시립요양원에 AIoT Wright(HumanCare)를 구축 중이라고 소개했습니다. 영상 촬영 없이 레이더로 낙상과 생체신호를 감지하고 돌봄 담당자에게 알리는 구성이며, 구축 진행과 시범운영 단계로 구분했습니다.",
+    "competitor": "스페이스뱅크",
+    "competitor_id": "spacebank",
+    "source": "스페이스뱅크 공식 뉴스레터",
+    "url": "https://www.spacebank.co.kr/newsletter/?bmode=view&idx=171934056",
+    "published_at": "2026-06-21T00:00:00+09:00",
+    "collected_at": "2026-09-09",
+    "reviewed": true,
+    "kind": "공식 발표",
+    "via": ""
+  },
+  {
     "id": "b810685033e32f4c57033271a122b1debf290f6abbd7cc258a495609752c2c76",
     "title": "SKT, 케어비아의 발달장애 돌봄 적용 사례 소개",
     "summary": "SK텔레콤 뉴스룸은 비전 AI 기반 돌봄 서비스 ‘케어비아’의 현장 적용과 기록·행동 분석 지원 방식을 소개했습니다. 시니어 케어로의 확장은 계획 단계로 언급됐습니다.",
@@ -93,6 +163,20 @@
     "url": "https://news.sktelecom.com/226306",
     "published_at": "2026-06-10T00:00:00+09:00",
     "collected_at": "2026-09-08",
+    "reviewed": true,
+    "kind": "공식 발표",
+    "via": ""
+  },
+  {
+    "id": "dca75ed8628d43dfb7624a2a3e2948c67ccb1a0ceb8632e173ed85c1b70deacd",
+    "title": "인지니어스, 구립용산노인전문요양원 시스템 도입 발표",
+    "summary": "인지니어스는 서울복지재단 디지털전환사업 공급사로 선정돼 구립용산노인전문요양원에 비접촉 레이더 모니터링 시스템을 도입·설치한다고 공지했습니다. 낙상 위험과 호흡·심박 이상을 관찰하는 구성으로, 공지에서 실제 운영 개시일은 확인되지 않습니다.",
+    "competitor": "인지니어스",
+    "competitor_id": "inzinious",
+    "source": "인지니어스 공식 공지",
+    "url": "https://inzinious.com/",
+    "published_at": "2026-05-28T00:00:00+09:00",
+    "collected_at": "2026-09-09",
     "reviewed": true,
     "kind": "공식 발표",
     "via": ""
