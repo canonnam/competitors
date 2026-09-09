@@ -32,6 +32,7 @@ PROVIDERS = {
 PROVIDER_KEYS = {'openai': 'OPENAI_API_KEY', 'gemini': 'GEMINI_API_KEY', 'perplexity': 'PERPLEXITY_API_KEY'}
 LOCKS = {provider: threading.Lock() for provider in PROVIDERS}
 OPENAI_MAX_SEARCHES = 3
+AD_PARSER_VERSION = 2
 
 
 class SearchAccessLimited(ValueError):
@@ -183,6 +184,25 @@ def public_result_links(doc):
     return links
 
 
+def public_ad_results(root, url, page):
+    def is_title(a):
+        return (a.has_class('lnk_tit') or a.has_class('lnk_head')) and a.text() and safe_url(a.attrs.get('href')) and urllib.parse.urlsplit(a.attrs['href']).hostname in {'ader.naver.com', 'adcr.naver.com'}
+    # Scope descriptions to one ad. A neighbouring facility must never provide
+    # the location for our branch or create a false brand match.
+    descriptions = {}
+    for card in root.all('li'):
+        titles = [a for a in card.all('a') if is_title(a)]
+        if len(titles) == 1:
+            descriptions[id(titles[0])] = card.text()[:1200]
+    results = []
+    for a in root.all('a'):
+        if is_title(a):
+            # Save the search page, never the chargeable advertising redirect.
+            results.append({'area': 'ad', 'title': a.text(), 'snippet': descriptions.get(id(a), a.text()),
+                            'url': url, 'position': len(results)+1, 'page': page})
+    return results
+
+
 def parse_naver(html, url, expected_page=1):
     root = Document(html).root
     text = root.text()
@@ -218,10 +238,7 @@ def parse_naver(html, url, expected_page=1):
             # A search-page evidence link avoids chargeable ad redirects.
             results.append({'area': area, 'title': a.text(), 'url': url if area == 'place_ad' else href,
                             'snippet': a.text(), 'position': position, 'page': page})
-    for a in root.all('a'):
-        if a.has_class('lnk_tit') and a.text():
-            results.append({'area': 'ad', 'title': a.text(), 'snippet': a.text(), 'url': url,
-                            'position': 1 + sum(row['area'] == 'ad' for row in results), 'page': page})
+    results.extend(public_ad_results(root, url, page))
     if not any(row['area'] == 'web' for row in results) and not any(marker in text for marker in ('검색결과가 없습니다', '검색 결과가 없습니다')):
         raise ValueError('Web results not present in returned page')
     following = next((a.attrs.get('href') for a in root.all('a') if a.has_class('btn_next') and a.attrs.get('aria-disabled') != 'true'), None)
@@ -265,6 +282,7 @@ def collect_naver(query, config, fetcher=fetch_html, stop=None):
             raise InterruptedError()
     organic = [row for row in matches if row['area'] in {'web', 'place'}]
     return {'matches': matches, 'evidence': evidence, 'pages_checked': len(evidence), 'search_correction': correction,
+            'ad_parser_version': AD_PARSER_VERSION,
             'mentioned': bool(organic), 'first_page': min((row['page'] for row in organic), default=None),
             'method': 'PC 비로그인 공개 검색 · 웹문서 및 첫 화면 플레이스 · 광고 별도 표시'}
 
@@ -487,11 +505,13 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
                 row = db.execute('SELECT payload FROM checks WHERE id=?', (identity,)).fetchone()
             previous = json.loads(row[0]) if row else {}
             last = timestamp(previous.get('last_success'))
-            if last and last >= due_at(now):
+            if last and last >= due_at(now) and (provider != 'naver' or previous.get('last_success_version') == AD_PARSER_VERSION):
                 continue
             # At most two attempts per scheduled day; persist attempts before paid calls.
             cycle = due_at(now).date().isoformat()
             attempts = previous.get('attempts', 0) if previous.get('cycle') == cycle else 0
+            if provider == 'naver' and previous.get('attempt_version') != AD_PARSER_VERSION:
+                attempts = 0
             attempt_at = timestamp(previous.get('last_attempt'))
             # Resume an interrupted free public-page read after a deployment. Paid
             # provider attempts remain counted because the request may have completed.
@@ -502,6 +522,8 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
                 continue
             state = {**previous, 'provider': provider, 'keyword': query['keyword'], 'cycle': cycle,
                      'attempts': attempts+1, 'last_attempt': now.isoformat(), 'error': '', 'running': True}
+            if provider == 'naver':
+                state['attempt_version'] = AD_PARSER_VERSION
             with connect(path) as db:
                 db.execute('INSERT OR REPLACE INTO checks VALUES(?,?)', (identity, json.dumps(state, ensure_ascii=False)))
             try:
@@ -510,6 +532,8 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
                 payload.update(provider=provider, keyword=query['keyword'], observed_at=observed.isoformat(),
                                signature=query_signature(provider, query, config), query=query)
                 completed = {**state, 'last_success': observed.isoformat(), 'error': '', 'running': False}
+                if provider == 'naver':
+                    completed['last_success_version'] = AD_PARSER_VERSION
                 with connect(path) as db:
                     db.execute('INSERT OR REPLACE INTO observations VALUES(?,?,?,?,?)',
                                (provider, query['keyword'], cycle, payload['signature'], json.dumps(payload, ensure_ascii=False)))
@@ -572,6 +596,8 @@ def report(path, ad_path=None, now=None, summary=False):
             item = {**observation, 'keyword': query['keyword'], 'query': query, 'branch': branch, 'branch_result': branch_result, 'status': status, 'stale': not fresh,
                     'error': state.get('error', ''), 'last_attempt': state.get('last_attempt'),
                     'history': [{'at': row['observed_at'], 'mentioned': row['mentioned'], 'first_page': row.get('first_page')} for row in records[:30] if provider == 'naver' or row.get('grounded')]}
+            if provider == 'naver':
+                item['ad_coverage_complete'] = observation.get('ad_parser_version') == AD_PARSER_VERSION
             if summary:
                 item = {key: item.get(key) for key in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'first_page', 'observed_at')}
                 item['branch_result'] = {k: value for k, value in branch_result.items() if k in {'mentioned', 'first_page', 'branch_unconfirmed'}}

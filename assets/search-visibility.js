@@ -6,6 +6,7 @@
   function stateLabel(item){if(item.status==='unconfigured')return '연결 필요';if(item.status==='error')return '측정 불가';if(item.status==='running')return '측정 중';if(item.status==='unverified')return '검색 근거 부족';return '갱신 대기';}
   function matchLabel(item,areas){
     if(!fresh(item))return stateLabel(item);
+    if(areas.every(area=>['ad','place_ad'].includes(area))&&item.ad_coverage_complete===false)return '광고 재측정 대기';
     const found=(item.matches||[]).filter(row=>areas.includes(row.area)).sort((a,b)=>a.page-b.page||a.position-b.position)[0];
     return found?`${found.page}페이지 · ${found.position}번째`:(item.unconfirmed_matches||[]).some(row=>areas.includes(row.area))?'브랜드 노출 · 지점 미확인':'측정 범위 내 미확인';
   }
@@ -23,13 +24,13 @@
       const lines=data.branches.map(branch=>{
         const scoped=scopeData(data,branch.id),naver=scoped.providers.find(p=>p.id==='naver'),ai=scoped.providers.filter(p=>p.kind==='ai'&&p.configured);
         const checked=ai.reduce((s,p)=>s+p.checked,0),mentioned=ai.reduce((s,p)=>s+p.mentioned,0);
-        return `${branch.name} · 네이버 첫 페이지 ${naver.checked?`${naver.first_page}/${naver.checked}개`:'측정 대기'} · AI 언급 ${checked?`${mentioned}/${checked}건`:'측정 대기'}`;
+        return `${branch.name} · 네이버 첫 페이지(광고 제외) ${naver.checked?`${naver.first_page}/${naver.checked}개`:'측정 대기'} · AI 언급 ${checked?`${mentioned}/${checked}건`:'측정 대기'}`;
       });
       return {text:lines.join('\n'),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
     }
     const naver=data.providers.find(p=>p.id==='naver'),ai=data.providers.filter(p=>p.kind==='ai'&&p.configured);
     const checked=ai.reduce((sum,p)=>sum+p.checked,0),mentioned=ai.reduce((sum,p)=>sum+p.mentioned,0);
-    const parts=[naver?.checked?`네이버 첫 페이지 ${naver.first_page}/${naver.checked}개`:naver?.items.some(item=>item.status==='error')?'네이버 측정 불가':'네이버 측정 대기',checked?`AI 언급 ${mentioned}/${checked}건`:'AI 측정 대기'];
+    const parts=[naver?.checked?`네이버 첫 페이지(광고 제외) ${naver.first_page}/${naver.checked}개`:naver?.items.some(item=>item.status==='error')?'네이버 측정 불가':'네이버 측정 대기',checked?`AI 언급 ${mentioned}/${checked}건`:'AI 측정 대기'];
     return {text:parts.join(' · '),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
   }
   function citedAnswer(item){
@@ -59,11 +60,11 @@
     });
     if(current)drawAI();
   }).catch(()=>{});
-  function history(item){return `<div class="visibility-history" aria-label="최근 관측 기록">${(item.history||[]).slice().reverse().map(day=>`<span class="visibility-day ${day.mentioned?'is-found':''}" title="${esc(date(day.at))} · ${day.mentioned?'노출 확인':'미확인'}" aria-label="${esc(date(day.at))} ${day.mentioned?'노출 확인':'미확인'}"></span>`).join('')}</div><span class="visibility-small">${(item.history||[]).length}회 관측 · 초록색은 ${esc(selectedName()||'브랜드')} 노출 확인</span>`;}
+  function history(item){return `<div class="visibility-history" aria-label="최근 관측 기록">${(item.history||[]).slice().reverse().map(day=>`<span class="visibility-day ${day.mentioned?'is-found':''}" title="${esc(date(day.at))} · ${day.mentioned?'노출 확인':'미확인'}" aria-label="${esc(date(day.at))} ${day.mentioned?'노출 확인':'미확인'}"></span>`).join('')}</div><span class="visibility-small">${(item.history||[]).length}회 관측 · 초록색은 ${esc(selectedName()||'브랜드')} ${item.query?.source?'웹·플레이스 노출 확인(광고 제외)':'언급 확인'}</span>`;}
   function overview(){
     $('visibility-overview').innerHTML=current.providers.map(p=>{
       const ai=p.kind==='ai',metric=!p.configured?'연결 필요':!p.checked?(p.items.some(item=>item.status==='error')?'측정 불가':'측정 대기'):`${ai?p.mentioned:p.first_page}<small> / ${p.checked}</small>`;
-      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.id==='openai'?'ChatGPT 계열 · OpenAI API':p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'답변 속 언급':'첫 페이지 노출'}<br>${p.configured?`${p.expected}개 중 ${p.checked}개 정상 측정`:'API 연결 후 매일 측정'}</p></article>`;
+      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.id==='openai'?'ChatGPT 계열 · OpenAI API':p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'답변 속 언급':'첫 페이지 · 광고 제외'}<br>${p.configured?`${p.expected}개 중 ${p.checked}개 정상 측정`:'API 연결 후 매일 측정'}</p></article>`;
     }).join('');
     const naverError=current.providers.find(p=>p.id==='naver')?.items.find(item=>item.error)?.error;
     const aiErrors=current.providers.filter(p=>p.kind==='ai'&&p.configured).map(p=>{const error=p.items.find(item=>item.error)?.error;return error?`${p.name}: ${error}.`:'';}).filter(Boolean).join(' ');
@@ -79,8 +80,8 @@
     $('visibility-keyword-source').textContent=[selectedName()||'전체 지점',adCount?`인천 광고 계정 ${adCount}개 · 목록 ${date(current.keyword_source.updated_at)}`:'',regionalCount?`안양 지역 점검 키워드 ${regionalCount}개 · 광고 계정 연동 키워드 아님`:'',`최대 ${current.max_pages}페이지 확인`].filter(Boolean).join(' · ');
     $('visibility-keywords').innerHTML=rows.map(item=>{
       const matches=(item.matches||[]),links=[...matches.map(m=>({...m,unconfirmed:false})),...(item.unconfirmed_matches||[]).map(m=>({...m,unconfirmed:true}))].map(m=>`<li>${esc(areaName[m.area])} ${m.page}페이지 ${m.position}번째 · ${m.unconfirmed?'브랜드 노출 · 지점 미확인':m.owned?'공식 주소':'브랜드 언급'}<br><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(m.title)}</a></li>`).join('');
-      const cells=[['web'],['place'],['ad','place_ad']].map(areas=>`<td>${tag(matchLabel(item,areas),!fresh(item)?'is-warning':matches.some(m=>areas.includes(m.area))?'':'is-absent')}</td>`).join('');
-      return `<tr><td><details${opened.has(item.keyword)?' open':''}><summary>${esc(item.keyword)}</summary>${item.search_correction?`<p class="visibility-small">네이버 검색어 보정: ${esc(item.search_correction.from)} → ${esc(item.search_correction.to)}</p>`:''}<span class="visibility-small">${esc(current.branches?.find(b=>b.id===item.branch)?.name||'공통')} · ${item.query.source==='regional'?'지역 점검 키워드':'광고 계정 등록 키워드'}${item.query.groups?.length?' · '+esc(item.query.groups.join(' · ')):''}</span>${item.error?`<p class="visibility-small">${esc(item.error)}</p>`:''}${!fresh(item)&&item.observed_at?`<p class="visibility-small">아래는 ${esc(date(item.observed_at))}의 이전 결과입니다.</p>`:''}<ul class="visibility-evidence">${links||'<li>저장된 브랜드 노출 결과 없음</li>'}</ul><div class="visibility-pages">${(item.evidence||[]).map(p=>`<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">${p.page}페이지 원문</a>`).join('')}</div>${history(item)}</details></td>${cells}<td>${Number.isFinite(item.query.average_ad_rank)?item.query.average_ad_rank.toLocaleString('ko-KR',{maximumFractionDigits:1})+'위':item.query.source==='regional'?'해당 없음':'정보 없음'}<span class="visibility-small">${item.query.source==='regional'?'광고 계정 미연동':'페이지 환산하지 않음'+(item.query.eligible?'':' · 집행 제한')}</span></td><td>${esc(date(item.observed_at))}${!fresh(item)?'<span class="visibility-small">정상 집계에서 제외</span>':''}</td></tr>`;
+      const cells=[['web'],['place'],['ad','place_ad']].map(areas=>`<td>${tag(matchLabel(item,areas),!fresh(item)||(areas.includes('ad')&&item.ad_coverage_complete===false)?'is-warning':matches.some(m=>areas.includes(m.area))?'':'is-absent')}</td>`).join('');
+      return `<tr><td><details${opened.has(item.keyword)?' open':''}><summary>${esc(item.keyword)}</summary>${item.search_correction?`<p class="visibility-small">네이버 검색어 보정: ${esc(item.search_correction.from)} → ${esc(item.search_correction.to)}</p>`:''}<span class="visibility-small">${esc(current.branches?.find(b=>b.id===item.branch)?.name||'공통')} · ${item.query.source==='regional'?'지역 점검 키워드':'광고 계정 등록 키워드'}${item.query.groups?.length?' · '+esc(item.query.groups.join(' · ')):''}</span>${item.error?`<p class="visibility-small">${esc(item.error)}</p>`:''}${item.ad_coverage_complete===false?'<p class="visibility-small">첫 페이지 광고 수집 방식을 보완해 재측정 중입니다. 아래의 이전 광고 기록은 일부 누락될 수 있습니다.</p>':''}${!fresh(item)&&item.observed_at?`<p class="visibility-small">아래는 ${esc(date(item.observed_at))}의 이전 결과입니다.</p>`:''}<ul class="visibility-evidence">${links||'<li>저장된 브랜드 노출 결과 없음</li>'}</ul><div class="visibility-pages">${(item.evidence||[]).map(p=>`<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">${p.page}페이지 원문</a>`).join('')}</div>${history(item)}</details></td>${cells}<td>${Number.isFinite(item.query.average_ad_rank)?item.query.average_ad_rank.toLocaleString('ko-KR',{maximumFractionDigits:1})+'위':item.query.source==='regional'?'해당 없음':'정보 없음'}<span class="visibility-small">${item.query.source==='regional'?'광고 계정 미연동':'페이지 환산하지 않음'+(item.query.eligible?'':' · 집행 제한')}</span></td><td>${esc(date(item.observed_at))}${!fresh(item)?'<span class="visibility-small">정상 집계에서 제외</span>':''}</td></tr>`;
     }).join('')||'<tr><td colspan="6">조건에 맞는 키워드가 없습니다.</td></tr>';
   }
   function drawAI(){

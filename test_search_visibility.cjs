@@ -7,6 +7,8 @@ test('search page numbers use observed result pages, never average ad ranks',()=
   assert.equal(v.matchLabel(row,['web']),'4페이지 · 2번째');
   assert.equal(v.matchLabel(row,['place']),'측정 범위 내 미확인');
   assert.equal(v.matchLabel({...row,status:'error',stale:true},['web']),'측정 불가');
+  assert.equal(v.matchLabel({...row,ad_coverage_complete:false},['ad','place_ad']),'광고 재측정 대기');
+  assert.equal(v.matchLabel({...row,ad_coverage_complete:false},['web']),'4페이지 · 2번째');
 });
 test('unmeasured and failed probes never appear as non-exposure findings',()=>{
   const items=[{keyword:'인천',status:'pending'},{keyword:'인천',status:'error'},
@@ -27,7 +29,7 @@ test('home reports measured denominators and exposes partial setup',()=>{
     {id:'naver',kind:'search',configured:true,expected:24,checked:10,first_page:3},
     {id:'openai',kind:'ai',configured:true,expected:6,checked:4,mentioned:1},
     {id:'gemini',kind:'ai',configured:false,expected:6,checked:0,mentioned:0}]};
-  assert.equal(v.homeSummary(data).text,'네이버 첫 페이지 3/10개 · AI 언급 1/4건');
+  assert.equal(v.homeSummary(data).text,'네이버 첫 페이지(광고 제외) 3/10개 · AI 언급 1/4건');
   assert.equal(v.homeSummary(data).warning,true);
 });
 
@@ -56,6 +58,6 @@ test('home shows both branches and keeps failed AI checks outside the denominato
     {id:'openai',kind:'ai',configured:true,checked:1,expected:2,items:[
       {branch:'incheon',status:'error',branch_result:{mentioned:true}},
       {branch:'anyang',status:'ready',branch_result:{mentioned:true}}]}]};
-  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지 1/1개 · AI 언급 측정 대기\n안양점 · 네이버 첫 페이지 0/1개 · AI 언급 1/1건');
+  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지(광고 제외) 1/1개 · AI 언급 측정 대기\n안양점 · 네이버 첫 페이지(광고 제외) 0/1개 · AI 언급 1/1건');
   assert.equal(v.homeSummary(data).warning,true);
 });

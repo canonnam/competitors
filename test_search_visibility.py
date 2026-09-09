@@ -99,6 +99,39 @@ class VisibilityTests(unittest.TestCase):
         self.assertEqual(result['matches'][0]['area'],'ad')
         self.assertEqual(result['matches'][0]['url'],v.search_url(QUERY['keyword']))
 
+    def test_first_page_ads_include_description_and_preserve_ad_order(self):
+        html=page()+'<ul><li><a class="lnk_head" href="https://ader.naver.com/other">다른 요양원</a><a class="link_desc">안양 요양원</a></li>'
+        html+='<li><a class="site" href="https://ader.naver.com/brand">더비다요양원</a><a class="lnk_head" href="https://ader.naver.com/paid">재활 중심 더비다 요양원</a>'
+        html+='<a class="link_desc" href="https://ader.naver.com/paid">미추홀구 숭의동 요양원, 기능유지 중심 돌봄</a></li></ul>'
+        html+='<a class="lnk_head" href="https://example.com">광고가 아닌 제목</a>'
+        result=v.collect_naver(QUERY,self.config,lambda _:html)
+        self.assertEqual(len(result['matches']),1)
+        ad=result['matches'][0]
+        self.assertEqual((ad['area'],ad['page'],ad['position']),('ad',1,2))
+        self.assertIn('숭의동',ad['snippet']);self.assertNotIn('안양',ad['snippet'])
+        self.assertEqual(ad['url'],v.search_url(QUERY['keyword']))
+        self.assertEqual(v.evidence_branch(ad['title']+'\n'+ad['snippet'],ad['url'],self.config),'incheon')
+        self.assertFalse(result['mentioned']);self.assertIsNone(result['first_page'])
+
+    def test_old_ad_parser_is_rechecked_once_without_losing_organic_history(self):
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW,fetcher=lambda _:page('더비다요양원'))
+        identity=v.check_id('naver',QUERY,self.config)
+        with v.connect(self.path) as db:
+            state=json.loads(db.execute('select payload from checks where id=?',(identity,)).fetchone()[0])
+            state.pop('last_success_version');state.pop('attempt_version');state['attempts']=2
+            db.execute('update checks set payload=? where id=?',(json.dumps(state),identity))
+            observation=json.loads(db.execute('select payload from observations').fetchone()[0])
+            observation.pop('ad_parser_version')
+            db.execute('update observations set payload=?',(json.dumps(observation),))
+        row=self.report()['providers'][0]['items'][0]
+        self.assertTrue(row['mentioned']);self.assertFalse(row['ad_coverage_complete'])
+        calls=[]
+        def fetch(url):calls.append(url);return page('더비다요양원')
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(minutes=2),fetcher=fetch)
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(minutes=3),fetcher=fetch)
+        self.assertEqual(len(calls),1)
+        self.assertTrue(self.report()['providers'][0]['items'][0]['ad_coverage_complete'])
+
     def test_owned_blog_mobile_urls_and_exact_place_ids(self):
         for url in ('https://blog.naver.com/vida25/100','https://m.blog.naver.com/vida25/100',
                     'https://blog.naver.com/PostView.naver?blogId=vida25&logNo=100',
