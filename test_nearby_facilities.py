@@ -26,7 +26,7 @@ class MapEndpointTests(unittest.TestCase):
     def test_missing_configuration_and_data_route(self):
         with patch.dict(os.environ,{'KAKAO_JAVASCRIPT_KEY':''}):self.assertEqual(self.request('/api/maps-config')[0],503)
         status,headers,raw=self.request('/api/nearby-facilities')
-        self.assertEqual(status,200);self.assertEqual(len(json.loads(raw)['facilities']),725)
+        self.assertEqual(status,200);self.assertEqual(len(json.loads(raw)['facilities']),812)
         self.assertEqual(self.request('/api/nearby-facilities','HEAD')[2],b'')
         self.assertEqual(self.request('/nearby-facilities.html')[0],200)
         self.assertEqual(self.request('/data/nearby_facilities.json')[0],404)
