@@ -178,6 +178,35 @@ class VisibilityTests(unittest.TestCase):
         text,citations,_=v.parse_openai(response('확인할 자료가 부족합니다.',False))
         self.assertTrue(text);self.assertEqual(citations,[])
 
+    def test_model_upgrade_preserves_old_observations_and_collects_new_sample_once(self):
+        with patch.dict(os.environ, {'SEARCH_OPENAI_MODEL': 'gpt-5.4-mini'}):
+            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=lambda *args:response())
+            other_signatures={p:v.query_signature(p,QUERY,self.config) for p in ('naver','gemini')}
+        calls=[]
+        def request(url,payload,headers):
+            calls.append(payload)
+            result=response('더비다요양원 인천점을 비교하세요.')
+            result['model']=payload['model']
+            return result
+        with patch.dict(os.environ, {'SEARCH_OPENAI_MODEL': 'gpt-6-astra'}):
+            before=next(p for p in self.report()['providers'] if p['id']=='openai')
+            self.assertEqual(before['checked'],0)
+            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=request)
+            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=1),requester=request)
+            after=next(p for p in self.report()['providers'] if p['id']=='openai')
+            self.assertEqual(after['checked'],1)
+            self.assertEqual(after['items'][0]['model'],'gpt-6-astra')
+            self.assertEqual(len(after['items'][0]['history']),1)
+            self.assertEqual(other_signatures,{p:v.query_signature(p,QUERY,self.config) for p in other_signatures})
+        self.assertEqual(len(calls),1)
+        self.assertEqual(calls[0]['reasoning'],{'effort':'low'})
+        self.assertEqual(calls[0]['max_output_tokens'],4096)
+        self.assertEqual(calls[0]['max_tool_calls'],3)
+        self.assertEqual(calls[0]['input'],QUERY['keyword'])
+        self.assertNotIn('더비다',json.dumps(calls,ensure_ascii=False))
+        with v.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM observations WHERE provider='openai'").fetchone()[0],2)
+
     def test_unverified_answer_and_disconnected_providers_excluded_from_denominator(self):
         v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=lambda *args:response(cited=False))
         providers={p['id']:p for p in self.report()['providers']}

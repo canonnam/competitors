@@ -60,8 +60,15 @@ def configured(provider):
 
 
 def model_for(provider):
-    defaults = {'openai': 'gpt-5.4-mini', 'gemini': 'gemini-3.6-flash', 'perplexity': 'sonar'}
+    defaults = {'openai': 'gpt-6-astra', 'gemini': 'gemini-3.6-flash', 'perplexity': 'sonar'}
     return os.getenv('SEARCH_' + provider.upper() + '_MODEL', defaults.get(provider, 'PC 공개 검색'))
+
+
+def openai_options():
+    # Astra always reasons; leave enough output budget for reasoning and citations.
+    if model_for('openai') == 'gpt-6-astra':
+        return {'reasoning': {'effort': 'low'}, 'max_output_tokens': 4096}
+    return {'max_output_tokens': 1600}
 
 
 def init_db(path):
@@ -359,7 +366,7 @@ def collect_ai(provider, query, config, requester=post_json):
     key = os.environ[PROVIDER_KEYS[provider]]
     if provider == 'openai':
         data = requester('https://api.openai.com/v1/responses', {
-            'model': model, 'input': query['keyword'], 'instructions': AI_INSTRUCTIONS, 'store': False, 'max_output_tokens': 1600,
+            'model': model, 'input': query['keyword'], 'instructions': AI_INSTRUCTIONS, 'store': False, **openai_options(),
             'tools': [{'type': 'web_search', 'search_context_size': 'medium', 'user_location': {
                 'type': 'approximate', 'country': 'KR', 'city': query.get('city', 'Incheon'), 'timezone': 'Asia/Seoul'}}],
             'tool_choice': {'type': 'web_search'}, 'max_tool_calls': OPENAI_MAX_SEARCHES,
@@ -463,6 +470,8 @@ def branch_observation(observation, branch, config):
 def query_signature(provider, query, config):
     fields = [VERSION, provider, query['keyword'], query.get('city') if provider != 'naver' else None, model_for(provider), config['aliases'], config.get('owned_urls'), config.get('place_ids'),
               ['public-pages-v2', config['max_pages'], bool(os.getenv('SERPAPI_KEY'))] if provider == 'naver' else [ai_prompt(query), OPENAI_MAX_SEARCHES if provider == 'openai' else None]]
+    if provider == 'openai' and model_for(provider) == 'gpt-6-astra':
+        fields.append(openai_options())
     return hashlib.sha256(json.dumps(fields, ensure_ascii=False).encode()).hexdigest()
 
 
