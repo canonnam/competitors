@@ -7,7 +7,7 @@ test('the public agency card is third and preserves news and original icons',()=
   const home=fs.readFileSync('index.html','utf8');
   const titles=[...home.matchAll(/<article[^>]*>.*?<h2>(.*?)<\/h2>/g)].map(match=>match[1]);
   assert.deepEqual(titles.slice(0,4),['경쟁사 분석','경쟁사 뉴스','건보공단·복지부 뉴스·지원사업','AI 허브 활용데이터']);
-  assert.equal(titles.length,9);
+  assert.equal(titles.length,10);
   assert.ok(!fs.readFileSync('assets/site.css','utf8').includes('.card .icon{background:'));
 });
 
