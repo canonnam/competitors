@@ -164,6 +164,16 @@ class ServiceNewsTest(unittest.TestCase):
         self.assertNotIn("개설했습니다", answer)
         self.assertIsNone(service.news_list_answer("이 뉴스가 우리에게 미칠 영향을 분석해주세요", result))
 
+    def test_requested_count_does_not_rank_old_numeric_headlines_first(self):
+        item = {"id": "old3", "title": "돌봄 3자 협약 체결", "url": "https://example.com/old", "competitor_id": "caring",
+                "published_at": "2025-01-01", "summary": "", "reviewed": False}
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("INSERT INTO articles VALUES(?,?,?,?,?,?)", ("old3", item["url"], "old3", item["published_at"], 0, json.dumps(item)))
+        rows = service.retrieve("경쟁사 최신 뉴스 3건을 알려주세요", today=TODAY)[1:]
+        dates = [r["updated"] for r in rows]
+        self.assertEqual(dates, sorted(dates, reverse=True))
+        self.assertTrue(all(date.startswith("2026-") for date in dates))
+
 
 class ServiceIntegrationTest(unittest.TestCase):
     def test_valid_declared_citations_recover_missing_inline_markers(self):

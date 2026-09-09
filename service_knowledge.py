@@ -319,8 +319,8 @@ def news_evidence(question, selected, today):
     count = len(records)
     # Retain recency for general questions; specific topics may reorder the shortlist.
     ignore = {"경쟁사", "뉴스", "소식", "최근", "최신", "알려주세요", "요약", "동향", "관련", "기사", "보도"}
-    keywords = tokens(question) - ignore
-    ranked = sorted(enumerate(records), key=lambda pair: (-sum(word in pair[1].get("title", "") + " " + pair[1].get("summary", "") for word in keywords), pair[0]))
+    keywords = {word for word in tokens(question) - ignore if not word.isdigit()}
+    ranked = sorted(enumerate(records), key=lambda pair: (-sum(word in (pair[1].get("title", "") + " " + pair[1].get("summary", "")).lower() for word in keywords), pair[0]))
     limit_match = re.search(r"(\d{1,2})\s*(?:개|건)", question)
     limit = min(6, max(1, int(limit_match[1]))) if limit_match else 5
     updated = str(state.get("last_success") or "수집 성공 시각 미확인")
