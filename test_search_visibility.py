@@ -161,6 +161,23 @@ class VisibilityTests(unittest.TestCase):
             v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=minutes),requester=failure)
         self.assertEqual(len(calls),2)
 
+    def test_interrupted_public_search_resumes_but_paid_attempt_is_preserved(self):
+        def interrupted(*args):raise InterruptedError()
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW,fetcher=interrupted)
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(minutes=1),fetcher=lambda _:page())
+        self.assertEqual(self.report()['providers'][0]['checked'],1)
+        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=interrupted)
+        with patch.object(v,'collect_ai') as request:
+            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=1))
+            request.assert_not_called()
+
+    def test_gemini_billing_error_exposes_action_without_raw_provider_details(self):
+        from io import BytesIO
+        error=urllib.error.HTTPError('https://example.com',429,'quota',{},BytesIO(json.dumps({'error':{
+            'message':'Your prepayment credits are depleted. private-details'}}).encode()))
+        message=v.safe_error(error)
+        self.assertIn('크레딧 부족',message);self.assertNotIn('private-details',message)
+
     def test_naver_access_limit_stops_all_remaining_queries(self):
         calls=[]
         def failure(url):calls.append(url);raise urllib.error.HTTPError(url,403,'Forbidden',{},None)

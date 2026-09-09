@@ -59,7 +59,7 @@ def configured(provider):
 
 
 def model_for(provider):
-    defaults = {'openai': 'gpt-5.4-mini', 'gemini': 'gemini-2.5-flash', 'perplexity': 'sonar'}
+    defaults = {'openai': 'gpt-5.4-mini', 'gemini': 'gemini-3.6-flash', 'perplexity': 'sonar'}
     return os.getenv('SEARCH_' + provider.upper() + '_MODEL', defaults.get(provider, 'PC 공개 검색'))
 
 
@@ -335,9 +335,12 @@ def collect_ai(provider, query, config, requester=post_json):
     elif provider == 'gemini':
         if not re.fullmatch(r'[a-zA-Z0-9._-]+', model):
             raise ValueError('Invalid Gemini model')
+        generation = {'maxOutputTokens': 4096}
+        if model.startswith('gemini-3'):
+            generation['thinkingConfig'] = {'thinkingLevel': 'low'}
         data = requester('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent', {
             'contents': [{'parts': [{'text': prompt}]}], 'tools': [{'google_search': {}}],
-            'generationConfig': {'maxOutputTokens': 2200},
+            'generationConfig': generation,
         }, {'x-goog-api-key': key})
         text, citations, suggestions = parse_gemini(data)
     else:
@@ -378,6 +381,13 @@ def check_id(provider, query, config):
 
 def safe_error(exc):
     if isinstance(exc, urllib.error.HTTPError):
+        if exc.code == 429:
+            try:
+                message = json.loads(exc.read(16000)).get('error', {}).get('message', '').lower()
+                if 'prepayment credits are depleted' in message:
+                    return 'Gemini API 크레딧 부족 · Google AI Studio에서 충전 필요'
+            except (ValueError, OSError, AttributeError):
+                pass
         return f'연결 확인 필요 (HTTP {exc.code})'
     if isinstance(exc, (TimeoutError, urllib.error.URLError)):
         return '응답 지연 · 재시도 대기'
@@ -410,6 +420,11 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
             cycle = due_at(now).date().isoformat()
             attempts = previous.get('attempts', 0) if previous.get('cycle') == cycle else 0
             attempt_at = timestamp(previous.get('last_attempt'))
+            # Resume an interrupted free public-page read after a deployment. Paid
+            # provider attempts remain counted because the request may have completed.
+            if provider == 'naver' and not os.getenv('SERPAPI_KEY') and previous.get('running'):
+                attempts = max(0, attempts-1)
+                attempt_at = None
             if attempts >= 2 or (attempts and attempt_at and now < attempt_at + timedelta(minutes=30)):
                 continue
             state = {**previous, 'provider': provider, 'keyword': query['keyword'], 'cycle': cycle,
