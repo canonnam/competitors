@@ -17,6 +17,7 @@ import urllib.request
 from agency_news import Document
 from competitor_news import KST, connect, normalized, timestamp
 import naver_ads
+import aeo_missions
 
 ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('search_visibility')
@@ -82,6 +83,7 @@ def init_db(path):
             CREATE TABLE IF NOT EXISTS checks (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS visibility_history ON observations(day DESC);
         ''')
+    aeo_missions.init_db(path)
 
 
 def due_at(now):
@@ -394,30 +396,39 @@ def collect_ai(provider, query, config, requester=post_json):
             'method': '웹 검색을 사용한 API 답변 · 개인화된 소비자 서비스 화면과 다를 수 있음'}
 
 
+def active_keyword_queries(items):
+    """Deduplicate only enabled rows, including for a stale inventory."""
+    queries = {}
+    for item in items:
+        # Older snapshots only recorded delivery eligibility. Fail closed there.
+        if item.get('enabled', item.get('eligible')) is not True:
+            continue
+        keyword = str(item['keyword']).strip()
+        if keyword:
+            query = queries.setdefault(keyword, {'keyword': keyword, 'groups': [],
+                                      'average_ad_rank': item.get('average_rank'), 'eligible': False, 'enabled': True})
+            if item['group'] not in query['groups']:
+                query['groups'].append(item['group'])
+            query['eligible'] |= item.get('eligible') is True
+    return list(queries.values())
+
+
 def keyword_queries(ad_path, now):
     report = naver_ads.keyword_report(ad_path, now)
     # Configuration failures must not silently turn an old keyword inventory into a fresh check.
     if not report.get('updated_at') or report.get('stale'):
         return [], report
-    queries = {}
-    for item in report['items']:
-        keyword = str(item['keyword']).strip()
-        if keyword:
-            queries.setdefault(keyword, {'keyword': keyword, 'groups': [], 'average_ad_rank': item.get('average_rank'), 'eligible': False})
-            queries[keyword]['groups'].append(item['group'])
-            queries[keyword]['eligible'] |= item['eligible']
-    return list(queries.values()), report
+    return active_keyword_queries(report['items']), report
 
 
 def naver_queries(ad_path, now, config, show_stale=False):
     queries, inventory = keyword_queries(ad_path, now)
-    if show_stale and not queries:
-        queries = [{'keyword': item['keyword'], 'average_ad_rank': item.get('average_rank'),
-                    'eligible': item['eligible'], 'groups': [item['group']]} for item in inventory.get('items', [])]
+    if show_stale and inventory.get('stale'):
+        queries = active_keyword_queries(inventory.get('items', []))
     combined = {(q['keyword'], 'incheon'): {**q, 'branch': 'incheon', 'source': 'ad_account'} for q in queries}
     for query in config.get('naver_queries', []):
         keyword, branch = query['keyword'].strip(), query['branch']
-        if keyword:
+        if keyword and query.get('enabled', True) is True:
             combined.setdefault((keyword, branch), {**query, 'keyword': keyword, 'source': 'regional',
                                                     'groups': [], 'average_ad_rank': None, 'eligible': None})
     return list(combined.values()), inventory
@@ -615,6 +626,8 @@ def report(path, ad_path=None, now=None, summary=False):
         providers.append({'id': provider, **metadata, 'configured': connected, 'model': model_for(provider),
                           'expected': len(queries), 'checked': len(checked), 'mentioned': sum(bool(item.get('mentioned')) for item in checked),
                           'first_page': sum(item.get('first_page') == 1 for item in checked), 'items': items})
+    if not summary:
+        aeo_missions.attach(path, providers, config.get('branches', []))
     return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_daily(now).isoformat(),
             'naver_collection': 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
             'max_pages': config['max_pages'], 'owned_urls': config.get('owned_urls', []), 'providers': providers,
@@ -622,7 +635,7 @@ def report(path, ad_path=None, now=None, summary=False):
             'keyword_source': {'updated_at': ad_report.get('updated_at'), 'stale': ad_report.get('stale'), 'total': len(search_queries),
                                'ad_count': sum(q['source'] == 'ad_account' for q in search_queries),
                                'regional_count': sum(q['source'] == 'regional' for q in search_queries),
-                               'method': '인천 광고 계정 등록 키워드와 안양 지역 점검 키워드'},
+                               'method': '인천 광고 계정 ON 키워드와 안양 지역 점검 키워드'},
             'ai_queries': ai_queries, 'generated_at': now.isoformat()}
 
 

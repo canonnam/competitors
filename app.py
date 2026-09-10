@@ -12,6 +12,7 @@ import agency_news
 import search_visibility
 import reputation_watch
 import claim_check
+import aeo_missions
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -265,6 +266,9 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if urllib.parse.urlsplit(self.path).path == '/api/search-visibility/missions':
+            self.save_aeo_mission()
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/agency-news/support-preference":
             self.save_support_preference()
             return
@@ -321,6 +325,25 @@ class App(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"id": feedback_id, "received": True, "slack_notified": slack_ok,
                                      "automation_triggered": hermes_ok}, ensure_ascii=False).encode())
+
+    def save_aeo_mission(self):
+        try:
+            wiki_chat.check_origin(self)
+            body = wiki_chat.read_json(self, 24000)
+            result = aeo_missions.submit(search_visibility.db_path(), body)
+        except wiki_chat.ChatError as exc:
+            wiki_chat.send_json(self, exc.status, {'error': str(exc)})
+            return
+        except aeo_missions.Conflict as exc:
+            wiki_chat.send_json(self, 409, {'error': str(exc)})
+            return
+        except (ValueError, LookupError) as exc:
+            wiki_chat.send_json(self, 404 if isinstance(exc, LookupError) else 400, {'error': str(exc)})
+            return
+        except (sqlite3.Error, OSError):
+            wiki_chat.send_json(self, 503, {'error': '미션을 저장하지 못했습니다. 입력 내용을 유지한 채 다시 시도해주세요.'})
+            return
+        wiki_chat.send_json(self, 200, {'mission': result})
 
     def save_support_preference(self):
         import business_support

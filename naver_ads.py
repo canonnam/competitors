@@ -221,6 +221,12 @@ def delivery_eligible(entity):
     return entity.get("status") == "ELIGIBLE" and str(entity.get("userLock", False)).lower() not in {"true", "1", "y"}
 
 
+def switched_on(entity):
+    if 'userLock' not in entity:
+        return entity.get('status') == 'ELIGIBLE'
+    return str(entity.get('userLock', False)).lower() not in {'true', '1', 'y'} and entity.get('status') != 'PAUSED'
+
+
 def sync_keywords(path, client, now=None):
     """Seven-day reported rank, not a live SERP position or a bid estimate."""
     now = now or datetime.now(KST)
@@ -235,6 +241,7 @@ def sync_keywords(path, client, now=None):
                 items.append({"id": keyword["nccKeywordId"], "keyword": keyword.get("keyword", ""),
                               "campaign": campaign.get("name", ""), "group": group.get("name", ""),
                               "eligible": all(delivery_eligible(row) for row in (campaign, group, keyword)),
+                              "enabled": all(switched_on(row) for row in (campaign, group, keyword)),
                               "campaign_status": campaign.get("status", "UNKNOWN"),
                               "group_status": group.get("status", "UNKNOWN"),
                               "keyword_status": keyword.get("status", "UNKNOWN"),
