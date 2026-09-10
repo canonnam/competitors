@@ -8,6 +8,8 @@
   "regions": ["경기", "인천"],
   "cities": ["성남시", "안양시", "인천시", "인천광역시"],
   "research_center_city": "안양시",
+  "research_partners": [{"name": "서강대학교 시니어케어 AX센터", "relationship": "공동연구 협력기관", "specialty": "시니어 케어·AI·AX"}],
+  "prioritize_senior_ai_research": true,
   "business": ["장기요양기관 운영", "요양원 인천점·안양점", "장기요양기관 운영 SaaS 플랫폼 개발"],
   "industry_code": null,
   "employees": null,

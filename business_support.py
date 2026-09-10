@@ -18,7 +18,7 @@ DETAIL_PATH = '/sii/siia/selectSIIA200Detail.do'
 ORIGIN = 'https://www.bizinfo.go.kr'
 BOOTSTRAP_PAGES = 10
 MAX_PAGES = 100
-POLICY_REVISION = '2026-09-09-regions-care-ai'
+POLICY_REVISION = '2026-09-10-senior-ai-research'
 
 
 def list_url(page=1):
@@ -119,9 +119,10 @@ REGIONS = {
     '경북': ('경북', '경상북도'), '경남': ('경남', '경상남도'),
     '제주': ('제주', '제주도', '제주특별자치도'),
 }
-CARE = ('장기요양', '요양원', '돌봄', '시니어', '고령친화', '고령자', '노인복지', '사회복지',
+CARE = ('장기요양', '요양원', '돌봄', '시니어', '고령친화', '고령자', '노인', '어르신', '치매', '사회복지',
         '에이지테크', 'Age-Tech', '에이징테크', '복지시설')
 AX = ('AX', 'AI전환', '인공지능전환', 'AI도입', 'AI활용', '인공지능도입', '인공지능활용', '지능화')
+AI = ('AI', '인공지능', '머신러닝', '딥러닝', 'LLM')
 PHYSICAL_AI = ('피지컬AI', 'Physical AI', '돌봄로봇', '케어로봇', '재활로봇', '서비스로봇')
 LOCATION = ('위치정보', '위치기반서비스', '위치기반사업', 'LBS', 'GPS')
 GYEONGGI_CITIES = ('수원', '용인', '고양', '성남', '화성', '부천', '남양주', '안산', '평택', '안양',
@@ -129,9 +130,54 @@ GYEONGGI_CITIES = ('수원', '용인', '고양', '성남', '화성', '부천', '
                   '이천', '안성', '구리', '의왕', '포천', '양평', '여주', '동두천', '과천', '가평', '연천')
 SOFTWARE = ('SaaS', '클라우드', '소프트웨어', '정보통신', 'ICT', '디지털헬스', '헬스케어', '플랫폼개발', '플랫폼서비스', '서비스개발', 'ERP')
 STARTUP = ('창업기업', '초기창업', '스타트업', '창업도약', '액셀러레이', '액셀러레이터', '창업사업화', '오픈이노베이션')
-RESEARCH = ('연구개발', 'R&D', '기술개발', '산학연', '기업부설연구소', '연구인력', '기술사업화', '기술실증')
+RESEARCH = ('연구개발', 'R&D', '기술개발', '산학연', '기업부설연구소', '연구인력', '기술사업화', '기술실증',
+            '연구과제', '공동연구', '산학협력', '산연협력', '중개연구', '현장실증', '실증사업', '리빙랩')
+SENIOR = ('노인', '어르신', '고령', '시니어', '장기요양', '요양원', '치매', '에이지테크', 'Age-Tech',
+          '에이징테크', '돌봄로봇', '스마트사회복지시설', '지능형사회복지시설')
+COLLABORATION = ('산학연', '산학협력', '산연협력', '공동연구', '대학', '연구기관', '컨소시엄')
 GENERAL = ('지식재산', '특허', '상표', '고용', '채용', '일자리', '인건비', '직무교육', '직업훈련', '직장어린이집',
            '경영컨설팅', '경영지원', '경영안정', '정책자금', '육성자금', '보증', '이자지원', '이차보전', '수출바우처', '디지털전환')
+
+
+def research_focus(item, profile=PROFILE):
+    """Prioritize the requested research direction, separately from eligibility and votes."""
+    empty = {'label': '', 'score': 0, 'reason': '', 'checks': []}
+    if not profile.get('prioritize_senior_ai_research'):
+        return empty
+    title = item.get('title', '')
+    text = ' '.join(item.get(key, '') for key in ('title', 'target', 'benefit'))
+    if matches(title, ('교육생', '수강생', '세미나', '컨퍼런스', '인턴십', '입주기업', '채용', '연구인력', '경진대회', '전시회')):
+        return empty
+    if matches(title, ('주파수', '전파예측', '가속기', '양자', '신약', '항암', '우주', '태양광', '원자력',
+                       '원전', '재생에너지', '국방', '방산', '농업', '물류특화', '제조특화')):
+        return empty
+    # Senior researchers/employment are not evidence that the research serves older adults.
+    if re.search(r'(?:시니어|고경력)\s*(?:과학기술인|연구자|인력)', title):
+        return empty
+    senior_text = re.sub(r'(?:시니어|고경력)\s*(?:과학기술인|연구자|인력|인턴십)', '', text)
+    senior = matches(senior_text, SENIOR)
+    ai = matches(text, AI + AX + PHYSICAL_AI)
+    research = matches(text, RESEARCH + ('시범사업',))
+    partners = [partner['name'] for partner in profile.get('research_partners', [])
+                if partner.get('relationship') == '공동연구 협력기관']
+    if senior and ai and research:
+        label, score = '시니어 AI·AX 연구·실증', 60
+        reason = '노인·시니어 케어와 AI·AX 연구·실증이 함께 명시된 우선 검토 과제입니다.'
+    elif senior and ai and matches(text, ('상용화', '제품개발', '서비스개발', '기술고도화')):
+        label, score = '시니어 AI·AX 상용화', 40
+        reason = '시니어 AI·AX 기술의 제품·서비스 상용화에 연결되는 후보입니다. 연구개발비 지원 여부는 별도 확인이 필요합니다.'
+    elif partners and research and matches(text, COLLABORATION) and (senior or ai):
+        label, score = '산학연 공동연구 검토', 25
+        reason = '대학·연구기관과 협력해 시니어 케어 연구주제를 제안할 수 있는지 검토할 과제입니다.'
+    else:
+        return empty
+    checks = ['공고의 세부 연구주제(RFP), 주관·공동연구기관 자격, 기업부담금과 기존 과제 수행 요건을 확인하세요.']
+    if partners:
+        reason += ' 공동연구 협력기관인 '+', '.join(partners)+'와 연계 가능성을 검토합니다.'
+        checks.append('협력센터의 참여는 대학 산학협력단의 협약·신청 권한과 연구책임자 자격을 확인해야 합니다. 협력기관 소재지는 콤파스원 소재지로 인정하지 않습니다.')
+    if senior:
+        checks.append('요양원 실증이 포함되면 대상자 동의·연구윤리 심의 필요 여부, 데이터 이용 범위와 실증시설 참여 조건을 확인하세요.')
+    return {'label': label, 'score': score, 'reason': reason, 'checks': checks}
 
 
 def named_regions(text, compact=False):
@@ -207,9 +253,12 @@ def assess(item, detail, today, profile=PROFILE):
     if insurance_before and 2000+int(insurance_before.group(1))%100 < profile['established_year']:
         return None
     focus = title + ' ' + target
+    # Read the actual support content as well: some R&D calls only name their topic in the benefit.
+    research_text = focus + ' ' + detail['benefit']
+    priority = research_focus(detail, profile)
     if matches(focus, CARE):
         topics.append('시니어·사회복지·장기요양'); reasons.append('더비다 요양원 운영 경험과 시니어·사회복지·장기요양 현장에 연결되는 사업입니다.')
-    if matches(focus, AX):
+    if matches(focus, AX) or (matches(research_text, AI) and matches(research_text, CARE + RESEARCH)):
         topics.append('AI·AX 전환'); reasons.append('장기요양 업무의 AI 활용과 SaaS 플랫폼 고도화에 적용할 수 있는지 검토할 사업입니다.')
     if matches(focus, PHYSICAL_AI):
         topics.append('피지컬 AI·돌봄 로봇'); reasons.append('요양 현장의 피지컬 AI·돌봄 로봇 실증 또는 SaaS 연계 가능성을 검토할 사업입니다.')
@@ -218,8 +267,10 @@ def assess(item, detail, today, profile=PROFILE):
         topics.append('SaaS·디지털 기술'); reasons.append('개발 중인 장기요양기관 SaaS 플랫폼과 기술 분야가 연결됩니다.')
     if matches(focus, STARTUP):
         topics.append('창업·사업화'); reasons.append('2024년 설립 기업의 사업화·성장 지원 후보입니다.')
-    if matches(focus, RESEARCH):
+    if matches(focus, RESEARCH) or (priority['label'] and matches(research_text, RESEARCH)):
         topics.append('연구개발'); reasons.append('안양 기업부설연구소와 SaaS 연구개발에 활용할 가능성이 있습니다.')
+    if priority['label'] and not topics:
+        topics.append(priority['label']); reasons.append(priority['reason'])
     if matches(text, ('여성기업', '여성창업', '여성기업인')):
         topics.append('여성기업'); reasons.append('여성 대표자가 운영하는 기업을 위한 지원 분야입니다.')
         if profile['certifications'].get('women_enterprise') is not True:
@@ -313,8 +364,9 @@ def apply_preferences(items, preferences):
             explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 높였습니다.')
         elif adjustment < 0:
             explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 낮췄습니다.')
-        item.update(preference=preference, preference_score=adjustment,
-                    recommendation_score=item.get('score', 0)+adjustment, preference_reasons=explanation)
+        priority = research_focus(item)
+        item.update(preference=preference, preference_score=adjustment, research_focus=priority,
+                    recommendation_score=item.get('score', 0)+adjustment+priority['score'], preference_reasons=explanation)
     items.sort(key=lambda item: (item['application_status']['active'],
         {'interested': 1, 'neutral': 0, 'not_interested': -1}[item['preference']],
         item['recommendation_score'], item['published_at'], item['id']), reverse=True)

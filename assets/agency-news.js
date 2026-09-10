@@ -25,7 +25,7 @@
         && (preference==='all' || (preference==='recommended' ? (!support||item.preference!=='not_interested') : (support&&item.preference===preference)))
         && (!onlyUnread || (support&&item.application_status.active&&!readIds.has(item.id)))
         && (!activeOnly || !support || item.application_status.active)
-        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[])].join(' ').toLocaleLowerCase().includes(query));
+        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[]),item.research_focus?.label||'',item.research_focus?.reason||''].join(' ').toLocaleLowerCase().includes(query));
     });
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = {status,safeUrl,unreadSupport,filterItems};
@@ -90,6 +90,7 @@
       if(item.kind==='support') {
         article.classList.add('support-item');
         meta.append(make('span','support-match',item.recommendation));
+        if(item.research_focus?.label)meta.append(make('span','support-research-match',item.research_focus.label));
         if(item.application_status.active&&item.preference!=='not_interested'&&!readIds.has(item.id))meta.append(make('span','support-new','새 공고'));
       }
       article.append(meta,make('h2','',item.title));
@@ -100,10 +101,11 @@
         if(item.application_status.days_left!==null&&item.application_status.active)period.append(make('strong','',` (D-${item.application_status.days_left})`));
         article.append(period);
         const reasons=make('ul','support-reasons');item.reasons.forEach(reason=>reasons.append(make('li','',reason)));article.append(reasons);
+        if(item.research_focus?.reason)reasons.append(make('li','',item.research_focus.reason));
         const details=make('details','support-detail');details.append(make('summary','','지원 내용과 확인할 조건'));
         details.append(make('p','','공고상 대상 · '+item.target));
         if(item.benefit)details.append(make('p','','지원 내용 · '+item.benefit));
-        const checks=make('ul','support-checks');item.checks.forEach(check=>checks.append(make('li','',check)));details.append(checks);article.append(details);
+        const checks=make('ul','support-checks');[...item.checks,...(item.research_focus?.checks||[])].forEach(check=>checks.append(make('li','',check)));details.append(checks);article.append(details);
         const choices=make('div','support-interest');choices.setAttribute('role','group');choices.setAttribute('aria-label',item.title+' 관심 선택');
         for(const [value,label] of [['interested','관심있음'],['not_interested','관심없음']]) {
           const button=make('button','support-interest-button',label);button.type='button';

@@ -121,6 +121,56 @@ class SupportTests(unittest.TestCase):
             self.assertIsNone(self.assess(detail(title,target,'온라인 판로 개척')),title)
         self.assertIsNone(self.assess(detail('산업기술 연구개발','주관연구개발기관','전력망핵심기술 및 중수로 사업 연구개발비 지원')))
 
+    def test_senior_ai_research_focus_includes_benefit_and_cooperating_center(self):
+        for title in ('노인 인공지능 연구과제', '어르신 AI 현장실증', '시니어 케어 AX 공동연구', '치매 AI 중개연구'):
+            data=detail(title, '전국 기업 및 대학·연구기관', '연구개발비 지원')
+            self.assertIsNotNone(self.assess(data))
+            priority=biz.research_focus(data,self.profile)
+            self.assertEqual(priority['score'],60)
+            self.assertIn('서강대학교 시니어케어 AX센터',priority['reason'])
+            self.assertTrue(any('산학협력단' in check for check in priority['checks']))
+        data=detail('공동연구 지원','전국 기업과 대학','노인의 낙상 예방을 위한 인공지능 기술개발비 지원')
+        self.assertEqual(biz.research_focus(data,self.profile)['score'],60)
+        self.assertIn('AI·AX 전환',self.assess(data)['topics'])
+
+    def test_general_joint_ai_research_and_commercialization_are_distinguished(self):
+        generic=detail('인공지능 공동연구 개발','전국 기업·대학 컨소시엄','연구개발비 지원')
+        commercial=detail('에이지테크 AI 응용제품 신속 상용화','전국 기업','제품 상용화 지원')
+        self.assertEqual(biz.research_focus(generic,self.profile)['label'],'산학연 공동연구 검토')
+        self.assertEqual(biz.research_focus(commercial,self.profile)['label'],'시니어 AI·AX 상용화')
+        self.assertNotIn('연구개발',self.assess(commercial)['topics'])
+        self.assertEqual(biz.research_focus(detail('AX 솔루션 도입','창업기업','업무 프로세스 개선'),self.profile)['score'],0)
+
+    def test_events_senior_researchers_and_unrelated_ai_do_not_gain_research_priority(self):
+        for title in ('시니어 AI 교육생 모집','노인 AI 경진대회','시니어 인턴십 AI 연구인력 지원',
+                      '고경력 과학기술인 AI 연구개발 지원','AI 기반 주파수 간섭분석 연구개발',
+                      'MAX 연구개발','Trail 연구개발'):
+            data=detail(title,'전국 기업 및 대학','사업비 지원')
+            self.assertEqual(biz.research_focus(data,self.profile)['score'],0,title)
+
+    def test_research_cooperation_does_not_expand_company_location_or_reopen_deadlines(self):
+        self.assertEqual(self.profile['regions'],['경기','인천'])
+        self.assertEqual(self.profile['research_center_city'],'안양시')
+        self.assertIsNone(self.assess(detail('[서울] 노인 AI 연구개발','서울 소재 기업','연구개발비 지원')))
+        self.assertIsNone(self.assess(detail('노인 AI 연구개발',period='2026.03.01 ~ 2026.04.01')))
+        self.assertIsNone(self.assess(detail('시니어 AI 연구개발','공장등록 제조기업','연구개발비 지원')))
+
+    def test_priority_is_added_once_and_interest_feedback_still_takes_precedence(self):
+        research={**detail('노인 AI 공동연구'), 'id':'research','score':20,'topics':['연구개발'],
+                  'published_at':'2026-09-01','application_status':{'active':True}}
+        generic={**detail(), 'id':'generic','score':50,'topics':['창업'],
+                 'published_at':'2026-09-09','application_status':{'active':True}}
+        items=[generic,research]
+        biz.apply_preferences(items,{})
+        self.assertEqual(items[0]['id'],'research')
+        score=items[0]['recommendation_score']
+        biz.apply_preferences(items,{})
+        self.assertEqual(items[0]['recommendation_score'],score)
+        biz.apply_preferences(items,{'research':{'preference':'not_interested','topics':'[]'}})
+        self.assertEqual(items[0]['id'],'generic')
+        no_priority=deepcopy(self.profile);no_priority['prioritize_senior_ai_research']=False
+        self.assertEqual(biz.research_focus(research,no_priority)['score'],0)
+
     def test_establishment_employment_and_existing_business_limits(self):
         for target in ['예비창업자','업력 7년 이상 창업기업','상시근로자 10인 이상 중소기업',"고용보험 성립일자가 '22.12.31. 이전인 기업"]:
             self.assertIsNone(self.assess(detail(target=target)),target)
