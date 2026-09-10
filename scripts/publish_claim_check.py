@@ -17,6 +17,16 @@ ENVIRONMENT = "6a839bc7-ff57-4811-abdd-cb74b16d97d2"
 URL = "https://app.aivida.tech/api/claim-check"
 
 
+def verify_published(payload, saved):
+    actual = {b["id"]: b for b in saved["branches"]}
+    if saved["benefitMonth"] != payload["benefitMonth"] or set(actual) != {b["id"] for b in payload["branches"]}:
+        raise RuntimeError("저장 후 사이트의 대상 월과 지점을 확인하지 못했습니다.")
+    for branch in payload["branches"]:
+        key = "checkedAt" if branch["querySucceeded"] else "lastQueryFailureAt"
+        if actual[branch["id"]].get(key) != branch["checkedAt"]:
+            raise RuntimeError("저장 후 사이트 응답을 확인하지 못했습니다. 같은 결과를 재확인해주세요.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("result", type=Path, help="Credential-free JSON from a completed browser query")
@@ -37,10 +47,7 @@ def main():
     subprocess.run(command, check=True, timeout=90)
     with urllib.request.urlopen(URL, timeout=20) as response:
         saved = json.load(response)
-    expected_times = {b["id"]: b["checkedAt"] for b in payload["branches"]}
-    actual_times = {b["id"]: b["checkedAt"] for b in saved["branches"]}
-    if saved["benefitMonth"] != payload["benefitMonth"] or expected_times != actual_times:
-        raise RuntimeError("저장 후 사이트 응답을 확인하지 못했습니다. 같은 결과를 재확인해주세요.")
+    verify_published(payload, saved)
     print("사이트 반영 확인: " + ", ".join(f'{b["name"]} {b["label"]} ({b["verifiedItems"]}/3 항목)' for b in saved["branches"]))
 
 

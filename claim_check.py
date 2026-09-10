@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import argparse
 import base64
+import copy
 import json
 import os
 import tempfile
@@ -33,8 +34,8 @@ def timestamp(value):
     return result.astimezone(KST)
 
 
-def exact_keys(value, keys):
-    if not isinstance(value, dict) or set(value) != set(keys):
+def exact_keys(value, keys, optional=()):
+    if not isinstance(value, dict) or not set(keys) <= set(value) or set(value) - set(keys) - set(optional):
         raise ValueError("점검 결과의 항목을 확인해주세요.")
 
 
@@ -51,7 +52,7 @@ def validate(payload, now=None, require_current=True):
         raise ValueError("두 지점의 점검 결과가 필요합니다.")
     seen = set()
     for branch in branches:
-        exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"})
+        exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"}, {"lastQueryFailureAt"})
         ident = branch["id"]
         if ident not in BRANCHES or ident in seen or branch["institutionNumber"] != BRANCHES[ident][1]:
             raise ValueError("지점과 기관 기호가 일치하지 않습니다.")
@@ -60,6 +61,10 @@ def validate(payload, now=None, require_current=True):
             raise ValueError("확인 시각이 현재보다 늦습니다.")
         if type(branch["querySucceeded"]) is not bool:
             raise ValueError("조회 성공 여부가 필요합니다.")
+        if "lastQueryFailureAt" in branch:
+            failed_at = timestamp(branch["lastQueryFailureAt"])
+            if not branch["querySucceeded"] or not timestamp(branch["checkedAt"]) <= failed_at <= now + timedelta(minutes=5):
+                raise ValueError("재조회 실패 시각을 확인해주세요.")
         if not isinstance(branch["claims"], list) or len(branch["claims"]) > 100:
             raise ValueError("청구 목록 형식이 올바르지 않습니다.")
         if not branch["querySucceeded"] and branch["claims"]:
@@ -79,14 +84,32 @@ def validate(payload, now=None, require_current=True):
 
 def save(payload, path=None, now=None):
     now = now or now_kst()
-    payload = validate(payload, now)
+    payload = validate(copy.deepcopy(payload), now)
     path = Path(path or data_path())
     if path.exists():
-        old = json.loads(path.read_text(encoding="utf-8"))
+        old = validate(json.loads(path.read_text(encoding="utf-8")), now, require_current=False)
         if old.get("benefitMonth") == payload["benefitMonth"]:
-            prior = {b["id"]: timestamp(b["checkedAt"]) for b in old["branches"]}
-            if any(timestamp(b["checkedAt"]) < prior.get(b["id"], timestamp(b["checkedAt"])) for b in payload["branches"]):
-                raise ValueError("더 오래된 점검으로 최신 결과를 덮어쓸 수 없습니다.")
+            prior = {b["id"]: b for b in old["branches"]}
+            for index, branch in enumerate(payload["branches"]):
+                previous = prior[branch["id"]]
+                checked_at = timestamp(branch["checkedAt"])
+                previous_at = timestamp(previous["checkedAt"])
+                failed_at = previous.get("lastQueryFailureAt") if previous["querySucceeded"] else previous["checkedAt"]
+                if branch["querySucceeded"]:
+                    if previous["querySucceeded"] and checked_at < previous_at:
+                        raise ValueError("더 오래된 점검으로 최신 결과를 덮어쓸 수 없습니다.")
+                    # A failed attempt is not a newer claim result. An earlier verified
+                    # result can fill that gap without pretending it was checked again.
+                    if failed_at and timestamp(failed_at) >= checked_at:
+                        incoming_failure = branch.get("lastQueryFailureAt", failed_at)
+                        branch["lastQueryFailureAt"] = max((failed_at, incoming_failure), key=timestamp)
+                else:
+                    latest_at = max(previous_at, timestamp(failed_at)) if failed_at else previous_at
+                    if checked_at < latest_at:
+                        raise ValueError("더 오래된 점검으로 최신 결과를 덮어쓸 수 없습니다.")
+                    if previous["querySucceeded"]:
+                        payload["branches"][index] = {**previous, "lastQueryFailureAt": branch["checkedAt"]}
+    validate(payload, now)
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as output:
         json.dump(payload, output, ensure_ascii=False)
@@ -126,7 +149,8 @@ def report(path=None, now=None):
             message = "심사 이외의 처리상태가 있어 확인이 필요합니다."
         results.append({"id": ident, "name": name, "status": "accepted" if accepted else "check",
                         "label": "접수 완료" if accepted else "점검", "message": message,
-                        "checkedAt": entry["checkedAt"] if entry else None,
+                        "checkedAt": entry["checkedAt"] if entry and entry["querySucceeded"] else None,
+                        "lastQueryFailureAt": (entry.get("lastQueryFailureAt") if entry["querySucceeded"] else entry["checkedAt"]) if entry else None,
                         "claims": claims, "count": len(claims), "missing": missing,
                         "verifiedItems": 3 - len(missing)})
     return {"benefitMonth": month, "deadline": deadline.isoformat(),

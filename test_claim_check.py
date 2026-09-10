@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import app
 import claim_check as claims
+from scripts.publish_claim_check import verify_published
 
 NOW = datetime(2026, 9, 10, 14, tzinfo=claims.KST)
 
@@ -81,11 +82,98 @@ class ClaimCheckTests(unittest.TestCase):
         payload["branches"][0]["claims"] = []
         self.assertFalse(self.result(payload)["allAccepted"])
         payload["branches"][0]["querySucceeded"] = False
-        self.assertIn("조회", self.result(payload)["branches"][0]["message"])
+        failed = self.result(payload)["branches"][0]
+        self.assertEqual(failed["status"], "check")
+        self.assertEqual(failed["lastQueryFailureAt"], NOW.isoformat())
         self.result(sample())
         result = claims.report(self.path, NOW + timedelta(hours=37))
         self.assertTrue(result["allAccepted"])
         self.assertEqual(result["branches"][0]["checkedAt"], NOW.isoformat())
+
+    def test_failed_recheck_preserves_each_branch_result_and_success_time(self):
+        self.result(sample())
+        later = NOW + timedelta(hours=1)
+        payload = sample()
+        for branch in payload["branches"]:
+            branch["checkedAt"] = later.isoformat()
+        payload["branches"][0].update(querySucceeded=False, claims=[])
+        claims.save(payload, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertTrue(result["allAccepted"])
+        self.assertEqual(result["branches"][0]["checkedAt"], NOW.isoformat())
+        self.assertEqual(result["branches"][0]["lastQueryFailureAt"], later.isoformat())
+        self.assertEqual(result["branches"][0]["verifiedItems"], 3)
+        self.assertEqual(result["branches"][1]["checkedAt"], later.isoformat())
+        self.assertIsNone(result["branches"][1]["lastQueryFailureAt"])
+        verify_published(payload, result)
+        stale = copy.deepcopy(result)
+        stale["branches"][0]["lastQueryFailureAt"] = NOW.isoformat()
+        with self.assertRaises(RuntimeError):
+            verify_published(payload, stale)
+
+    def test_repeated_failures_do_not_erase_results_and_real_new_result_replaces_them(self):
+        self.result(sample())
+        for hours in (1, 2):
+            later = NOW + timedelta(hours=hours)
+            payload = sample()
+            for branch in payload["branches"]:
+                branch.update(checkedAt=later.isoformat(), querySucceeded=False, claims=[])
+            claims.save(payload, self.path, later)
+            result = claims.report(self.path, later)
+            self.assertTrue(result["allAccepted"])
+            self.assertEqual(result["branches"][0]["lastQueryFailureAt"], later.isoformat())
+        later = NOW + timedelta(hours=3)
+        payload = sample()
+        for branch in payload["branches"]:
+            branch["checkedAt"] = later.isoformat()
+        payload["branches"][0]["claims"][0]["processingStatus"] = "반송"
+        claims.save(payload, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertFalse(result["allAccepted"])
+        self.assertEqual(result["branches"][0]["checkedAt"], later.isoformat())
+        self.assertIsNone(result["branches"][0]["lastQueryFailureAt"])
+
+    def test_first_failure_is_unknown_and_earlier_verified_result_can_be_recovered(self):
+        later = NOW + timedelta(hours=1)
+        failed = sample()
+        for branch in failed["branches"]:
+            branch.update(checkedAt=later.isoformat(), querySucceeded=False, claims=[])
+        claims.save(failed, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertFalse(result["allAccepted"])
+        self.assertIsNone(result["branches"][0]["checkedAt"])
+        self.assertEqual(result["branches"][0]["lastQueryFailureAt"], later.isoformat())
+        verify_published(failed, result)
+        claims.save(sample(), self.path, later)
+        recovered = claims.report(self.path, later)
+        self.assertTrue(recovered["allAccepted"])
+        self.assertEqual(recovered["branches"][0]["checkedAt"], NOW.isoformat())
+        self.assertEqual(recovered["branches"][0]["lastQueryFailureAt"], later.isoformat())
+        verify_published(sample(), recovered)
+        # An older failure cannot replace the newer failure or the recovered result.
+        for branch in failed["branches"]:
+            branch["checkedAt"] = NOW.isoformat()
+        with self.assertRaises(ValueError):
+            claims.save(failed, self.path, later)
+
+    def test_failed_query_does_not_carry_completion_into_a_new_benefit_month(self):
+        self.result(sample())
+        later = datetime(2026, 10, 6, 11, tzinfo=claims.KST)
+        payload = sample()
+        payload["benefitMonth"] = "2026-09"
+        for branch in payload["branches"]:
+            branch.update(checkedAt=later.isoformat(), querySucceeded=False, claims=[])
+        claims.save(payload, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertFalse(result["allAccepted"])
+        self.assertTrue(all(b["claims"] == [] and b["checkedAt"] is None for b in result["branches"]))
+
+    def test_failure_metadata_cannot_predate_success_or_claim_a_future_attempt(self):
+        for moment in (NOW - timedelta(minutes=1), NOW + timedelta(hours=1)):
+            payload = sample()
+            payload["branches"][0]["lastQueryFailureAt"] = moment.isoformat()
+            with self.assertRaises(ValueError):
+                claims.save(payload, self.path, NOW)
 
     def test_month_rollover_hides_history_and_year_rollover_uses_korea(self):
         self.result(sample())
