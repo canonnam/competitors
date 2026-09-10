@@ -11,6 +11,7 @@ import wiki_chat
 import agency_news
 import search_visibility
 import reputation_watch
+import claim_check
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -54,6 +55,9 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
+            self.send_claim_check()
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/reputation-watch":
             self.send_reputation()
             return
@@ -80,6 +84,9 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
+            self.send_claim_check(head_only=True)
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/reputation-watch":
             self.send_reputation(head_only=True)
             return
@@ -104,6 +111,20 @@ class App(SimpleHTTPRequestHandler):
             self.send_ad_report(head_only=True)
             return
         super().do_HEAD()
+
+    def send_claim_check(self, head_only=False):
+        try:
+            payload, status = claim_check.report(), 200
+        except (OSError, ValueError, TypeError, KeyError):
+            payload, status = {"error": "청구 점검 결과를 불러오지 못했습니다."}, 503
+        raw = json.dumps(payload, ensure_ascii=False).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(raw)
 
     def send_map_payload(self, head_only=False):
         route = urllib.parse.urlsplit(self.path).path
@@ -231,7 +252,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
+        public_pages = {"claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
