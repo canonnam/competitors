@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import urllib.parse
+import support_feedback
 
 from agency_news import Document, checked_url, matches, normalized
 
@@ -321,13 +322,21 @@ def fingerprint(item):
     return hashlib.sha256(json.dumps([item['title'], item['published_at'], item['application_period']], ensure_ascii=False).encode()).hexdigest()
 
 
-def save_preference(path, article_id, preference, now):
+def save_preference(path, article_id, preference, now, reason=None):
     """One shared company choice per announcement; repeated requests never add votes."""
     from agency_news import connect
     if not isinstance(article_id, str) or not re.fullmatch(r'bizinfo:PBLN_\d{1,40}', article_id):
         raise ValueError('지원사업 ID가 올바르지 않습니다.')
     if not isinstance(preference, str) or preference not in ('interested', 'not_interested', 'neutral'):
         raise ValueError('관심 선택이 올바르지 않습니다.')
+    # Omitted reasons remain compatible with already-open versions of the page.
+    # An explicit reason from the new form must be nonempty for a rejection.
+    if reason is not None:
+        reason = support_feedback.validate_reason(reason)
+        if preference == 'not_interested' and not reason:
+            raise ValueError('관심없는 이유를 입력해주세요.')
+        if preference != 'not_interested' and reason:
+            raise ValueError('관심없는 이유는 관심없음 선택에만 저장할 수 있습니다.')
     with connect(path) as db:
         row = db.execute('SELECT payload FROM articles WHERE id=?', (article_id,)).fetchone()
         if row is None or json.loads(row[0]).get('kind') != 'support':
@@ -335,18 +344,27 @@ def save_preference(path, article_id, preference, now):
         if preference == 'neutral':
             db.execute('DELETE FROM support_preferences WHERE article_id=?', (article_id,))
         else:
+            previous = db.execute('SELECT reason FROM support_preferences WHERE article_id=?', (article_id,)).fetchone()
+            reason = ((previous['reason'] if previous else '') if reason is None else reason) if preference == 'not_interested' else ''
             topics = json.dumps(json.loads(row[0]).get('topics', []), ensure_ascii=False)
-            db.execute('''INSERT INTO support_preferences(article_id,preference,topics,updated_at) VALUES (?,?,?,?)
+            db.execute('''INSERT INTO support_preferences(article_id,preference,topics,updated_at,reason) VALUES (?,?,?,?,?)
                 ON CONFLICT(article_id) DO UPDATE SET preference=excluded.preference,
-                    topics=excluded.topics,updated_at=excluded.updated_at''',
-                       (article_id, preference, topics, now.isoformat()))
+                    topics=excluded.topics,updated_at=excluded.updated_at,reason=excluded.reason''',
+                       (article_id, preference, topics, now.isoformat(), reason))
+    return support_feedback.analyze_reason(reason or '')
 
 
 def apply_preferences(items, preferences):
     """Adjust eligible candidates by topic feedback without changing eligibility rules."""
     topic_weights = {}
+    feedback = {identity: support_feedback.analyze_reason(saved.get('reason', ''))
+                for identity, saved in preferences.items() if saved['preference'] == 'not_interested'}
     current = {item['id']: item for item in items}
     for identity, saved in preferences.items():
+        # Specific reasons replace broad negative topic votes. A scheduling issue
+        # must not lower all senior-care / AI research announcements.
+        if saved['preference'] == 'not_interested' and feedback[identity]['reason']:
+            continue
         topics = set(current[identity]['topics'] if identity in current else json.loads(saved['topics']))
         direction = 1 if saved['preference'] == 'interested' else -1
         for topic in topics:
@@ -355,6 +373,8 @@ def apply_preferences(items, preferences):
         preference = preferences.get(item['id'], {}).get('preference', 'neutral')
         topics = set(item.get('topics', []))
         adjustment = round(max(-40, min(40, 12 * sum(topic_weights.get(t, 0) for t in topics))), 2)
+        matching = [support_feedback.matched_rules(item, reason) for reason in feedback.values()]
+        reason_adjustment = -min(60, 24 * sum(bool(rules) for rules in matching))
         explanation = []
         if preference == 'interested':
             explanation.append('관심있음으로 선택한 사업을 우선 추천합니다.')
@@ -364,9 +384,15 @@ def apply_preferences(items, preferences):
             explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 높였습니다.')
         elif adjustment < 0:
             explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 낮췄습니다.')
+        if reason_adjustment:
+            criteria = list(dict.fromkeys(rule['label'] + (' 관련성 미확인' if rule['mode'] == 'require' else '')
+                                        for rules in matching for rule in rules))
+            explanation.append('관심없음 이유 반영 · ' + ', '.join(criteria) + ' 조건 때문에 추천 순위를 낮췄습니다.')
         priority = research_focus(item)
-        item.update(preference=preference, preference_score=adjustment, research_focus=priority,
-                    recommendation_score=item.get('score', 0)+adjustment+priority['score'], preference_reasons=explanation)
+        item.update(preference=preference, preference_score=adjustment+reason_adjustment,
+                    reason_preference_score=reason_adjustment,
+                    preference_feedback=feedback.get(item['id'], support_feedback.analyze_reason('')), research_focus=priority,
+                    recommendation_score=item.get('score', 0)+adjustment+reason_adjustment+priority['score'], preference_reasons=explanation)
     items.sort(key=lambda item: (item['application_status']['active'],
         {'interested': 1, 'neutral': 0, 'not_interested': -1}[item['preference']],
         item['recommendation_score'], item['published_at'], item['id']), reverse=True)

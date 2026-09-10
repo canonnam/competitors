@@ -305,11 +305,14 @@ class App(SimpleHTTPRequestHandler):
         import business_support
         try:
             wiki_chat.check_origin(self)
-            body = wiki_chat.read_json(self, 1024)
+            body = wiki_chat.read_json(self, 8192)
             if not isinstance(body, dict):
                 raise ValueError('요청 형식이 올바르지 않습니다.')
-            business_support.save_preference(agency_news.db_path(), body.get('article_id'),
-                                             body.get('preference'), agency_news.datetime.now(agency_news.KST))
+            if 'reason' in body and not isinstance(body['reason'], str):
+                raise ValueError('관심없는 이유를 글자로 입력해주세요.')
+            feedback = business_support.save_preference(agency_news.db_path(), body.get('article_id'),
+                                             body.get('preference'), agency_news.datetime.now(agency_news.KST),
+                                             reason=body.get('reason'))
         except wiki_chat.ChatError as exc:
             wiki_chat.send_json(self, exc.status, {'error': str(exc)})
             return
@@ -319,7 +322,10 @@ class App(SimpleHTTPRequestHandler):
         except (sqlite3.Error, OSError):
             wiki_chat.send_json(self, 503, {'error': '관심 선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.'})
             return
-        wiki_chat.send_json(self, 200, {'article_id': body['article_id'], 'preference': body['preference']})
+        result = {'article_id': body['article_id'], 'preference': body['preference']}
+        if 'reason' in body:
+            result['feedback'] = feedback
+        wiki_chat.send_json(self, 200, result)
 
 
 if __name__ == "__main__":

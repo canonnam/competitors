@@ -282,6 +282,9 @@ def init_db(path):
                 topics TEXT NOT NULL, updated_at TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS agency_date ON articles(published_at DESC);
         ''')
+        columns = {row['name'] for row in db.execute('PRAGMA table_info(support_preferences)')}
+        if 'reason' not in columns:
+            db.execute("ALTER TABLE support_preferences ADD COLUMN reason TEXT NOT NULL DEFAULT ''")
 
 
 def due_at(now):

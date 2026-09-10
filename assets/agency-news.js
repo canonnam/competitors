@@ -25,7 +25,7 @@
         && (preference==='all' || (preference==='recommended' ? (!support||item.preference!=='not_interested') : (support&&item.preference===preference)))
         && (!onlyUnread || (support&&item.application_status.active&&!readIds.has(item.id)))
         && (!activeOnly || !support || item.application_status.active)
-        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[]),item.research_focus?.label||'',item.research_focus?.reason||''].join(' ').toLocaleLowerCase().includes(query));
+        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[]),item.research_focus?.label||'',item.research_focus?.reason||'',item.preference_feedback?.reason||''].join(' ').toLocaleLowerCase().includes(query));
     });
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = {status,safeUrl,unreadSupport,filterItems};
@@ -38,7 +38,8 @@
   const readKey='vida-support-read-v1';
   let readIds=new Set();
   try {const saved=JSON.parse(localStorage.getItem(readKey)||'[]');if(Array.isArray(saved))readIds=new Set(saved.filter(id=>typeof id==='string'));}catch{}
-  let current, visible=30, loading=false, onlyUnread=false, saving=false, revision=0;
+  let current, visible=30, loading=false, onlyUnread=false, saving=false, revision=0, reasonTarget=null, reasonFocus=null;
+  const reasonDialog=$('support-reason-dialog'), reasonForm=$('support-reason-form'), reasonInput=$('support-reason-input');
   function drawStatus(data) {
     const state=status(data), checked=data.sources.filter(source=>source.last_success&&!source.error&&!source.stale).length, target=data.sources.length;
     const unread=unreadSupport(data,readIds).length;
@@ -111,10 +112,18 @@
           const button=make('button','support-interest-button',label);button.type='button';
           button.dataset.articleId=item.id;button.dataset.preference=value;button.disabled=saving;
           button.setAttribute('aria-pressed',String(item.preference===value));
-          button.title=item.preference===value?'다시 누르면 선택을 취소합니다.':label+'으로 선택하고 추천에 반영합니다.';
-          button.addEventListener('click',()=>savePreference(item.id,item.preference===value?'neutral':value,value));choices.append(button);
+          button.title=item.preference===value?'다시 누르면 선택을 취소합니다.':value==='not_interested'?'관심없는 이유를 입력하고 추천에 반영합니다.':label+'으로 선택하고 추천에 반영합니다.';
+          button.addEventListener('click',()=>value==='not_interested'&&item.preference!==value
+            ?openReason(item,button):savePreference(item.id,item.preference===value?'neutral':value,value));choices.append(button);
         }
         article.append(choices);
+        if(item.preference==='not_interested') {
+          const feedback=make('div','support-saved-feedback');feedback.append(make('strong','','관심없는 이유'));
+          feedback.append(make('p','support-saved-reason',item.preference_feedback?.reason||'아직 입력한 이유가 없습니다.'));
+          if(item.preference_feedback?.summary)feedback.append(make('p','support-reason-effect',item.preference_feedback.summary));
+          const edit=make('button','support-reason-edit',item.preference_feedback?.reason?'이유 수정':'이유 추가');edit.type='button';edit.dataset.editReason=item.id;edit.disabled=saving;
+          edit.addEventListener('click',()=>openReason(item,edit));feedback.append(edit);article.append(feedback);
+        }
         if(item.preference_reasons?.length)article.append(make('p','support-interest-reason',item.preference_reasons.join(' ')));
       }
       const footer=make('div','agency-item-footer');
@@ -135,38 +144,57 @@
     const response=await fetch('/api/agency-news'+(list?'':'?summary=1'),{cache:'no-store',signal:AbortSignal.timeout(20000)});
     if(!response.ok)throw new Error('Agency request failed');return response.json();
   }
-  async function savePreference(id,preference,focusValue) {
+  function openReason(item,button) {
+    if(saving||!reasonDialog)return;
+    reasonTarget=item.id;reasonFocus=button;revision++;
+    $('support-reason-title').textContent=item.title;
+    reasonInput.value=item.preference_feedback?.reason||'';reasonInput.setCustomValidity('');
+    $('support-reason-error').textContent='';updateReasonCount();
+    reasonDialog.showModal();reasonInput.focus();
+  }
+  function updateReasonCount() {
+    if(reasonInput)$('support-reason-count').textContent=`${[...reasonInput.value].length} / 500자`;
+  }
+  async function savePreference(id,preference,focusValue,reason='') {
     if(saving)return;saving=true;revision++;
     const message=$('support-feedback-status');message.textContent='관심 선택을 저장하고 있습니다.';
-    list.querySelectorAll('[data-preference]').forEach(button=>{button.disabled=true;});
+    list.querySelectorAll('[data-preference],[data-edit-reason]').forEach(button=>{button.disabled=true;});
+    if(reasonDialog?.open){$('support-reason-error').textContent=message.textContent;[...reasonForm.elements].forEach(field=>{field.disabled=true;});}
     let saved=false;
     try {
       const response=await fetch('/api/agency-news/support-preference',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({article_id:id,preference}),signal:AbortSignal.timeout(20000)});
-      if(!response.ok)throw new Error('Preference request failed');
+        body:JSON.stringify({article_id:id,preference,reason}),signal:AbortSignal.timeout(20000)});
+      if(!response.ok){const error=await response.json().catch(()=>({}));throw new Error(error.error||'관심 선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');}
       const result=await response.json();
       if(result.article_id!==id||result.preference!==preference)throw new Error('Invalid preference response');
       saved=true;
       // Keep the acknowledged choice visible even if the subsequent report refresh fails.
-      const item=current.items.find(item=>item.id===id);item.preference=preference;item.preference_reasons=[];
+      const item=current.items.find(item=>item.id===id);item.preference=preference;item.preference_reasons=[];item.preference_feedback=result.feedback||{reason,summary:''};
       const summaryItem=current.support.items.find(item=>item.id===id);
       summaryItem.preference=preference;summaryItem.active=item.application_status.active&&preference!=='not_interested';
       current.support.active=current.support.items.filter(item=>item.active).length;
       current.article_ids=current.items.filter(item=>item.kind!=='support'||(item.application_status.active&&item.preference!=='not_interested')).map(item=>item.id);
       render(await loadReport());
+      const effect=result.feedback?.summary||'추천에 반영했습니다.';
       message.textContent=preference==='neutral'?'관심 선택을 취소하고 추천에 반영했습니다.':preference==='interested'
         ?'관심있음으로 저장했습니다. 해당 사업과 비슷한 분야의 추천 순위에 반영했습니다.'
-        :'관심없음으로 저장했습니다. 기본 추천에서 숨겼으며, 관심없음 목록에서 취소할 수 있습니다.';
-    } catch {
-      message.textContent=saved?'관심 선택은 저장했습니다. 추천 목록을 갱신하지 못해 새로고침이 필요합니다.':'관심 선택의 저장을 확인하지 못했습니다. 잠시 후 다시 눌러주세요.';
+        :'관심없음과 이유를 저장했습니다. '+effect+(effect.endsWith('.')?'':'.')+' 관심없음 목록에서 이유를 수정하거나 선택을 취소할 수 있습니다.';
+    } catch(error) {
+      message.textContent=saved?'관심 선택과 이유는 저장했습니다. 추천 목록을 갱신하지 못해 새로고침이 필요합니다.':
+        (error.name==='Error'?error.message:'관심 선택의 저장을 확인하지 못했습니다. 입력한 이유를 유지했으니 다시 저장해주세요.');
     } finally {
       saving=false;drawStatus(current);drawList();newMark?.update(current.article_ids);
+      if(reasonDialog?.open) {
+        [...reasonForm.elements].forEach(field=>{field.disabled=false;});
+        if(saved){reasonFocus=null;reasonDialog.close();reasonTarget=null;}
+        else{$('support-reason-error').textContent=message.textContent;reasonInput.focus();return;}
+      }
       const button=[...list.querySelectorAll('[data-preference]')].find(button=>button.dataset.articleId===id&&button.dataset.preference===focusValue);
       (button||message).focus({preventScroll:true});
     }
   }
   async function refresh() {
-    if(loading||saving)return;loading=true;const started=revision;
+    if(loading||saving||reasonDialog?.open)return;loading=true;const started=revision;
     try {
       const data=await loadReport();if(started===revision)render(data);
     } catch {
@@ -175,6 +203,20 @@
       const badge=$('home-agency-badge');if(badge){badge.querySelector('span').textContent='연결 확인 필요';badge.classList.add('is-warning');badge.title=message.textContent;badge.setAttribute('aria-label',message.textContent);}
     } finally {loading=false;}
   }
+  reasonInput?.addEventListener('input',()=>{reasonInput.setCustomValidity('');updateReasonCount();});
+  reasonForm?.addEventListener('submit',event=>{
+    event.preventDefault();if(saving||!reasonTarget)return;
+    const reason=reasonInput.value.trim();
+    if(!reason){reasonInput.setCustomValidity('관심없는 이유를 입력해주세요.');reasonInput.reportValidity();return;}
+    savePreference(reasonTarget,'not_interested','not_interested',reason);
+  });
+  reasonForm?.querySelectorAll('[data-reason-suggestion]').forEach(button=>button.addEventListener('click',()=>{
+    // Suggestions are editable examples, never silent additional preferences.
+    reasonInput.value=button.dataset.reasonSuggestion;reasonInput.setCustomValidity('');updateReasonCount();reasonInput.focus();
+  }));
+  $('support-reason-cancel')?.addEventListener('click',()=>{if(!saving)reasonDialog.close();});
+  reasonDialog?.addEventListener('cancel',event=>{if(saving)event.preventDefault();});
+  reasonDialog?.addEventListener('close',()=>{reasonTarget=null;if(reasonFocus?.isConnected)reasonFocus.focus({preventScroll:true});reasonFocus=null;});
   ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested'].includes($(id).value))$('agency-filter').value='bizinfo';drawList();}));
   $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();list.scrollIntoView({behavior:'smooth',block:'start'});});
   $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='all';$('agency-search').value='';drawList();});

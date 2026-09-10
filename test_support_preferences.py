@@ -30,8 +30,8 @@ class SupportPreferenceTests(unittest.TestCase):
             self.public = {'id': 'news', 'kind': 'mohw', 'published_at': '2026-09-09', 'title': '공공기관 소식'}
             db.execute('INSERT INTO articles VALUES (?,?,?)', ('news', '2026-09-09', json.dumps(self.public)))
 
-    def choose(self, preference, identity='bizinfo:PBLN_1'):
-        biz.save_preference(self.path, identity, preference, NOW)
+    def choose(self, preference, identity='bizinfo:PBLN_1', reason=None):
+        return biz.save_preference(self.path, identity, preference, NOW, reason=reason)
 
     def report(self):
         return news.report(self.path, NOW)
@@ -101,6 +101,64 @@ class SupportPreferenceTests(unittest.TestCase):
         biz.apply_preferences(items, preferences)
         self.assertEqual(min(item['preference_score'] for item in items), -40)
 
+    def test_schema_upgrade_keeps_legacy_choices_and_is_repeatable(self):
+        old_path = Path(self.temp.name) / 'legacy.db'
+        with news.connect(old_path) as db:
+            db.execute('CREATE TABLE support_preferences(article_id TEXT PRIMARY KEY, preference TEXT NOT NULL, topics TEXT NOT NULL, updated_at TEXT NOT NULL)')
+            db.execute('INSERT INTO support_preferences VALUES (?,?,?,?)', ('old', 'not_interested', '["AI"]', NOW.isoformat()))
+        news.init_db(old_path);news.init_db(old_path)
+        with news.connect(old_path) as db:
+            saved = dict(db.execute('SELECT * FROM support_preferences').fetchone())
+        self.assertEqual(saved['preference'], 'not_interested');self.assertEqual(saved['reason'], '')
+        self.assertEqual(saved['topics'], '["AI"]')
+
+    def test_reason_changes_new_candidates_without_lowering_the_whole_sector(self):
+        with news.connect(self.path) as db:
+            for identity, title in [(1, '시니어 창업 입주기업 모집'), (2, '시니어 입주 공간 지원'), (3, '시니어 AI 연구과제 지원')]:
+                item = json.loads(db.execute('SELECT payload FROM articles WHERE id=?', (f'bizinfo:PBLN_{identity}',)).fetchone()[0])
+                item.update(title=title, target='전국 기업', benefit='', topics=['시니어'], score=20)
+                db.execute('UPDATE articles SET payload=? WHERE id=?', (json.dumps(item), item['id']))
+        feedback = self.choose('not_interested', reason='입주 공간은 필요 없고 시니어 AI 연구과제에 관심이 있습니다.')
+        self.assertIn('입주', feedback['summary'])
+        items = {row['id']: row for row in self.supports()}
+        self.assertEqual(items['bizinfo:PBLN_2']['preference_score'], -24)
+        self.assertEqual(items['bizinfo:PBLN_3']['preference_score'], 0)
+        newcomer = {**items['bizinfo:PBLN_2'], 'id': 'bizinfo:PBLN_4'}
+        with news.connect(self.path) as db:
+            db.execute('INSERT INTO articles VALUES (?,?,?)', (newcomer['id'], newcomer['published_at'], json.dumps(newcomer)))
+        self.assertEqual(next(row for row in self.supports() if row['id']==newcomer['id'])['reason_preference_score'], -24)
+        self.choose('not_interested', reason='이번에는 일정이 맞지 않습니다.')
+        self.assertTrue(all(row['preference_score']==0 for row in self.supports()))
+        self.assertNotIn('bizinfo:PBLN_1', self.report()['article_ids'])
+        self.assertIn('이번에는 일정', next(row for row in self.supports() if row['id']=='bizinfo:PBLN_1')['preference_feedback']['reason'])
+
+    def test_reason_edit_retry_restart_crawl_switch_and_cancel(self):
+        reason = '특허와 상표는 필요 없습니다.'
+        self.choose('not_interested', reason=reason)
+        before = self.supports()
+        self.choose('not_interested', reason=reason)
+        news.init_db(self.path)
+        self.choose('not_interested')  # a cached old client must not erase a reason
+        self.assertEqual(self.supports(), before)
+        news.sync(self.path, NOW, lambda url: listing([1, 2, 3]) if 'View.do' in url else detail_html(detail()), [SOURCE])
+        self.assertEqual(self.supports(), before)
+        self.choose('interested', reason='')
+        self.assertEqual(self.supports()[0]['preference_feedback']['reason'], '')
+        self.choose('not_interested', reason=reason)
+        self.choose('neutral', reason='')
+        self.assertTrue(all(row['preference_score']==0 for row in self.supports()))
+        with news.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM support_preferences').fetchone()[0], 0)
+
+    def test_reason_penalties_are_bounded_and_never_accumulate_on_read(self):
+        items = deepcopy(self.supports())
+        preferences = {str(i): {'preference': 'not_interested', 'topics': '["돌봄"]', 'reason': '시니어 케어와 관련된 사업만 원합니다.'} for i in range(20)}
+        biz.apply_preferences(items, preferences)
+        self.assertTrue(all(row['reason_preference_score']==-60 for row in items))
+        first = deepcopy(items)
+        biz.apply_preferences(items, preferences)
+        self.assertEqual(items, first)
+
     def test_api_validates_inputs_origin_and_storage_failures_without_webhooks(self):
         server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.App)
         worker = threading.Thread(target=server.serve_forever, daemon=True);worker.start()
@@ -123,7 +181,14 @@ class SupportPreferenceTests(unittest.TestCase):
                 self.assertEqual(request(body, {'Sec-Fetch-Site': 'cross-site'})[0], 403)
                 self.assertEqual(request(body, {'Content-Type': 'text/plain'})[0], 415)
                 self.assertEqual(request(body, raw='{broken')[0], 400)
-                self.assertEqual(request(body, raw='x'*1025)[0], 413)
+                self.assertEqual(request(body, raw='x'*8193)[0], 413)
+                dislike = {**body, 'preference': 'not_interested'}
+                for reason in ['', '  ', [], None, False, '가'*501, 'bad\x00text']:
+                    self.assertEqual(request({**dislike, 'reason': reason})[0], 400)
+                self.assertEqual(request({**body, 'reason': '잘못된 선택'})[0], 400)
+                code, payload = request({**dislike, 'reason': '입주 공간은 필요 없습니다.'})
+                self.assertEqual(code, 200);self.assertIn('입주', payload['feedback']['summary'])
+                self.assertEqual(request({**dislike, 'reason': '가'*500})[0], 200)
                 with patch.object(biz, 'save_preference', side_effect=sqlite3.OperationalError('private DB path')):
                     code, payload = request(body)
                     self.assertEqual(code, 503);self.assertNotIn('private', payload['error'])
