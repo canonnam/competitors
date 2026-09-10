@@ -38,3 +38,18 @@ test('support alerts ignore read and expired items and preserve public news filt
   assert.equal(filterItems(items,{onlyUnread:true,readIds:new Set(['new'])}).length,0);
   assert.equal(filterItems(items,{query:'연구소'}).length,1);
 });
+
+test('interest filters hide disliked support by default and allow restoring every choice',()=>{
+  const base={kind:'support',source_id:'bizinfo',title:'지원사업',topics:[],application_status:{active:true}};
+  const items=[{...base,id:'yes',preference:'interested'},{...base,id:'no',preference:'not_interested'},{...base,id:'new'},
+    {...base,id:'expired',preference:'interested',application_status:{active:false}},
+    {id:'news',source_id:'mohw',title:'뉴스',topics:[]}];
+  const ids=options=>filterItems(items,options).map(item=>item.id);
+  assert.deepEqual(ids({}),['yes','new','news']);
+  assert.deepEqual(ids({preference:'interested'}),['yes']);
+  assert.deepEqual(ids({preference:'not_interested'}),['no']);
+  assert.deepEqual(ids({preference:'all'}),['yes','no','new','news']);
+  assert.deepEqual(ids({preference:'interested',activeOnly:false}),['yes','expired']);
+  assert.deepEqual(ids({source:'public-news'}),['news']);
+  assert.deepEqual(unreadSupport({support:{items:[{id:'yes',active:true},{id:'no',active:true,preference:'not_interested'}]}},new Set()).map(item=>item.id),['yes']);
+});

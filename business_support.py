@@ -270,6 +270,56 @@ def fingerprint(item):
     return hashlib.sha256(json.dumps([item['title'], item['published_at'], item['application_period']], ensure_ascii=False).encode()).hexdigest()
 
 
+def save_preference(path, article_id, preference, now):
+    """One shared company choice per announcement; repeated requests never add votes."""
+    from agency_news import connect
+    if not isinstance(article_id, str) or not re.fullmatch(r'bizinfo:PBLN_\d{1,40}', article_id):
+        raise ValueError('지원사업 ID가 올바르지 않습니다.')
+    if not isinstance(preference, str) or preference not in ('interested', 'not_interested', 'neutral'):
+        raise ValueError('관심 선택이 올바르지 않습니다.')
+    with connect(path) as db:
+        row = db.execute('SELECT payload FROM articles WHERE id=?', (article_id,)).fetchone()
+        if row is None or json.loads(row[0]).get('kind') != 'support':
+            raise LookupError('지원사업을 찾을 수 없습니다. 목록을 새로고침해주세요.')
+        if preference == 'neutral':
+            db.execute('DELETE FROM support_preferences WHERE article_id=?', (article_id,))
+        else:
+            topics = json.dumps(json.loads(row[0]).get('topics', []), ensure_ascii=False)
+            db.execute('''INSERT INTO support_preferences(article_id,preference,topics,updated_at) VALUES (?,?,?,?)
+                ON CONFLICT(article_id) DO UPDATE SET preference=excluded.preference,
+                    topics=excluded.topics,updated_at=excluded.updated_at''',
+                       (article_id, preference, topics, now.isoformat()))
+
+
+def apply_preferences(items, preferences):
+    """Adjust eligible candidates by topic feedback without changing eligibility rules."""
+    topic_weights = {}
+    current = {item['id']: item for item in items}
+    for identity, saved in preferences.items():
+        topics = set(current[identity]['topics'] if identity in current else json.loads(saved['topics']))
+        direction = 1 if saved['preference'] == 'interested' else -1
+        for topic in topics:
+            topic_weights[topic] = topic_weights.get(topic, 0) + direction / max(1, len(topics))
+    for item in items:
+        preference = preferences.get(item['id'], {}).get('preference', 'neutral')
+        topics = set(item.get('topics', []))
+        adjustment = round(max(-40, min(40, 12 * sum(topic_weights.get(t, 0) for t in topics))), 2)
+        explanation = []
+        if preference == 'interested':
+            explanation.append('관심있음으로 선택한 사업을 우선 추천합니다.')
+        elif preference == 'not_interested':
+            explanation.append('관심없음으로 선택해 기본 추천과 새 공고 알림에서 제외했습니다.')
+        if adjustment > 0:
+            explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 높였습니다.')
+        elif adjustment < 0:
+            explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 낮췄습니다.')
+        item.update(preference=preference, preference_score=adjustment,
+                    recommendation_score=item.get('score', 0)+adjustment, preference_reasons=explanation)
+    items.sort(key=lambda item: (item['application_status']['active'],
+        {'interested': 1, 'neutral': 0, 'not_interested': -1}[item['preference']],
+        item['recommendation_score'], item['published_at'], item['id']), reverse=True)
+
+
 def collect(source, seen, now, fetcher, stop=None, review=False, archive=()):
     selected, scanned = {}, {}
 

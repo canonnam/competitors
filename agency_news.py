@@ -276,6 +276,10 @@ def init_db(path):
             CREATE TABLE IF NOT EXISTS articles(id TEXT PRIMARY KEY, published_at TEXT NOT NULL, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS seen(source_id TEXT NOT NULL, id TEXT NOT NULL, signature TEXT NOT NULL, PRIMARY KEY(source_id,id));
             CREATE TABLE IF NOT EXISTS sources(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS support_preferences(
+                article_id TEXT PRIMARY KEY,
+                preference TEXT NOT NULL CHECK(preference IN ('interested','not_interested')),
+                topics TEXT NOT NULL, updated_at TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS agency_date ON articles(published_at DESC);
         ''')
 
@@ -375,6 +379,7 @@ def report(path, now=None, summary=False):
         total = db.execute('SELECT COUNT(*) FROM articles').fetchone()[0]
         latest = db.execute('SELECT MAX(published_at) FROM articles').fetchone()[0]
         items = [json.loads(row[0]) for row in db.execute('SELECT payload FROM articles ORDER BY published_at DESC,id DESC')]
+        preferences = {row['article_id']: dict(row) for row in db.execute('SELECT * FROM support_preferences')}
     import business_support
     supports = []
     for item in items:
@@ -383,6 +388,11 @@ def report(path, now=None, summary=False):
             if item.get('withdrawn'):
                 item['application_status'].update(active=False, label='추천 제외')
             supports.append(item)
+    business_support.apply_preferences(supports, preferences)
+    # Keep public news in its existing order and slots; rank only support announcements.
+    ranked = iter(supports)
+    items = [next(ranked) if item.get('kind') == 'support' else item for item in items]
+    recommended = lambda item: item['application_status']['active'] and item['preference'] != 'not_interested'
     source_status = []
     for source in SOURCES:
         state = saved.get(source['id'], {})
@@ -393,10 +403,12 @@ def report(path, now=None, summary=False):
     successes = [row.get('last_success') for row in source_status]
     updated = min(successes) if all(successes) else None
     result = {'total': total, 'latest_published_at': latest, 'updated_at': updated, 'sources': source_status,
-              'article_ids': [item['id'] for item in items if item.get('kind') != 'support' or item['application_status']['active']],
-              'support': {'total': len(supports), 'active': sum(item['application_status']['active'] for item in supports),
+              'article_ids': [item['id'] for item in items if item.get('kind') != 'support' or recommended(item)],
+              'support': {'total': len(supports), 'active': sum(recommended(item) for item in supports),
+                          'interested': sum(item['preference'] == 'interested' for item in supports),
+                          'not_interested': sum(item['preference'] == 'not_interested' for item in supports),
                           'items': [{'id': item['id'], 'first_seen_at': item.get('first_seen_at', item['collected_at']),
-                                     'active': item['application_status']['active']} for item in supports]},
+                                     'active': recommended(item), 'preference': item['preference']} for item in supports]},
               'sync': {'enabled': enabled(), 'schedule': SCHEDULE, 'target_count': len(SOURCES),
                        'stale': any(row['stale'] for row in source_status),
                        'errors': [row['agency']+' '+row['name'] for row in source_status if row.get('error')],

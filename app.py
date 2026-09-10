@@ -244,6 +244,9 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/agency-news/support-preference":
+            self.save_support_preference()
+            return
         if wiki_chat.handle(self, "POST"):
             return
         if self.path != "/api/feedback":
@@ -297,6 +300,26 @@ class App(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"id": feedback_id, "received": True, "slack_notified": slack_ok,
                                      "automation_triggered": hermes_ok}, ensure_ascii=False).encode())
+
+    def save_support_preference(self):
+        import business_support
+        try:
+            wiki_chat.check_origin(self)
+            body = wiki_chat.read_json(self, 1024)
+            if not isinstance(body, dict):
+                raise ValueError('요청 형식이 올바르지 않습니다.')
+            business_support.save_preference(agency_news.db_path(), body.get('article_id'),
+                                             body.get('preference'), agency_news.datetime.now(agency_news.KST))
+        except wiki_chat.ChatError as exc:
+            wiki_chat.send_json(self, exc.status, {'error': str(exc)})
+            return
+        except (ValueError, LookupError) as exc:
+            wiki_chat.send_json(self, 404 if isinstance(exc, LookupError) else 400, {'error': str(exc)})
+            return
+        except (sqlite3.Error, OSError):
+            wiki_chat.send_json(self, 503, {'error': '관심 선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.'})
+            return
+        wiki_chat.send_json(self, 200, {'article_id': body['article_id'], 'preference': body['preference']})
 
 
 if __name__ == "__main__":
