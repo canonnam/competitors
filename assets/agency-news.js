@@ -40,6 +40,33 @@
   try {const saved=JSON.parse(localStorage.getItem(readKey)||'[]');if(Array.isArray(saved))readIds=new Set(saved.filter(id=>typeof id==='string'));}catch{}
   let current, visible=30, loading=false, onlyUnread=false, saving=false, revision=0, reasonTarget=null, reasonFocus=null;
   const reasonDialog=$('support-reason-dialog'), reasonForm=$('support-reason-form'), reasonInput=$('support-reason-input');
+  const infoDialog=$('support-info-dialog'), infoTooltip=$('support-info-tooltip');
+  let infoFocus=null, tooltipButton=null, tooltipTimer;
+  function hideInfoTooltip() {
+    clearTimeout(tooltipTimer);if(infoTooltip)infoTooltip.hidden=true;
+    tooltipButton?.removeAttribute('aria-describedby');tooltipButton=null;
+  }
+  function showInfoTooltip(button) {
+    if(infoDialog?.open)return;
+    hideInfoTooltip();tooltipButton=button;infoTooltip.textContent=button.dataset.tooltip;infoTooltip.hidden=false;
+    infoTooltip.style.left='12px';infoTooltip.style.top='0px';
+    button.setAttribute('aria-describedby','support-info-tooltip');
+    const rect=button.getBoundingClientRect(), width=infoTooltip.offsetWidth, height=infoTooltip.offsetHeight;
+    infoTooltip.style.left=Math.max(12,Math.min(rect.left+rect.width/2-width/2,window.innerWidth-width-12))+'px';
+    infoTooltip.style.top=(rect.bottom+height+20<window.innerHeight?rect.bottom+8:Math.max(12,rect.top-height-8))+'px';
+  }
+  function openSupportInfo(button) {
+    const panel=[...infoDialog.querySelectorAll('[data-info-panel]')].find(panel=>panel.dataset.infoPanel===button.dataset.supportInfo);
+    if(!panel)return;
+    hideInfoTooltip();infoFocus=button;
+    infoDialog.querySelectorAll('[data-info-panel]').forEach(section=>{section.hidden=section!==panel;});
+    $('support-info-heading').textContent=panel.dataset.infoHeading;
+    infoDialog.showModal();$('support-info-close').focus({preventScroll:true});
+  }
+  function showSupportList() {
+    if(infoDialog?.open){infoFocus=null;infoDialog.close();}
+    hideInfoTooltip();list.focus({preventScroll:true});list.scrollIntoView({behavior:'smooth',block:'start'});
+  }
   function drawStatus(data) {
     const state=status(data), checked=data.sources.filter(source=>source.last_success&&!source.error&&!source.stale).length, target=data.sources.length;
     const unread=unreadSupport(data,readIds).length;
@@ -74,6 +101,14 @@
       $('agency-sources').replaceChildren(fragment);
       $('support-alert-count').textContent=supportPending ? (supportDelayed?'지원사업 수집 지연':'지원사업 첫 수집 중') : (unread ? `새 지원사업 ${unread}건` : '새로 확인할 지원사업이 없습니다');
       $('support-alert-detail').textContent=(supportDelayed ? '수집 지연 · 기존 후보와 원문을 확인해주세요. ' : '')+`접수기간이 지나지 않은 후보 ${data.support?.active||0}건 · 신청 자격은 원문 조건 확인 필요`;
+      if($('support-compact-new')) {
+        $('support-compact-new').textContent=supportPending?(supportDelayed?'수집 지연':'확인 중'):`새 공고 ${unread}건`;
+        $('support-compact-new').classList.toggle('has-new',unread>0);
+        $('support-compact-new').classList.toggle('is-warning',supportDelayed);
+        $('support-compact-active').textContent=supportPending?'':`추천 ${data.support?.active||0}건`;
+        document.querySelector('[data-support-info="status"]').dataset.tooltip=supportPending?'지원사업을 수집하고 있습니다.':
+          `${supportDelayed?'수집 지연 · ':''}새 공고 ${unread}건 · 접수기간이 지나지 않은 추천 ${data.support?.active||0}건`;
+      }
       $('support-show-new').disabled=!unread;
       $('support-mark-read').disabled=!unread;
     }
@@ -217,9 +252,26 @@
   $('support-reason-cancel')?.addEventListener('click',()=>{if(!saving)reasonDialog.close();});
   reasonDialog?.addEventListener('cancel',event=>{if(saving)event.preventDefault();});
   reasonDialog?.addEventListener('close',()=>{reasonTarget=null;if(reasonFocus?.isConnected)reasonFocus.focus({preventScroll:true});reasonFocus=null;});
+  document.querySelectorAll('[data-support-info]').forEach(button=>{
+    button.addEventListener('click',()=>openSupportInfo(button));
+    button.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showInfoTooltip(button);});
+    button.addEventListener('pointerleave',()=>{tooltipTimer=setTimeout(hideInfoTooltip,150);});
+    button.addEventListener('focus',()=>showInfoTooltip(button));
+    button.addEventListener('blur',hideInfoTooltip);
+  });
+  infoTooltip?.addEventListener('pointerenter',()=>clearTimeout(tooltipTimer));
+  infoTooltip?.addEventListener('pointerleave',hideInfoTooltip);
+  $('support-info-close')?.addEventListener('click',()=>infoDialog.close());
+  infoDialog?.addEventListener('close',()=>{if(infoFocus?.isConnected)infoFocus.focus({preventScroll:true});infoFocus=null;});
+  infoDialog?.addEventListener('click',event=>{
+    const rect=infoDialog.getBoundingClientRect();
+    if(event.target===infoDialog&&(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom))infoDialog.close();
+  });
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideInfoTooltip();});
+  window.addEventListener('scroll',hideInfoTooltip,{capture:true,passive:true});window.addEventListener('resize',hideInfoTooltip);
   ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested'].includes($(id).value))$('agency-filter').value='bizinfo';drawList();}));
-  $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();list.scrollIntoView({behavior:'smooth',block:'start'});});
-  $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='all';$('agency-search').value='';drawList();});
+  $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();showSupportList();});
+  $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='all';$('agency-search').value='';drawList();showSupportList();});
   $('support-mark-read')?.addEventListener('click',()=>{
     if(!current)return;
     const next=new Set([...readIds,...unreadSupport(current,readIds).map(item=>item.id)]);
