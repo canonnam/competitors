@@ -30,7 +30,8 @@ class StaticPageDeploymentTests(unittest.TestCase):
     def test_shared_navigation_and_single_detail_heading(self):
         home = (ROOT / "index.html").read_text(encoding="utf-8")
         header = re.search(r'<header class="kb-header">.*?</header>', home).group()
-        self.assertIn('더비다를 위한<br>지식 창고', home)
+        self.assertIn('더비다 지식 창고', home)
+        self.assertNotIn('더비다를 위한<br>지식 창고', home)
         self.assertNotIn('class="card primary"', home)
         for page in ('competitors.html', 'competitor-news.html', 'ai-hub-data.html', 'naver-ads.html', 'operating-costs.html', 'statistics.html'):
             with self.subTest(page=page):
