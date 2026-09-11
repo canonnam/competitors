@@ -253,13 +253,16 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
+        public_pages = {"payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
+        allowed_asset = allowed_asset or (path.parent == ROOT / "assets" / "contracts" and path.name in {
+            "templates.json", "NanumGothic-Regular.ttf", "NanumGothic-Bold.ttf",
+        })
         if not (allowed_page or allowed_root_asset or allowed_asset) or not path.is_file():
             self.send_error(404)
             return None
