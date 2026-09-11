@@ -2,6 +2,14 @@
   'use strict';
   const WEEK = 365 / 7 / 12;
   const names = { D: '주', N: '야', O: '휴' };
+  function contractEndDate(start, years) {
+    if (!start) return '';
+    const count = Number(years), value = new Date(`${start}T00:00:00Z`);
+    if (![1, 2].includes(count) || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !Number.isFinite(value.getTime()) || value.toISOString().slice(0, 10) !== start || value.getUTCFullYear() + count > 9999) throw Error('계약 시작일과 계약기간을 확인해주세요.');
+    value.setUTCFullYear(value.getUTCFullYear() + count);
+    value.setUTCDate(value.getUTCDate() - 1);
+    return value.toISOString().slice(0, 10);
+  }
   function minutes(value) {
     if (!/^\d{2}:\d{2}$/.test(value || '')) throw Error('근무·휴게 시각을 입력해주세요.');
     const [h, m] = value.split(':').map(Number);
@@ -74,20 +82,25 @@
   }
   function calculate(input) {
     const h = hours(input);
+    const overtimeOrdinary = input.overtimeOrdinary === true, nightOrdinary = input.nightOrdinary === true;
+    const divisor = h.basic + (overtimeOrdinary ? 0 : h.overtime * 1.5) + (nightOrdinary ? 0 : h.night * .5);
     const extras = input.extras.map(x => ({ ...x, amount: Number(x.amount || 0) }));
     if (extras.some(x => !Number.isFinite(x.amount) || x.amount < 0)) throw Error('수당은 0 이상의 금액으로 입력해주세요.');
     const included = extras.filter(x => x.ordinary).reduce((s, x) => s + x.amount, 0);
     const excluded = extras.filter(x => !x.ordinary).reduce((s, x) => s + x.amount, 0);
-    if (input.amount === '' || input.amount == null) return { hours: h, pending: true, extras };
+    const context = { hours:h, divisor, overtimeOrdinary, nightOrdinary, extras };
+    if (input.amount === '' || input.amount == null) return { ...context, pending: true };
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw Error('월급 또는 시급은 0보다 커야 합니다.');
-    const hourly = input.basis === 'hourly' ? amount : (amount - excluded) / h.divisor;
+    // Solve the agreed gross pay once, without counting included fixed premiums twice.
+    const hourly = input.basis === 'hourly' ? amount : (amount - excluded) / divisor;
     const overtime = Math.round(hourly * h.overtime * 1.5);
     const night = Math.round(hourly * h.night * .5);
-    const total = input.basis === 'hourly' ? Math.round(hourly * h.divisor + excluded) : Math.round(amount);
+    const total = input.basis === 'hourly' ? Math.round(hourly * divisor + excluded) : Math.round(amount);
     const basic = total - overtime - night - included - excluded;
     if (basic < 0 || hourly <= 0) throw Error('입력한 수당 합계가 급여를 초과합니다. 월급과 수당을 확인해주세요.');
-    return { hours: h, hourly, overtime, night, total, basic, extras, pending: false };
+    const ordinaryMonthly = basic + included + (overtimeOrdinary ? overtime : 0) + (nightOrdinary ? night : 0);
+    return { ...context, hourly, overtime, night, total, basic, ordinaryMonthly, pending: false };
   }
   function shiftText(id, spec) {
     const overnight = minutes(spec.end) <= minutes(spec.start) ? '익일 ' : '';
@@ -100,7 +113,7 @@
     const shifts = ['D', 'N'].filter(id => input.pattern.includes(id)).map(id => shiftText(id, input.shifts[id])).join(', ');
     return `${label}를 원칙으로 하며, 근로시간 및 휴게시간은 "${shifts}"로 한다. (단, 기관 및 개인사정에 따라 근로시간 및 휴게시간을 변경할 수 있다.)`;
   }
-  const api = { minutes, shift, hours, calculate, workText };
+  const api = { contractEndDate, minutes, shift, hours, calculate, workText };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PayrollCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

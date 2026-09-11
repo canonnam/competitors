@@ -32,6 +32,11 @@ class PayrollRouteTests(SiteIdentityTests):
         names = {f.get('name') for f in parser.fields}
         self.assertTrue({'organization','organizationAddress','residentNumber','employee','bank','account'} <= names)
         self.assertNotIn('workplace', names)
+        self.assertIn('termYears', names)
+        for name in ('manualOvertime', 'manualNight', 'overtimeOrdinary', 'nightOrdinary'):
+            self.assertEqual(sum(f.get('name') == name for f in parser.fields), 1)
+        for name in ('overtimeOrdinary', 'nightOrdinary'):
+            self.assertIn('checked', next(f for f in parser.fields if f.get('name') == name))
         self.assertFalse(any(f.get('type') == 'file' for f in parser.fields))
         self.assertEqual(parser.forms[0]['onsubmit'], 'return false')
         for asset in parser.assets + ['/assets/contracts/templates.json', '/assets/contracts/NanumGothic-Regular.ttf', '/assets/contracts/NanumGothic-Bold.ttf']:

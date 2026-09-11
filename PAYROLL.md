@@ -12,6 +12,10 @@ Variable contract terms and wages are filled directly. Font glyphs are embedded
 in full because subsetting Nanum Gothic Bold dropped glyphs in PDFium. Long text
 wraps with row growth; vertical merges and signing blocks are kept together.
 Additional wage items and special terms use an appendix. Blank inputs remain blank.
+Fixed terms offer one year, two years, or a custom end date. Presets end on the
+day before the anniversary, with leap-day rollover handled in UTC.
+PDF line breaking removes empty paragraphs and whitespace-only wrapped lines.
+Row heights fit their actual content, preserving merged cells and table borders.
 The flexible-hours clause is opt-in and switches to manual wage entry; the general
 calculator does not purport to implement a flexible-hours agreement.
 
@@ -27,6 +31,16 @@ calculator does not purport to implement a flexible-hours agreement.
 - Each fixed allowance's ordinary-wage inclusion is explicit; no tax calculation.
 - Gross-mode hourly pay excludes separately designated non-ordinary allowances.
 - Overtime includes the ordinary 100% plus the 50% premium. Night is an extra 50%.
+- Fixed overtime and night allowances have separate rows in every template and
+  separate ordinary-wage inclusion flags. The UI defaults both to included as
+  requested; they can be unchecked to reproduce the original workbook.
+- For these contractual inclusion settings, solve hourly pay using gross minus
+  excluded fixed extras, divided by basic hours plus only the excluded overtime
+  and night premium-equivalent hours. Each allowance is paid once in gross pay.
+  The displayed ordinary monthly amount includes exactly the checked components.
+- These flags express the requested calculation assumptions, not a legal finding.
+  The actual character of fixed overtime pay and additional statutory amounts
+  needs review: https://1350.moel.go.kr/rtmview.do?id=1000302874
 - Keep unrounded hours/hourly rates internally. Round paid allowances to won and
   balance basic pay to the agreed total. The cycle workbook example therefore has
   a one-won basic-pay rounding adjustment, not a changed agreed monthly total.

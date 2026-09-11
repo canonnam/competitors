@@ -41,7 +41,7 @@
       </section>
       <section class="form-section" aria-labelledby="term-title">
         <h2 id="term-title">계약 조건</h2>
-        <div class="fields"><label>계약 시작일<input name="startDate" type="date"></label><label>계약 형태<select name="term"><option value="indefinite">기간의 정함 없음</option><option value="fixed">기간제</option></select></label><label id="end-date-field" hidden>계약 종료일<input name="endDate" type="date"></label><label>작성일<input name="documentDate" type="date"></label><label>수습기간 (개월)<input name="probationMonths" type="number" min="0" max="12" step="1" placeholder="미기재"></label><label>수습기간 급여 감액률 (%)<input name="probationReduction" type="number" min="0" max="100" step="1" placeholder="미기재"></label></div>
+        <div class="fields"><label>계약 시작일<input name="startDate" type="date"></label><label>계약 형태<select name="term"><option value="indefinite">기간의 정함 없음</option><option value="fixed">기간제</option></select></label><label id="term-years-field" hidden>계약기간<select name="termYears"><option value="1">1년</option><option value="2">2년</option><option value="custom">직접 지정</option></select></label><label id="end-date-field" hidden>계약 종료일<input name="endDate" type="date"></label><label>작성일<input name="documentDate" type="date"></label><label>수습기간 (개월)<input name="probationMonths" type="number" min="0" max="12" step="1" placeholder="미기재"></label><label>수습기간 급여 감액률 (%)<input name="probationReduction" type="number" min="0" max="100" step="1" placeholder="미기재"></label></div>
       </section>
       <section class="form-section" aria-labelledby="schedule-title">
         <h2 id="schedule-title">근무 조건</h2>
@@ -55,9 +55,12 @@
         <h2 id="pay-title">급여 조건</h2>
         <fieldset class="basis-options"><legend class="sr-only">계산 기준</legend><label><input type="radio" name="basis" value="gross" checked>월급 기준</label><label><input type="radio" name="basis" value="hourly">시급 기준</label><label><input type="radio" name="basis" value="manual">직접 입력</label></fieldset>
         <div class="fields" id="auto-pay"><label id="amount-label">월 급여 총액 (세전·원)<input name="amount" type="number" min="0" max="100000000" step="1" inputmode="numeric"></label></div>
-        <div class="fields" id="manual-pay" hidden><label>기본급 (원)<input name="manualBasic" type="number" min="0" step="1"></label><label>통상시급 (원)<input name="manualHourly" type="number" min="0" step="0.01"></label><label>고정연장수당 (원)<input name="manualOvertime" type="number" min="0" step="1"></label><label>고정야간수당 (원)<input name="manualNight" type="number" min="0" step="1"></label></div>
+        <div class="fields" id="manual-pay" hidden><label>기본급 (원)<input name="manualBasic" type="number" min="0" step="1"></label><label>통상시급 (원)<input name="manualHourly" type="number" min="0" step="0.01"></label></div>
         <div class="allowance-header"><span>수당 항목</span><span>월 금액 (원)</span><span>통상임금 포함</span><span></span></div>
+        <div class="allowance-row fixed-allowance"><span>고정연장수당</span><input name="manualOvertime" type="number" min="0" step="1" readonly aria-label="고정연장수당 금액"><label class="ordinary-label"><input name="overtimeOrdinary" type="checkbox" checked aria-label="고정연장수당 통상임금 포함"></label><span></span></div>
+        <div class="allowance-row fixed-allowance"><span>고정야간수당</span><input name="manualNight" type="number" min="0" step="1" readonly aria-label="고정야간수당 금액"><label class="ordinary-label"><input name="nightOrdinary" type="checkbox" checked aria-label="고정야간수당 통상임금 포함"></label><span></span></div>
         <div id="allowances"></div><button id="add-allowance" class="text-button" type="button">+ 수당 항목</button>
+        <p class="field-note">통상임금 포함 여부는 수당의 실제 지급 성격에 따라 확인이 필요합니다. <a href="https://1350.moel.go.kr/rtmview.do?id=1000302874" target="_blank" rel="noreferrer noopener">고용노동부 안내</a></p>
       </section>
       <section class="form-section" aria-labelledby="payment-title">
         <h2 id="payment-title">지급·기타 조건</h2>

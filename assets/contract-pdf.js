@@ -21,8 +21,8 @@
     if (cycle && f.includeFlexibleClause) values.B15 = values.B15.replace('휴게시간을 변경할 수 있다.)', '휴게시간을 변경할 수 있으며, 취업규칙에 따라 탄력적근무제를 실시한다.)');
     const time = result.hours;
     const wageRows = [{ label: '기본급(월)', value: result.basic, note: time ? `${decimal(time.basic)}h(주휴포함)` : '' }];
-    if (cycle || result.overtime > 0) wageRows.push({ label: '고정연장수당', value: result.overtime, note: time ? `${decimal(time.overtime)}h*1.5배` : '' });
-    if (cycle || result.night > 0) wageRows.push({ label: '고정야간수당', value: result.night, note: time ? `${decimal(time.night)}h*0.5배` : '' });
+    wageRows.push({ label: '고정연장수당', value: result.overtime, note: [time ? `${decimal(time.overtime)}h*1.5배` : '',result.overtimeOrdinary?'통상임금 포함':''].filter(Boolean).join('\n') });
+    wageRows.push({ label: '고정야간수당', value: result.night, note: [time ? `${decimal(time.night)}h*0.5배` : '',result.nightOrdinary?'통상임금 포함':''].filter(Boolean).join('\n') });
     for (const item of result.extras) {
       if (item.amount > 0 || item.name === '식대') wageRows.push({ label: item.name, value: item.amount || '', note: '해당자에 한함' });
     }
@@ -63,13 +63,13 @@
   }
   function lines(text, font, size, width) {
     const result = [];
-    for (const paragraph of String(text || '').replace(/\t/g, '  ').replace(/\r/g, '').split('\n')) {
+    for (const paragraph of String(text || '').replace(/\t/g, '  ').replace(/\r/g, '').split('\n').map(x => x.trim()).filter(Boolean)) {
       let line = '';
       for (const ch of paragraph) {
-        if (font.widthOfTextAtSize(line + ch, size) > width && line) { result.push(line.trimEnd()); line = ''; }
+        if (font.widthOfTextAtSize(line + ch, size) > width && line) { if(line.trim())result.push(line.trim()); line = ''; }
         line += ch;
       }
-      result.push(line.trimEnd());
+      if(line.trim())result.push(line.trim());
     }
     return result;
   }
@@ -92,7 +92,7 @@
     const pageWidth = 595.28, pageHeight = 841.89, margin = 28;
     const scale = (pageWidth - margin * 2) / template.widths.reduce((a,b) => a + b, 0);
     const widths = template.widths.map(x => x * scale);
-    const heights = Object.fromEntries(Object.entries(template.heights).map(([r,h]) => [r, h * scale]));
+    const heights = Object.fromEntries(Object.keys(template.heights).map(r => [r, 0]));
     const sumRows = (r, count) => Array.from({length:count}, (_,i) => heights[r+i]).reduce((a,b) => a+b, 0);
     const prepared = template.cells.map(c => {
       const face = c.bold ? bold : font;
@@ -102,15 +102,18 @@
         size = Math.min(size, size * (w - 8) / face.widthOfTextAtSize(data.values[c.id], size));
       }
       const wrapped = lines(data.values[c.id], face, size, w - 8);
-      const required = wrapped.length * size * 1.32 + 8;
-      if (data.values[c.id] && sumRows(c.r, c.rows) < required) heights[c.r+c.rows-1] += required - sumRows(c.r, c.rows);
-      return { ...c, font:face, size, w, wrapped };
+      const required = wrapped.length ? wrapped.length * size * 1.25 + 6 : 0;
+      return { ...c, font:face, size, w, wrapped, required };
     });
+    // Fit single rows before merged fields; source spacer rows no longer consume space.
+    for (const c of prepared.slice().sort((a,b) => a.rows-b.rows)) {
+      if (sumRows(c.r,c.rows) < c.required) heights[c.r+c.rows-1] += c.required-sumRows(c.r,c.rows);
+    }
     // Keep vertically merged fields together, and keep the signing block on one page.
     const blocks = [];
     for (let r = template.first; r <= template.last;) {
       let end = r;
-      if (r >= template.last - 8) end = template.last;
+      if (r >= template.last - 7) end = template.last;
       let changed = true;
       while (changed) {
         changed = false;
@@ -130,9 +133,9 @@
         for (const [side,style] of Object.entries(c.borders)) if (style) {
           const [a,b] = edge[side]; page.drawLine({start:{x:a[0],y:a[1]},end:{x:b[0],y:b[1]},thickness:style==='medium'?0.8:0.45,color:rgb(.12,.12,.12)});
         }
-        const lineHeight = c.size*1.32;
+        const lineHeight = c.size*1.25;
         const textHeight = c.wrapped.length*lineHeight;
-        const offset = c.vertical === 'top' ? 4 : Math.max(4,(h-textHeight)/2);
+        const offset = c.vertical === 'top' ? 3 : Math.max(3,(h-textHeight)/2);
         let y = yTop-offset-c.size;
         for (const line of c.wrapped) {
           if (line) {

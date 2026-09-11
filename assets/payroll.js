@@ -72,7 +72,15 @@
     });
   }
   function fieldValues(){
-    const fields=Object.fromEntries(new FormData(form));fields.includeFlexibleClause=get('includeFlexibleClause').checked;return fields;
+    const fields=Object.fromEntries(new FormData(form));
+    for(const key of ['includeFlexibleClause','overtimeOrdinary','nightOrdinary'])fields[key]=get(key).checked;
+    return fields;
+  }
+  function syncTerm(){
+    const fixed=get('term').value==='fixed',years=get('termYears').value;
+    $('term-years-field').hidden=!fixed;$('end-date-field').hidden=!fixed;
+    get('endDate').readOnly=fixed&&years!=='custom';
+    if(fixed&&years!=='custom')get('endDate').value=PayrollCore.contractEndDate(get('startDate').value,years);
   }
   function schedule(){return {mode:get('scheduleMode').value,pattern:pattern.slice(),shifts:structuredClone(shifts),weeklyPaidHours:get('weeklyPaidHours').value};}
   function inputErrors(f){
@@ -80,6 +88,7 @@
     if(f.term==='fixed' && f.startDate && f.endDate && f.endDate<f.startDate)throw Error('계약 종료일은 시작일 이후여야 합니다.');
     if(f.paymentDay && (!Number.isInteger(Number(f.paymentDay)) || Number(f.paymentDay)<1 || Number(f.paymentDay)>31))throw Error('급여 지급일은 1~31일로 입력해주세요.');
     if(extras.some(x=>Number(x.amount)>0&&!x.name.trim()))throw Error('금액이 있는 수당의 명칭을 입력해주세요.');
+    if(extras.some(x=>['고정연장수당','고정야간수당'].includes(x.name.replace(/\s/g,''))))throw Error('고정연장·고정야간수당은 위의 전용 항목을 사용해주세요.');
     if(f.includeFlexibleClause && f.workingSystem!=='flexible')throw Error('탄력근로제 조항을 포함할 때는 근로시간제를 함께 선택해주세요.');
   }
   function readModel(){
@@ -93,8 +102,9 @@
       const items=extras.map(x=>({...x,amount:Number(x.amount||0)}));
       if(items.some(x=>!Number.isFinite(x.amount)||x.amount<0))throw Error('수당 금액을 확인해주세요.');
       const [basic,hourly,overtime,night]=amounts;
-      result={basic,hourly,overtime,night,extras:items,pending:basic===null,total:basic===null?null:basic+(overtime||0)+(night||0)+items.reduce((s,x)=>s+x.amount,0),hours:fields.workingSystem==='flexible'?null:computedHours};
-    }else result=PayrollCore.calculate({...s,extras,basis:fields.basis,amount:fields.amount});
+      const ordinaryMonthly=basic===null?null:basic+items.filter(x=>x.ordinary).reduce((sum,x)=>sum+x.amount,0)+(fields.overtimeOrdinary?(overtime||0):0)+(fields.nightOrdinary?(night||0):0);
+      result={basic,hourly,overtime,night,ordinaryMonthly,overtimeOrdinary:fields.overtimeOrdinary,nightOrdinary:fields.nightOrdinary,extras:items,pending:basic===null,total:basic===null?null:basic+(overtime||0)+(night||0)+items.reduce((s,x)=>s+x.amount,0),hours:fields.workingSystem==='flexible'?null:computedHours};
+    }else result=PayrollCore.calculate({...s,extras,basis:fields.basis,amount:fields.amount,overtimeOrdinary:fields.overtimeOrdinary,nightOrdinary:fields.nightOrdinary});
     return {fields,schedule:s,result,workText:PayrollCore.workText(s)};
   }
   function dl(id,items){
@@ -104,14 +114,16 @@
   function update(){
     invalidate();$('input-errors').hidden=true;
     const manual=get('basis').value==='manual';$('manual-pay').hidden=!manual;$('auto-pay').hidden=manual;
+    for(const key of ['manualOvertime','manualNight'])get(key).readOnly=!manual;
     $('amount-label').firstChild.textContent=get('basis').value==='hourly'?'통상시급 (원)':'월 급여 총액 (세전·원)';
-    $('end-date-field').hidden=get('term').value!=='fixed';
     try{
+      syncTerm();
       model=readModel();const r=model.result,h=r.hours;
+      if(!manual){get('manualOvertime').value=r.overtime??'';get('manualNight').value=r.night??'';}
       $('total').textContent=money(r.total);
       dl('pay-breakdown',[['기본급',money(r.basic)],['고정연장수당',money(r.overtime)],['고정야간수당',money(r.night)],...r.extras.filter(x=>x.amount>0).map(x=>[x.name,money(x.amount)])]);
       dl('hour-breakdown',h?[
-        ['월 기본시간 (주휴 포함)',`${dec(h.basic)}시간`],['월 연장근로',`${dec(h.overtime)}시간`],['월 야간근로',`${dec(h.night)}시간`],['통상시급',r.hourly==null?'미입력':`${dec(r.hourly)}원`],
+        ['월 기본시간 (주휴 포함)',`${dec(h.basic)}시간`],['월 연장근로',`${dec(h.overtime)}시간`],['월 야간근로',`${dec(h.night)}시간`],['월 통상임금 기준액',money(r.ordinaryMonthly)],['통상시급',r.hourly==null?'미입력':`${dec(r.hourly)}원`],
       ]:[['근로시간·통상시급','별도 산정']]);
       $('formula-details').replaceChildren();
       if(h){
@@ -119,13 +131,16 @@
         for(const id of ['D','N'])if(p.includes(id))$('formula-details').append(el('p',{},`${id==='D'?'주간':'야간'} 횟수: 365 ÷ ${p.length} × ${p.filter(x=>x===id).length} ÷ 12 = ${dec(h.counts[id])}회/월`));
         $('formula-details').append(el('p',{},`기본시간: 실근로 중 기본 ${dec(h.regular)} + 유급주휴 ${dec(h.paid)}시간`));
         if(!manual){
-          $('formula-details').append(el('p',{},`급여 환산시간: ${dec(h.basic)} + ${dec(h.overtime)} × 1.5 + ${dec(h.night)} × 0.5 = ${dec(h.divisor)}시간`));
+          const terms=[dec(h.basic)];if(!r.overtimeOrdinary)terms.push(`${dec(h.overtime)} × 1.5`);if(!r.nightOrdinary)terms.push(`${dec(h.night)} × 0.5`);
+          $('formula-details').append(el('p',{},`급여 환산시간: ${terms.join(' + ')} = ${dec(r.divisor)}시간`));
+          if(r.overtimeOrdinary||r.nightOrdinary)$('formula-details').append(el('p',{},`${[r.overtimeOrdinary?'고정연장수당':'',r.nightOrdinary?'고정야간수당':''].filter(Boolean).join('·')}: 월 통상임금 기준액에 포함`));
           $('formula-details').append(el('p',{},'연장수당 = 통상시급 × 연장시간 × 1.5\n야간수당 = 통상시급 × 야간시간 × 0.5'));
         }
       }
       $('calculation-status').textContent=model.fields.workingSystem==='flexible'?'탄력근로제는 별도로 산정한 급여를 직접 입력합니다.':h&&h.maxWeek>52?`반복주기 중 주 ${dec(h.maxWeek)}시간 근무가 있습니다. 근무조건을 확인해주세요.`:r.pending?'급여 미입력: 금액은 공란으로 출력됩니다.':'';
       $('preview-contract').disabled=false;$('download-contract').disabled=false;
     }catch(error){
+      if(!manual){get('manualOvertime').value='';get('manualNight').value='';}
       model=null;$('total').textContent='입력 확인';$('input-errors').hidden=false;$('input-errors').textContent=error.message;dl('pay-breakdown',[]);dl('hour-breakdown',[]);$('formula-details').replaceChildren();$('calculation-status').textContent='';$('preview-contract').disabled=true;$('download-contract').disabled=true;
     }
   }
