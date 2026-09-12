@@ -97,7 +97,7 @@ def init_db(path):
             write_state(db, "seed_revision", revision)
         target_revision = hashlib.sha256(json.dumps(TARGETS, sort_keys=True).encode()).hexdigest()
         if state.get("target_revision") != target_revision:
-            # New suppliers must be collected even if today's old target set ran.
+            # New suppliers or topics must be collected even if today's old set ran.
             write_state(db, "target_revision", target_revision)
             write_state(db, "last_success", None)
             write_state(db, "errors", [])
@@ -238,15 +238,27 @@ def sync(path, now=None, fetcher=fetch_feed, targets=None, stop=None):
         SYNC_LOCK.release()
 
 
+def article_categories(item):
+    """Classify archived headlines too, keeping overlapping topics on one card."""
+    primary = next((target for target in TARGETS if target["id"] == item.get("competitor_id")), None)
+    categories = [primary.get("category", "competitor")] if primary else []
+    for target in TARGETS:
+        category = target.get("category")
+        if category and category not in categories and relevant(item["title"], target):
+            categories.append(category)
+    return categories
+
+
 def active_articles(db):
     ids = [target["id"] for target in TARGETS]
     if not ids:
         return []
     # Retain retired suppliers' history on disk, excluding it from every live view.
     placeholders = ",".join("?" for _ in ids)
-    return [json.loads(row[0]) for row in db.execute(
+    items = [json.loads(row[0]) for row in db.execute(
         f"SELECT payload FROM articles WHERE json_extract(payload, '$.competitor_id') IN ({placeholders}) "
         "ORDER BY published_at DESC, reviewed DESC, id", ids)]
+    return [{**item, "categories": article_categories(item)} for item in items]
 
 
 def report(path, now=None, summary=False):
@@ -267,7 +279,9 @@ def report(path, now=None, summary=False):
                        "last_attempt": state.get("last_attempt"),
                        "last_added": state.get("last_added", 0),
                        "next_run": next_run(state, now).isoformat() if active else None,
-                       "target_count": len(TARGETS)}}
+                       "target_count": len(TARGETS),
+                       "competitor_count": sum(not target.get("category") for target in TARGETS),
+                       "topic_count": sum(bool(target.get("category")) for target in TARGETS)}}
     if not summary:
         result["items"] = rows
     return result

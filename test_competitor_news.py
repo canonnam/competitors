@@ -99,6 +99,46 @@ class NewsTests(unittest.TestCase):
         self.assertTrue(news.relevant('스페이스뱅크, 요양원 휴먼케어 구축', targets['spacebank']))
         self.assertFalse(news.relevant('스페이스뱅크, 발전소 산업 DX 협약', targets['spacebank']))
 
+    def test_nursing_topics_require_both_facility_and_topic_keywords(self):
+        targets = {row['id']: row for row in news.TARGETS}
+        incidents, policy = targets['nursing-incidents'], targets['nursing-policy']
+        for title in ['요양원 입소자 낙상 사고 수사', '노인요양시설 화재 대피', '요양원 감염 예방 안전교육']:
+            self.assertTrue(news.parse_feed(feed(title=title), incidents, NOW))
+        for title in ['요양원 인력 배치 기준 개정', '장기요양보험 제도 시행', '노인요양공동생활가정 평가 기준 변경']:
+            self.assertTrue(news.parse_feed(feed(title=title), policy, NOW))
+        for title in ['고속도로 낙상 사고', '요양병원 화재', '요양원 봄맞이 공연', '사고 예방 제도 개정']:
+            self.assertEqual(news.parse_feed(feed(title=title), incidents, NOW), [])
+            self.assertEqual(news.parse_feed(feed(title=title), policy, NOW), [])
+        self.assertEqual(news.parse_feed(feed(title='민간기업, 장기요양 고객 방문돌봄 지원 확대'), policy, NOW), [])
+
+    def test_topic_overlap_keeps_one_article_visible_in_both_categories_after_restart(self):
+        targets = [target for target in news.TARGETS if target.get('category')]
+        raw = feed(title='요양원 낙상 사고 예방 의무 기준 개정')
+        result = news.sync(self.path, NOW, lambda _: raw, targets)
+        self.assertEqual(result, {'added': 1, 'errors': []})
+        news.init_db(self.path)
+        report = news.report(self.path, NOW)
+        item = next(item for item in report['items'] if not item['reviewed'])
+        self.assertEqual(set(item['categories']), {'nursing_incident', 'nursing_policy'})
+        self.assertEqual(report['total'], SEED_COUNT + 1)
+        self.assertEqual(report['sync']['competitor_count'], 20)
+        self.assertEqual(report['sync']['topic_count'], 2)
+        self.assertIn(item['id'], news.report(self.path, NOW, summary=True)['article_ids'])
+
+    def test_existing_competitor_headline_gets_topic_without_losing_reviewed_summary(self):
+        original = news.report(self.path, NOW)['items'][0]
+        article = {**original, 'id': 'reviewed-safety', 'competitor_id': 'caredoc', 'competitor': '케어닥',
+                   'title': '케어닥, 요양원 낙상 예방 기준 제안', 'url': 'https://example.org/safety'}
+        with news.connect(self.path) as db:
+            news.put_article(db, article)
+        targets = [target for target in news.TARGETS if target.get('category')]
+        news.sync(self.path, NOW, lambda _: feed(title=article['title'], published=datetime.fromisoformat(article['published_at'])), targets)
+        item = next(item for item in news.report(self.path, NOW)['items'] if item['id'] == article['id'])
+        self.assertEqual(set(item['categories']), {'competitor', 'nursing_incident', 'nursing_policy'})
+        self.assertEqual(item['summary'], original['summary'])
+        self.assertTrue(item['reviewed'])
+        self.assertEqual(news.report(self.path, NOW)['total'], SEED_COUNT + 1)
+
     def test_real_rss_shape_cleans_markup_and_removes_tracking_query(self):
         item, = news.parse_feed(feed(title='<b>케어닥</b>, 새로운 돌봄 서비스 발표'), TARGET, NOW)
         self.assertEqual(item['title'], '케어닥, 새로운 돌봄 서비스 발표')

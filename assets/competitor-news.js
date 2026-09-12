@@ -15,7 +15,13 @@
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : '';
     } catch { return ''; }
   }
-  const api = {syncStatus, safeUrl};
+  const categoryNames = {competitor: '경쟁사', nursing_incident: '요양원 사건·사고', nursing_policy: '요양원 정책·제도'};
+  const categories = item => item.categories || ['competitor'];
+  function filterItems(items, category = '', competitor = '') {
+    return items.filter(item => (!category || categories(item).includes(category))
+      && (!competitor || (categories(item).includes('competitor') && item.competitor_id === competitor)));
+  }
+  const api = {syncStatus, safeUrl, filterItems};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CompetitorNews = api;
   if (typeof document === 'undefined') return;
@@ -57,7 +63,7 @@
   function drawList() {
     if (!timeline || !current) return;
     const selected = $('news-competitor').value;
-    const items = current.items.filter(item => !selected || item.competitor_id === selected);
+    const items = filterItems(current.items, $('news-category').value, selected);
     const fragment = document.createDocumentFragment();
     for (const item of items.slice(0, visibleCount)) {
       const article = make('article', 'item');
@@ -67,8 +73,11 @@
       article.append(dateLine, make('h2', '', item.title));
       if (item.reviewed && item.summary) article.append(make('p', '', item.summary));
       const labels = make('div', 'labels');
-      labels.append(make('span', 'label', '대상 경쟁사: ' + item.competitor),
-        make('span', item.kind === '공식 발표' ? 'label official' : 'label', item.kind));
+      if (categories(item).includes('competitor')) labels.append(make('span', 'label', '대상 경쟁사: ' + item.competitor));
+      for (const category of categories(item)) {
+        if (category !== 'competitor' && categoryNames[category]) labels.append(make('span', 'label topic', categoryNames[category]));
+      }
+      labels.append(make('span', item.kind === '공식 발표' ? 'label official' : 'label', item.kind));
       if (item.reviewed) labels.append(make('span', 'label reviewed', '검토한 요약'));
       const source = make('div', 'source');
       source.append(make('span', '', `출처: ${item.source} · ${item.reviewed ? '확인' : 'Google 뉴스 경유 · 수집'} ${date(item.collected_at)}`));
@@ -91,7 +100,7 @@
     drawStatus(data);
     if (timeline) {
       const filter = $('news-competitor'), selected = filter.value;
-      const names = new Map(data.items.map(item => [item.competitor_id, item.competitor]));
+      const names = new Map(data.items.filter(item => categories(item).includes('competitor')).map(item => [item.competitor_id, item.competitor]));
       filter.replaceChildren(make('option', '', '전체 경쟁사'));
       filter.firstChild.value = '';
       [...names].sort((a, b) => a[1].localeCompare(b[1], 'ko')).forEach(([id, name]) => {
@@ -123,6 +132,12 @@
     } finally { loading = false; }
   }
   $('news-competitor')?.addEventListener('change', () => { visibleCount = 30; drawList(); });
+  $('news-category')?.addEventListener('change', () => {
+    const topic = $('news-category').value.startsWith('nursing_');
+    $('news-competitor-label').hidden = topic;
+    if (topic) $('news-competitor').value = '';
+    visibleCount = 30; drawList();
+  });
   $('news-more')?.addEventListener('click', () => { visibleCount += 30; drawList(); });
   refresh();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });

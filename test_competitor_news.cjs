@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {syncStatus, safeUrl} = require('./assets/competitor-news.js');
+const {syncStatus, safeUrl, filterItems} = require('./assets/competitor-news.js');
 const now = Date.parse('2026-09-08T10:00:00+09:00');
 const fresh = {updated_at: '2026-09-08T09:00:00+09:00', sync: {enabled: true, stale: false, errors: [], next_run: '2026-09-09T09:00:00+09:00'}};
 
@@ -20,4 +20,18 @@ test('article links reject executable schemes and embedded credentials', () => {
   }
   assert.equal(safeUrl('https://news.google.com/rss/articles/123'), 'https://news.google.com/rss/articles/123');
   assert.equal(safeUrl('https://www.carefor.co.kr/cs/view_notice.php?calmgno=46856'), 'https://www.carefor.co.kr/cs/view_notice.php?calmgno=46856');
+});
+
+test('topic filters include overlapping articles once and keep company filters separate', () => {
+  const old = {competitor_id: 'caredoc'};
+  const shared = {competitor_id: 'cleverus', categories: ['competitor', 'nursing_incident']};
+  const topic = {competitor_id: 'nursing-incidents', categories: ['nursing_incident', 'nursing_policy']};
+  const items = [old, shared, topic];
+  assert.deepEqual(filterItems(items), items);
+  assert.deepEqual(filterItems(items, 'competitor'), [old, shared]);
+  assert.deepEqual(filterItems(items, 'nursing_incident'), [shared, topic]);
+  assert.deepEqual(filterItems(items, 'nursing_policy'), [topic]);
+  assert.deepEqual(filterItems(items, '', 'caredoc'), [old]);
+  assert.deepEqual(filterItems(items, 'nursing_policy', 'caredoc'), []);
+  assert.deepEqual(filterItems(items, '', 'nursing-incidents'), []);
 });

@@ -18,5 +18,21 @@
   {"id":"caredoc","name":"케어닥","query":"\"케어닥\"","aliases":["케어닥"]},
   {"id":"cleverus","name":"클레버러스","query":"(\"클레버러스\" OR \"비클레버\")","aliases":["클레버러스","비클레버","Be:Clever"]},
   {"id":"inzinious","name":"인지니어스","query":"(\"인지니어스\" OR \"InCare24\") (레이더 OR 낙상 OR 환자 OR 요양)","aliases":["인지니어스","InCare24","Inzinious"],"context":["레이더","낙상","환자","요양","생체신호","InCare24"],"exclude":["보드게임"]},
-  {"id":"spacebank","name":"스페이스뱅크","query":"\"스페이스뱅크\" (휴먼케어 OR 낙상 OR 요양 OR 돌봄)","aliases":["스페이스뱅크"],"context":["휴먼케어","HumanCare","낙상","요양","돌봄"]}
+  {"id":"spacebank","name":"스페이스뱅크","query":"\"스페이스뱅크\" (휴먼케어 OR 낙상 OR 요양 OR 돌봄)","aliases":["스페이스뱅크"],"context":["휴먼케어","HumanCare","낙상","요양","돌봄"]},
+  {
+    "id": "nursing-incidents",
+    "name": "요양원 사건·사고",
+    "category": "nursing_incident",
+    "query": "(요양원 OR 요양시설 OR 노인요양공동생활가정) (사건 OR 사고 OR 낙상 OR 추락 OR 화재 OR 학대 OR 폭행 OR 사망 OR 질식 OR 실종 OR 감염 OR 식중독 OR 안전)",
+    "aliases": ["요양원", "요양시설", "노인요양공동생활가정"],
+    "context": ["사건", "사고", "낙상", "추락", "화재", "학대", "폭행", "사망", "질식", "실종", "감염", "식중독", "안전"]
+  },
+  {
+    "id": "nursing-policy",
+    "name": "요양원 정책·제도",
+    "category": "nursing_policy",
+    "query": "(요양원 OR 요양시설 OR 노인요양공동생활가정 OR 장기요양) (정책 OR 제도 OR 법안 OR 법률 OR 개정 OR 시행 OR 수가 OR 급여 OR 보험료 OR 인력 OR 배치 OR 기준 OR 평가 OR 본인부담 OR 국비 OR 보조금 OR 지원사업 OR 의무)",
+    "aliases": ["요양원", "요양시설", "노인요양공동생활가정", "장기요양"],
+    "context": ["정책", "제도", "법안", "법률", "개정", "시행", "수가", "급여", "보험료", "인력", "배치", "기준", "평가", "본인부담", "국비", "보조금", "지원사업", "의무"]
+  }
 ]

@@ -16,7 +16,7 @@ import sqlite3
 
 ROOT = Path(__file__).resolve().parent
 KST = timezone(timedelta(hours=9))
-LABELS = {"competitors": "경쟁사 분석", "competitor_news": "경쟁사 뉴스", "operating": "더비다 운영분석"}
+LABELS = {"competitors": "경쟁사 분석", "competitor_news": "경쟁사 및 요양원 뉴스", "operating": "더비다 운영분석"}
 PAGES = {"competitors": "/competitors.html", "competitor_news": "/competitor-news.html", "operating": "/operating-costs.html"}
 METRICS = {"revenue": "운영수입", "cost": "운영비용", "profit": "운영손익(입출금 기준)",
            "cashChange": "자금증감", "financing": "차입·원금상환 순액", "investment": "시설투자 순액"}
@@ -327,12 +327,12 @@ def news_evidence(question, selected, today):
     limit_match = re.search(r"(\d{1,2})\s*(?:개|건)", question)
     limit = min(6, max(1, int(limit_match[1]))) if limit_match else 5
     updated = str(state.get("last_success") or "수집 성공 시각 미확인")
-    header = f"조회일 {today.isoformat()}; 저장된 기사 중 {' / '.join(r['name'] for r in selected) or '전체 경쟁사'}; 게시일 범위 {start or '전체'}~{end}; 범위 내 {count}건 중 최대 {limit}건 발췌. "
+    header = f"조회일 {today.isoformat()}; 저장된 기사 중 {' / '.join(r['name'] for r in selected) or '전체 경쟁사 및 요양원 뉴스'}; 게시일 범위 {start or '전체'}~{end}; 범위 내 {count}건 중 최대 {limit}건 발췌. "
     header += f"마지막 수집 성공 {updated}. 수집 장애 여부: {'있음' if state.get('errors') else '기록된 오류 없음'}. 인터넷 전체를 실시간 검색한 결과가 아닙니다. "
     header += "아래 발췌 밖의 내용을 추정하지 마세요. 기사 제목만 있으면 제목 수준의 소식으로 표시하고, 회사 발표·계획을 검증된 성과로 바꾸지 마세요."
-    result = [evidence("competitor_news", "경쟁사 뉴스 조회 범위", header, updated)]
+    result = [evidence("competitor_news", "경쟁사 및 요양원 뉴스 조회 범위", header, updated)]
     for _, row in ranked[:limit]:
-        content = f"경쟁사: {row.get('competitor', '')}\n기사 게시일(실제 사건일이 아님): {row.get('published_at', '')}\n출처: {row.get('source', '')}\n제목: {row['title']}\n"
+        content = f"대상: {row.get('competitor', '')}\n기사 게시일(실제 사건일이 아님): {row.get('published_at', '')}\n출처: {row.get('source', '')}\n제목: {row['title']}\n"
         content += "검토된 요약: " + row["summary"] if row.get("summary") and row.get("reviewed") else "제목만 수집됨. 기사 본문 및 세부 내용은 미확인."
         item = evidence("competitor_news", row["title"], content, row.get("published_at", ""),
                         "active" if row.get("reviewed") else "needs-review", safe_url(row.get("url")) or PAGES["competitor_news"])
