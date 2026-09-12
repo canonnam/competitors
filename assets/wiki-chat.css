@@ -22,3 +22,4 @@
 @media(prefers-reduced-motion:reduce){.wiki-thinking{animation:none}}
 @media(max-width:520px){.wiki-launcher{right:16px;bottom:max(16px,env(safe-area-inset-bottom));width:52px;height:52px}.wiki-panel{right:12px;bottom:calc(80px + env(safe-area-inset-bottom));width:calc(100vw - 24px);max-width:none;max-height:calc(100dvh - 96px - env(safe-area-inset-bottom));height:620px}.wiki-panel .wiki-topbar{padding:12px}.wiki-messages{padding:16px}.wiki-title-group h2{font-size:15px}.wiki-panel .wiki-icon-button{width:32px;height:32px}.wiki-composer textarea{font-size:16px}.wiki-composer{padding:10px}}
 @media print{.wiki-launcher,.wiki-panel{display:none!important}}
+.wiki-source-note{margin:0 0 7px;color:#617087;font-size:12px;line-height:1.5}

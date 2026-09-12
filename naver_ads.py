@@ -51,7 +51,7 @@ def db_path():
 
 @contextmanager
 def connect(path):
-    db = sqlite3.connect(path, timeout=30)
+    db = sqlite3.connect(path, timeout=30, uri=True)
     db.row_factory = sqlite3.Row
     try:
         with db:

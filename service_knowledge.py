@@ -13,11 +13,14 @@ import hashlib
 import json
 import re
 import sqlite3
+import card_knowledge
 
 ROOT = Path(__file__).resolve().parent
 KST = timezone(timedelta(hours=9))
 LABELS = {"competitors": "경쟁사 분석", "competitor_news": "경쟁사 및 요양원 뉴스", "operating": "더비다 운영분석"}
 PAGES = {"competitors": "/competitors.html", "competitor_news": "/competitor-news.html", "operating": "/operating-costs.html"}
+LABELS.update({key: value[0] for key, value in card_knowledge.CARDS.items()})
+PAGES.update({key: value[1] for key, value in card_knowledge.CARDS.items()})
 METRICS = {"revenue": "운영수입", "cost": "운영비용", "profit": "운영손익(입출금 기준)",
            "cashChange": "자금증감", "financing": "차입·원금상환 순액", "investment": "시설투자 순액"}
 ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어포", "한강시스템"],
@@ -381,12 +384,29 @@ def retrieve(question, history=None, today=None):
     except (OSError, ValueError, KeyError):
         catalog = []
     selected = matched_companies(question, catalog)
-    is_news = any(x in q for x in ("뉴스", "소식", "기사", "보도", "동향"))
-    is_operating = any(x in q for x in ("운영분석", "운영비", "운영수입", "운영손익", "현금흐름", "안양", "인천")) or (
+    card_domains = card_knowledge.match(question)
+    is_news = any(x in q for x in ("뉴스", "소식", "기사", "보도", "동향")) and (not card_domains or "경쟁사" in q or bool(selected))
+    is_operating = any(x in q for x in ("운영분석", "운영비", "운영수입", "운영손익", "현금흐름")) or (
         any(x in q for x in ("더비다", "우리", "저희")) and any(x in q for x in ("매출", "손익", "비용", "수입", "이익", "실적", "지출", "인건비", "식비", "적자", "흑자", "월", "분기", "상반기", "하반기", "누적")))
-    is_competitor = bool(selected) or "경쟁사" in q or "erp" in q or any(compact(a) in q for values in ALIASES.values() for a in values)
+    if card_domains and not any(x in q for x in ("운영분석", "운영비", "운영수입", "운영손익", "현금흐름", "손익", "적자", "흑자")):
+        is_operating = False
+    if not card_domains and any(x in q for x in ('안양', '인천')) and any(x in q for x in ('손익', '수입', '매출', '비용', '지출', '인건비', '식비')):
+        is_operating = True
+    is_competitor = bool(selected) or "경쟁사" in q or ("erp" in q and not card_domains) or any(compact(a) in q for values in ALIASES.values() for a in values)
     prior_turns = [m["content"] for m in reversed(history or []) if m["role"] == "user"]
-    if not (is_news or is_operating or is_competitor) and any(x in q for x in ("그럼", "그러면", "전월", "지난달", "이번달", "비교", "차이", "얼마", "월은", "월도")):
+    if not (card_domains or is_news or is_operating or is_competitor) and any(x in q for x in ("그럼", "그러면", "전월", "지난달", "이번달", "비교", "차이", "얼마", "월은", "월도", "안양", "인천", "오늘", "갱신", "최신")):
+        prior_card = ''
+        for text in prior_turns:
+            if card_knowledge.match(text):
+                prior_card = text
+                break
+            if any(x in compact(text) for x in ('손익', '운영', '경쟁사', '뉴스')) or matched_companies(text, catalog):
+                break
+        if prior_card:
+            card_domains = card_knowledge.match(prior_card)
+            if not card_knowledge.select_branches(question):
+                question += ' ' + ' '.join(x for x in ('안양', '인천') if x in prior_card)
+    if not (card_domains or is_news or is_operating or is_competitor) and any(x in q for x in ("그럼", "그러면", "전월", "지난달", "이번달", "비교", "차이", "얼마", "월은", "월도")):
         prior = next((text for text in prior_turns if any(x in compact(text) for x in ("더비다", "안양", "인천", "운영", "경쟁사", "뉴스", "소식", "기사")) or matched_companies(text, catalog)), "")
         if prior:
             # Use prior turns only to infer domain/company, never old dates or old assistant claims.
@@ -403,6 +423,17 @@ def retrieve(question, history=None, today=None):
     if is_operating and any(x in q for x in ("전월대비", "전월과", "전달과")) and not re.search(r"\d월|20\d{2}|지난달|이번달", q):
         period_question = next((text for text in prior_turns if re.search(r"\d월|20\d{2}|지난달|이번달", compact(text))), None)
     result = []
+    if any(x in q for x in ('전체카드', '모든카드', '연결된자료', '참조자료목록', '무슨자료')):
+        return [evidence(key, label + ' 연결 상태',
+            f"{label}: {'저장 자료 연결됨' if row['available'] else '현재 저장 자료 조회 불가'}. 질문할 때마다 카드와 같은 원자료를 다시 읽습니다. 카드 데이터가 갱신되면 다음 질문부터 반영되며 과거 답변은 자동 변경되지 않습니다.",
+            status='active' if row['available'] else 'needs-review')
+            for row in status() for key, label in [(row['id'], row['label'])]]
+    for kind in card_knowledge.CARDS:
+        if kind in card_domains:
+            try:
+                result.extend(card_knowledge.retrieve(kind, question, datetime.combine(today, datetime.now(KST).timetz(), KST)))
+            except (OSError, sqlite3.Error, ValueError, KeyError, TypeError):
+                result.append(unavailable(kind))
     if is_operating:
         try:
             result.extend(operating_evidence(question, today, period_question))
@@ -422,4 +453,21 @@ def status():
     import competitor_news
     paths = {"competitors": ROOT / "data/competitor_knowledge.json", "operating": ROOT / "data/operating_report.json",
              "competitor_news": competitor_news.db_path()}
-    return [{"id": key, "label": label, "available": paths[key].is_file()} for key, label in LABELS.items()]
+    return [{"id": key, "label": LABELS[key], "url": PAGES[key], "available": path.is_file(), 'refresh': 'on_question'}
+            for key, path in paths.items()] + card_knowledge.status()
+
+
+def select_evidence(items, limit=12):
+    """Keep at least one source from every requested card before extra excerpts."""
+    groups = {}
+    for item in items:
+        groups.setdefault(item['dataset'], []).append(item)
+    selected = []
+    while groups and len(selected) < limit:
+        for kind in list(groups):
+            if len(selected) >= limit:
+                break
+            selected.append(groups[kind].pop(0))
+            if not groups[kind]:
+                del groups[kind]
+    return selected

@@ -23,6 +23,7 @@ panel.innerHTML = `
   </div>
   <div class="wiki-messages" role="log" aria-label="위키 대화" aria-live="polite" aria-relevant="additions"></div>
   <form class="wiki-composer">
+    <p class="wiki-source-note">카드가 갱신되면 다음 질문부터 반영됩니다.</p>
     <div class="wiki-input-row"><textarea rows="2" maxlength="2000" aria-label="위키에 질문" placeholder="궁금한 내용을 물어보세요"></textarea><button class="wiki-icon-button wiki-send" type="submit" title="질문 보내기" aria-label="질문 보내기" disabled>${icon('send')}</button></div>
     <p class="wiki-error" role="alert" hidden></p>
   </form>`;
@@ -46,7 +47,7 @@ function scroll() { messages.scrollTop = messages.scrollHeight; }
 function refreshSend() { send.disabled = !input.value.trim() || pending; }
 function safeSourceUrl(value) {
   if (typeof value !== 'string' || value.length > 3000 || /[\s\\\u0000-\u001f]/u.test(value)) return null;
-  if (['/competitors.html', '/competitor-news.html', '/operating-costs.html'].includes(value)) return value;
+  if (['/competitors.html', '/competitor-news.html', '/operating-costs.html', '/payroll.html', '/claim-check.html', '/agency-news.html', '/ai-hub-data.html', '/naver-ads.html', '/search-visibility.html', '/reputation-watch.html', '/nearby-facilities.html', '/statistics.html'].includes(value)) return value;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
@@ -122,7 +123,7 @@ function render() {
     welcome.className = 'wiki-welcome';
     welcome.innerHTML = `${icon('book-open')}<h3>어떤 업무가 궁금하세요?</h3><div class="wiki-suggestions"></div>`;
     welcome.querySelector('img').className = 'wiki-book';
-    for (const question of ['인력 가산·감산 기준을 알려주세요', '케어포와 이지케어의 기능과 50인 가격을 비교해주세요', '경쟁사 최신 뉴스 3건을 알려주세요', '더비다 안양점과 인천점의 최근 운영손익을 비교해주세요']) {
+    for (const question of ['인력 가산·감산 기준을 알려주세요', '인천점과 안양점의 최근 검색노출 현황을 알려주세요', '현재 검토할 지원사업을 알려주세요', '더비다 안양점과 인천점의 최근 운영손익을 비교해주세요']) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = question;
@@ -139,6 +140,7 @@ async function checkStatus() {
     const data = await response.json();
     const count = Array.isArray(data.datasets) ? data.datasets.filter(item => item.available).length : 0;
     state.textContent = data.ready ? `위키 ${data.documentCount}개${count ? ` · 서비스 자료 ${count}종` : ''}` : '답변 연결 준비 중';
+    state.title = '질문할 때마다 각 카드의 최신 저장 자료를 참조합니다.\n' + (data.datasets || []).map(item => `${item.label}: ${item.available ? '연결됨' : '자료 확인 필요'}`).join('\n');
   } catch { state.textContent = '연결을 확인해주세요'; }
 }
 function close() { panel.close(); launcher.setAttribute('aria-expanded', 'false'); launcher.focus(); }

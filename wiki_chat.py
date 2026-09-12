@@ -305,6 +305,11 @@ def generate_answer(question, history, evidence):
 근거로 확인되는 내용과 확인되지 않는 내용을 구분하세요. 필요한 인원, 월, 인정 근무시간 등의 조건이 빠지면 질문하세요.
 문서 갱신일은 법령 시행일이 아닙니다. 외부 인터넷 검색이나 최신 법령 확인을 수행했다고 주장하지 마세요.
 서비스 조회 결과는 해당 데이터의 조회 범위와 기준일을 명시하세요. 보유 최신 월과 현재 달을 구별하세요.
+모든 카드의 자료는 이번 질문 시 읽은 결과입니다. 이전 대화의 수치보다 이번 evidence를 우선하며 과거 답변의 숫자를 재사용하지 마세요.
+검색노출은 지점별 결과를 사용하고 광고와 자연검색, ChatGPT 웹과 Gemini 웹을 구별하세요. 미측정·오류·지난 관측을 현재 미노출로 바꾸지 마세요.
+수집 지연·오류·미완료가 표시되면 마지막 확인 시각과 함께 설명하세요. 생성시각은 관측일이나 원자료 갱신일이 아닙니다.
+청구 접수 완료는 지급 완료가 아니며 지원사업 추천은 신청 자격 확정이 아닙니다. 평판 후보는 사실로 확정된 사건이 아닙니다.
+통계는 발행연도와 조사연도, 대상과 분모를 유지하세요. 급여·계약서는 공통 양식과 사용법만 참조하며 개인 입력값은 조회할 수 없습니다.
 가격 답변에는 확인일을, 뉴스 답변에는 게시일을 표시하세요. today_kst보다 지난 할인 기한을 현재 할인으로 안내하지 마세요.
 운영 금액은 서버가 제공한 원 단위 합계·증감을 우선 그대로 사용하세요. 없는 기간은 0원으로 채우거나 다른 달로 대체하지 마세요.
 운영손익은 입출금 기준이며 발생주의 순이익이 아닙니다. 계정 변동과 미확인 사업 원인을 구별하세요.
@@ -401,7 +406,8 @@ def answer(body, client, path=None):
         wiki = search(query, history, path)
         # Preserve both domains for mixed questions without letting broad wiki matches
         # crowd out exact service totals. Evidence numbers are assigned only once.
-        evidence = service[:12] + wiki[:4] if service else wiki
+        service = service_knowledge.select_evidence(service)
+        evidence = service + wiki[:4] if service else wiki
         for number, item in enumerate(evidence, 1):
             item["number"] = number
         news_answer = service_knowledge.news_list_answer(question, service)

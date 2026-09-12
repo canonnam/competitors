@@ -3,6 +3,9 @@ WORKDIR /build
 COPY assets/competitors-data.js ./assets/competitors-data.js
 COPY scripts/build_competitor_knowledge.cjs ./scripts/build_competitor_knowledge.cjs
 RUN mkdir -p data && node scripts/build_competitor_knowledge.cjs
+COPY assets/statistics-data.js ./assets/statistics-data.js
+COPY scripts/build_service_catalogs.cjs ./scripts/build_service_catalogs.cjs
+RUN node scripts/build_service_catalogs.cjs
 
 FROM python:3.13-alpine
 
@@ -15,9 +18,11 @@ COPY payroll.html /app/
 COPY robots.txt favicon.ico /app/
 COPY data /app/data
 COPY service_knowledge.py /app/
+COPY card_knowledge.py /app/
 COPY aeo_missions.py /app/
 COPY web_search_results.py /app/
 COPY --from=knowledge /build/data/competitor_knowledge.json /app/data/competitor_knowledge.json
+COPY --from=knowledge /build/data/statistics_knowledge.json /app/data/statistics_knowledge.json
 COPY nginx /app/nginx
 
 ENV PYTHONUNBUFFERED=1

@@ -215,7 +215,7 @@ class ServiceIntegrationTest(unittest.TestCase):
             status = wiki.public_status(path)
             self.assertTrue(status["ready"])
             self.assertEqual(status["documentCount"], 0)
-            self.assertEqual(len(status["datasets"]), 3)
+            self.assertEqual(len(status["datasets"]), 12)
 
 
 if __name__ == "__main__":
