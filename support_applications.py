@@ -7,6 +7,7 @@ from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
 import hmac
+import http.client
 from http.cookies import SimpleCookie
 import io
 import json
@@ -311,31 +312,73 @@ def create_draft(body):
 
 
 FIELD_SCHEMA = {'type': 'object', 'properties': {
-    'target_id': {'type': 'string'}, 'label': {'type': 'string'}, 'value': {'type': 'string'},
+    'target_id': {'type': 'string'}, 'label': {'type': 'string'}, 'value': {'type': 'string', 'description': '입력칸의 분량에 맞는 간결한 내용. 최대 6000자.'},
     'kind': {'type': 'string', 'enum': ['fact', 'narrative', 'missing']},
-    'sources': {'type': 'array', 'items': {'type': 'string'}}, 'note': {'type': 'string'}},
+    'sources': {'type': 'array', 'maxItems': 12, 'items': {'type': 'string'}}, 'note': {'type': 'string'}},
     'required': ['target_id', 'label', 'value', 'kind', 'sources', 'note'], 'additionalProperties': False}
 FORM_SCHEMA = {'type': 'object', 'properties': {'fields': {'type': 'array', 'items': FIELD_SCHEMA},
-    'warnings': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['fields', 'warnings'], 'additionalProperties': False}
+    'warnings': {'type': 'array', 'maxItems': 12, 'items': {'type': 'string'}}}, 'required': ['fields', 'warnings'], 'additionalProperties': False}
+
+
+class AIResponseError(ValueError):
+    def __init__(self, message, *, retry=False, grow_budget=False):
+        super().__init__(message)
+        self.retry = retry
+        self.grow_budget = grow_budget
 
 
 def ai_json(instructions, content, schema, name, max_tokens=12000):
     payload = {'model': os.getenv('SUPPORT_OPENAI_MODEL') or os.getenv('OPENAI_MODEL', 'gpt-4.1-mini'), 'store': False,
         'instructions': instructions, 'input': [{'role': 'user', 'content': dumps(content)}],
         'max_output_tokens': max_tokens, 'text': {'format': {'type': 'json_schema', 'name': name, 'strict': True, 'schema': schema}}}
-    request = urllib.request.Request('https://api.openai.com/v1/responses', data=dumps(payload).encode(),
-        headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY']}, method='POST')
-    try:
-        with urllib.request.urlopen(request, timeout=150) as response: result = json.load(response)
-        if result.get('status') != 'completed': raise ValueError('incomplete')
-        text = ''.join(p.get('text', '') for item in result.get('output', []) if item.get('type') == 'message'
-                       for p in item.get('content', []) if p.get('type') == 'output_text')
-        return json.loads(text)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 429: raise ValueError('AI 사용 한도에 도달했습니다. 잠시 후 다시 실행해주세요.') from exc
-        raise ValueError('AI 작성 서비스의 연결을 확인해주세요. 기존 자료는 보존했습니다.') from exc
-    except (OSError, ValueError) as exc:
-        raise ValueError('AI 작성 결과를 끝까지 받지 못했습니다. 기존 자료를 보존했으니 다시 실행해주세요.') from exc
+    for attempt in range(2):
+        request = urllib.request.Request('https://api.openai.com/v1/responses', data=dumps(payload).encode(),
+            headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY']}, method='POST')
+        retry = False
+        try:
+            with urllib.request.urlopen(request, timeout=150) as response: result = json.load(response)
+            if not isinstance(result, dict): raise AIResponseError('AI 응답 형식을 확인하지 못했습니다.', retry=True)
+            status = result.get('status')
+            reason = (result.get('incomplete_details') or {}).get('reason', '')
+            usage = result.get('usage') or {}
+            # Record response metadata only; never log application text, evidence or API keys.
+            LOG.info('Support AI stage=%s model=%s attempt=%d status=%s reason=%s input_tokens=%s output_tokens=%s response_id=%s',
+                name, payload['model'], attempt + 1, status, reason, usage.get('input_tokens'), usage.get('output_tokens'), result.get('id'))
+            if status == 'incomplete':
+                if reason == 'content_filter': raise AIResponseError('AI가 일부 입력 자료를 처리하지 못했습니다. 등록 자료와 작성 요청을 확인해주세요.')
+                raise AIResponseError('AI 응답이 작성 도중 중단되었습니다. 자동 재시도 후에도 완료되지 않아 자료를 보존했습니다.',
+                    retry=True, grow_budget=reason == 'max_output_tokens')
+            if status != 'completed':
+                raise AIResponseError('AI 작성 서비스가 작업을 완료하지 못했습니다. 기존 자료는 보존했습니다.', retry=status in ('failed', 'cancelled'))
+            parts = [p for item in result.get('output', []) if item.get('type') == 'message' for p in item.get('content', [])]
+            if any(p.get('type') == 'refusal' for p in parts):
+                raise AIResponseError('AI가 작성 요청을 처리하지 못했습니다. 등록 자료와 작성 요청을 확인해주세요.')
+            text = ''.join(p.get('text', '') for p in parts if p.get('type') == 'output_text')
+            if not text.strip(): raise AIResponseError('AI 작성 결과가 비어 있습니다. 기존 자료는 보존했습니다.', retry=True)
+            parsed = json.loads(text)
+            if not isinstance(parsed, dict): raise AIResponseError('AI 작성 결과의 형식을 확인하지 못했습니다.', retry=True)
+            return parsed
+        except AIResponseError as exc:
+            message, retry = str(exc), exc.retry
+            if exc.grow_budget:
+                payload['max_output_tokens'] = min(24000, payload['max_output_tokens'] * 2)
+                payload['instructions'] = instructions + '\n완성된 JSON만 반환합니다. 항목을 반복하지 말고 값과 보완 설명을 간결하게 작성해주세요.'
+        except urllib.error.HTTPError as exc:
+            LOG.warning('Support AI stage=%s attempt=%d http_status=%d', name, attempt + 1, exc.code)
+            if exc.code == 429: message = 'AI 사용 한도에 도달했습니다. 잠시 후 다시 실행해주세요.'
+            else: message = 'AI 작성 서비스의 연결을 확인해주세요. 기존 자료는 보존했습니다.'
+            retry = exc.code in (408, 409, 500, 502, 503, 504)
+        except json.JSONDecodeError:
+            LOG.warning('Support AI stage=%s attempt=%d invalid_json', name, attempt + 1)
+            message, retry = 'AI 응답 형식이 올바르지 않아 초안을 완료하지 못했습니다. 기존 자료는 보존했습니다.', True
+        except (OSError, http.client.HTTPException) as exc:
+            LOG.warning('Support AI stage=%s attempt=%d transport_error=%s', name, attempt + 1, type(exc).__name__)
+            message, retry = 'AI 응답 연결 시간이 초과되거나 끊겼습니다. 자동 재시도 후에도 연결되지 않아 자료를 보존했습니다.', True
+        if retry and attempt == 0:
+            LOG.warning('Support AI retrying stage=%s next_output_budget=%d', name, payload['max_output_tokens'])
+            time.sleep(1)
+            continue
+        raise ValueError(message)
 
 
 def evidence_map(snapshot):
@@ -441,6 +484,7 @@ def generate_draft(job):
                 'format': analysis['format'], 'fields': [], 'warnings': ['동의·서명은 원본에서 직접 확인하고 작성해주세요. 이 문서는 원본 내용을 유지했습니다.']})
             continue
         schema = json.loads(dumps(FORM_SCHEMA))
+        schema['properties']['fields']['maxItems'] = len(editable_targets) if analysis['targets'] else 60
         properties = schema['properties']['fields']['items']['properties']
         if len(evidence) <= 200:
             properties['sources']['items']['enum'] = list(evidence) or ['__no_evidence__']

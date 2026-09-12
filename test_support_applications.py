@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
+import urllib.error
 from unittest.mock import patch
 import zipfile
 
@@ -170,6 +171,54 @@ class SupportTests(unittest.TestCase):
         self.assertEqual(request('POST','profile',support.profile(),cookie=cookie,origin='https://evil.example')[0],403)
         code,headers,raw=request('GET','assets/file?id='+asset['id'],cookie=cookie);self.assertEqual(code,200);self.assertEqual(headers['Cache-Control'],'no-store');self.assertTrue(raw.startswith(b'PK'))
         self.assertEqual(request('POST','logout',{},cookie=cookie)[0],200);self.assertEqual(request('GET','profile',cookie=cookie)[0],401)
+
+
+class AITransportTests(unittest.TestCase):
+    def setUp(self):
+        self.env=patch.dict(os.environ,{'OPENAI_API_KEY':'test-no-network','SUPPORT_OPENAI_MODEL':'gpt-4.1-mini'})
+        self.env.start();self.addCleanup(self.env.stop)
+        self.delay=patch.object(support.time,'sleep');self.delay.start();self.addCleanup(self.delay.stop)
+        self.schema={'type':'object','properties':{'ok':{'type':'boolean'}},'required':['ok'],'additionalProperties':False}
+
+    def response(self, status='completed', reason=None, text='{"ok":true}', refusal=False):
+        result={'id':'response-test','status':status,'incomplete_details':{'reason':reason} if reason else None,
+                'usage':{'input_tokens':42,'output_tokens':12000 if reason=='max_output_tokens' else 8},
+                'output':[{'type':'message','content':[{'type':'refusal','refusal':'refused'} if refusal else {'type':'output_text','text':text}]}]}
+        return io.BytesIO(json.dumps(result).encode())
+
+    def test_truncated_response_retries_with_larger_budget_without_exposing_partial_json(self):
+        with patch.object(support.urllib.request,'urlopen',side_effect=[self.response('incomplete','max_output_tokens','{"ok":'),self.response()]) as send, self.assertLogs(support.LOG,level='INFO') as logs:
+            result=support.ai_json('instructions',{'private':'company-data-must-not-be-logged'},self.schema,'support_application')
+        self.assertEqual(result,{'ok':True});self.assertEqual(send.call_count,2)
+        payloads=[json.loads(c.args[0].data) for c in send.call_args_list]
+        self.assertEqual([p['max_output_tokens'] for p in payloads],[12000,24000])
+        self.assertTrue(all(p['store'] is False for p in payloads))
+        self.assertIn('max_output_tokens',' '.join(logs.output));self.assertNotIn('company-data-must-not-be-logged',' '.join(logs.output))
+
+    def test_retry_is_bounded_and_reports_incomplete_separately(self):
+        with patch.object(support.urllib.request,'urlopen',side_effect=[self.response('incomplete','max_output_tokens'),self.response('incomplete','max_output_tokens')]) as send:
+            with self.assertRaisesRegex(ValueError,'자동 재시도'):support.ai_json('i',{},self.schema,'test')
+        self.assertEqual(send.call_count,2)
+
+    def test_filtered_or_refused_content_is_not_automatically_retried(self):
+        for response in [self.response('incomplete','content_filter'),self.response(refusal=True)]:
+            with self.subTest(),patch.object(support.urllib.request,'urlopen',return_value=response) as send:
+                with self.assertRaisesRegex(ValueError,'자료와 작성 요청'):support.ai_json('i',{},self.schema,'test')
+                self.assertEqual(send.call_count,1)
+
+    def test_transport_and_invalid_json_recover_once(self):
+        for failure in [TimeoutError(),http.client.IncompleteRead(b'partial'),self.response(text='{"ok":')]:
+            with self.subTest(failure=type(failure).__name__),patch.object(support.urllib.request,'urlopen',side_effect=[failure,self.response()]) as send:
+                self.assertEqual(support.ai_json('i',{},self.schema,'test'),{'ok':True});self.assertEqual(send.call_count,2)
+
+    def test_server_errors_retry_but_auth_and_quota_errors_do_not(self):
+        for code,expected in [(503,2),(401,1),(429,1)]:
+            error=urllib.error.HTTPError('https://api.openai.com/v1/responses',code,'API error',{},None)
+            with self.subTest(code=code),patch.object(support.urllib.request,'urlopen',side_effect=[error,self.response()]) as send:
+                if expected==2:self.assertEqual(support.ai_json('i',{},self.schema,'test'),{'ok':True})
+                else:
+                    with self.assertRaises(ValueError):support.ai_json('i',{},self.schema,'test')
+                self.assertEqual(send.call_count,expected)
 
 
 if __name__=='__main__':unittest.main()
