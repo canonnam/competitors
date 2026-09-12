@@ -18,21 +18,15 @@ from agency_news import Document
 from competitor_news import KST, connect, normalized, timestamp
 import naver_ads
 import aeo_missions
+import web_search_results
 
 ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('search_visibility')
 SCHEDULE = '매일 10:50 (한국시간)'
 VERSION = 'visibility-v1'
 NAVER_ORIGIN = 'https://search.naver.com'
-PROVIDERS = {
-    'naver': {'name': '네이버 검색', 'kind': 'search'},
-    'openai': {'name': 'OpenAI 검색 답변', 'kind': 'ai'},
-    'gemini': {'name': 'Gemini 검색 답변', 'kind': 'ai'},
-    'perplexity': {'name': 'Perplexity 검색 답변', 'kind': 'ai'},
-}
-PROVIDER_KEYS = {'openai': 'OPENAI_API_KEY', 'gemini': 'GEMINI_API_KEY', 'perplexity': 'PERPLEXITY_API_KEY'}
-LOCKS = {provider: threading.Lock() for provider in PROVIDERS}
-OPENAI_MAX_SEARCHES = 3
+PROVIDERS = {'naver': {'name': '네이버 검색', 'kind': 'search'}}
+LOCKS = {'naver': threading.Lock()}
 AD_PARSER_VERSION = 2
 
 
@@ -57,19 +51,12 @@ def enabled():
 
 
 def configured(provider):
-    return provider == 'naver' or bool(os.getenv(PROVIDER_KEYS[provider], '').strip())
+    # Consumer AI services are measured in the browser; inference API collection is retired.
+    return provider == 'naver'
 
 
 def model_for(provider):
-    defaults = {'openai': 'gpt-6-astra', 'gemini': 'gemini-3.6-flash', 'perplexity': 'sonar'}
-    return os.getenv('SEARCH_' + provider.upper() + '_MODEL', defaults.get(provider, 'PC 공개 검색'))
-
-
-def openai_options():
-    # Astra always reasons; leave enough output budget for reasoning and citations.
-    if model_for('openai') == 'gpt-6-astra':
-        return {'reasoning': {'effort': 'low'}, 'max_output_tokens': 4096}
-    return {'max_output_tokens': 1600}
+    return 'PC 공개 검색'
 
 
 def init_db(path):
@@ -84,6 +71,7 @@ def init_db(path):
             CREATE INDEX IF NOT EXISTS visibility_history ON observations(day DESC);
         ''')
     aeo_missions.init_db(path)
+    web_search_results.init_db(path)
 
 
 def due_at(now):
@@ -296,106 +284,6 @@ def collect_naver(query, config, fetcher=fetch_html, stop=None):
             'method': 'PC 비로그인 공개 검색 · 웹문서 및 첫 화면 플레이스 · 광고 별도 표시'}
 
 
-AI_INSTRUCTIONS = ('한국어로 답하세요. 최신 웹 정보를 검색해 보호자가 비교할 수 있는 실제 입소형 요양원 최대 5곳을 알려주세요. '
-                   '각 시설 이름과 지역, 비교할 특징을 간단히 적고 확인한 출처를 인용하세요. '
-                   '요양병원과 재가 방문요양은 제외하고 특정 업체를 우선하지 마세요. 근거가 부족하면 확인이 어렵다고 말해주세요.')
-
-
-def ai_prompt(query):
-    # Never include our brand, owned URLs, or company profile in the probe prompt.
-    return query['keyword'] + '\n' + AI_INSTRUCTIONS
-
-
-def parse_openai(data):
-    if data.get('status') != 'completed':
-        raise ValueError('AI response incomplete')
-    output = data.get('output', [])
-    searched = any(row.get('type') == 'web_search_call' and row.get('status') == 'completed' for row in output)
-    parts = [part for row in output if row.get('type') == 'message' for part in row.get('content', []) if part.get('type') == 'output_text']
-    text, citations = '', []
-    for part in parts:
-        offset = len(text)
-        text += part.get('text', '') + '\n'
-        for item in part.get('annotations', []):
-            if item.get('type') == 'url_citation' and safe_url(item.get('url')):
-                citations.append({'url': item['url'], 'title': item.get('title', item['url']),
-                                  'start': offset + item.get('start_index', len(text)),
-                                  'end': offset + item.get('end_index', len(text))})
-    if not searched or not text.strip():
-        raise ValueError('No completed search answer')
-    return text.rstrip(), citations, []
-
-
-def parse_gemini(data):
-    candidate = next(iter(data.get('candidates', [])), {})
-    if candidate.get('finishReason') != 'STOP':
-        raise ValueError('AI response incomplete')
-    text = ''.join(part.get('text', '') for part in candidate.get('content', {}).get('parts', []) if not part.get('thought'))
-    grounding = candidate.get('groundingMetadata', {})
-    chunks = grounding.get('groundingChunks', [])
-    citations = []
-    # Gemini segment offsets are bytes; convert to character offsets for rendering.
-    for support in grounding.get('groundingSupports', []):
-        segment = support.get('segment', {})
-        for index in support.get('groundingChunkIndices', []):
-            if not isinstance(index, int) or not 0 <= index < len(chunks):
-                continue
-            web = chunks[index].get('web', {})
-            if safe_url(web.get('uri')):
-                citations.append({'url': web['uri'], 'title': web.get('title', web['uri']),
-                                  'start': len(text.encode()[:segment.get('startIndex', 0)].decode('utf-8', errors='ignore')),
-                                  'end': len(text.encode()[:segment.get('endIndex', 0)].decode('utf-8', errors='ignore'))})
-    if not grounding.get('webSearchQueries') or not text.strip():
-        raise ValueError('No grounded answer with sources')
-    # Preserve the provider's required search suggestions in an isolated, script-free iframe.
-    suggestions = grounding.get('searchEntryPoint', {}).get('renderedContent', '')
-    return text, citations, [{'html': suggestions}] if suggestions else []
-
-
-def parse_perplexity(data):
-    choices = data.get('choices', [])
-    if not choices or choices[0].get('finish_reason') != 'stop':
-        raise ValueError('AI response incomplete')
-    text = choices[0].get('message', {}).get('content', '')
-    citations = [{'url': url, 'title': url, 'start': 0, 'end': len(text)} for url in data.get('citations', []) if safe_url(url)]
-    if not text.strip():
-        raise ValueError('No cited search answer')
-    return text, citations, []
-
-
-def collect_ai(provider, query, config, requester=post_json):
-    model, prompt = model_for(provider), ai_prompt(query)
-    key = os.environ[PROVIDER_KEYS[provider]]
-    if provider == 'openai':
-        data = requester('https://api.openai.com/v1/responses', {
-            'model': model, 'input': query['keyword'], 'instructions': AI_INSTRUCTIONS, 'store': False, **openai_options(),
-            'tools': [{'type': 'web_search', 'search_context_size': 'medium', 'user_location': {
-                'type': 'approximate', 'country': 'KR', 'city': query.get('city', 'Incheon'), 'timezone': 'Asia/Seoul'}}],
-            'tool_choice': {'type': 'web_search'}, 'max_tool_calls': OPENAI_MAX_SEARCHES,
-        }, {'Authorization': 'Bearer ' + key})
-        text, citations, suggestions = parse_openai(data)
-    elif provider == 'gemini':
-        if not re.fullmatch(r'[a-zA-Z0-9._-]+', model):
-            raise ValueError('Invalid Gemini model')
-        generation = {'maxOutputTokens': 4096}
-        if model.startswith('gemini-3'):
-            generation['thinkingConfig'] = {'thinkingLevel': 'low'}
-        data = requester('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent', {
-            'contents': [{'parts': [{'text': prompt}]}], 'tools': [{'google_search': {}}],
-            'generationConfig': generation,
-        }, {'x-goog-api-key': key})
-        text, citations, suggestions = parse_gemini(data)
-    else:
-        data = requester('https://api.perplexity.ai/v1/sonar', {
-            'model': model, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': 1600,
-        }, {'Authorization': 'Bearer ' + key})
-        text, citations, suggestions = parse_perplexity(data)
-    return {'answer': text, 'citations': citations, 'search_suggestions': suggestions, 'grounded': bool(citations),
-            'mentioned': brand_mentioned(text, config), 'owned_cited': any(is_owned(c['url'], config) for c in citations),
-            'model': data.get('model', data.get('modelVersion', model)), 'prompt': prompt,
-            'method': '웹 검색을 사용한 API 답변 · 개인화된 소비자 서비스 화면과 다를 수 있음'}
-
-
 def active_keyword_queries(items):
     """Deduplicate only enabled rows, including for a stale inventory."""
     queries = {}
@@ -479,10 +367,9 @@ def branch_observation(observation, branch, config):
 
 
 def query_signature(provider, query, config):
-    fields = [VERSION, provider, query['keyword'], query.get('city') if provider != 'naver' else None, model_for(provider), config['aliases'], config.get('owned_urls'), config.get('place_ids'),
-              ['public-pages-v2', config['max_pages'], bool(os.getenv('SERPAPI_KEY'))] if provider == 'naver' else [ai_prompt(query), OPENAI_MAX_SEARCHES if provider == 'openai' else None]]
-    if provider == 'openai' and model_for(provider) == 'gpt-6-astra':
-        fields.append(openai_options())
+    # Preserve the existing Naver observation identity across this migration.
+    fields = [VERSION, provider, query['keyword'], None, 'PC 공개 검색', config['aliases'], config.get('owned_urls'), config.get('place_ids'),
+              ['public-pages-v2', config['max_pages'], bool(os.getenv('SERPAPI_KEY'))]]
     return hashlib.sha256(json.dumps(fields, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -505,7 +392,7 @@ def safe_error(exc):
     return '측정 결과를 확인할 수 없어 저장하지 않았습니다'
 
 
-def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html, requester=post_json, stop=None):
+def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html, stop=None):
     live_clock = now is None
     now = now or datetime.now(KST)
     if not configured(provider) or not LOCKS[provider].acquire(blocking=False):
@@ -547,7 +434,7 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
             with connect(path) as db:
                 db.execute('INSERT OR REPLACE INTO checks VALUES(?,?)', (identity, json.dumps(state, ensure_ascii=False)))
             try:
-                payload = collect_naver(query, config, fetcher, stop) if provider == 'naver' else collect_ai(provider, query, config, requester)
+                payload = collect_naver(query, config, fetcher, stop)
                 observed = datetime.now(KST) if live_clock else now
                 payload.update(provider=provider, keyword=query['keyword'], observed_at=observed.isoformat(),
                                signature=query_signature(provider, query, config), query=query)
@@ -588,7 +475,7 @@ def report(path, ad_path=None, now=None, summary=False):
         states = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT * FROM checks')}
         history = [json.loads(row['payload']) for row in db.execute('SELECT payload FROM observations WHERE day>=? ORDER BY day DESC', ((now-timedelta(days=30)).date().isoformat(),))]
     providers = []
-    for provider, metadata in PROVIDERS.items():
+    for provider, metadata in [('naver', PROVIDERS['naver'])]:
         queries = search_queries if provider == 'naver' else ai_queries
         connected = configured(provider)
         items = []
@@ -626,6 +513,7 @@ def report(path, ad_path=None, now=None, summary=False):
         providers.append({'id': provider, **metadata, 'configured': connected, 'model': model_for(provider),
                           'expected': len(queries), 'checked': len(checked), 'mentioned': sum(bool(item.get('mentioned')) for item in checked),
                           'first_page': sum(item.get('first_page') == 1 for item in checked), 'items': items})
+    providers.extend(web_search_results.reports(path, ai_queries, config, now, summary))
     if not summary:
         aeo_missions.attach(path, providers, config.get('branches', []))
     return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_daily(now).isoformat(),
@@ -636,7 +524,8 @@ def report(path, ad_path=None, now=None, summary=False):
                                'ad_count': sum(q['source'] == 'ad_account' for q in search_queries),
                                'regional_count': sum(q['source'] == 'regional' for q in search_queries),
                                'method': '인천 광고 계정 ON 키워드와 안양 지역 점검 키워드'},
-            'ai_queries': ai_queries, 'generated_at': now.isoformat()}
+            'ai_queries': ai_queries, 'web_collection': {'mode': 'browser', 'schedule': SCHEDULE, 'api_collection': False},
+            'generated_at': now.isoformat()}
 
 
 def start_scheduler(path, ad_path=None):
@@ -653,6 +542,6 @@ def start_scheduler(path, ad_path=None):
             stop.wait(60)
 
     if enabled():
-        for provider in PROVIDERS:
+        for provider in ('naver',):
             threading.Thread(target=run, args=(provider,), daemon=True, name='visibility-'+provider).start()
     return stop

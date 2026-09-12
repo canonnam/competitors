@@ -29,7 +29,7 @@ test('home reports measured denominators and exposes partial setup',()=>{
     {id:'naver',kind:'search',configured:true,expected:24,checked:10,first_page:3},
     {id:'openai',kind:'ai',configured:true,expected:6,checked:4,mentioned:1},
     {id:'gemini',kind:'ai',configured:false,expected:6,checked:0,mentioned:0}]};
-  assert.equal(v.homeSummary(data).text,'네이버 첫 페이지(광고 제외) 3/10개 · AI API 언급 1/4건');
+  assert.equal(v.homeSummary(data).text,'네이버 첫 페이지(광고 제외) 3/10개 · AI 웹 언급 1/4건');
   assert.equal(v.homeSummary(data).warning,true);
 });
 
@@ -58,6 +58,6 @@ test('home shows both branches and keeps failed AI checks outside the denominato
     {id:'openai',kind:'ai',configured:true,checked:1,expected:2,items:[
       {branch:'incheon',status:'error',branch_result:{mentioned:true}},
       {branch:'anyang',status:'ready',branch_result:{mentioned:true}}]}]};
-  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지(광고 제외) 1/1개 · AI API 언급 측정 대기\n안양점 · 네이버 첫 페이지(광고 제외) 0/1개 · AI API 언급 1/1건');
+  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지(광고 제외) 1/1개 · AI 웹 언급 측정 대기\n안양점 · 네이버 첫 페이지(광고 제외) 0/1개 · AI 웹 언급 1/1건');
   assert.equal(v.homeSummary(data).warning,true);
 });

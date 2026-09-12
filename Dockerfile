@@ -16,6 +16,7 @@ COPY robots.txt favicon.ico /app/
 COPY data /app/data
 COPY service_knowledge.py /app/
 COPY aeo_missions.py /app/
+COPY web_search_results.py /app/
 COPY --from=knowledge /build/data/competitor_knowledge.json /app/data/competitor_knowledge.json
 COPY nginx /app/nginx
 

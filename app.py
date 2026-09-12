@@ -13,6 +13,7 @@ import search_visibility
 import reputation_watch
 import claim_check
 import aeo_missions
+import web_search_results
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -269,6 +270,9 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if urllib.parse.urlsplit(self.path).path == '/api/search-visibility/web-results':
+            self.save_web_result()
+            return
         if urllib.parse.urlsplit(self.path).path == '/api/search-visibility/missions':
             self.save_aeo_mission()
             return
@@ -347,6 +351,21 @@ class App(SimpleHTTPRequestHandler):
             wiki_chat.send_json(self, 503, {'error': '미션을 저장하지 못했습니다. 입력 내용을 유지한 채 다시 시도해주세요.'})
             return
         wiki_chat.send_json(self, 200, {'mission': result})
+
+    def save_web_result(self):
+        try:
+            wiki_chat.check_origin(self)
+            result = web_search_results.submit(search_visibility.db_path(), wiki_chat.read_json(self, 250000))
+        except wiki_chat.ChatError as exc:
+            wiki_chat.send_json(self, exc.status, {'error': str(exc)})
+            return
+        except (ValueError, LookupError) as exc:
+            wiki_chat.send_json(self, 404 if isinstance(exc, LookupError) else 400, {'error': str(exc)})
+            return
+        except (sqlite3.Error, OSError):
+            wiki_chat.send_json(self, 503, {'error': '웹 검색 결과를 저장하지 못했습니다. 다시 시도해주세요.'})
+            return
+        wiki_chat.send_json(self, 200, result)
 
     def save_support_preference(self):
         import business_support

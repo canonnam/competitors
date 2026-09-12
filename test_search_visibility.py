@@ -161,105 +161,14 @@ class VisibilityTests(unittest.TestCase):
             {'search_metadata':{'status':'Success','raw_html_file':'https://evil.test/searches/result.html'}}).encode())):
             with self.assertRaises(ValueError):v.fetch_serp_html(url)
 
-    def test_ai_query_never_contains_our_brand_or_urls(self):
-        calls=[]
-        def request(url,payload,headers):calls.append((url,payload));return response('더비다요양원을 포함한 비교입니다.')
-        result=v.collect_ai('openai',QUERY,self.config,request)
-        self.assertTrue(result['mentioned']);self.assertTrue(result['grounded'])
-        raw=json.dumps(calls,ensure_ascii=False)
-        self.assertNotIn('더비다',raw);self.assertNotIn('vida25',raw)
-        self.assertEqual(calls[0][1]['max_tool_calls'],3)
-        self.assertEqual(calls[0][1]['input'],QUERY['keyword'])
-        self.assertEqual(calls[0][1]['tool_choice'],{'type':'web_search'})
 
-    def test_incomplete_or_unsearched_ai_is_not_a_negative_observation(self):
-        for data in ({'status':'incomplete','output':[]},{'status':'completed','output':response()['output'][1:]}):
-            with self.assertRaises(ValueError):v.parse_openai(data)
-        text,citations,_=v.parse_openai(response('확인할 자료가 부족합니다.',False))
-        self.assertTrue(text);self.assertEqual(citations,[])
 
-    def test_model_upgrade_preserves_old_observations_and_collects_new_sample_once(self):
-        with patch.dict(os.environ, {'SEARCH_OPENAI_MODEL': 'gpt-5.4-mini'}):
-            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=lambda *args:response())
-            other_signatures={p:v.query_signature(p,QUERY,self.config) for p in ('naver','gemini')}
-        calls=[]
-        def request(url,payload,headers):
-            calls.append(payload)
-            result=response('더비다요양원 인천점을 비교하세요.')
-            result['model']=payload['model']
-            return result
-        with patch.dict(os.environ, {'SEARCH_OPENAI_MODEL': 'gpt-6-astra'}):
-            before=next(p for p in self.report()['providers'] if p['id']=='openai')
-            self.assertEqual(before['checked'],0)
-            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=request)
-            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=1),requester=request)
-            after=next(p for p in self.report()['providers'] if p['id']=='openai')
-            self.assertEqual(after['checked'],1)
-            self.assertEqual(after['items'][0]['model'],'gpt-6-astra')
-            self.assertEqual(len(after['items'][0]['history']),1)
-            self.assertEqual(other_signatures,{p:v.query_signature(p,QUERY,self.config) for p in other_signatures})
-        self.assertEqual(len(calls),1)
-        self.assertEqual(calls[0]['reasoning'],{'effort':'low'})
-        self.assertEqual(calls[0]['max_output_tokens'],4096)
-        self.assertEqual(calls[0]['max_tool_calls'],3)
-        self.assertEqual(calls[0]['input'],QUERY['keyword'])
-        self.assertNotIn('더비다',json.dumps(calls,ensure_ascii=False))
-        with v.connect(self.path) as db:
-            self.assertEqual(db.execute("SELECT COUNT(*) FROM observations WHERE provider='openai'").fetchone()[0],2)
 
-    def test_unverified_answer_and_disconnected_providers_excluded_from_denominator(self):
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=lambda *args:response(cited=False))
-        providers={p['id']:p for p in self.report()['providers']}
-        self.assertEqual(providers['openai']['checked'],0)
-        self.assertEqual(providers['openai']['items'][0]['status'],'unverified')
-        self.assertTrue(providers['openai']['items'][0]['answer'])
-        self.assertEqual(providers['gemini']['checked'],0)
-        self.assertEqual(providers['gemini']['items'][0]['status'],'unconfigured')
-        self.assertEqual(providers['openai']['items'][0]['history'],[])
 
-    def test_restart_does_not_repeat_paid_calls_and_next_day_keeps_history(self):
-        calls=[]
-        def request(*args):calls.append(1);return response('더비다 요양원을 비교하세요.')
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=request)
-        v.init_db(self.path)
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=10),requester=request)
-        self.assertEqual(len(calls),1)
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(days=1),requester=request)
-        self.assertEqual(len(calls),2)
-        row=self.report(NOW+timedelta(days=1))['providers'][1]['items'][0]
-        self.assertEqual(len(row['history']),2);self.assertFalse(row['stale'])
 
-    def test_failed_new_day_preserves_old_answer_but_marks_it_stale(self):
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=lambda *args:response())
-        def failure(*args):raise TimeoutError('secret must not escape')
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(days=1),requester=failure)
-        row=self.report(NOW+timedelta(days=1))['providers'][1]['items'][0]
-        self.assertEqual(row['observed_at'],NOW.isoformat());self.assertTrue(row['stale'])
-        self.assertEqual(row['status'],'error');self.assertNotIn('secret',json.dumps(row))
 
-    def test_daily_failure_attempt_limit_and_thirty_minute_retry(self):
-        calls=[]
-        def failure(*args):calls.append(1);raise TimeoutError()
-        for minutes in (0,1,30,61,300):
-            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=minutes),requester=failure)
-        self.assertEqual(len(calls),2)
 
-    def test_interrupted_public_search_resumes_but_paid_attempt_is_preserved(self):
-        def interrupted(*args):raise InterruptedError()
-        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW,fetcher=interrupted)
-        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(minutes=1),fetcher=lambda _:page())
-        self.assertEqual(self.report()['providers'][0]['checked'],1)
-        v.sync_provider(self.path,'openai',[QUERY],self.config,NOW,requester=interrupted)
-        with patch.object(v,'collect_ai') as request:
-            v.sync_provider(self.path,'openai',[QUERY],self.config,NOW+timedelta(minutes=1))
-            request.assert_not_called()
 
-    def test_gemini_billing_error_exposes_action_without_raw_provider_details(self):
-        from io import BytesIO
-        error=urllib.error.HTTPError('https://example.com',429,'quota',{},BytesIO(json.dumps({'error':{
-            'message':'Your prepayment credits are depleted. private-details'}}).encode()))
-        message=v.safe_error(error)
-        self.assertIn('크레딧 부족',message);self.assertNotIn('private-details',message)
 
     def test_naver_access_limit_stops_all_remaining_queries(self):
         calls=[]
@@ -307,18 +216,6 @@ class VisibilityTests(unittest.TestCase):
             self.assertTrue(target['branch_result']['mentioned'])
             self.assertTrue(next(row for row in rows if row['query']['source']=='ad_account')['stale'])
 
-    def test_branch_metadata_reuses_existing_observation_without_paid_calls(self):
-        query={'keyword':'안양 요양원 추천','city':'Anyang'}
-        enriched={**query,'branch':'anyang'}
-        self.assertEqual(v.query_signature('openai',query,self.config),v.query_signature('openai',enriched,self.config))
-        v.sync_provider(self.path,'openai',[query],self.config,NOW,requester=lambda *args:response('더비다요양원 안양점을 확인하세요.'))
-        with patch.object(v,'collect_ai') as collector:
-            v.sync_provider(self.path,'openai',[enriched],self.config,NOW)
-            collector.assert_not_called()
-        row=next(row for row in self.report()['providers'][1]['items'] if row['keyword']==query['keyword'])
-        self.assertEqual(row['branch'],'anyang')
-        self.assertTrue(row['branch_result']['mentioned'])
-        self.assertTrue(row['branch_result']['history'][0]['mentioned'])
 
     def test_other_branch_and_generic_brand_do_not_count_as_anyang(self):
         def match(title,url='https://example.com/facility',area='web'):
@@ -337,17 +234,9 @@ class VisibilityTests(unittest.TestCase):
         result=v.branch_observation({'matches':[match('더비다요양원 인천',area='ad')]},'incheon',self.config)
         self.assertFalse(result['mentioned']);self.assertIsNone(result['first_page'])
 
-    def test_gemini_and_perplexity_grounded_answers(self):
-        text='더비다요양원을 확인하세요.'
-        data={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':text}]},'groundingMetadata':{
-            'webSearchQueries':['인천 요양원'],'groundingChunks':[{'web':{'uri':'https://example.com','title':'시설'}}],
-            'groundingSupports':[{'segment':{'endIndex':len(text.encode())},'groundingChunkIndices':[0]}]}}]}
-        result=v.parse_gemini(data)
-        self.assertEqual(result[1][0]['end'],len(text))
-        self.assertEqual(v.parse_perplexity({'choices':[{'finish_reason':'stop','message':{'content':text}}],'citations':['https://example.com','javascript:bad']})[1][0]['url'],'https://example.com')
 
     def test_api_reads_only_and_private_files_remain_private(self):
-        with patch.object(v,'db_path',return_value=self.path),patch.object(v.naver_ads,'db_path',return_value=self.adpath),patch.object(v,'collect_ai') as collector:
+        with patch.object(v,'db_path',return_value=self.path),patch.object(v.naver_ads,'db_path',return_value=self.adpath),patch.object(v,'fetch_html') as collector:
             server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
             thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
             try:
