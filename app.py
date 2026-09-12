@@ -14,6 +14,7 @@ import reputation_watch
 import claim_check
 import aeo_missions
 import web_search_results
+import support_applications
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -57,6 +58,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if support_applications.handle(self, "GET"):
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
             self.send_claim_check()
             return
@@ -86,6 +89,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if support_applications.handle(self, "HEAD"):
+            return
         if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
             self.send_claim_check(head_only=True)
             return
@@ -254,7 +259,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
+        public_pages = {"support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
@@ -270,6 +275,8 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if support_applications.handle(self, "POST"):
+            return
         if urllib.parse.urlsplit(self.path).path == '/api/search-visibility/web-results':
             self.save_web_result()
             return
@@ -389,6 +396,12 @@ class App(SimpleHTTPRequestHandler):
             wiki_chat.send_json(self, 503, {'error': '관심 선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.'})
             return
         result = {'article_id': body['article_id'], 'preference': body['preference']}
+        if body['preference'] == 'interested':
+            try:
+                support_applications.ensure_case(body['article_id'])
+            except (sqlite3.Error, OSError, ValueError, LookupError):
+                # Interest is already saved; the durable worker discovers it on its next pass.
+                pass
         if 'reason' in body:
             result['feedback'] = feedback
         wiki_chat.send_json(self, 200, result)
@@ -396,6 +409,7 @@ class App(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    support_applications.init_db()
     wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
     scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())
@@ -403,6 +417,7 @@ if __name__ == "__main__":
     news_scheduler_stop = competitor_news.start_scheduler(competitor_news.db_path())
     agency_news.init_db(agency_news.db_path())
     agency_scheduler_stop = agency_news.start_scheduler(agency_news.db_path())
+    support_worker_stop = support_applications.start_worker()
     search_visibility.init_db(search_visibility.db_path())
     visibility_scheduler_stop = search_visibility.start_scheduler(search_visibility.db_path())
     reputation_watch.init_db(reputation_watch.db_path())
@@ -416,6 +431,7 @@ if __name__ == "__main__":
         scheduler_stop.set()
         news_scheduler_stop.set()
         agency_scheduler_stop.set()
+        support_worker_stop.set()
         visibility_scheduler_stop.set()
         reputation_scheduler_stop.set()
         server.server_close()

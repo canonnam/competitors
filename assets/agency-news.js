@@ -164,6 +164,10 @@
       const footer=make('div','agency-item-footer');
       footer.append(make('span','',`${item.match_basis} 기준 선별 · 수집 ${when(item.collected_at)}`));
       const link=make('a','',item.kind==='support'?'지원사업 원문·공고문 확인 ↗':'원문·첨부파일 확인 ↗');link.href=safeUrl(item.url);link.target='_blank';link.rel='noopener noreferrer';footer.append(link);
+      if(item.kind==='support'&&item.preference==='interested') {
+        const prepare=make('a','support-prepare-link','신청 준비 · 양식·초안');
+        prepare.href='/support-prep.html#case='+encodeURIComponent(item.id);footer.append(prepare);
+      }
       article.append(footer);fragment.append(article);
     }
     if(!items.length)fragment.append(make('p','agency-empty',current.total?'조건에 맞는 게시글이 없습니다.':'관련 게시글을 수집하면 여기에 표시됩니다. 아래 원문 게시판에서도 확인할 수 있습니다.'));
@@ -212,7 +216,7 @@
       render(await loadReport());
       const effect=result.feedback?.summary||'추천에 반영했습니다.';
       message.textContent=preference==='neutral'?'관심 선택을 취소하고 추천에 반영했습니다.':preference==='interested'
-        ?'관심있음으로 저장했습니다. 해당 사업과 비슷한 분야의 추천 순위에 반영했습니다.'
+        ?'관심있음으로 저장했습니다. 양식을 자동 수집합니다. 신청 준비에서 원본을 받고 초안을 만들 수 있습니다.'
         :'관심없음과 이유를 저장했습니다. '+effect+(effect.endsWith('.')?'':'.')+' 관심없음 목록에서 이유를 수정하거나 선택을 취소할 수 있습니다.';
     } catch(error) {
       message.textContent=saved?'관심 선택과 이유는 저장했습니다. 추천 목록을 갱신하지 못해 새로고침이 필요합니다.':
