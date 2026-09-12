@@ -14,6 +14,7 @@
   const stateLabels = {queued:'대기 중',collecting:'양식 수집 중',running:'초안 작성 중',ready:'준비 완료',needs_review:'확인 필요',failed:'처리 확인 필요'};
   const kindLabels = {form:'신청 양식',consent:'동의·확약',notice:'공고·안내',reference:'참고 자료'};
   let signedIn = false, p = null, references = [], currentCase = null, currentDraft = null, profileDirty = false, draftDirty = false, view = 'cases', reference = null, rewriteId = '', polling = false, busy = false;
+  let modelCatalog = null;
   const make = (tag, cls='', text='') => { const n=document.createElement(tag); if(cls)n.className=cls; if(text)n.textContent=text; return n; };
   const button = (text, action, cls='') => { const b=make('button',cls,text);b.type='button';b.addEventListener('click',action);return b; };
   const link = (text, href, cls='') => { const a=make('a',cls,text);a.href=href;return a; };
@@ -136,6 +137,20 @@
     if(result.suggestions.length)host.append(button('선택한 정보를 입력란에 반영',()=>{gatherProfile();for(const input of host.querySelectorAll('input:checked'))p.data.company[input.dataset.field]=input.dataset.value;profileDirty=true;renderProfile('company');$('reference-dialog').close();message('선택한 정보를 입력란에 반영했습니다. 내용을 확인한 뒤 기본 데이터를 저장해주세요.');},'primary'));
     $('extract-status').textContent=result.suggestions.length?'반영할 정보를 선택해주세요. 기존 값은 선택해야 변경됩니다.':'회사 기본정보를 확실히 찾지 못했습니다. 직접 입력해주세요.';
   }
+  function renderModelInfo(){
+    const model=modelCatalog?.models.find(m=>m.id===$('select-model').value);
+    if(!model)return;
+    $('model-description').textContent=model.description;
+    $('model-pricing').textContent=`100만 토큰당 · USD\n입력 $${model.input_price} · 출력 $${model.output_price}\n캐시 입력 $${model.cached_input_price}\n표준 단가 (${modelCatalog.prices_checked}). 긴 입력 등 조건별 요금은 공식 요금을 확인해주세요.`;
+    $('model-price-source').href=model.price_url;
+  }
+  async function loadModels(){
+    if(!modelCatalog)modelCatalog=await api('models');
+    const selected=$('select-model').value;
+    $('select-model').replaceChildren(...modelCatalog.models.map(m=>new Option(m.label+(m.id===modelCatalog.default?' · 기본':''),m.id)));
+    $('select-model').value=modelCatalog.models.some(m=>m.id===selected)?selected:modelCatalog.default;
+    renderModelInfo();
+  }
   async function loadCase(id,first=false){
     const data=await api('case?id='+encodeURIComponent(id));currentCase=data;
     $('case-title').textContent=data.announcement.title;$('case-period').textContent=data.announcement.application_period||'';$('case-source').href=data.announcement.url;
@@ -144,13 +159,14 @@
     $('case-files').replaceChildren(...data.assets.map(a=>fileRow(a)));
     if(!data.assets.length)$('case-files').append(make('p','muted',data.status==='collecting'||data.status==='queued'?'공식 공고에서 양식을 수집하고 있습니다.':'원본 양식을 추가해주세요.'));
     if(first){
+      await loadModels();
       if(!p)p=await api('profile');references=(await api('assets')).assets;
       selectOptions($('select-branch'),p.data.branches,'사업장 선택');selectOptions($('select-plan'),p.data.plans,'사업계획 선택');
       checks($('select-members'),p.data.members);checks($('select-references'),references);
       checks($('select-assets'),data.assets.filter(a=>!a.error),data.assets.filter(a=>['form','consent'].includes(a.kind)&&!a.error).map(a=>a.id));
     }
     const active=data.jobs.some(j=>['queued','running'].includes(j.state));
-    $('generate-button').disabled=active;$('generate-button').textContent=active?'자료 처리 중…':'초안 만들기';$('recollect').disabled=active;
+    $('generate-button').disabled=active||!modelCatalog;$('generate-button').textContent=active?'자료 처리 중…':'초안 만들기';$('recollect').disabled=active;
     const latest=data.drafts[0],selected=$('draft-version').value;
     $('draft-version').replaceChildren();for(const draft of data.drafts)$('draft-version').add(new Option(`v${draft.version} · ${stateLabels[draft.status]} · ${date(draft.created)}`,draft.id));
     if(!first&&selected&&data.drafts.some(d=>d.id===selected)&&!['running','queued'].includes(currentDraft?.status))$('draft-version').value=selected;
@@ -163,7 +179,8 @@
     const draft=currentDraft,host=$('draft-editor');host.replaceChildren();draftDirty=false;
     $('save-draft').disabled=draft.status!=='ready';$('draft-bundle').hidden=draft.status!=='ready';$('draft-bundle').href='/api/support/draft/export?id='+draft.id;
     const selection=draft.snapshot;
-    $('draft-status').textContent=`v${draft.version} · 기본 자료 v${draft.profile_revision} · ${selection.branch?.name||''} · ${selection.plan?.name||''}`;
+    const usedModel=draft.model_label||draft.model||selection.model||'GPT-4.1 mini';
+    $('draft-status').textContent=`v${draft.version} · 작성 모델 ${usedModel} · 기본 자료 v${draft.profile_revision} · ${selection.branch?.name||''} · ${selection.plan?.name||''}`;
     if(draft.status!=='ready'){host.append(make('div','sp-busy',draft.status==='failed'?draft.error:'선택한 양식에 맞춰 초안을 작성하고 있습니다. 화면을 닫아도 작업은 계속됩니다.'));return;}
     for(const document of draft.data.documents){
       const section=make('section','sp-draft-document'),head=make('div','sp-toolbar');head.append(make('h4','',document.name),link(document.mode==='manual'?'직접 확인용 받기':document.mode==='outline'?'항목별 초안 받기':document.format==='hwpx'?'HWPX 초안 받기':'초안 받기','/api/support/draft/export?id='+draft.id+'&asset='+document.asset_id,'button'));section.append(head);
@@ -172,9 +189,9 @@
       for(const warning of document.warnings)section.append(make('p','sp-field-note',warning));
       for(const field of document.fields){
         const item=make('div','sp-field');item.dataset.kind=field.kind;const heading=make('div','sp-field-heading');const label=make('label','',field.label);label.htmlFor='field-'+field.id;
-        const redo=button('다시 작성',()=>{rewriteId=field.id;$('rewrite-label').textContent=field.label;$('rewrite-instruction').value='';$('rewrite-dialog').showModal();});heading.append(label,redo);
+        const redo=button('다시 작성',()=>{rewriteId=field.id;$('rewrite-label').textContent=`${field.label} · 이 초안의 ${usedModel} 모델로 다시 작성합니다. API 사용 비용이 발생합니다.`;$('rewrite-instruction').value='';$('rewrite-dialog').showModal();});heading.append(label,redo);
         const input=make('textarea');input.id='field-'+field.id;input.dataset.fieldId=field.id;input.value=field.value;input.maxLength=16000;input.rows=Math.min(16,Math.max(2,Math.ceil(field.value.length/65)));input.placeholder='보완할 내용을 입력해주세요.';
-        input.addEventListener('input',()=>{draftDirty=true;$('draft-status').textContent=`v${draft.version} · 저장하지 않은 수정 내용이 있습니다.`;});item.append(heading,input);
+        input.addEventListener('input',()=>{draftDirty=true;$('draft-status').textContent=`v${draft.version} · 작성 모델 ${usedModel} · 저장하지 않은 수정 내용이 있습니다.`;});item.append(heading,input);
         if(field.note)item.append(make('p','sp-field-note',field.note));
         const sources=make('details');sources.append(make('summary','',field.edited?'사용자 수정 · 작성 근거 보기':'작성 근거 보기'));const list=make('ul');
         for(const source of field.sources)list.append(make('li','',`${sourceLabel(source)}: ${draft.evidence[source]||'근거 확인 필요'}`));
@@ -197,9 +214,11 @@
   $('back-cases').addEventListener('click',()=>{if(checkDirty()){draftDirty=false;location.hash='cases';}});
   $('recollect').addEventListener('click',e=>action(async()=>{await api('case/collect',{case_id:currentCase.id});await loadCase(currentCase.id);message('공고와 양식을 다시 확인하고 있습니다. 기존 원본과 초안은 보관합니다.');},e.currentTarget));
   $('generate-form').addEventListener('submit',e=>{e.preventDefault();if(!checkDirty())return;action(async()=>{
-    const result=await api('draft/create',{case_id:currentCase.id,branch_id:$('select-branch').value,plan_id:$('select-plan').value,member_ids:checked('select-members'),reference_ids:checked('select-references'),asset_ids:checked('select-assets'),instructions:$('draft-instructions').value});
+    if(!$('select-model').value)throw new Error('작성 모델을 목록에서 선택해주세요.');
+    const result=await api('draft/create',{case_id:currentCase.id,model:$('select-model').value,branch_id:$('select-branch').value,plan_id:$('select-plan').value,member_ids:checked('select-members'),reference_ids:checked('select-references'),asset_ids:checked('select-assets'),instructions:$('draft-instructions').value});
     draftDirty=false;currentDraft=await api('draft?id='+result.id);await loadCase(currentCase.id);$('draft-version').value=result.id;renderDraft();message('초안 작성을 시작했습니다. 완료되면 이 화면에 표시됩니다.');
   },e.submitter);});
+  $('select-model').addEventListener('change',renderModelInfo);
   $('draft-version').addEventListener('change',e=>{if(draftDirty&&!checkDirty()){e.target.value=currentDraft.id;return;}action(async()=>{currentDraft=await api('draft?id='+e.target.value);renderDraft();});});
   $('save-draft').addEventListener('click',e=>action(saveCurrentDraft,e.currentTarget));
   $('extract-company').addEventListener('click',e=>action(extractCompany,e.currentTarget));

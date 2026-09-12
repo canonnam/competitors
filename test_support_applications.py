@@ -47,14 +47,17 @@ class SupportTests(unittest.TestCase):
         asset = support.store_asset(self.case['id'],'신청서.docx',docx_form(),kind='form')[0]
         return asset
 
-    def generate(self):
+    def generate(self, model=None):
         asset = self.configured()
-        created = support.create_draft({'case_id':self.case['id'],'branch_id':'incheon','plan_id':'plan','asset_ids':[asset['id']]})
+        created = support.create_draft({'case_id':self.case['id'],'branch_id':'incheon','plan_id':'plan','asset_ids':[asset['id']], 'model':model})
         analysis = json.loads(support.get_asset(asset['id'])['analysis'])
         target = next(t for t in analysis['targets'] if '기업명' in t['context'] and not t['text'])
         result = {'fields':[{'target_id':target['id'],'label':'기업명','value':'주식회사 콤파스원','kind':'fact','sources':['company.name'],'note':''}], 'warnings':['제출 전 확인']}
         with closing(support.connect()) as db, db: job = db.execute("SELECT * FROM support_jobs WHERE kind='draft'").fetchone()
-        with patch.object(support,'ai_json',return_value=result),patch.object(support,'collect_case'),patch.object(support,'review_fields'): support.run_job(job)
+        with patch.object(support,'ai_json',return_value=result) as ai,patch.object(support,'collect_case'),patch.object(support,'review_fields') as review:
+            support.run_job(job)
+            self.assertEqual(ai.call_args.kwargs['model'], model or support.resolve_model())
+            self.assertEqual(review.call_args.kwargs['model'], model or support.resolve_model())
         return support.get_draft(created['id']), asset
 
     def test_profile_revision_conflict_and_company_branch_separation(self):
@@ -94,13 +97,42 @@ class SupportTests(unittest.TestCase):
         self.assertEqual({f['target_id']:f['value'] for f in fields},{'company':'회사','rep':'대표이름','contact':''})
 
     def test_rewrite_uses_grounding_review_and_preserves_previous_version(self):
-        draft,_=self.generate();field=draft['data']['documents'][0]['fields'][0]
+        draft,_=self.generate('gpt-5.4-mini');field=draft['data']['documents'][0]['fields'][0]
         result={k:field[k] for k in support.FIELD_SCHEMA['required']};result['value']='근거 없는 회사명'
         review={'reviews':[{'id':field['id'],'supported':False,'reason':'등록 회사명을 확인해주세요.'}]}
-        with patch.object(support,'ai_json',side_effect=[result,review]):
+        with patch.object(support,'ai_json',side_effect=[result,review]) as ai, patch.dict(os.environ, {'SUPPORT_OPENAI_MODEL':'gpt-4.1'}):
             saved=support.rewrite_field({'id':draft['id'],'field_id':field['id'],'instruction':'다시 작성'})
+        self.assertEqual([c.kwargs['model'] for c in ai.call_args_list], ['gpt-5.4-mini','gpt-5.4-mini'])
+        self.assertEqual(saved['snapshot']['model'],'gpt-5.4-mini')
         self.assertEqual(saved['version'],2);self.assertEqual(saved['data']['documents'][0]['fields'][0]['value'],'')
         self.assertEqual(support.get_draft(draft['id'])['data']['documents'][0]['fields'][0]['value'],'주식회사 콤파스원')
+
+    def test_model_validation_precedes_queue_and_model_is_frozen(self):
+        asset=self.configured()
+        body={'case_id':self.case['id'],'branch_id':'incheon','plan_id':'plan','asset_ids':[asset['id']]}
+        for invalid in ['unlisted-model', '', {'id':'gpt-4.1'}, ['gpt-4.1']]:
+            with self.subTest(model=invalid),self.assertRaisesRegex(ValueError,'모델'):support.create_draft(body|{'model':invalid})
+        with closing(support.connect()) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM support_jobs').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT count(*) FROM support_drafts').fetchone()[0],0)
+        created=support.create_draft(body|{'model':'gpt-6-astra'})
+        with patch.dict(os.environ, {'SUPPORT_OPENAI_MODEL':'gpt-4.1'}):
+            draft=support.get_draft(created['id'])
+            self.assertEqual(draft['snapshot']['model'],'gpt-6-astra')
+            self.assertEqual(draft['model_label'],'GPT-6 Astra')
+
+    def test_legacy_draft_and_manual_version_keep_model_without_changing_history(self):
+        draft,_=self.generate('gpt-4.1-mini');snapshot=copy.deepcopy(draft['snapshot']);snapshot.pop('model')
+        with closing(support.connect()) as db,db:db.execute('UPDATE support_drafts SET snapshot=? WHERE id=?',(support.dumps(snapshot),draft['id']))
+        with patch.dict(os.environ, {'SUPPORT_OPENAI_MODEL':'gpt-6-astra'}):
+            legacy=support.get_draft(draft['id'])
+            self.assertEqual(legacy['model'],'gpt-4.1-mini');self.assertNotIn('model',legacy['snapshot'])
+            field=legacy['data']['documents'][0]['fields'][0]
+            saved=support.save_draft({'id':draft['id'],'values':{field['id']:'수정 회사'}})
+            self.assertEqual(saved['model'],'gpt-4.1-mini')
+            self.assertEqual(support.get_draft(draft['id'])['snapshot'],snapshot)
+            _,raw=support.draft_export(saved['id'])
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:self.assertIn('GPT-4.1 mini',archive.read('보완사항.txt').decode('utf-8-sig'))
 
     def test_interest_collect_does_not_call_ai_and_retries_deduplicate(self):
         with patch.object(support.agency_news,'report',return_value={'items':[self.case|{'kind':'support','preference':'interested'}]}), patch.object(support,'ai_json') as model:
@@ -164,10 +196,15 @@ class SupportTests(unittest.TestCase):
             if body is not None:headers['Content-Type']='application/json'
             c.request(method,'/api/support/'+route,None if body is None else json.dumps(body),headers);r=c.getresponse();raw=r.read();result=(r.status,dict(r.getheaders()),raw);c.close();return result
         self.assertEqual(request('GET','profile')[0],401)
+        self.assertEqual(request('GET','models')[0],401)
         self.assertEqual(request('HEAD','assets/file?id='+asset['id'])[0],401)
         code,headers,_=request('POST','login',{'key':'test-key-only'});self.assertEqual(code,200)
         cookie=headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         self.assertEqual(request('GET','profile',cookie=cookie)[0],200)
+        code,headers,raw=request('GET','models',cookie=cookie);catalog=json.loads(raw)
+        self.assertEqual(code,200);self.assertEqual(headers['Cache-Control'],'no-store')
+        self.assertIn(catalog['default'],{m['id'] for m in catalog['models']})
+        self.assertEqual(len(catalog['models']),5);self.assertEqual(catalog['currency'],'USD')
         self.assertEqual(request('POST','profile',support.profile(),cookie=cookie,origin='https://evil.example')[0],403)
         code,headers,raw=request('GET','assets/file?id='+asset['id'],cookie=cookie);self.assertEqual(code,200);self.assertEqual(headers['Cache-Control'],'no-store');self.assertTrue(raw.startswith(b'PK'))
         self.assertEqual(request('POST','logout',{},cookie=cookie)[0],200);self.assertEqual(request('GET','profile',cookie=cookie)[0],401)
@@ -194,6 +231,19 @@ class AITransportTests(unittest.TestCase):
         self.assertEqual([p['max_output_tokens'] for p in payloads],[12000,24000])
         self.assertTrue(all(p['store'] is False for p in payloads))
         self.assertIn('max_output_tokens',' '.join(logs.output));self.assertNotIn('company-data-must-not-be-logged',' '.join(logs.output))
+
+    def test_selected_model_and_reasoning_are_sent_on_every_attempt(self):
+        for model in support.MODEL_OPTIONS:
+            with self.subTest(model=model['id']),patch.object(support.urllib.request,'urlopen',side_effect=[TimeoutError(),self.response()]) as send:
+                self.assertEqual(support.ai_json('i',{},self.schema,'test',model=model['id']),{'ok':True})
+                for call in send.call_args_list:
+                    payload=json.loads(call.args[0].data)
+                    self.assertEqual(payload['model'],model['id'])
+                    self.assertEqual(payload.get('reasoning'),{'effort':'low'} if model.get('reasoning_effort') else None)
+                    self.assertFalse(payload['store'])
+        with patch.object(support.urllib.request,'urlopen') as send:
+            with self.assertRaises(ValueError):support.ai_json('i',{},self.schema,'test',model='unlisted')
+            send.assert_not_called()
 
     def test_retry_is_bounded_and_reports_incomplete_separately(self):
         with patch.object(support.urllib.request,'urlopen',side_effect=[self.response('incomplete','max_output_tokens'),self.response('incomplete','max_output_tokens')]) as send:

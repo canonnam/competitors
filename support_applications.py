@@ -41,6 +41,30 @@ BRANCH_FIELDS = ('name', 'type', 'address', 'postal_code', 'business_number', 'f
 MEMBER_FIELDS = ('name', 'organization', 'position', 'expertise', 'career', 'role', 'period', 'participation')
 PLAN_FIELDS = ('name', 'overview', 'problem', 'customers', 'product', 'technology', 'difference', 'business_model', 'schedule', 'goals', 'budget', 'content')
 RECORD_FIELDS = ('name', 'type', 'value', 'unit', 'as_of', 'expires', 'source', 'notes')
+LEGACY_MODEL = 'gpt-4.1-mini'
+# Standard API prices in USD per million tokens, checked against official model pages.
+MODEL_OPTIONS = (
+    {'id': 'gpt-4.1-mini', 'label': 'GPT-4.1 mini', 'description': '기본 모델 · 낮은 단가', 'input_price': .4, 'cached_input_price': .1, 'output_price': 1.6},
+    {'id': 'gpt-4.1', 'label': 'GPT-4.1', 'description': '일반 작성 모델', 'input_price': 2, 'cached_input_price': .5, 'output_price': 8},
+    {'id': 'gpt-5.4-mini', 'label': 'GPT-5.4 mini', 'description': '추론 지원 · 낮음 설정', 'input_price': .75, 'cached_input_price': .075, 'output_price': 4.5, 'reasoning_effort': 'low'},
+    {'id': 'gpt-5.4', 'label': 'GPT-5.4', 'description': '추론 지원 · 낮음 설정', 'input_price': 2.5, 'cached_input_price': .25, 'output_price': 15, 'reasoning_effort': 'low'},
+    {'id': 'gpt-6-astra', 'label': 'GPT-6 Astra', 'description': '고성능 모델 · 높은 단가 · 추론 낮음', 'input_price': 10, 'cached_input_price': 1, 'output_price': 50, 'reasoning_effort': 'low'},
+)
+MODELS = {model['id']: model for model in MODEL_OPTIONS}
+
+
+def resolve_model(model=None):
+    if model is None:
+        configured = os.getenv('SUPPORT_OPENAI_MODEL') or os.getenv('OPENAI_MODEL', LEGACY_MODEL)
+        model = configured if configured in MODELS else LEGACY_MODEL
+    if not isinstance(model, str) or model not in MODELS:
+        raise ValueError('작성 모델을 목록에서 선택해주세요.')
+    return model
+
+
+def model_catalog():
+    return {'default': resolve_model(), 'currency': 'USD', 'price_unit_tokens': 1_000_000,
+            'prices_checked': '2026-09-12', 'models': [dict(m, price_url='https://developers.openai.com/api/docs/models/' + m['id']) for m in MODEL_OPTIONS]}
 
 
 def now(): return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -289,8 +313,10 @@ def selected_snapshot(body):
 
 def create_draft(body):
     if not os.getenv('OPENAI_API_KEY', '').strip(): raise wiki_chat.ChatError(503, '초안 작성 서비스가 아직 연결되지 않았습니다.')
+    model = resolve_model(body.get('model'))
     case_id = body.get('case_id'); case = get_case(case_id)
     revision, snapshot = selected_snapshot(body)
+    snapshot['model'] = model
     selected = body.get('asset_ids', [])
     available = {a['id']: a for a in case['assets']}
     if not isinstance(selected, list) or not 1 <= len(selected) <= 12 or any(a not in available for a in selected):
@@ -327,10 +353,13 @@ class AIResponseError(ValueError):
         self.grow_budget = grow_budget
 
 
-def ai_json(instructions, content, schema, name, max_tokens=12000):
-    payload = {'model': os.getenv('SUPPORT_OPENAI_MODEL') or os.getenv('OPENAI_MODEL', 'gpt-4.1-mini'), 'store': False,
+def ai_json(instructions, content, schema, name, max_tokens=12000, *, model=None):
+    model = resolve_model(model)
+    payload = {'model': model, 'store': False,
         'instructions': instructions, 'input': [{'role': 'user', 'content': dumps(content)}],
         'max_output_tokens': max_tokens, 'text': {'format': {'type': 'json_schema', 'name': name, 'strict': True, 'schema': schema}}}
+    if MODELS[model].get('reasoning_effort'):
+        payload['reasoning'] = {'effort': MODELS[model]['reasoning_effort']}
     for attempt in range(2):
         request = urllib.request.Request('https://api.openai.com/v1/responses', data=dumps(payload).encode(),
             headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY']}, method='POST')
@@ -414,7 +443,7 @@ targets가 비어 있는 PDF·텍스트 양식은 실제 문서에 있는 질문
 반환 값에 HTML, URL, 마크다운 표를 넣지 않습니다. value는 읽을 수 있는 일반 텍스트로 작성합니다.'''
 
 
-def review_fields(fields, evidence, targets):
+def review_fields(fields, evidence, targets, *, model=None):
     """A separate grounding pass checks entity roles and unsupported factual claims."""
     checks = [f for f in fields if f['value']]
     if not checks: return
@@ -430,7 +459,7 @@ target_context의 input_label과 left_labels로 실제 입력칸을 확인하세
 기업 정보에 없는 숫자·실적·학력·경력·인증·협약·지역·설립일을 작성했으면 false입니다. 성명·주소 등의 표기 정리와 근거가 있는 계획의 문장 재구성은 true입니다.
 계획에 근거한 기대효과·추진단계는 허용하지만 새로운 사실·확정 수치·실제 보유경험을 추가하면 false입니다.
 reason에는 부족한 등록 정보를 짧고 구체적으로 적습니다. true인 경우 reason은 빈 문자열입니다.''',
-        {'evidence': evidence, 'fields': checks, 'target_context': {f['target_id']: targets.get(f['target_id'], {}) for f in checks}}, schema, 'support_grounding_review', 6000)
+        {'evidence': evidence, 'fields': checks, 'target_context': {f['target_id']: targets.get(f['target_id'], {}) for f in checks}}, schema, 'support_grounding_review', 6000, model=model)
     reviews = {r['id']: r for r in result['reviews']}
     if len(reviews) != len(checks) or set(reviews) != {f['id'] for f in checks}: raise ValueError('초안의 사실 검토를 끝내지 못했습니다. 다시 작성해주세요.')
     for field in checks:
@@ -491,7 +520,7 @@ def generate_draft(job):
         if len(editable_targets) <= 200:
             properties['target_id']['enum'] = [t['id'] for t in editable_targets] or ['']
         result = ai_json(DRAFT_INSTRUCTIONS, {'announcement': snapshot['announcement'], 'evidence': evidence,
-            'additional_instructions': snapshot.get('instructions', ''), 'template': {'name': asset['name'], 'text': analysis['text'], 'targets': analysis['targets']}}, schema, 'support_application')
+            'additional_instructions': snapshot.get('instructions', ''), 'template': {'name': asset['name'], 'text': analysis['text'], 'targets': analysis['targets']}}, schema, 'support_application', model=current['model'])
         target_map = {t['id']: t for t in analysis['targets']}
         valid_targets = {t['id'] for t in editable_targets}; seen = set(); fields = []
         for field in result['fields']:
@@ -511,7 +540,7 @@ def generate_draft(job):
             if re.search('[□☐☑■✓]|서명|날인|동의합니다|동의함', original_text):
                 field.update(value='', kind='missing', sources=[], note='선택·동의·서명란은 원본에서 직접 확인해주세요.')
             seen.add(key); fields.append(field)
-        review_fields(fields, evidence, target_map)
+        review_fields(fields, evidence, target_map, model=current['model'])
         fixed = exact_fact_fields(editable_targets, evidence)
         fixed_map = {f['target_id']:f for f in fixed}
         fields = [fixed_map.pop(f['target_id'], f) for f in fields] + list(fixed_map.values())
@@ -539,6 +568,9 @@ def get_draft(did):
         if not row: raise LookupError('초안을 찾지 못했습니다.')
         result = dict(row); result['data'] = json.loads(row['data']); result['snapshot'] = json.loads(row['snapshot'])
         result['evidence'] = evidence_map(result['snapshot'])
+        # Drafts made before model selection used the verified legacy model.
+        result['model'] = result['snapshot'].get('model') or LEGACY_MODEL
+        result['model_label'] = MODELS.get(result['model'], {}).get('label', result['model'])
         return result
 
 
@@ -587,12 +619,12 @@ def rewrite_field(body):
     if len(original['evidence']) <= 200: schema['properties']['sources']['items']['enum'] = list(original['evidence']) or ['__no_evidence__']
     result = ai_json(DRAFT_INSTRUCTIONS + '\n선택한 한 항목만 다시 작성합니다. 입력 위치와 label은 기존 값을 유지합니다.',
         {'evidence': original['evidence'], 'announcement': original['snapshot']['announcement'], 'field': field,
-         'target_context': targets.get(field['target_id'], {}), 'instruction': str(body.get('instruction', ''))[:3000]}, schema, 'support_rewrite', 5000)
+         'target_context': targets.get(field['target_id'], {}), 'instruction': str(body.get('instruction', ''))[:3000]}, schema, 'support_rewrite', 5000, model=original['model'])
     if result['target_id'] != field['target_id'] or any(s not in original['evidence'] for s in result['sources']): raise ValueError('다시 작성한 항목의 위치나 근거가 올바르지 않습니다.')
     if len(result['value']) > 16000: raise ValueError('작성 길이를 초과했습니다.')
     field.update(result); field['edited'] = False
     if field['kind'] == 'missing': field['value'] = ''
-    review_fields([field], original['evidence'], targets)
+    review_fields([field], original['evidence'], targets, model=original['model'])
     return save_new_version(original, 'draft.rewritten')
 
 
@@ -630,7 +662,7 @@ def draft_export(did, aid=None):
         suffix, raw = export_document(get_asset(aid), document)
         label = '항목별초안' if document['mode'] == 'outline' else '직접확인용' if document['mode'] == 'manual' else '초안'
         return docs.clean_name(f'{Path(document["name"]).stem}_{label}_v{draft["version"]}{suffix}'), raw
-    out = io.BytesIO(); notes = [f'초안 v{draft["version"]} · {draft["created"]}', f'기본자료 버전 {draft["profile_revision"]}', '최종 제출 전에 내용, 분량, 서명·동의를 확인해주세요.']
+    out = io.BytesIO(); notes = [f'초안 v{draft["version"]} · {draft["created"]}', f'작성 모델: {draft["model_label"]}', f'기본자료 버전 {draft["profile_revision"]}', '최종 제출 전에 내용, 분량, 서명·동의를 확인해주세요.']
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as archive:
         for i, document in enumerate(documents, 1):
             asset = get_asset(document['asset_id'])
@@ -755,6 +787,7 @@ def handle(handler, method):
         if not isinstance(body, dict): raise ValueError('요청 형식을 확인해주세요.')
         if method in ('GET', 'HEAD'):
             if route == 'profile': result = profile()
+            elif route == 'models': result = model_catalog()
             elif route == 'cases': result = {'cases': list_cases()}
             elif route == 'case': result = get_case(param('id'))
             elif route == 'assets': result = {'assets': assets('')}

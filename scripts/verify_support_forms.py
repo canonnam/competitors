@@ -15,6 +15,7 @@ import support_documents as docs
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--live',action='store_true')
+    parser.add_argument('--model',choices=list(support.MODELS),default=None)
     args=parser.parse_args()
     if not args.live:parser.error('--live is required; this uses the configured AI API with test data')
     output=Path('.local/support-verification');output.mkdir(parents=True,exist_ok=True)
@@ -37,11 +38,13 @@ def main():
         assert len(selected)>=2,selected
         assert all(not a['error'] for a in selected),selected
         print('Public attachments:',[(a['name'],a['targets']) for a in support.assets(case['id'])],flush=True)
-        created=support.create_draft({'case_id':case['id'],'branch_id':'incheon','plan_id':'verify-plan','asset_ids':[a['id'] for a in selected]})
+        created=support.create_draft({'case_id':case['id'],'branch_id':'incheon','plan_id':'verify-plan','asset_ids':[a['id'] for a in selected],'model':args.model})
         with closing(support.connect()) as db:job=db.execute("SELECT * FROM support_jobs WHERE kind='draft'").fetchone()
         support.run_job(job);draft=support.get_draft(created['id'])
         (output/'draft-verification.json').write_text(support.dumps(draft),encoding='utf-8')
         assert draft['status']=='ready',draft['error']
+        assert draft['model']==support.resolve_model(args.model)
+        print('Verified drafting model:',draft['model'],flush=True)
         application=next(d for d in draft['data']['documents'] if '참가 신청서' in d['name'])
         filled={f['target_id']:f['value'] for f in application['fields']}
         assert filled['Contents/section0.xml:t0r3c1']=='검증용 콤파스원'
