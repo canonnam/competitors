@@ -4,6 +4,11 @@
 workbook is not deployed. The checked-in template JSON contains only printable
 layout and non-personal text, with no cached employee values or Excel formulas.
 The Anyang/Incheon selector fills the single institution-name and address fields.
+The PDF controls include a checked-by-default seal option for both preview and
+download. Each branch uses its supplied transparent PNG in the employer signing
+area, including any appendix. Custom organizations have no registered seal.
+Unchecking the option excludes the image entirely from the PDF. Seal loading
+failures stop generation with a retry/omit message instead of silently omitting it.
 Employee identifiers, bank details and PDF bytes remain in browser memory. There
 is no persistence, upload, analytics, chat context capture, or payroll API.
 

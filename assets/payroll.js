@@ -14,6 +14,7 @@
   let pattern = ['D','D','N','N','O','O'], shifts=defaultShifts(), revision=0, model=null, lastURL=null, resources=null;
   const defaultExtras=()=>['식대','자가운전보조금','장기근속수당','기타수당','특별상여'].map(name=>({name,amount:'',ordinary:name!=='장기근속수당'}));
   let extras = defaultExtras();
+  const sealResources = new Map();
   const money = n => n == null ? '미입력' : `${Math.round(n).toLocaleString('ko-KR')}원`;
   const dec = n => Number(n.toFixed(4)).toLocaleString('ko-KR');
   function el(tag, props={}, text) {
@@ -74,7 +75,13 @@
   function fieldValues(){
     const fields=Object.fromEntries(new FormData(form));
     for(const key of ['includeFlexibleClause','overtimeOrdinary','nightOrdinary'])fields[key]=get(key).checked;
+    fields.includeSeal=!get('includeSeal').disabled&&get('includeSeal').checked;
     return fields;
+  }
+  function syncSeal(){
+    const branch=get('branch').value,option=get('includeSeal');
+    option.disabled=!Object.hasOwn(branches,branch);
+    $('seal-note').textContent=option.disabled?'직접 입력 기관에는 등록된 직인이 없어 포함되지 않습니다.':option.checked?`${branch==='incheon'?'인천점':'안양점'} 직인을 미리보기와 PDF에 포함합니다.`:'직인 없이 미리보기와 PDF를 만듭니다.';
   }
   function syncTerm(){
     const fixed=get('term').value==='fixed',years=get('termYears').value;
@@ -112,7 +119,7 @@
   }
   function invalidate(){revision++;model=null;if(lastURL){URL.revokeObjectURL(lastURL);lastURL=null;$('pdf-preview').removeAttribute('src');}$('pdf-status').textContent='';}
   function update(){
-    invalidate();$('input-errors').hidden=true;
+    invalidate();syncSeal();$('input-errors').hidden=true;
     const manual=get('basis').value==='manual';$('manual-pay').hidden=!manual;$('auto-pay').hidden=manual;
     for(const key of ['manualOvertime','manualNight'])get(key).readOnly=!manual;
     $('amount-label').firstChild.textContent=get('basis').value==='hourly'?'통상시급 (원)':'월 급여 총액 (세전·원)';
@@ -152,20 +159,29 @@
     return resources;
   }
   function filename(f){return `근로계약서_${(f.employee||'미기재').replace(/[\\/:*?"<>|]/g,'_')}.pdf`;}
+  async function loadSeal(fields){
+    const path=ContractPDF.sealPath(fields);
+    if(!path)return null;
+    if(!sealResources.has(path))sealResources.set(path,fetch(path).then(r=>{
+      if(!r.ok)throw Error('직인 이미지를 불러오지 못했습니다. 다시 시도하거나 직인 포함을 해제해주세요.');
+      return r.arrayBuffer();
+    }).catch(error=>{sealResources.delete(path);throw error;}));
+    return sealResources.get(path);
+  }
   async function generate(preview){
     if(!form.reportValidity())return;
     try{
       const captured=readModel(),version=revision;
       $('pdf-status').textContent='계약서를 만드는 중입니다.';$('preview-contract').disabled=true;$('download-contract').disabled=true;
-      const [templates,regular,bold]=await loadResources();
+      const [[templates,regular,bold],sealBytes]=await Promise.all([loadResources(),loadSeal(captured.fields)]);
       if(!window.PDFLib||!window.fontkit)throw Error('PDF 구성요소를 불러오지 못했습니다. 페이지를 새로고침해주세요.');
-      const bytes=await ContractPDF.create(captured,templates[captured.fields.template],regular,bold,{PDFLib:window.PDFLib,fontkit:window.fontkit});
+      const bytes=await ContractPDF.create(captured,templates[captured.fields.template],regular,bold,{PDFLib:window.PDFLib,fontkit:window.fontkit},sealBytes);
       if(version!==revision){$('pdf-status').textContent='입력내용이 변경되었습니다. 다시 만들어주세요.';return;}
       if(lastURL)URL.revokeObjectURL(lastURL);lastURL=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
       $('preview-download').href=lastURL;$('preview-download').download=filename(captured.fields);
       if(preview){$('pdf-preview').src=lastURL;$('preview-dialog').showModal();}
       else{const a=el('a',{href:lastURL,download:filename(captured.fields)});document.body.append(a);a.click();a.remove();}
-      $('pdf-status').textContent='계약서가 생성되었습니다.';
+      $('pdf-status').textContent=`계약서가 생성되었습니다. (${sealBytes?'직인 포함':'직인 미포함'})`;
     }catch(error){$('pdf-status').textContent=error.message||'PDF 생성에 실패했습니다. 입력내용을 확인해주세요.';}
     finally{$('preview-contract').disabled=!model;$('download-contract').disabled=!model;}
   }
@@ -176,6 +192,7 @@
     get('includeFlexibleClause').checked=flex;
   }
   form.addEventListener('submit',e=>e.preventDefault());
+  get('includeSeal').addEventListener('change',update);
   form.addEventListener('input',event=>{if(event.target.name)update();});
   form.addEventListener('change',event=>{
     const name=event.target.name;

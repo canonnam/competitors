@@ -3,6 +3,12 @@
   const won = value => value === '' || value == null ? '' : Math.round(value).toLocaleString('ko-KR');
   const date = value => value ? value.replaceAll('-', '.') : '';
   const decimal = value => Number(value.toFixed(2)).toLocaleString('ko-KR');
+  function sealPath(fields) {
+    if (fields.includeSeal === false) return null;
+    if (fields.branch === 'anyang') return '/assets/contracts/seal-anyang.png';
+    if (fields.branch === 'incheon') return '/assets/contracts/seal-incheon.png';
+    return null;
+  }
   function content(model, template) {
     const f = model.fields, result = model.result, key = f.template;
     const cycle = key === 'care-cycle', day = key === 'care-day';
@@ -73,10 +79,21 @@
     }
     return result;
   }
-  async function create(model, template, regularBytes, boldBytes, libs) {
+  async function create(model, template, regularBytes, boldBytes, libs, sealBytes) {
     const { PDFLib, fontkit } = libs;
     const { PDFDocument, rgb } = PDFLib;
     const doc = await PDFDocument.create(); doc.registerFontkit(fontkit);
+    const includeSeal = Boolean(sealPath(model.fields));
+    if (includeSeal && !sealBytes) throw Error('직인 이미지를 불러오지 못했습니다. 다시 시도하거나 직인 포함을 해제해주세요.');
+    const seal = includeSeal ? await doc.embedPng(sealBytes) : null;
+    const sealSize = 45;
+    const sealCell = model.fields.template === 'care-cycle' ? 'A46' : model.fields.template === 'care-day' ? 'A43' : 'A44';
+    const drawSeal = (page, line, x, y, face, size) => {
+      const index = line.indexOf('(인)');
+      if (!seal || index < 0) return;
+      const center = x + face.widthOfTextAtSize(line.slice(0, index), size) + face.widthOfTextAtSize('(인)', size) / 2;
+      page.drawImage(seal, {x:center-sealSize/2,y:y+size*.35-sealSize/2,width:sealSize,height:sealSize});
+    };
     const font = await doc.embedFont(regularBytes, { subset: false });
     const bold = await doc.embedFont(boldBytes, { subset: false });
     const data = content(model, template);
@@ -102,7 +119,7 @@
         size = Math.min(size, size * (w - 8) / face.widthOfTextAtSize(data.values[c.id], size));
       }
       const wrapped = lines(data.values[c.id], face, size, w - 8);
-      const required = wrapped.length ? wrapped.length * size * 1.25 + 6 : 0;
+      const required = wrapped.length ? wrapped.length * size * 1.25 + (seal && c.id === sealCell ? sealSize : 6) : 0;
       return { ...c, font:face, size, w, wrapped, required };
     });
     // Fit single rows before merged fields; source spacer rows no longer consume space.
@@ -135,13 +152,14 @@
         }
         const lineHeight = c.size*1.25;
         const textHeight = c.wrapped.length*lineHeight;
-        const offset = c.vertical === 'top' ? 3 : Math.max(3,(h-textHeight)/2);
+        const offset = seal && c.id === sealCell ? Math.max(sealSize/2,(h-textHeight)/2) : c.vertical === 'top' ? 3 : Math.max(3,(h-textHeight)/2);
         let y = yTop-offset-c.size;
         for (const line of c.wrapped) {
           if (line) {
             const length = c.font.widthOfTextAtSize(line,c.size);
             const align = c.align==='center' ? (c.w-length)/2 : c.align==='right' ? c.w-length-4 : 4;
             page.drawText(line,{x:x+align,y,size:c.size,font:c.font,color:rgb(0,0,0)});
+            if(c.id===sealCell)drawSeal(page,line,x+align,y,c.font,c.size);
           }
           y -= lineHeight;
         }
@@ -150,23 +168,25 @@
     }
     if (data.extraWages.length || data.specialTerms) {
       page = doc.addPage([pageWidth,pageHeight]); top = pageHeight-margin;
-      const write = (text, size=10, face=font) => {
+      const write = (text, size=10, face=font, signing=false) => {
         for (const line of lines(printable(text),face,size,pageWidth-margin*2)) {
-          if (top < margin+20) {page=doc.addPage([pageWidth,pageHeight]);top=pageHeight-margin;}
-          page.drawText(line,{x:margin,y:top-size,font:face,size});top-=size*1.6;
+          if (top < margin+(signing&&seal?sealSize:20)) {page=doc.addPage([pageWidth,pageHeight]);top=pageHeight-margin-(signing&&seal?sealSize/2:0);}
+          page.drawText(line,{x:margin,y:top-size,font:face,size});
+          if(signing)drawSeal(page,line,margin,top-size,face,size);
+          top-=size*1.6;
         }
       };
       write('근로계약서 별지',16,bold);top-=12;
       write(`기관명: ${model.fields.organization || ''}     근로자: ${model.fields.employee || ''}`);top-=14;
       if(data.extraWages.length){write('임금 구성',12,bold);for(const item of data.extraWages)write(`${item.label}: ${won(item.value)} 원  ${item.note}`);write(`월 급여 총액: ${won(model.result.total)} 원`,11,bold);top-=18;}
       if(data.specialTerms){write('특약사항',12,bold);write(data.specialTerms);}
-      top-=22;write('사용자:                          (인)          근로자:                          (서명)');
+      top-=22;write('사용자:                          (인)          근로자:                          (서명)',10,font,true);
     }
     const pages=doc.getPages();
     pages.forEach((p,i)=>p.drawText(`${i+1} / ${pages.length}`,{x:pageWidth/2-10,y:13,size:8,font,color:rgb(.4,.4,.4)}));
     doc.setTitle('근로계약서');doc.setCreator('더비다 지식 창고');
     return doc.save();
   }
-  const api={content,create,lines};
+  const api={content,create,lines,sealPath};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.ContractPDF=api;
 })(typeof window!=='undefined'?window:globalThis);

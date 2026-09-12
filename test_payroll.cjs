@@ -54,6 +54,10 @@ function model(key,filled=false){const s=key==='care-cycle'?cycle:weekly;return 
 for(const key of Object.keys(templates)){const c=pdf.content(model(key),templates[key]);assert.equal(c.values.C7,'');assert.equal(c.values.I7,'');assert.equal(c.values.C21,'');assert(!JSON.stringify(c).includes('undefined'));assert(c.values.B17.includes('사전에 기관의 승인을'));assert(c.values.B18.includes('이에 동의함'));}
 for(const key of Object.keys(templates)){const c=pdf.content(model(key,true),templates[key]);assert.equal(c.values.E11,'2028.09.10');assert.equal(c.values.E22,'고정연장수당');assert.equal(c.values.E23,'고정야간수당');assert(c.values.I22.includes('통상임금 포함'));assert(c.values.I23.includes('통상임금 포함'));}
 assert(!/\d{6}-\d{7}|VLOOKUP|#N\/A/.test(JSON.stringify(templates)));
+assert.equal(pdf.sealPath({branch:'incheon'}),'/assets/contracts/seal-incheon.png');
+assert.equal(pdf.sealPath({branch:'anyang',includeSeal:true}),'/assets/contracts/seal-anyang.png');
+for(const branch of ['anyang','incheon','custom','__proto__',undefined])assert.equal(pdf.sealPath({branch,includeSeal:false}),null);
+for(const branch of ['custom','__proto__',undefined])assert.equal(pdf.sealPath({branch,includeSeal:true}),null);
 console.log('Payroll: 5 workbook baselines, rounding, missing inputs, custom cycles, weekly overtime and template mapping passed.');
 if(process.argv.includes('--pdf'))(async()=>{
  const out=path.resolve(__dirname,'..','.codex-analysis','pdf-qa');fs.mkdirSync(out,{recursive:true});
@@ -63,5 +67,28 @@ if(process.argv.includes('--pdf'))(async()=>{
  const long=model('office',true);long.fields.employee='검증용 긴 이름';long.fields.organizationAddress='경기도 안양시 만안구 전파로 19-1 별관 3층 사무실 및 직원 휴게실';long.fields.specialTerms='별도 합의한 특약사항을 기재합니다.\n'.repeat(120);long.result.extras=Array.from({length:8},(_,i)=>({name:`검증 수당 ${i+1}`,amount:10000}));
  long.result.total=long.result.basic+long.result.overtime+long.result.night+80000;
  fs.writeFileSync(path.join(out,'long-fields.pdf'),await pdf.create(long,templates.office,regular,bold,{PDFLib,fontkit}));
+ const imageCounts=async bytes=>(await PDFLib.PDFDocument.load(bytes)).getPages().map(page=>{
+   const objects=page.node.Resources().lookupMaybe(PDFLib.PDFName.of('XObject'),PDFLib.PDFDict);
+   return objects?objects.keys().length:0;
+ });
+ for(const branch of ['anyang','incheon']){
+   const seal=fs.readFileSync(path.join(__dirname,`assets/contracts/seal-${branch}.png`));
+   for(const key of Object.keys(templates))for(const includeSeal of [true,false]){
+     const sample=model(key,true);Object.assign(sample.fields,{branch,includeSeal,representative:'검증대표'});
+     const bytes=await pdf.create(sample,templates[key],regular,bold,{PDFLib,fontkit},seal);
+     assert.equal((await imageCounts(bytes)).reduce((a,b)=>a+b,0),includeSeal?1:0,`${branch} ${key} seal=${includeSeal}`);
+     fs.writeFileSync(path.join(out,`${key}-${branch}-${includeSeal?'seal':'no-seal'}.pdf`),bytes);
+   }
+   const appendix=model('office',true);Object.assign(appendix.fields,{branch,specialTerms:'직인 위치 검증용 특약사항',representative:'검증대표'});
+   const bytes=await pdf.create(appendix,templates.office,regular,bold,{PDFLib,fontkit},seal);
+   assert.equal((await imageCounts(bytes)).reduce((a,b)=>a+b,0),2,'Default-on seal covers contract and appendix');
+   fs.writeFileSync(path.join(out,`appendix-${branch}-seal.pdf`),bytes);
+ }
+ const custom=model('office',true);Object.assign(custom.fields,{branch:'custom',includeSeal:true});
+ const suppliedSeal=fs.readFileSync(path.join(__dirname,'assets/contracts/seal-anyang.png'));
+ assert.equal((await imageCounts(await pdf.create(custom,templates.office,regular,bold,{PDFLib,fontkit},suppliedSeal))).reduce((a,b)=>a+b,0),0,'Custom organization never gets a branch seal');
+ const missing=model('office',true);missing.fields.branch='anyang';
+ await assert.rejects(pdf.create(missing,templates.office,regular,bold,{PDFLib,fontkit}),/직인 이미지를/);
+ console.log('Seal PDFs: both branches, all templates, include/exclude, default-on appendix, custom organization and missing image passed.');
  console.log(`PDF samples created in ${out}`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

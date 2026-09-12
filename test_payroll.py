@@ -35,13 +35,19 @@ class PayrollRouteTests(SiteIdentityTests):
         self.assertIn('termYears', names)
         for name in ('manualOvertime', 'manualNight', 'overtimeOrdinary', 'nightOrdinary'):
             self.assertEqual(sum(f.get('name') == name for f in parser.fields), 1)
-        for name in ('overtimeOrdinary', 'nightOrdinary'):
+        for name in ('overtimeOrdinary', 'nightOrdinary', 'includeSeal'):
             self.assertIn('checked', next(f for f in parser.fields if f.get('name') == name))
+        self.assertEqual(next(f for f in parser.fields if f.get('name') == 'includeSeal')['form'], 'contract-form')
         self.assertFalse(any(f.get('type') == 'file' for f in parser.fields))
         self.assertEqual(parser.forms[0]['onsubmit'], 'return false')
-        for asset in parser.assets + ['/assets/contracts/templates.json', '/assets/contracts/NanumGothic-Regular.ttf', '/assets/contracts/NanumGothic-Bold.ttf']:
+        for asset in parser.assets + ['/assets/contracts/templates.json', '/assets/contracts/NanumGothic-Regular.ttf', '/assets/contracts/NanumGothic-Bold.ttf', '/assets/contracts/seal-anyang.png', '/assets/contracts/seal-incheon.png']:
             with self.subTest(asset=asset):
                 self.assertEqual(self.request(asset)[0], 200)
+        for branch in ('anyang', 'incheon'):
+            asset = f'/assets/contracts/seal-{branch}.png'
+            status, headers, body = self.request(asset)
+            self.assertEqual(headers.get_content_type(), 'image/png')
+            self.assertEqual(body, (ROOT/asset.lstrip('/')).read_bytes())
         self.assertEqual(self.request('/test_payroll.cjs')[0], 404)
         self.assertEqual(self.request('/assets/contracts/private.json')[0], 404)
         js = (ROOT/'assets/payroll.js').read_text(encoding='utf-8')

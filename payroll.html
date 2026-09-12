@@ -18,12 +18,12 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <link rel="stylesheet" href="/assets/site.css">
-  <link rel="stylesheet" href="/assets/payroll.css">
+  <link rel="stylesheet" href="/assets/payroll.css?v=20260912-seals">
   <script src="/assets/payroll-core.js" defer></script>
   <script src="/assets/vendor/pdf-lib-1.17.1.min.js" defer></script>
   <script src="/assets/vendor/fontkit-1.1.1.umd.min.js" defer></script>
-  <script src="/assets/contract-pdf.js" defer></script>
-  <script src="/assets/payroll.js" defer></script>
+  <script src="/assets/contract-pdf.js?v=20260912-seals" defer></script>
+  <script src="/assets/payroll.js?v=20260912-seals" defer></script>
 </head>
 <body class="kb-detail payroll-page">
 <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><a href="/" class="kb-home">지식 창고 홈</a></nav></div></header>
@@ -74,6 +74,7 @@
       <details open class="calculation-details"><summary>시간·계산 근거</summary><dl id="hour-breakdown" class="breakdown"></dl><div id="formula-details" class="formula-details"></div></details>
       <p id="calculation-status" class="calculation-status" role="status"></p>
       <div id="input-errors" class="error" role="alert" hidden></div>
+      <div class="seal-option"><label class="check"><input type="checkbox" name="includeSeal" form="contract-form" checked aria-describedby="seal-note">직인 포함</label><p id="seal-note" class="field-note" role="status">안양점 직인을 미리보기와 PDF에 포함합니다.</p></div>
       <button type="button" id="preview-contract" class="primary-button"><img src="/assets/icons/book-open.svg" alt="">계약서 미리보기</button>
       <button type="button" id="download-contract" class="secondary-button"><img src="/assets/icons/download.svg" alt="">PDF 다운로드</button>
       <p class="privacy-note">미입력 항목은 공란으로 출력됩니다. 개인정보는 서버에 전송·저장하지 않습니다.</p>
