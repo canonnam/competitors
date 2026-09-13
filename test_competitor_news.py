@@ -32,6 +32,12 @@ class NewsTests(unittest.TestCase):
         self.path = Path(self.temp.name) / 'news.db'
         news.init_db(self.path)
 
+    def test_reviewed_carefor_september_update_is_present_in_html_timeline(self):
+        page = (news.ROOT / 'competitor-news.html').read_text(encoding='utf-8')
+        self.assertIn('케어포, 9월 개선사항 안내 공개', page)
+        self.assertIn('calmgno=46878', page)
+        self.assertIn('2026-09-10', page)
+
     def test_seed_survives_restarts_and_summary_omits_article_bodies(self):
         news.init_db(self.path)
         report = news.report(self.path, NOW)
