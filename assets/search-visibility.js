@@ -100,7 +100,7 @@
     for(const data of [unfiltered,current])for(const provider of data?.providers||[])for(const item of provider.items)if(item.mission?.id===event.detail.id)item.mission=event.detail.mission;
     if(current)drawAI(true);
   });
-  function render(data){unfiltered=data;current=scopeData(data,$('visibility-branch').value);overview();drawNaver();drawAI();const measured=current.providers.reduce((s,p)=>s+p.checked,0);$('visibility-run').textContent=`${current.enabled?current.schedule:'자동 수집 중지'} · ${selectedName()||'전체 지점'} 정상 측정 ${measured}건 · 네이버 다음 점검 ${date(current.next_run)} · AI 웹 매일 10:50 점검`;}
+  function render(data){unfiltered=data;current=scopeData(data,$('visibility-branch').value);overview();drawNaver();drawAI();const measured=current.providers.reduce((s,p)=>s+p.checked,0);$('visibility-run').textContent=`${current.enabled?current.schedule:'자동 수집 중지'} · ${selectedName()||'전체 지점'} 정상 측정 ${measured}건 · 네이버 다음 점검 ${date(current.next_run)} · AI 웹 월·수·금 10:50 점검`;}
   async function refresh(){
     const home=$('home-visibility-status');
     try{const response=await fetch('/api/search-visibility'+(home?'?summary=1':''),{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error('request');const data=await response.json();if(home){const value=homeSummary(data);home.textContent=value.text;home.className='visibility-home-status'+(value.warning?' is-warning':'');}else render(data);}

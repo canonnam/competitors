@@ -1,4 +1,4 @@
-"""Daily observed search visibility. Unavailable checks never mean not mentioned."""
+"""Scheduled search visibility. Unavailable checks never mean not mentioned."""
 from __future__ import annotations
 
 from datetime import datetime, time as day_time, timedelta
@@ -22,7 +22,8 @@ import web_search_results
 
 ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('search_visibility')
-SCHEDULE = '매일 10:50 (한국시간)'
+SCHEDULE = '매주 월·수·금 10:50 (한국시간)'
+SCHEDULE_DAYS = {0, 2, 4}
 VERSION = 'visibility-v1'
 NAVER_ORIGIN = 'https://search.naver.com'
 PROVIDERS = {'naver': {'name': '네이버 검색', 'kind': 'search'}}
@@ -75,12 +76,18 @@ def init_db(path):
 
 
 def due_at(now):
-    today = datetime.combine(now.astimezone(KST).date(), day_time(10, 50), KST)
-    return today if now >= today else today - timedelta(days=1)
+    local = now.astimezone(KST)
+    scheduled = datetime.combine(local.date(), day_time(10, 50), KST)
+    while scheduled > local or scheduled.weekday() not in SCHEDULE_DAYS:
+        scheduled -= timedelta(days=1)
+    return scheduled
 
 
-def next_daily(now):
-    return due_at(now) + timedelta(days=1)
+def next_scheduled(now):
+    scheduled = due_at(now) + timedelta(days=1)
+    while scheduled.weekday() not in SCHEDULE_DAYS:
+        scheduled += timedelta(days=1)
+    return scheduled
 
 
 def safe_url(value):
@@ -395,6 +402,8 @@ def safe_error(exc):
 def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html, stop=None):
     live_clock = now is None
     now = now or datetime.now(KST)
+    if due_at(now).date() != now.astimezone(KST).date():
+        return []
     if not configured(provider) or not LOCKS[provider].acquire(blocking=False):
         return []
     results = []
@@ -457,7 +466,7 @@ def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html,
                 if provider == 'naver' and (isinstance(exc, SearchAccessLimited) or isinstance(exc, urllib.error.HTTPError) and exc.code in {403, 429}):
                     with connect(path) as db:
                         db.execute('INSERT OR REPLACE INTO checks VALUES(?,?)', (provider+':cooldown', json.dumps({
-                            'until': next_daily(now).isoformat(), 'serpapi': bool(os.getenv('SERPAPI_KEY')),
+                            'until': next_scheduled(now).isoformat(), 'serpapi': bool(os.getenv('SERPAPI_KEY')),
                             'error': '검색 제공처의 조회 제한 · 다음 정기 점검까지 중단'})))
                     results.append(state)
                     break
@@ -516,7 +525,7 @@ def report(path, ad_path=None, now=None, summary=False):
     providers.extend(web_search_results.reports(path, ai_queries, config, now, summary))
     if not summary:
         aeo_missions.attach(path, providers, config.get('branches', []))
-    return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_daily(now).isoformat(),
+    return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_scheduled(now).isoformat(),
             'naver_collection': 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
             'max_pages': config['max_pages'], 'owned_urls': config.get('owned_urls', []), 'providers': providers,
             'branches': [{'id': b['id'], 'name': b['name']} for b in config.get('branches', [])],

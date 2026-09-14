@@ -5,9 +5,9 @@
 다른 기능에서 사용 중인 API 연결은 변경하지 않는다. 기존 API 관측 DB는 보존하되
 웹 집계·답변·관측 기록에 포함하지 않는다. 기존 AEO 미션은 provider 별칭으로 진행 기록을 유지한다.
 
-## 매일 점검 절차
+## 월·수·금 점검 절차
 
-Codex의 이 작업에 연결된 heartbeat가 매일 10:50 Asia/Seoul에 실행한다.
+Codex의 이 작업에 연결된 heartbeat가 매주 월·수·금 10:50 Asia/Seoul에 실행한다.
 API `GET https://app.aivida.tech/api/search-visibility`의 `ai_queries`를 읽고
 각 질문을 `chatgpt_web`, `gemini_web` 두 서비스에서 그대로 검색한다.
 현재 인천 3개, 안양 3개로 총 12개 웹 답변이다. 질문마다 새 대화를 시작한다.
@@ -68,7 +68,7 @@ API `GET https://app.aivida.tech/api/search-visibility`의 `ai_queries`를 읽�
 쿠키·로그인 토큰·브라우저 프로필·개인 대화·비밀번호는 저장하거나 전송하지 않는다.
 
 이전 정상 결과와 의미 있는 노출 변화, 실행 실패, 사용자 조치가 필요한 경우에만
-사용자에게 알린다. 변화가 없는 정상 일일 점검은 조용히 종료한다.
+사용자에게 알린다. 변화가 없는 정상 정기 점검은 조용히 종료한다.
 
 ## 첫 액션
 

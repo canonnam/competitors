@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from html import escape
 import http.client
 import json
@@ -191,15 +191,33 @@ class VisibilityTests(unittest.TestCase):
         def failure(url):
             if 'page=2' in url:raise TimeoutError()
             return page(following=True)
-        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(days=1),fetcher=failure)
-        row=self.report(NOW+timedelta(days=1))['providers'][0]['items'][0]
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW+timedelta(days=2),fetcher=failure)
+        row=self.report(NOW+timedelta(days=2))['providers'][0]['items'][0]
         self.assertEqual(row['observed_at'],NOW.isoformat());self.assertTrue(row['mentioned']);self.assertTrue(row['stale'])
 
     def test_schedule_boundary(self):
         boundary=NOW.replace(hour=10,minute=50)
         self.assertEqual(v.due_at(boundary),boundary)
-        self.assertEqual(v.next_daily(boundary-timedelta(seconds=1)),boundary)
-        self.assertEqual(v.next_daily(boundary),boundary+timedelta(days=1))
+        self.assertEqual(v.next_scheduled(boundary-timedelta(seconds=1)),boundary)
+        self.assertEqual(v.next_scheduled(boundary),boundary+timedelta(days=2))
+        friday = boundary + timedelta(days=2)
+        monday = friday + timedelta(days=3)
+        for moment in (friday, friday+timedelta(days=1), friday+timedelta(days=2), monday-timedelta(seconds=1)):
+            with self.subTest(moment=moment):
+                self.assertEqual(v.due_at(moment), friday)
+                self.assertEqual(v.next_scheduled(moment), monday)
+        self.assertEqual(v.due_at(monday), monday)
+        self.assertEqual(v.next_scheduled(monday), monday+timedelta(days=2))
+        self.assertEqual(v.due_at(monday.astimezone(timezone.utc)), monday)
+
+    def test_no_search_before_scheduled_time_or_on_other_weekdays(self):
+        monday = datetime(2026, 9, 14, 10, 50, tzinfo=v.KST)
+        with patch.object(v, 'collect_naver') as collect:
+            for moment in (monday-timedelta(seconds=1), monday+timedelta(days=1),
+                           monday+timedelta(days=3), monday+timedelta(days=5), monday+timedelta(days=6)):
+                with self.subTest(moment=moment):
+                    self.assertEqual(v.sync_provider(self.path,'naver',[QUERY],self.config,moment), [])
+            collect.assert_not_called()
 
     def test_regional_queries_remain_collectable_when_ad_inventory_is_stale(self):
         queries, inventory=v.naver_queries(self.adpath,NOW,self.config)

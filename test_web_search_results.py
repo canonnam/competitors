@@ -76,9 +76,21 @@ class WebResultsTests(unittest.TestCase):
         self.assertEqual(self.item()['mission']['track'], 'foundation')
         w.submit(self.path,self.body(answer='다른 요양원을 비교하고 현장 상담을 통해 시설을 확인하세요.'),NOW)
         self.assertFalse(self.item()['mentioned']);self.assertEqual(self.item()['status'],'ready')
-        tomorrow=NOW+timedelta(days=1)
-        self.assertEqual(self.item(tomorrow)['status'],'pending')
-        self.assertEqual(self.report(tomorrow)['providers'][1]['checked'],0)
+        sunday=NOW+timedelta(days=1)
+        monday=NOW+timedelta(days=2)
+        self.assertEqual(self.item(sunday)['status'],'ready')
+        self.assertEqual(self.item(monday.replace(hour=10,minute=49))['status'],'ready')
+        self.assertEqual(self.item(monday.replace(hour=10,minute=50))['status'],'pending')
+        self.assertEqual(self.report(monday)['providers'][1]['checked'],0)
+
+    def test_monday_result_stays_current_until_wednesday_check(self):
+        monday=datetime(2026,9,14,11,0,tzinfo=v.KST)
+        w.submit(self.path,self.body(observed_at=monday.isoformat()),monday)
+        for moment in (monday+timedelta(days=1), (monday+timedelta(days=2)).replace(hour=10,minute=49)):
+            with self.subTest(moment=moment):
+                self.assertEqual(self.item(moment)['status'],'ready')
+                self.assertEqual(self.report(moment)['providers'][1]['checked'],1)
+        self.assertEqual(self.item((monday+timedelta(days=2)).replace(hour=10,minute=50))['status'],'pending')
 
     def test_time_evidence_provider_and_url_validation(self):
         bad=[{'search_confirmed':False},{'complete_answer':False},{'session_context':''},{'answer':'짧음'},
