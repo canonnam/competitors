@@ -21,6 +21,10 @@ Fixed terms offer one year, two years, or a custom end date. Presets end on the
 day before the anniversary, with leap-day rollover handled in UTC.
 PDF line breaking removes empty paragraphs and whitespace-only wrapped lines.
 Row heights fit their actual content, preserving merged cells and table borders.
+Contract titles use a light gray background; section labels, identity labels and
+wage item names use a lighter gray. Appendix headings use the same treatment.
+Backgrounds are painted before borders, text and seals, within existing bounds;
+font sizes, wrapping, row heights and page breaks are unchanged by this styling.
 The flexible-hours clause is opt-in and switches to manual wage entry; the general
 calculator does not purport to implement a flexible-hours agreement.
 

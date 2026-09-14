@@ -107,6 +107,10 @@
     for (const key of Object.keys(data.values)) data.values[key] = printable(data.values[key]);
     data.specialTerms = printable(data.specialTerms);
     const pageWidth = 595.28, pageHeight = 841.89, margin = 28;
+    const titleFill = rgb(.92,.92,.92), labelFill = rgb(.95,.95,.95);
+    const labelCells = new Set(['B5','F5','B6','B7','F7','B8','F8','F10','D13','B21','B22']);
+    const cellFill = c => c.id === 'A4' ? titleFill :
+      (c.c === 1 && c.cols === 1 && c.bold) || labelCells.has(c.id) || /^E2[1-6]$/.test(c.id) ? labelFill : null;
     const scale = (pageWidth - margin * 2) / template.widths.reduce((a,b) => a + b, 0);
     const widths = template.widths.map(x => x * scale);
     const heights = Object.fromEntries(Object.keys(template.heights).map(r => [r, 0]));
@@ -143,9 +147,18 @@
       const blockHeight = sumRows(start, end-start+1);
       if (blockHeight > pageHeight-margin*2) throw Error('입력한 문구가 계약서 한 페이지의 공간을 초과합니다. 긴 내용은 특약사항에 입력해주세요.');
       if (top - blockHeight < margin) { page = doc.addPage([pageWidth,pageHeight]); top = pageHeight-margin; }
-      for (const c of prepared.filter(c => c.r >= start && c.r <= end)) {
+      const cells = prepared.filter(c => c.r >= start && c.r <= end).map(c => {
         const x = margin + widths.slice(0,c.c-1).reduce((a,b) => a+b,0);
         const yTop = top - sumRows(start,c.r-start), h = sumRows(c.r,c.rows), bottom = yTop-h;
+        return {c,x,yTop,h,bottom};
+      });
+      // Paint backgrounds first so adjacent borders, text and seals remain crisp.
+      // Existing row heights and wrapping determine every shaded cell's bounds.
+      for (const {c,x,h,bottom} of cells) {
+        const color = cellFill(c);
+        if (color && h > 0) page.drawRectangle({x,y:bottom,width:c.w,height:h,color});
+      }
+      for (const {c,x,yTop,h,bottom} of cells) {
         const edge = { top: [[x,yTop],[x+c.w,yTop]], bottom:[[x,bottom],[x+c.w,bottom]], left:[[x,yTop],[x,bottom]], right:[[x+c.w,yTop],[x+c.w,bottom]] };
         for (const [side,style] of Object.entries(c.borders)) if (style) {
           const [a,b] = edge[side]; page.drawLine({start:{x:a[0],y:a[1]},end:{x:b[0],y:b[1]},thickness:style==='medium'?0.8:0.45,color:rgb(.12,.12,.12)});
@@ -168,18 +181,19 @@
     }
     if (data.extraWages.length || data.specialTerms) {
       page = doc.addPage([pageWidth,pageHeight]); top = pageHeight-margin;
-      const write = (text, size=10, face=font, signing=false) => {
+      const write = (text, size=10, face=font, signing=false, shaded=false) => {
         for (const line of lines(printable(text),face,size,pageWidth-margin*2)) {
           if (top < margin+(signing&&seal?sealSize:20)) {page=doc.addPage([pageWidth,pageHeight]);top=pageHeight-margin-(signing&&seal?sealSize/2:0);}
+          if(shaded)page.drawRectangle({x:margin,y:top-size*1.6,width:pageWidth-margin*2,height:size*1.6,color:size===16?titleFill:labelFill});
           page.drawText(line,{x:margin,y:top-size,font:face,size});
           if(signing)drawSeal(page,line,margin,top-size,face,size);
           top-=size*1.6;
         }
       };
-      write('근로계약서 별지',16,bold);top-=12;
+      write('근로계약서 별지',16,bold,false,true);top-=12;
       write(`기관명: ${model.fields.organization || ''}     근로자: ${model.fields.employee || ''}`);top-=14;
-      if(data.extraWages.length){write('임금 구성',12,bold);for(const item of data.extraWages)write(`${item.label}: ${won(item.value)} 원  ${item.note}`);write(`월 급여 총액: ${won(model.result.total)} 원`,11,bold);top-=18;}
-      if(data.specialTerms){write('특약사항',12,bold);write(data.specialTerms);}
+      if(data.extraWages.length){write('임금 구성',12,bold,false,true);for(const item of data.extraWages)write(`${item.label}: ${won(item.value)} 원  ${item.note}`);write(`월 급여 총액: ${won(model.result.total)} 원`,11,bold);top-=18;}
+      if(data.specialTerms){write('특약사항',12,bold,false,true);write(data.specialTerms);}
       top-=22;write('사용자:                          (인)          근로자:                          (서명)',10,font,true);
     }
     const pages=doc.getPages();
