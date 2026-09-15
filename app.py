@@ -15,6 +15,7 @@ import claim_check
 import aeo_missions
 import web_search_results
 import support_applications
+import website_intake
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -58,6 +59,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if website_intake.handle(self, "GET"):
+            return
         if support_applications.handle(self, "GET"):
             return
         if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
@@ -89,6 +92,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if website_intake.handle(self, "HEAD"):
+            return
         if support_applications.handle(self, "HEAD"):
             return
         if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
@@ -259,7 +264,7 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
+        public_pages = {"website-requests.html", "support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "nearby-facilities.html", "statistics.html", "knowledge.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
@@ -275,6 +280,8 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if website_intake.handle(self, "POST"):
+            return
         if support_applications.handle(self, "POST"):
             return
         if urllib.parse.urlsplit(self.path).path == '/api/search-visibility/web-results':
@@ -410,6 +417,7 @@ class App(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     init_db()
     support_applications.init_db()
+    website_intake.init_db()
     wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
     scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())

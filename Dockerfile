@@ -22,6 +22,7 @@ COPY card_knowledge.py /app/
 COPY aeo_missions.py /app/
 COPY web_search_results.py /app/
 COPY support_applications.py support_documents.py support-prep.html /app/
+COPY website_intake.py website-requests.html /app/
 COPY --from=knowledge /build/data/competitor_knowledge.json /app/data/competitor_knowledge.json
 COPY --from=knowledge /build/data/statistics_knowledge.json /app/data/statistics_knowledge.json
 COPY nginx /app/nginx
