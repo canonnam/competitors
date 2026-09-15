@@ -1,44 +1,149 @@
 <!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>상담·무료체험 신청 | 더비다 지식 창고</title>
-  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <link rel="icon" href="/favicon.ico">
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="상담·무료체험 신청 | 더비다 지식 창고">
-  <meta property="og:description" content="더비다 홈페이지의 상담·무료체험 신청을 관리하는 담당자 공간입니다.">
-  <meta property="og:url" content="https://competitors-dev.up.railway.app/website-requests.html">
-  <meta property="og:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
-  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
-  <link rel="stylesheet" href="/assets/website-requests.css">
-  <script src="/assets/website-requests.js" defer></script>
-</head>
-<body>
-  <header><a href="/">← 더비다 지식 창고</a><button id="logout" hidden>로그아웃</button></header>
-  <main>
-    <p class="eyebrow">THE VIDA · INQUIRIES</p>
-    <h1>상담·무료체험 신청</h1>
-    <p class="lead">홈페이지에서 접수된 방문상담과 시스템 무료체험·비용 문의를 확인하고, 상담 진행 상황을 기록하세요.</p>
-    <p id="message" role="status" aria-live="polite"></p>
-    <section id="login-section" class="login-panel">
-      <h2>담당자 로그인</h2><p>신청자의 정보는 담당자만 확인할 수 있습니다. 지원사업 신청 준비에서 사용하는 접근 키로 로그인하세요.</p>
-      <form id="login-form"><label for="access-key">담당자 접근 키</label><input id="access-key" type="password" required autocomplete="current-password"><button type="submit">신청 내역 열기</button></form>
-    </section>
-    <section id="workspace" hidden>
-      <div id="counts" class="counts" aria-label="전체 접수 현황"></div>
-      <form id="filters" class="filters">
-        <label>신청 유형<select name="kind"><option value="">전체 유형</option><option value="visit">방문상담</option><option value="trial">무료체험</option><option value="pricing">비용 문의</option></select></label>
-        <label>처리 상태<select name="status"><option value="">전체 상태</option><option value="new">새 접수</option><option value="contacted">상담 중</option><option value="completed">상담 완료</option><option value="archived">보관함</option></select></label>
-        <label>접수 사이트<select name="environment"><option value="">전체 사이트</option><option value="dev">개발 사이트</option><option value="production">운영 사이트</option></select></label>
-        <button type="submit">조회·새로고침</button>
-      </form>
-      <p id="result-count"></p><div id="cards" class="cards"></div>
-      <nav class="pagination" aria-label="신청 목록 페이지"><button id="previous">이전</button><span id="page"></span><button id="next">다음</button></nav>
-    </section>
-  </main>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>상담·무료체험 신청 | 더비다 지식 창고</title>
+    <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="상담·무료체험 신청 | 더비다 지식 창고" />
+    <meta
+      property="og:description"
+      content="더비다 홈페이지의 상담·무료체험 신청을 관리하는 담당자 공간입니다."
+    />
+    <meta
+      property="og:url"
+      content="https://competitors-dev.up.railway.app/website-requests.html"
+    />
+    <meta
+      property="og:image"
+      content="https://competitors-dev.up.railway.app/assets/brand/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:image"
+      content="https://competitors-dev.up.railway.app/assets/brand/og-image.png"
+    />
+    <link rel="stylesheet" href="/assets/website-requests.css?v=board-1" />
+    <script src="/assets/website-requests.js?v=board-1" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">← 더비다 지식 창고</a
+      ><button id="logout" hidden>로그아웃</button>
+    </header>
+    <main>
+      <p class="eyebrow">THE VIDA · INQUIRIES</p>
+      <h1>상담·무료체험 신청</h1>
+      <p class="lead">
+        홈페이지에서 접수된 방문상담과 시스템 무료체험·비용 문의를 확인하고,
+        상담 진행 상황을 기록하세요.
+      </p>
+      <p id="message" role="status" aria-live="polite"></p>
+      <section id="login-section" class="login-panel">
+        <h2>담당자 로그인</h2>
+        <p>
+          신청자의 정보는 담당자만 확인할 수 있습니다. 지원사업 신청 준비에서
+          사용하는 접근 키로 로그인하세요.
+        </p>
+        <form id="login-form">
+          <label for="access-key">담당자 접근 키</label
+          ><input
+            id="access-key"
+            type="password"
+            required
+            autocomplete="current-password"
+          /><button type="submit">신청 내역 열기</button>
+        </form>
+      </section>
+      <section id="workspace" hidden>
+        <div id="counts" class="counts" aria-label="전체 접수 현황"></div>
+        <form id="filters" class="filters">
+          <label
+            >신청 유형<select name="kind">
+              <option value="">전체 유형</option>
+              <option value="visit">방문상담</option>
+              <option value="trial">무료체험</option>
+              <option value="pricing">비용 문의</option>
+            </select></label
+          >
+          <label
+            >처리 상태<select name="status">
+              <option value="">전체 상태</option>
+              <option value="new">새 접수</option>
+              <option value="contacted">상담 중</option>
+              <option value="completed">상담 완료</option>
+              <option value="archived">보관함</option>
+            </select></label
+          >
+          <label
+            >접수 사이트<select name="environment">
+              <option value="">전체 사이트</option>
+              <option value="dev">개발 사이트</option>
+              <option value="production">운영 사이트</option>
+            </select></label
+          >
+          <button type="submit">조회·새로고침</button>
+        </form>
+        <div id="request-board" class="request-board">
+          <section class="list-panel" aria-labelledby="list-heading">
+            <div class="list-heading">
+              <div>
+                <h2 id="list-heading" tabindex="-1">신청 내역</h2>
+                <p id="result-count" aria-live="polite"></p>
+              </div>
+              <span class="list-hint">최신 접수순</span>
+            </div>
+            <div class="table-wrap">
+              <table class="request-table">
+                <caption class="sr-only">
+                  신청 내역 목록. 신청 제목을 누르면 상세 내용을 확인할 수
+                  있습니다.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="number-cell">번호</th>
+                    <th scope="col">신청 내용</th>
+                    <th scope="col" class="applicant-cell">신청자</th>
+                    <th scope="col" class="date-cell">접수일</th>
+                    <th scope="col" class="status-cell">상태</th>
+                    <th scope="col" class="site-cell">사이트</th>
+                  </tr>
+                </thead>
+                <tbody id="request-rows"></tbody>
+              </table>
+              <div id="list-empty" class="empty" hidden>
+                <strong>해당하는 신청이 없습니다.</strong>
+                <p>조회 조건을 바꾸거나 새 신청이 접수된 후 확인해 주세요.</p>
+              </div>
+            </div>
+            <nav class="pagination" aria-label="신청 목록 페이지">
+              <button id="previous" type="button">이전</button
+              ><span id="page"></span
+              ><button id="next" type="button">다음</button>
+            </nav>
+          </section>
+          <aside
+            id="request-detail"
+            class="detail-panel"
+            aria-label="신청 상세"
+          >
+            <div class="detail-placeholder">
+              <span class="placeholder-mark" aria-hidden="true">≡</span>
+              <h2>신청 내용을 확인하세요</h2>
+              <p>
+                목록에서 신청을 선택하면<br />상세 내용과 처리 상태를 확인할 수
+                있습니다.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
