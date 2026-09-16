@@ -15,6 +15,7 @@ import claim_check
 import aeo_missions
 import web_search_results
 import support_applications
+import support_projects
 import website_intake
 
 ROOT = Path(__file__).resolve().parent
@@ -47,6 +48,12 @@ def post_json(url, payload, headers=None):
 
 
 class App(SimpleHTTPRequestHandler):
+    def log_message(self, fmt, *args):
+        if self.path.startswith('/api/project-share/'):
+            super().log_message('%s', 'Grant shared view request (token redacted)')
+        else:
+            super().log_message(fmt, *args)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
@@ -59,6 +66,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if support_projects.handle(self, "GET"):
+            return
         if website_intake.handle(self, "GET"):
             return
         if support_applications.handle(self, "GET"):
@@ -92,6 +101,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if support_projects.handle(self, "HEAD"):
+            return
         if website_intake.handle(self, "HEAD"):
             return
         if support_applications.handle(self, "HEAD"):
@@ -268,6 +279,7 @@ class App(SimpleHTTPRequestHandler):
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
+        public_pages.update({'support-projects.html', 'support-share.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
@@ -280,6 +292,8 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_POST(self):
+        if support_projects.handle(self, "POST"):
+            return
         if website_intake.handle(self, "POST"):
             return
         if support_applications.handle(self, "POST"):
@@ -417,6 +431,7 @@ class App(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     init_db()
     support_applications.init_db()
+    support_projects.init_db()
     website_intake.init_db()
     wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
