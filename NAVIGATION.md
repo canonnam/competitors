@@ -1,5 +1,7 @@
 # Knowledge base navigation
 
+Before UI edits, read [UI/UX guidelines](docs/UI_UX_GUIDELINES.md). Root `AGENTS.md` requires this contract; `assets/ui-foundation.css` owns shared design tokens and controls. Run `python -m unittest test_ui_consistency.py` to verify all internal pages load the contract, while keeping external sharing separate.
+
 `assets/navigation.js` enhances the existing pages without changing tool APIs or authentication. `assets/navigation.css` scopes the shared layout under `kb-navigable`.
 
 - The `features` directory maps every home card to its route, category, concise description and search aliases. Add a matching entry when adding a home card. The directory is checked against the home links by `node --test test_navigation.cjs`.
@@ -16,3 +18,5 @@ Validation: navigation/storage/search and unread-feed tests; all 17 internal pag
 Fluency update verified in the browser: identical payroll/claim/operating-cost title offsets in desktop list and card views, consistent title offsets across all 14 mobile rows at 320px, no clipped content or horizontal overflow, loaded icon assets, and `rgb(240, 241, 243)` hover backgrounds for both a menu and a card.
 
 Line-icon update verified in desktop and 320px mobile views: all seven 20px SVG icons render, active menu and tag colors inherit correctly, content titles remain icon-free, N badges keep their 18px square dimensions, and the obsolete Icons8 credit is absent.
+
+Shared UI foundation: all 17 internal pages load the final shared stylesheet. Button/input geometry, primary colors, keyboard focus, neutral backgrounds, headings and status badges share tokens. Desktop and 320px checks cover the home list/card views, claim tables, payroll inputs and the inquiry login screen. Claim tables scroll inside each branch panel rather than widening the mobile page; the chat composer keeps its own height. Authenticated inquiry records and contract output were not exercised in this visual pass. External sharing and print styles remain outside the new screen rules.

@@ -1,0 +1,171 @@
+/* Shared UI contract. See docs/UI_UX_GUIDELINES.md before changing these tokens. */
+:root {
+  --ui-font: Pretendard,"Noto Sans KR",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ui-page: #f5f8fc;
+  --ui-surface: #fff;
+  --ui-text: #202b36;
+  --ui-muted: #596777;
+  --ui-border: #dde3ec;
+  --ui-primary: #4356ad;
+  --ui-primary-hover: #35458e;
+  --ui-selected: #eef1fc;
+  --ui-hover: #f0f1f3;
+  --ui-status-bg: #eef2f6;
+  --ui-success: #176b4b;
+  --ui-success-bg: #e8f4ed;
+  --ui-warning: #855b16;
+  --ui-warning-bg: #fff3df;
+  --ui-error: #a33131;
+  --ui-error-bg: #fff0f0;
+  --ui-control-radius: 8px;
+  --ui-card-radius: 10px;
+  --ui-status-radius: 6px;
+  --ui-control-height: 40px;
+  --ui-content-width: 1248px;
+}
+
+/* Screen-only rules leave contract, report and print layouts intact. */
+@media screen {
+  body.kb-navigable {
+    --ink: var(--ui-text);
+    --muted: var(--ui-muted);
+    --line: var(--ui-border);
+    --blue: var(--ui-primary);
+    --paper: var(--ui-page);
+    --bg: var(--ui-page);
+    min-height: 100vh;
+    background: var(--ui-page);
+    color: var(--ui-text);
+    font-family: var(--ui-font);
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  body.kb-navigable > main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--ui-content-width);
+    margin-inline: auto;
+    padding: 28px 24px 64px;
+  }
+  body.kb-navigable :is(button,input,select,textarea) { font-family: var(--ui-font); }
+  body.kb-navigable :is(a,button,input,select,textarea,summary,[tabindex]):focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 3px;
+  }
+  body.kb-navigable :is(button,[role="button"],a,input,select,textarea,summary) {
+    touch-action: manipulation;
+  }
+
+  /* Existing ordinary action controls map to the same component as .ui-button.
+     Tabs, map controls, previews, text actions and destructive actions stay separate. */
+  body.kb-navigable :is(.ui-button,.kb-actions>button,.kb-control,.primary-button,.secondary-button,
+    button.primary,button.secondary,.submit,.save,.reset-button,.news-more,.agency-more,
+    .claim-toolbar button,.visibility-run button,.support-actions button,.support-interest-button,
+    .support-reason-submit,.sp-upload,.knowledge-login-row button,.knowledge-upload-row button,
+    .login-panel button,.filters button,.web-result-actions button,.web-result-actions a,
+    .web-result-entry button,.aeo-mission button,.kb-feedback-dialog button) {
+    box-sizing: border-box;
+    min-height: var(--ui-control-height);
+    padding: 8px 12px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-family: var(--ui-font);
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  body.kb-navigable :is(.ui-button--primary,.primary-button,button.primary,.submit,.save,
+    .support-reason-submit,.login-panel button,.web-result-entry button,.aeo-mission button,
+    .kb-feedback-dialog button[type="submit"]) {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+    color: #fff;
+  }
+  body.kb-navigable :is(.kb-control,.support-interest-button)[aria-pressed="true"] {
+    background: var(--ui-selected);
+    border-color: #bac4ea;
+    color: var(--ui-primary);
+  }
+  body.kb-navigable :is(.kb-category-button,.kb-nav-link,.kb-nav-group>summary) { min-height: 44px; box-sizing: border-box; }
+  body.kb-navigable .kb-actions { gap: 12px; }
+  body.kb-navigable .kb-actions>a { color: var(--ui-muted); font-size: 14px; font-weight: 600; text-decoration: none; }
+  body.kb-navigable .kb-header .kb-brand { color: var(--ui-text); }
+
+  /* Search and chat composers keep their deliberately different geometry. */
+  body.kb-navigable :is(input,select,textarea):not(.kb-search-input):where(:not([type="hidden"],[type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="submit"],[type="button"],.wiki-panel *)) {
+    box-sizing: border-box;
+    min-height: var(--ui-control-height);
+    border: 1px solid #bcc8d8;
+    border-radius: var(--ui-control-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  body.kb-navigable textarea:where(:not(.wiki-panel *)) { min-height: 104px; resize: vertical; }
+  body.kb-navigable :is(input,textarea)::placeholder { color: #6c7789; opacity: 1; }
+  body.kb-navigable :is(input,select,textarea)[aria-invalid="true"] { border-color: var(--ui-error); }
+  body.kb-navigable .kb-search-input { min-height: 48px; font-size: 16px; border-radius: var(--ui-control-radius); }
+
+  body.kb-navigable :is(.ui-status,.badge,.claim-badge,.pill,.card-update-badge,.kb-card-summary) {
+    border-radius: var(--ui-status-radius);
+    padding: 3px 8px;
+    font-family: var(--ui-font);
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  body.kb-navigable .ui-status { display: inline-flex; align-items: center; background: var(--ui-status-bg); color: var(--ui-muted); }
+  body.kb-navigable :is(.ui-status[data-status="success"],.claim-badge.accepted,.badge.green) { background: var(--ui-success-bg); color: var(--ui-success); }
+  body.kb-navigable :is(.ui-status[data-status="warning"],.kb-card-summary.is-warning,.badge.amber,.badge.warning) { background: var(--ui-warning-bg); color: var(--ui-warning); }
+  body.kb-navigable .ui-status[data-status="error"] { background: var(--ui-error-bg); color: var(--ui-error); }
+  body.kb-navigable .kb-card-summary:not(.is-warning) { background: var(--ui-status-bg); color: var(--ui-muted); }
+  body.kb-navigable .kb-page-heading :is(.kb-description,.claim-intro) { color: var(--ui-muted); font-size: 15px; line-height: 1.75; }
+  body.kb-navigable .knowledge-heading { margin-bottom: 28px; padding-bottom: 24px; border-color: var(--ui-border); }
+  body.kb-navigable .knowledge-heading h1 { font-size: 30px; line-height: 1.35; font-weight: 800; }
+  body.kb-navigable .knowledge-eyebrow { color: var(--ui-muted); margin-bottom: 8px; }
+  body.kb-navigable .kb-page-heading { border-color: var(--ui-border); }
+  body.kb-navigable .kb-page-heading h1 { font-size: 30px; line-height: 1.35; margin: 0 0 10px; }
+  body.kb-navigable .heading-actions h1 { margin-bottom: 0; }
+  body.kb-navigable :is(.login-panel,.claim-branch,.knowledge-table-wrap) { border-radius: var(--ui-card-radius); }
+  /* Allow each branch's own scrollable table to shrink on narrow screens. */
+  body.kb-navigable .claim-branch { min-width: 0; }
+  body.kb-navigable :is(button,input,select,textarea):disabled {
+    cursor: not-allowed;
+    opacity: .55;
+  }
+}
+
+@media screen and (hover:hover) {
+  body.kb-navigable :is(.ui-button,.kb-actions>button,.kb-control,.secondary-button,button.secondary,
+    .reset-button,.news-more,.agency-more,.claim-toolbar button,.visibility-run button,
+    .support-actions button,.support-interest-button,.sp-upload,.knowledge-login-row button,
+    .knowledge-upload-row button,.filters button,.web-result-actions button,.web-result-actions a,
+    .kb-feedback-dialog button):not(:disabled):hover {
+    background: var(--ui-hover);
+  }
+  body.kb-navigable :is(.ui-button--primary,.primary-button,button.primary,.submit,.save,
+    .support-reason-submit,.login-panel button,.web-result-entry button,.aeo-mission button,
+    .kb-feedback-dialog button[type="submit"]):not(:disabled):hover {
+    background: var(--ui-primary-hover);
+    border-color: var(--ui-primary-hover);
+    color: #fff;
+  }
+}
+@media screen and (max-width:700px) {
+  body.kb-navigable > main { padding: 22px 16px 48px; }
+  body.kb-navigable :is(input,select,textarea):not(.kb-search-input):where(:not([type="checkbox"],[type="radio"],[type="range"])) { font-size: 16px; }
+  body.kb-navigable .kb-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  body.kb-navigable :is(.kb-page-heading,.knowledge-heading) h1 { font-size: 25px; }
+}
+@media screen and (pointer:coarse) {
+  body.kb-navigable { --ui-control-height: 44px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.kb-navigable :is(.kb-category-button,.kb-nav-link,.kb-feature-card,.kb-shortcut,.ui-button) { transition: none; }
+}
