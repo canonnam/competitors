@@ -80,7 +80,7 @@
     const el=(tag, className, text)=>{const node=doc.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
-    const icon=(id)=>{const image=el('img','kb-clay-icon');image.src='/assets/icons/clay/'+id+'.png';image.alt='';image.width=32;image.height=32;image.setAttribute('aria-hidden','true');return image;};
+    const icon=(id)=>{const image=el('img','kb-menu-icon');image.src='/assets/icons/fluency/'+id+'.png';image.alt='';image.width=32;image.height=32;image.setAttribute('aria-hidden','true');return image;};
     const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch'};
     let newsCounts=win.NewsBadge?.counts()||{};
     function countFor(id){
@@ -103,6 +103,7 @@
     }
     const homeLink=el('a','kb-sidebar-home','지식 창고 홈');homeLink.href='/';sidebar.append(homeLink);
     const nav=el('nav','kb-feature-nav');nav.setAttribute('aria-label','업무별 기능');sidebar.append(nav);
+    const credit=el('footer','kb-icon-credit'),creditLink=el('a','','Icons by Icons8');creditLink.href='https://icons8.com/';creditLink.target='_blank';creditLink.rel='noopener noreferrer';credit.append(creditLink);main.after(credit);
     const status=el('p','kb-sr-only');status.setAttribute('role','status');doc.body.append(status);
 
     // A native modal provides focus trapping, Escape and focus restoration on all pages.
@@ -117,7 +118,7 @@
     function renderDialog() {
       const matches=matchFeatures(dialogSearch.value,dialogFilters.value,preferences.get().favorites);
       dialogCount.textContent=matches.length+'개 기능';dialogResults.replaceChildren();
-      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(icon(item.category),el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(newMark(item.id));dialogResults.append(row);});
+      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(newMark(item.id));dialogResults.append(row);});
       if(!matches.length)dialogResults.append(el('p','kb-empty','검색 결과가 없습니다. 다른 검색어나 업무를 선택해 주세요.'));
       syncNewsMarkers();
     }
@@ -130,7 +131,7 @@
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
     doc.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&!doc.querySelector('dialog[open], .modal.open')){event.preventDefault();openDialog();}});
 
-    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, resultIcon, empty, grid;
+    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, empty, grid;
     const cards=new Map();
     if(home) {
       grid=main.querySelector('.grid');
@@ -146,7 +147,7 @@
       const favoriteHead=el('div','kb-section-head');
       editButton=button('순서 편집','kb-text-button');editButton.setAttribute('aria-pressed','false');editButton.addEventListener('click',()=>{editing=!editing;render();});favoriteHead.append(editButton);
       favoriteRows=el('div','kb-shortcuts');favoritesSection.append(favoriteRows,favoriteHead);
-      const toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultIcon=icon('all');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultIcon,resultTitle,resultCount);
+      const toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultTitle,resultCount);
       const views=el('div','kb-view-controls');views.setAttribute('aria-label','표시 방식');['cards','list'].forEach(view=>{const control=button(view==='cards'?'카드':'목록','kb-control');control.dataset.kbView=view;control.addEventListener('click',()=>{preferences.view(view);render();});views.append(control);});toolbar.append(heading,views);
       grid.before(tools,favoritesSection,toolbar);
       empty=el('div','kb-empty');empty.hidden=true;const emptyText=el('p','', '검색 결과가 없습니다. 검색어나 선택한 업무를 확인해 주세요.');
@@ -154,7 +155,7 @@
       grid.querySelectorAll(':scope > article').forEach(card=>{
         const item=features.find(feature=>card.querySelector('a[href="'+feature.href+'"]'));
         if(!item)return;cards.set(item.id,card);card.classList.add('kb-feature-card');card.dataset.kbFeature=item.id;
-        const heading=card.querySelector('h2'),titleLink=link(item,'kb-feature-title');titleLink.replaceChildren(icon(item.category),el('span','kb-feature-name',item.title));heading.replaceChildren(titleLink);
+        const heading=card.querySelector('h2'),titleLink=link(item,'kb-feature-title');titleLink.replaceChildren(el('span','kb-feature-name',item.title));heading.replaceChildren(titleLink);
         const description=card.querySelector(':scope > p');if(description)description.textContent=item.description;
         const content=el('div','kb-card-content');content.append(heading);if(description)content.append(description);content.append(el('span','kb-card-category',categories.find(group=>group.id===item.category).title));
         const live=el('div','kb-card-status');live.hidden=true;
@@ -219,7 +220,6 @@
       cards.forEach((card,id)=>{card.hidden=!matching.has(id);const pin=card.querySelector('[data-kb-pin]');const item=features.find(item=>item.id===id);const active=saved.favorites.includes(id);pin.setAttribute('aria-pressed',String(active));pin.setAttribute('aria-label',item.title+' 즐겨찾기 '+(active?'해제':'추가'));});
       grid.classList.toggle('kb-list-view',saved.view==='list');
       resultTitle.textContent=category==='all'?'전체 기능':category==='favorites'?'즐겨찾기':categories.find(group=>group.id===category).title;
-      resultIcon.src='/assets/icons/clay/'+category+'.png';
       resultCount.textContent=matches.length+'개';empty.hidden=matches.length>0;
       doc.querySelectorAll('[data-kb-view]').forEach(control=>control.setAttribute('aria-pressed',String(control.dataset.kbView===saved.view)));
     }
