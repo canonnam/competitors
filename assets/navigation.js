@@ -80,7 +80,7 @@
     const el=(tag, className, text)=>{const node=doc.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
-    const icon=(id)=>{const image=el('img','kb-menu-icon');image.src='/assets/icons/fluency/'+id+'.png';image.alt='';image.width=32;image.height=32;image.setAttribute('aria-hidden','true');return image;};
+    const icon=(id)=>{const mark=el('span','kb-menu-icon');mark.style.setProperty('--kb-icon','url("/assets/icons/line/'+id+'.svg")');mark.setAttribute('aria-hidden','true');return mark;};
     const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch'};
     let newsCounts=win.NewsBadge?.counts()||{};
     function countFor(id){
@@ -103,7 +103,6 @@
     }
     const homeLink=el('a','kb-sidebar-home','지식 창고 홈');homeLink.href='/';sidebar.append(homeLink);
     const nav=el('nav','kb-feature-nav');nav.setAttribute('aria-label','업무별 기능');sidebar.append(nav);
-    const credit=el('footer','kb-icon-credit'),creditLink=el('a','','Icons by Icons8');creditLink.href='https://icons8.com/';creditLink.target='_blank';creditLink.rel='noopener noreferrer';credit.append(creditLink);main.after(credit);
     const status=el('p','kb-sr-only');status.setAttribute('role','status');doc.body.append(status);
 
     // A native modal provides focus trapping, Escape and focus restoration on all pages.
