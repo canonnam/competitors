@@ -15,7 +15,7 @@ REPORT = json.loads((ROOT/'data'/'operating_report.json').read_text(encoding='ut
 
 class OperatingReportTests(unittest.TestCase):
     def test_all_months_reconcile_to_source_and_cash_bridge(self):
-        self.assertEqual(REPORT['sourceCount'], 31)
+        self.assertEqual(REPORT['sourceCount'], 33)
         for branch in REPORT['branches']:
             self.assertEqual(len({m['month'] for m in branch['months']}),len(branch['months']))
             for m in branch['months']:
@@ -32,6 +32,7 @@ class OperatingReportTests(unittest.TestCase):
                ('기타잡수입','회사 대여',5000000,0,('financing','차입·원금 상환')),
                ('기타잡수입','오루입금 후 출금',-12000000,0,('correction','오입금·반환')),
                ('잡지출','10/15 입금오류 반환',0,4500000,('correction','오입금·반환')),
+               ('잡지출','7/31착오송금 반환',0,579150,('correction','오입금·반환')),
                ('기타잡수입','3월 약제비 반환',1305500,0,('operating','기타 수입')),
                ('기타전출금','전출금(원금)',0,2000000,('financing','차입·원금 상환')),
                ('전년도이월금','이월',47387837,0,('carry','이월금')),
@@ -46,11 +47,26 @@ class OperatingReportTests(unittest.TestCase):
         jan=next(m for m in anyang['months'] if m['month']=='2026-01')
         self.assertEqual(jan['carry'],47387837)
         self.assertEqual(jan['profit'],19829097)
-        july=anyang['months'][-1]
+        july=next(m for m in anyang['months'] if m['month']=='2026-07')
         self.assertEqual((july['profit'],july['cashChange']),(-3731755,-17731755))
         march=next(m for m in incheon['months'] if m['month']=='2026-03')
         self.assertEqual(march['profit'],-25262470)
-        self.assertEqual(incheon['months'][-1]['flags'][0]['amount'],5000000)
+        incheon_july=next(m for m in incheon['months'] if m['month']=='2026-07')
+        self.assertEqual(incheon_july['flags'][0]['amount'],5000000)
+
+    def test_august_matches_workbook_controls_and_separates_returns(self):
+        # Independently read E114:G114 (Anyang), E82:G82 (Incheon).
+        expected = {
+            'anyang': (100770030, 84316828, 16453202, 91696630, 70243428, 21453202, 0),
+            'incheon': (110709790, 122390965, -11681175, 110144790, 103111815, 7032975, -13714150),
+        }
+        for branch in REPORT['branches']:
+            august=next(m for m in branch['months'] if m['month']=='2026-08')
+            july=next(m for m in branch['months'] if m['month']=='2026-07')
+            with self.subTest(branch=branch['id']):
+                self.assertEqual(tuple(august[k] for k in ['sourceIncome','sourceExpense','cashChange','revenue','cost','profit','correction']),expected[branch['id']])
+                self.assertEqual(august['openingBalance'],july['closingBalance'])
+                self.assertEqual(august['lastDate'],'2026-08-31')
 
     def test_aggregates_contain_no_transaction_memos_or_names(self):
         serialized=json.dumps(REPORT,ensure_ascii=False)

@@ -40,7 +40,7 @@ def classify(account, memo, income, expense):
     if account in {'기타잡수입', '잡지출'}:
         if '대여' in memo:
             return 'financing', '차입·원금 상환'
-        if any(word in compact for word in ['오류', '오루입금', '입금오류']):
+        if any(word in compact for word in ['오류', '오루입금', '입금오류', '착오송금']):
             return 'correction', '오입금·반환'
         if '보조금이관' in compact:
             return 'transfer', '기타 자금 이동'
@@ -72,10 +72,10 @@ def amount(value):
     return int(number)
 
 
-def build(source_root):
+def build(source_root, source_date=None):
     import openpyxl
     warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
-    report = {'schemaVersion': 1, 'sourceDate': '2026-09-08', 'currency': 'KRW', 'branches': [], 'sourceCount': 0}
+    report = {'schemaVersion': 1, 'sourceDate': (source_date or date.today()).isoformat(), 'currency': 'KRW', 'branches': [], 'sourceCount': 0}
     for branch_id, name in [('anyang', '안양점'), ('incheon', '인천점')]:
         folder = source_root / f'더비다요양원 {name} 현금출납부'
         paths = sorted(folder.glob('*.xlsx'))
@@ -160,6 +160,11 @@ def build(source_root):
                 flags.append({'type': 'timing', 'message': '식비와 사회보험 납부 기록이 없습니다. 다음 달 지급·정산 여부를 확인해야 흑자 지속성을 판단할 수 있습니다.'})
             if month == '2026-07' and branch_id == 'anyang':
                 flags.append({'type': 'timing', 'message': '생계급여 지급 2회가 포함되어 있습니다. 월별 지급 시점 차이가 손익에 영향을 줍니다.'})
+            if month == '2026-08' and branch_id == 'anyang':
+                flags.append({'type': 'timing', 'message': '식비 지출은 874,750원이고 이자 지급 기록은 없습니다. 급식 관련 오입금·반환 9,058,400원은 양쪽을 운영 손익에서 제외했습니다. 식비·이자의 실제 지급·정산 시점을 함께 확인해 주세요.'})
+            if month == '2026-08' and branch_id == 'incheon':
+                flags.append({'type': 'timing', 'message': '생계급여 지급 3회, 총 19,615,800원이 포함되어 있습니다. 이 달 보조금 수입 8,736,810원과의 차이는 10,878,990원으로, 수입·지급 시점 차이가 월별 손익에 영향을 줍니다.'})
+                flags.append({'type': 'classification', 'message': '7월 31일 착오송금 579,150원의 반환은 운영비용에서 제외하고 오입금·반환으로 분리했습니다. 운영 흑자와 실제 자금 증감은 다를 수 있습니다.'})
             cash_change = sums['sourceIncome']-sums['sourceExpense']-sums['carry']
             profit = sums['revenue']-sums['cost']
             if cash_change != profit + sum(sums[k] for k in ['financing', 'investment', 'transfer', 'correction']):
@@ -183,9 +188,10 @@ def build(source_root):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-root', type=Path, required=True)
+    parser.add_argument('--source-date', type=date.fromisoformat, default=date.today(), help='Source review date (YYYY-MM-DD); defaults to today.')
     parser.add_argument('--output', type=Path, default=ROOT/'data'/'operating_report.json')
     args = parser.parse_args()
-    result = build(args.source_root)
+    result = build(args.source_root, args.source_date)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(f"Validated {result['sourceCount']} monthly workbooks; wrote anonymous aggregates.")

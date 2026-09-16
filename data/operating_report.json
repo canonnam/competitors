@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDate": "2026-09-08",
+  "sourceDate": "2026-09-16",
   "currency": "KRW",
   "branches": [
     {
@@ -2145,6 +2145,180 @@
             "range": "A2:G161",
             "controlRange": "E162:G162",
             "sha256": "d2972d7ac6cd5491258a3ba30e34e1c16652e49cbc68dcba6f914b1ac7f87d9c"
+          }
+        },
+        {
+          "month": "2026-08",
+          "firstDate": "2026-08-03",
+          "lastDate": "2026-08-31",
+          "transactionCount": 111,
+          "revenue": 91696630,
+          "cost": 70243428,
+          "profit": 21453202,
+          "cashChange": 16453202,
+          "closingBalance": 68357654,
+          "openingBalance": 51904452,
+          "financing": 0,
+          "investment": 0,
+          "transfer": -5000000,
+          "correction": 0,
+          "carry": 0,
+          "sourceIncome": 100770030,
+          "sourceExpense": 84316828,
+          "accounts": [
+            {
+              "account": "가산금수입(인건비비율 반영)",
+              "group": "요양급여·가산금",
+              "income": 2751940,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "공공요금 및 각종 세금공과금",
+              "group": "공과금·세금",
+              "income": 0,
+              "expense": 1396870,
+              "count": 4
+            },
+            {
+              "account": "급여(간접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 8044760,
+              "count": 4
+            },
+            {
+              "account": "급여(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 45181078,
+              "count": 1
+            },
+            {
+              "account": "기관운영비",
+              "group": "기관 운영",
+              "income": 0,
+              "expense": 92000,
+              "count": 2
+            },
+            {
+              "account": "본인부담금수입",
+              "group": "본인부담금",
+              "income": 7575250,
+              "expense": 0,
+              "count": 27
+            },
+            {
+              "account": "사회보험부담금(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 3121930,
+              "count": 1
+            },
+            {
+              "account": "상급침실이용료",
+              "group": "기타 이용료",
+              "income": 560000,
+              "expense": 0,
+              "count": 4
+            },
+            {
+              "account": "생계비",
+              "group": "식비",
+              "income": 0,
+              "expense": 874750,
+              "count": 4
+            },
+            {
+              "account": "수급자생계비",
+              "group": "생계급여 지급",
+              "income": 0,
+              "expense": 5289260,
+              "count": 1
+            },
+            {
+              "account": "수용기관경비",
+              "group": "돌봄용품",
+              "income": 0,
+              "expense": 6380,
+              "count": 1
+            },
+            {
+              "account": "수용비 및 수수료",
+              "group": "물품·수수료",
+              "income": 0,
+              "expense": 1589440,
+              "count": 25
+            },
+            {
+              "account": "시군구보조금",
+              "group": "보조금",
+              "income": 5339260,
+              "expense": 0,
+              "count": 2
+            },
+            {
+              "account": "식재료비수입",
+              "group": "식비 수입",
+              "income": 5424180,
+              "expense": 0,
+              "count": 21
+            },
+            {
+              "account": "의료비",
+              "group": "의료·약품",
+              "income": 0,
+              "expense": 6960,
+              "count": 1
+            },
+            {
+              "account": "장기요양급여수입(인건비비율 반영)",
+              "group": "요양급여·가산금",
+              "income": 70046000,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "퇴직금 및 퇴직적립금(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 3040000,
+              "count": 1
+            },
+            {
+              "account": "프로그램 사업비",
+              "group": "프로그램",
+              "income": 0,
+              "expense": 1600000,
+              "count": 2
+            }
+          ],
+          "adjustments": [
+            {
+              "group": "기타 자금 이동",
+              "income": 0,
+              "expense": 5000000,
+              "count": 2
+            },
+            {
+              "group": "오입금·반환",
+              "income": 9073400,
+              "expense": 9073400,
+              "count": 6
+            }
+          ],
+          "flags": [
+            {
+              "type": "timing",
+              "message": "식비 지출은 874,750원이고 이자 지급 기록은 없습니다. 급식 관련 오입금·반환 9,058,400원은 양쪽을 운영 손익에서 제외했습니다. 식비·이자의 실제 지급·정산 시점을 함께 확인해 주세요."
+            }
+          ],
+          "source": {
+            "file": "현금출납부_8월_20260916.xlsx",
+            "sheet": "sheet1",
+            "range": "A2:G113",
+            "controlRange": "E114:G114",
+            "sha256": "eee5a45a82e012d9839807777a497420e486988dff2af3923a6b81cd5c37173c"
           }
         }
       ]
@@ -5836,9 +6010,214 @@
             "controlRange": "E138:G138",
             "sha256": "4079b5b20333945836fc21bc67719fb5aea112385ca8e1cbe79b11625d939c1e"
           }
+        },
+        {
+          "month": "2026-08",
+          "firstDate": "2026-08-02",
+          "lastDate": "2026-08-31",
+          "transactionCount": 79,
+          "revenue": 110144790,
+          "cost": 103111815,
+          "profit": 7032975,
+          "cashChange": -11681175,
+          "closingBalance": 84502956,
+          "openingBalance": 96184131,
+          "financing": -2000000,
+          "investment": 0,
+          "transfer": -3000000,
+          "correction": -13714150,
+          "carry": 0,
+          "sourceIncome": 110709790,
+          "sourceExpense": 122390965,
+          "accounts": [
+            {
+              "account": "가산금수입(인건비비율 미반영)",
+              "group": "요양급여·가산금",
+              "income": 974720,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "가산금수입(인건비비율 반영)",
+              "group": "요양급여·가산금",
+              "income": 6157210,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "공공요금 및 각종 세금공과금",
+              "group": "공과금·세금",
+              "income": 0,
+              "expense": 2205558,
+              "count": 5
+            },
+            {
+              "account": "급여(간접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 9216380,
+              "count": 4
+            },
+            {
+              "account": "급여(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 54169354,
+              "count": 1
+            },
+            {
+              "account": "기관운영비",
+              "group": "기관 운영",
+              "income": 0,
+              "expense": 391000,
+              "count": 4
+            },
+            {
+              "account": "기타운영비",
+              "group": "기타 운영",
+              "income": 0,
+              "expense": 600000,
+              "count": 1
+            },
+            {
+              "account": "기타전출금(이자)",
+              "group": "이자",
+              "income": 0,
+              "expense": 5602403,
+              "count": 1
+            },
+            {
+              "account": "본인부담금수입",
+              "group": "본인부담금",
+              "income": 2191440,
+              "expense": 0,
+              "count": 8
+            },
+            {
+              "account": "사회보험부담금(간접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 622230,
+              "count": 1
+            },
+            {
+              "account": "사회보험부담금(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 4734670,
+              "count": 1
+            },
+            {
+              "account": "생계비",
+              "group": "식비",
+              "income": 0,
+              "expense": 409300,
+              "count": 2
+            },
+            {
+              "account": "수급자생계비",
+              "group": "생계급여 지급",
+              "income": 0,
+              "expense": 19615800,
+              "count": 3
+            },
+            {
+              "account": "수용기관경비",
+              "group": "돌봄용품",
+              "income": 0,
+              "expense": 47660,
+              "count": 2
+            },
+            {
+              "account": "수용비 및 수수료",
+              "group": "물품·수수료",
+              "income": 0,
+              "expense": 1754360,
+              "count": 18
+            },
+            {
+              "account": "시군구보조금",
+              "group": "보조금",
+              "income": 8736810,
+              "expense": 0,
+              "count": 2
+            },
+            {
+              "account": "식재료비수입",
+              "group": "식비 수입",
+              "income": 2595590,
+              "expense": 0,
+              "count": 7
+            },
+            {
+              "account": "의료비",
+              "group": "의료·약품",
+              "income": 0,
+              "expense": 125900,
+              "count": 7
+            },
+            {
+              "account": "장기요양급여수입(인건비비율 미반영)",
+              "group": "요양급여·가산금",
+              "income": 140000,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "장기요양급여수입(인건비비율 반영)",
+              "group": "요양급여·가산금",
+              "income": 89349020,
+              "expense": 0,
+              "count": 1
+            },
+            {
+              "account": "퇴직금 및 퇴직적립금(직접비)",
+              "group": "인건비",
+              "income": 0,
+              "expense": 3617200,
+              "count": 1
+            }
+          ],
+          "adjustments": [
+            {
+              "group": "기타 자금 이동",
+              "income": 0,
+              "expense": 3000000,
+              "count": 1
+            },
+            {
+              "group": "오입금·반환",
+              "income": 565000,
+              "expense": 14279150,
+              "count": 5
+            },
+            {
+              "group": "차입·원금 상환",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "flags": [
+            {
+              "type": "timing",
+              "message": "생계급여 지급 3회, 총 19,615,800원이 포함되어 있습니다. 이 달 보조금 수입 8,736,810원과의 차이는 10,878,990원으로, 수입·지급 시점 차이가 월별 손익에 영향을 줍니다."
+            },
+            {
+              "type": "classification",
+              "message": "7월 31일 착오송금 579,150원의 반환은 운영비용에서 제외하고 오입금·반환으로 분리했습니다. 운영 흑자와 실제 자금 증감은 다를 수 있습니다."
+            }
+          ],
+          "source": {
+            "file": "현금출납부_8월_20260916.xlsx",
+            "sheet": "sheet1",
+            "range": "A2:G81",
+            "controlRange": "E82:G82",
+            "sha256": "484593c49758485a2676a6e8ec9a31f6c12b5be98f633e4c50f3ab940b5cc2bb"
+          }
         }
       ]
     }
   ],
-  "sourceCount": 31
+  "sourceCount": 33
 }
