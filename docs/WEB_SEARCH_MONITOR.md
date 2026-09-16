@@ -63,7 +63,11 @@ API `GET https://app.aivida.tech/api/search-visibility`의 `ai_queries`를 읽�
 재시도는 같은 내용과 같은 request_id를 사용하여 중복 저장을 방지한다.
 
 저장 후 운영 GET 응답에서 provider·keyword·branch·request_id·observed_at을
-대조한다. 실패 기록은 `last_attempt`, `error`로 확인한다. 서버는 마지막 정상 답변과
+대조한다. 각 질문을 독립 객체로 보관하고 저장한 `answer` 전체 본문과 `citations`의
+주소·제목도 원본과 비교한다. 다른 질문의 본문이 복제되면 정상 처리하지 않는다.
+종료 전 이번 `due_at` 이후 정상 결과 또는 구체적인 실패 기록이 모든 질문·서비스에
+존재하는지 확인한다. 이번 점검이 누락된 항목을 다음 점검일만 안내하고 종료하지 않는다.
+실패 기록은 `last_attempt`, `error`로 확인한다. 서버는 마지막 정상 답변과
 확인 시각을 유지하며, 실패 또는 오래된 결과는 현재 분모에서 제외한다.
 쿠키·로그인 토큰·브라우저 프로필·개인 대화·비밀번호는 저장하거나 전송하지 않는다.
 

@@ -58,6 +58,28 @@ test('home shows both branches and keeps failed AI checks outside the denominato
     {id:'openai',kind:'ai',configured:true,checked:1,expected:2,items:[
       {branch:'incheon',status:'error',branch_result:{mentioned:true}},
       {branch:'anyang',status:'ready',branch_result:{mentioned:true}}]}]};
-  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지(광고 제외) 1/1개 · AI 웹 언급 측정 대기\n안양점 · 네이버 첫 페이지(광고 제외) 0/1개 · AI 웹 언급 1/1건');
+  assert.equal(v.homeSummary(data).text,'인천점 · 네이버 첫 페이지(광고 제외) 1/1개 · AI 웹 언급 측정 불가\n안양점 · 네이버 첫 페이지(광고 제외) 0/1개 · AI 웹 언급 1/1건');
   assert.equal(v.homeSummary(data).warning,true);
+});
+
+test('missed collection preserves dated last results without counting them as current',()=>{
+  const provider={id:'chatgpt_web',kind:'ai',configured:true,expected:3,checked:0,mentioned:0,items:[
+    {branch:'incheon',status:'pending',stale:true,observed_at:'2026-09-14T11:00:00+09:00',mentioned:true,branch_result:{mentioned:true}},
+    {branch:'incheon',status:'error',stale:true,observed_at:'2026-09-14T11:01:00+09:00',mentioned:false,branch_result:{mentioned:false}},
+    {branch:'incheon',status:'pending',stale:true}]};
+  const scoped=v.scopeData({providers:[provider]},'incheon').providers[0];
+  assert.equal(scoped.checked,0);
+  assert.equal(scoped.mentioned,0);
+  assert.match(v.lastResult(scoped),/최근 확인 1\/2건 언급/);
+  assert.match(v.lastResult(scoped),/9\. 14\./);
+  assert.equal(v.collectionState(scoped),'이번 점검 0/3개 완료 · 1개 확인 불가 · 2개 갱신 대기');
+  assert.equal(v.filterRows(scoped.items.map(item=>({...item,keyword:'인천'})),'','absent').length,0);
+  const home=v.homeSummary({enabled:true,keyword_source:{stale:false},providers:[{id:'naver',kind:'search',checked:0,expected:0,items:[]},provider]});
+  assert.match(home.text,/측정 불가 \(최근 확인 1\/2건 언급/);
+});
+
+test('no observation is never presented as a zero exposure result',()=>{
+  const provider={kind:'ai',checked:0,expected:2,items:[{status:'pending'},{status:'error'}]};
+  assert.equal(v.lastResult(provider),'');
+  assert.equal(v.collectionState(provider),'이번 점검 0/2개 완료 · 1개 확인 불가 · 1개 갱신 대기');
 });

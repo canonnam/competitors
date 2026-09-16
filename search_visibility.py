@@ -515,7 +515,7 @@ def report(path, ad_path=None, now=None, summary=False):
             if provider == 'naver':
                 item['ad_coverage_complete'] = observation.get('ad_parser_version') == AD_PARSER_VERSION
             if summary:
-                item = {key: item.get(key) for key in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'first_page', 'observed_at')}
+                item = {key: item.get(key) for key in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'first_page', 'observed_at', 'error', 'last_attempt')}
                 item['branch_result'] = {k: value for k, value in branch_result.items() if k in {'mentioned', 'first_page', 'branch_unconfirmed'}}
             items.append(item)
         checked = [item for item in items if item['status'] == 'ready']
@@ -525,7 +525,7 @@ def report(path, ad_path=None, now=None, summary=False):
     providers.extend(web_search_results.reports(path, ai_queries, config, now, summary))
     if not summary:
         aeo_missions.attach(path, providers, config.get('branches', []))
-    return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'next_run': next_scheduled(now).isoformat(),
+    return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'due_at': due_at(now).isoformat(), 'next_run': next_scheduled(now).isoformat(),
             'naver_collection': 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
             'max_pages': config['max_pages'], 'owned_urls': config.get('owned_urls', []), 'providers': providers,
             'branches': [{'id': b['id'], 'name': b['name']} for b in config.get('branches', [])],

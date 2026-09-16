@@ -118,7 +118,7 @@ def reports(path, queries, config, now, summary=False):
             branch_result['history'] = [{'at': r['observed_at'], 'mentioned': v.branch_observation(r, query['branch'], config)['mentioned']} for r in successes[:30]]
             item['branch_result'] = branch_result
             if summary:
-                item = {k: item.get(k) for k in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'branch_result', 'observed_at', 'measurement_type')}
+                item = {k: item.get(k) for k in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'branch_result', 'observed_at', 'measurement_type', 'error', 'last_attempt')}
             items.append(item)
         checked = [i for i in items if i['status'] == 'ready']
         result.append({'id': provider, **metadata, 'kind': 'ai', 'configured': True, 'collection': 'consumer_web',

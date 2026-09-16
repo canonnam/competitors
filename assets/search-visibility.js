@@ -3,6 +3,25 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}}
   function fresh(item){return item.status==='ready'&&!item.stale;}
+  const observedDate=value=>new Date(value).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric'});
+  function lastResult(provider){
+    const items=(provider.items||[]).filter(item=>item.observed_at&&Number.isFinite(new Date(item.observed_at).getTime()));
+    if(!items.length)return '';
+    const dates=items.map(item=>item.observed_at).sort(),first=observedDate(dates[0]),last=observedDate(dates[dates.length-1]);
+    const found=items.filter(item=>provider.kind==='ai'?item.mentioned:item.first_page===1).length;
+    return `최근 확인 ${found}/${items.length}${provider.kind==='ai'?'건 언급':'개 첫 페이지'} · ${first===last?last:first+' ~ '+last}`;
+  }
+  function collectionState(provider){
+    const items=provider.items||[],failed=items.filter(item=>!fresh(item)&&item.status==='error').length;
+    const pending=Math.max(0,provider.expected-provider.checked-failed);
+    return [`이번 점검 ${provider.checked}/${provider.expected}개 완료`,failed?`${failed}개 확인 불가`:'',pending?`${pending}개 갱신 대기`:''].filter(Boolean).join(' · ');
+  }
+  function homeMetric(provider){
+    if(provider.checked)return `${provider.kind==='ai'?provider.mentioned:provider.first_page}/${provider.checked}${provider.kind==='ai'?'건':'개'}`;
+    const state=(provider.items||[]).some(item=>item.status==='error')?'측정 불가':'갱신 대기';
+    const previous=lastResult(provider);
+    return state+(previous?` (${previous})`:'');
+  }
   function stateLabel(item){if(item.status==='unconfigured')return '연결 필요';if(item.status==='error')return '측정 불가';if(item.status==='running')return '측정 중';if(item.status==='unverified')return '검색 근거 부족';return '갱신 대기';}
   function matchLabel(item,areas){
     if(!fresh(item))return stateLabel(item);
@@ -24,13 +43,13 @@
       const lines=data.branches.map(branch=>{
         const scoped=scopeData(data,branch.id),naver=scoped.providers.find(p=>p.id==='naver'),ai=scoped.providers.filter(p=>p.kind==='ai'&&p.configured);
         const checked=ai.reduce((s,p)=>s+p.checked,0),mentioned=ai.reduce((s,p)=>s+p.mentioned,0);
-        return `${branch.name} · 네이버 첫 페이지(광고 제외) ${naver.checked?`${naver.first_page}/${naver.checked}개`:'측정 대기'} · AI 웹 언급 ${checked?`${mentioned}/${checked}건`:'측정 대기'}`;
+        return `${branch.name} · 네이버 첫 페이지(광고 제외) ${homeMetric(naver)} · AI 웹 언급 ${homeMetric({kind:'ai',checked,mentioned,items:ai.flatMap(p=>p.items||[])})}`;
       });
       return {text:lines.join('\n'),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
     }
     const naver=data.providers.find(p=>p.id==='naver'),ai=data.providers.filter(p=>p.kind==='ai'&&p.configured);
     const checked=ai.reduce((sum,p)=>sum+p.checked,0),mentioned=ai.reduce((sum,p)=>sum+p.mentioned,0);
-    const parts=[naver?.checked?`네이버 첫 페이지(광고 제외) ${naver.first_page}/${naver.checked}개`:naver?.items.some(item=>item.status==='error')?'네이버 측정 불가':'네이버 측정 대기',checked?`AI 웹 언급 ${mentioned}/${checked}건`:'AI 측정 대기'];
+    const parts=[`네이버 첫 페이지(광고 제외) ${homeMetric(naver||{})}`,`AI 웹 언급 ${homeMetric({kind:'ai',checked,mentioned,items:ai.flatMap(p=>p.items||[])})}`];
     return {text:parts.join(' · '),warning:!data.enabled||data.keyword_source.stale||data.providers.some(p=>!p.configured||p.checked<p.expected)};
   }
   function citedAnswer(item){
@@ -40,7 +59,7 @@
     [...ends].sort((a,b)=>a[0]-b[0]).forEach(([end,list])=>{out+=esc(text.slice(previous,end));out+=list.map(([c,n])=>`<a class="visibility-citation" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer" title="${esc(c.title)}">[${n}]</a>`).join('');previous=end;});
     return out+esc(text.slice(previous));
   }
-  const api={safeUrl,fresh,stateLabel,matchLabel,filterRows,scopeData,homeSummary,citedAnswer};
+  const api={safeUrl,fresh,stateLabel,matchLabel,filterRows,scopeData,homeSummary,citedAnswer,lastResult,collectionState};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.SearchVisibility=api;
   if(typeof document==='undefined')return;
@@ -64,12 +83,14 @@
   function overview(){
     $('visibility-overview').innerHTML=current.providers.map(p=>{
       const ai=p.kind==='ai',metric=!p.configured?'연결 필요':!p.checked?(p.items.some(item=>item.status==='error')?'측정 불가':'측정 대기'):`${ai?p.mentioned:p.first_page}<small> / ${p.checked}</small>`;
-      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'웹 답변 속 언급':'첫 페이지 · 광고 제외'}<br>${p.configured?`${p.expected}개 중 ${p.checked}개 정상 측정`:'웹에서 확인 후 기록'}</p></article>`;
+      const previous=p.checked<p.expected?lastResult(p):'';
+      return `<article class="visibility-metric ${!p.checked?'is-pending':''}"><h2>${esc(p.name)}</h2><strong>${metric}</strong><p>${esc(selectedName()||'전체 지점')} · ${ai?'웹 답변 속 언급':'첫 페이지 · 광고 제외'}<br>${esc(collectionState(p))}${previous?`<br><span class="visibility-small">${esc(previous)}<br>이전 결과 포함 · 이번 집계와 별도</span>`:''}</p></article>`;
     }).join('');
     const naverError=current.providers.find(p=>p.id==='naver')?.items.find(item=>item.error)?.error;
     const aiErrors=current.providers.filter(p=>p.kind==='ai'&&p.configured).map(p=>{const error=p.items.find(item=>item.error)?.error;return error?`${p.name}: ${error}.`:'';}).filter(Boolean).join(' ');
     const missing=current.providers.filter(p=>!p.configured).map(p=>p.name.replace(' 검색 답변',''));
-    $('visibility-notice').textContent=[aiErrors,naverError?`네이버: ${naverError}.`:'',missing.length?`${missing.join('·')}는 아직 웹 결과가 등록되지 않았습니다.`:'',!current.owned_urls.length?'공식 홈페이지·블로그 주소를 등록하면 자사 페이지 인용 여부도 구분할 수 있습니다.':'',current.keyword_source.stale?'광고 키워드 목록 갱신이 지연되어 이전 목록을 표시합니다.':''].filter(Boolean).join(' ');
+    const pendingAI=current.providers.filter(p=>p.kind==='ai').reduce((n,p)=>n+p.items.filter(item=>!fresh(item)&&item.status!=='error').length,0);
+    $('visibility-notice').textContent=[aiErrors,naverError?`네이버: ${naverError}.`:'',pendingAI?`이번 정기 점검(${date(current.due_at)})의 AI 웹 결과 ${pendingAI}건이 아직 저장되지 않았습니다. 갱신 대기·확인 불가는 미노출이 아닙니다.`:'',missing.length?`${missing.join('·')}는 아직 웹 결과가 등록되지 않았습니다.`:'',!current.owned_urls.length?'공식 홈페이지·블로그 주소를 등록하면 자사 페이지 인용 여부도 구분할 수 있습니다.':'',current.keyword_source.stale?'광고 키워드 목록 갱신이 지연되어 이전 목록을 표시합니다.':''].filter(Boolean).join(' ');
   }
   function drawNaver(){
     const opened=new Set([...$('visibility-keywords').querySelectorAll('details[open] summary')].map(el=>el.textContent));
@@ -88,7 +109,7 @@
     if(!force&&(root.AeoMissions?.isEditing()||root.WebSearchResults?.isEditing()))return;
     const opened=new Set([...$('visibility-ai-grid').querySelectorAll('.visibility-ai-card')].filter(el=>el.querySelector(':scope > details[open]')).map(el=>el.querySelector('h3').textContent));
     const provider=current.providers.find(p=>p.id===$('visibility-provider').value);
-    $('visibility-ai-status').textContent=`${selectedName()||'전체 지점'} · ${provider.name} · ${provider.expected}개 질문 중 ${provider.checked}개 웹 확인 · ${provider.mentioned}개 답변에서 언급`;
+    $('visibility-ai-status').textContent=`${selectedName()||'전체 지점'} · ${provider.name} · ${collectionState(provider)}${provider.checked?` · ${provider.mentioned}개 답변에서 언급`:''}${provider.checked<provider.expected&&lastResult(provider)?' · '+lastResult(provider)+' (이전 결과 포함)':''}`;
     $('visibility-ai-grid').innerHTML=provider.items.map(item=>{
       const label=fresh(item)?(item.mentioned?'웹 답변에 언급':item.branch_unconfirmed?'브랜드 언급 · 지점 미확인':'이번 웹 답변에 미언급'):item.status==='error'?'웹 확인 불가':'웹 확인 대기';
       const citations=(item.citations||[]).filter(c=>safeUrl(c.url));
