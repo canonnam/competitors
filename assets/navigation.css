@@ -57,7 +57,7 @@
 .kb-result-count { margin-left:10px; color:var(--kb-nav-muted); font-size:14px; font-weight:400; }
 .kb-view-controls { display:flex; gap:4px; }
 .kb-homepage.kb-navigable .grid { margin-top:0; gap:12px; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; }
-.kb-homepage.kb-navigable .kb-feature-card { min-width:0; min-height:0; height:9.875rem; padding:15px 44px 15px 16px; position:relative; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; gap:6px; border-radius:10px; }
+.kb-homepage.kb-navigable .kb-feature-card { min-width:0; min-height:0; height:9.875rem; padding:13px 16px; position:relative; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; gap:4px; border-radius:10px; }
 .kb-homepage.kb-navigable .kb-feature-card h2 { display:flex; align-items:center; gap:7px; margin:0 0 5px; font-size:16px; line-height:1.5; }
 /* Override the legacy claim card's !important link padding so every title aligns. */
 .kb-homepage.kb-navigable .kb-feature-card .kb-feature-title { display:flex; align-items:center; min-width:0; padding:0!important; margin:0; color:#253654; font-size:inherit; line-height:inherit; font-weight:700; }
@@ -66,14 +66,14 @@
 .kb-card-content { min-width:0; }
 .kb-homepage.kb-navigable .kb-card-content>p { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:14px; line-height:1.65; color:#596777; }
 .kb-card-category { display:block; margin-top:5px; font-size:12px; line-height:1.5; color:#526394; }
-.kb-card-summary { min-width:0; font-size:13px; line-height:1.5; color:#586b7a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.kb-card-summary.is-warning { color:#96611b; }
-.kb-homepage.kb-navigable .kb-favorite-button { position:absolute; top:9px; right:6px; display:grid; place-items:center; width:36px; min-height:40px; padding:3px; border:0; border-radius:8px; background:transparent; color:#8793a4; cursor:pointer; }
+.kb-card-actions { position:relative; display:flex; align-items:center; justify-content:flex-end; min-width:0; min-height:26px; padding-right:44px; }
+.kb-card-summary { min-width:0; max-width:100%; padding:3px 8px; border-radius:6px; background:#eef2f6; text-align:right; font-size:13px; line-height:1.5; color:#586b7a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kb-card-summary.is-warning { background:#fff3df; color:#96611b; }
+.kb-homepage.kb-navigable .kb-favorite-button { position:absolute; top:50%; right:0; transform:translateY(-50%); display:grid; place-items:center; width:36px; min-height:40px; padding:3px; border:0; border-radius:8px; background:transparent; color:#8793a4; cursor:pointer; }
 .kb-homepage.kb-navigable .kb-favorite-button[aria-pressed=true] { background:#eef1fc; color:var(--kb-nav-blue); }
 .kb-homepage.kb-navigable .grid.kb-list-view { grid-template-columns:1fr; gap:7px; }
-.kb-homepage.kb-navigable .kb-list-view .kb-feature-card { height:6rem; display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,32%); gap:18px; padding:12px 54px 12px 16px; align-items:center; }
+.kb-homepage.kb-navigable .kb-list-view .kb-feature-card { height:6rem; display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,32%); gap:18px; padding:12px 16px; align-items:center; }
 .kb-homepage.kb-navigable .kb-list-view .kb-card-category { display:none; }
-.kb-homepage.kb-navigable .kb-list-view .kb-favorite-button { top:50%; transform:translateY(-50%); }
 .kb-mobile-menu { margin:12px 0 0; border:1px solid var(--kb-nav-line); border-radius:9px; background:#fff; }
 .kb-mobile-menu>summary { display:flex; align-items:center; gap:9px; padding:9px 12px; font-size:14px; cursor:pointer; list-style:none; }
 .kb-mobile-menu>summary::-webkit-details-marker { display:none; }
@@ -103,7 +103,7 @@
   .kb-homepage.kb-navigable>main { padding:22px 16px 80px; }
   .kb-homepage.kb-navigable .lead h1 { font-size:24px; }
   .kb-homepage.kb-navigable .grid { grid-template-columns:1fr; }
-  .kb-homepage.kb-navigable .kb-list-view .kb-feature-card { height:7rem; grid-template-columns:minmax(0,1fr); gap:4px; align-content:start; padding:16px 54px 16px 12px; }
+  .kb-homepage.kb-navigable .kb-list-view .kb-feature-card { height:7rem; grid-template-columns:minmax(0,1fr); grid-template-rows:1fr auto; gap:4px; align-items:start; padding:13px 16px 13px 12px; }
   .kb-homepage.kb-navigable .kb-list-view .kb-card-summary { font-size:12px; }
   .kb-homepage.kb-navigable .kb-list-view .kb-card-content>p { display:none; }
   .kb-shortcut-section { flex-wrap:wrap; }

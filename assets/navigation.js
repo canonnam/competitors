@@ -122,9 +122,6 @@
       syncNewsMarkers();
     }
     function openDialog() {if(dialog.open)return;dialogSearch.value='';dialogFilters.value='all';renderDialog();dialog.showModal();dialogSearch.focus();}
-    const open=button('기능 찾기','kb-search-trigger');open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-controls',dialog.id);open.addEventListener('click',openDialog);
-    open.append(newMark('all'));
-    const actions=header.querySelector('.kb-actions')||header.querySelector('nav')||header;actions.append(open);
     dialogSearch.addEventListener('input',renderDialog);dialogFilters.addEventListener('change',renderDialog);
     dialogSearch.addEventListener('keydown',event=>{if(event.key==='Enter'){const first=dialogResults.querySelector('a');if(first){event.preventDefault();first.click();}}if(event.key==='ArrowDown'){event.preventDefault();dialogResults.querySelector('a')?.focus();}});
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
@@ -134,9 +131,6 @@
     const cards=new Map();
     if(home) {
       grid=main.querySelector('.grid');
-      const lead=main.querySelector('.lead');
-      lead?.querySelector('.eyebrow')?.remove();
-      if(lead?.querySelector('p'))lead.querySelector('p').textContent='필요한 업무를 검색하거나 즐겨찾기에서 바로 시작하세요.';
       const tools=el('section','kb-home-tools');tools.setAttribute('aria-label','기능 탐색');
       const searchLabel=el('label','kb-search-label','기능 검색');searchLabel.htmlFor='kb-home-search';
       homeSearch=el('input','kb-search-input');homeSearch.id='kb-home-search';homeSearch.type='search';homeSearch.placeholder='급여, 손익, 네이버…';homeSearch.value=query;
@@ -168,7 +162,8 @@
         const originalMark=live.querySelector('.news-new-mark');if(originalMark){originalMark.classList.add('kb-new-mark');heading.append(originalMark);}
         const pin=button('','kb-favorite-button');pin.append(icon('favorites'));pin.dataset.kbPin=item.id;pin.addEventListener('click',()=>{preferences.toggle(item.id);render();status.textContent=item.title+(preferences.get().favorites.includes(item.id)?' 즐겨찾기에 추가했습니다.':' 즐겨찾기에서 해제했습니다.');if(!card.hidden)pin.focus();else homeSearch.focus();});
         const summary=el('div','kb-card-summary');summary.setAttribute('role','status');
-        card.append(content,summary,live,pin);
+        const actions=el('div','kb-card-actions');actions.append(summary,pin);
+        card.append(content,actions,live);
         function summarize(){
           const text=id=>doc.getElementById(id)?.textContent.trim().replace(/\s+/g,' ')||'';
           let value='';
