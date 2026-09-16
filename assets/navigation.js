@@ -41,22 +41,23 @@
     });
   }
   function createPreferences(storage) {
-    let state = {favorites:[], recent:[], view:'cards'};
+    let state = {favorites:[], view:'list'};
     function read() {
       try {
         const saved = JSON.parse(storage.getItem(key));
-        if (saved && typeof saved === 'object') state = {favorites:cleanIds(saved.favorites), recent:cleanIds(saved.recent).slice(0,3), view:saved.view === 'list' ? 'list' : 'cards'};
-        else state = {favorites:[], recent:[], view:'cards'};
+        if (saved && typeof saved === 'object') {
+          state = {favorites:cleanIds(saved.favorites), view:saved.layoutVersion===2&&saved.view==='cards'?'cards':'list'};
+          if(saved.layoutVersion!==2||'recent' in saved)save();
+        } else state = {favorites:[], view:'list'};
       } catch { /* Keep usable in-memory preferences when storage is blocked. */ }
     }
-    function save() { try { storage.setItem(key, JSON.stringify(state)); } catch { /* Device-local storage is optional. */ } }
+    function save() { try { storage.setItem(key, JSON.stringify({...state,layoutVersion:2})); } catch { /* Device-local storage is optional. */ } }
     read();
     return {
-      get:() => ({...state, favorites:[...state.favorites], recent:[...state.recent]}),
+      get:() => ({...state, favorites:[...state.favorites]}),
       reload:read,
       toggle(id) { if (!ids.has(id)) return; state.favorites = state.favorites.includes(id) ? state.favorites.filter(value => value !== id) : [...state.favorites,id]; save(); },
       move(id, delta) { const index=state.favorites.indexOf(id), next=index+delta; if (index<0 || next<0 || next>=state.favorites.length) return; [state.favorites[index],state.favorites[next]]=[state.favorites[next],state.favorites[index]]; save(); },
-      visit(id) { if (!ids.has(id)) return; state.recent=[id,...state.recent.filter(value=>value!==id)].slice(0,3); save(); },
       view(value) { state.view=value==='list'?'list':'cards'; save(); }
     };
   }
@@ -71,7 +72,6 @@
     const preferences=createPreferences(storage);
     const home=doc.body.classList.contains('kb-homepage');
     const current=features.find(item=>item.href===win.location.pathname);
-    if (current) preferences.visit(current.id);
     const params=new URLSearchParams(win.location.search);
     const allowedCategories=new Set(['all','favorites',...categories.map(item=>item.id)]);
     let category=allowedCategories.has(params.get('category'))?params.get('category'):'all';
@@ -80,6 +80,19 @@
     const el=(tag, className, text)=>{const node=doc.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
+    const icon=(id)=>{const image=el('img','kb-clay-icon');image.src='/assets/icons/clay/'+id+'.png';image.alt='';image.width=32;image.height=32;image.setAttribute('aria-hidden','true');return image;};
+    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch'};
+    let newsCounts=win.NewsBadge?.counts()||{};
+    function countFor(id){
+      const members=id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
+      return Object.entries(feedItems).reduce((sum,[feed,itemId])=>sum+(members.some(item=>item.id===itemId)?newsCounts[feed]||0:0),0);
+    }
+    function newMark(id){const mark=el('span','news-new-mark kb-new-mark','N');mark.dataset.kbUnread=id;mark.hidden=true;return mark;}
+    function syncNewsMarkers(counts=newsCounts){
+      newsCounts=counts;
+      doc.querySelectorAll('[data-kb-unread]').forEach(mark=>{const count=countFor(mark.dataset.kbUnread);mark.hidden=count===0;mark.setAttribute('aria-label','새 글 '+count+'건');mark.title='새 글 '+count+'건';});
+      dialogFilters.querySelectorAll('option').forEach(option=>{const group=[{id:'all',title:'전체 업무'},{id:'favorites',title:'즐겨찾기'},...categories].find(item=>item.id===option.value);option.textContent=group.title+(countFor(group.id)?' · N':'');});
+    }
     doc.body.classList.add('kb-navigable');
     main.id ||= 'kb-main-content';
     const skip=el('a','kb-skip','본문으로 건너뛰기');skip.href='#'+main.id;doc.body.prepend(skip);
@@ -104,18 +117,20 @@
     function renderDialog() {
       const matches=matchFeatures(dialogSearch.value,dialogFilters.value,preferences.get().favorites);
       dialogCount.textContent=matches.length+'개 기능';dialogResults.replaceChildren();
-      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.append(el('span','',item.description));dialogResults.append(row);});
+      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(icon(item.category),el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(newMark(item.id));dialogResults.append(row);});
       if(!matches.length)dialogResults.append(el('p','kb-empty','검색 결과가 없습니다. 다른 검색어나 업무를 선택해 주세요.'));
+      syncNewsMarkers();
     }
     function openDialog() {if(dialog.open)return;dialogSearch.value='';dialogFilters.value='all';renderDialog();dialog.showModal();dialogSearch.focus();}
     const open=button('기능 찾기','kb-search-trigger');open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-controls',dialog.id);open.addEventListener('click',openDialog);
+    open.append(newMark('all'));
     const actions=header.querySelector('.kb-actions')||header.querySelector('nav')||header;actions.append(open);
     dialogSearch.addEventListener('input',renderDialog);dialogFilters.addEventListener('change',renderDialog);
     dialogSearch.addEventListener('keydown',event=>{if(event.key==='Enter'){const first=dialogResults.querySelector('a');if(first){event.preventDefault();first.click();}}if(event.key==='ArrowDown'){event.preventDefault();dialogResults.querySelector('a')?.focus();}});
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
     doc.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&!doc.querySelector('dialog[open], .modal.open')){event.preventDefault();openDialog();}});
 
-    let homeSearch, homeFilter, favoriteRows, recentSection, recentRows, editButton, resultCount, resultTitle, empty, grid;
+    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, resultIcon, empty, grid;
     const cards=new Map();
     if(home) {
       grid=main.querySelector('.grid');
@@ -125,25 +140,24 @@
       const tools=el('section','kb-home-tools');tools.setAttribute('aria-label','기능 탐색');
       const searchLabel=el('label','kb-search-label','기능 검색');searchLabel.htmlFor='kb-home-search';
       homeSearch=el('input','kb-search-input');homeSearch.id='kb-home-search';homeSearch.type='search';homeSearch.placeholder='급여, 손익, 네이버…';homeSearch.value=query;
-      homeFilter=dialogFilters.cloneNode(true);homeFilter.classList.add('kb-mobile-filter');homeFilter.setAttribute('aria-label','업무별 기능 선택');homeFilter.value=category;
-      tools.append(searchLabel,homeSearch,homeFilter);
-      const favoritesSection=el('section','kb-shortcut-section');favoritesSection.setAttribute('aria-label','즐겨찾기');
-      const favoriteHead=el('div','kb-section-head');favoriteHead.append(el('h2','','즐겨찾기'));
+      mobileMenu=el('details','kb-mobile-menu');mobileSummary=el('summary');mobileNav=el('nav','kb-mobile-categories');mobileNav.setAttribute('aria-label','모바일 업무별 기능');mobileMenu.append(mobileSummary,mobileNav);
+      tools.append(searchLabel,homeSearch,mobileMenu);
+      favoritesSection=el('section','kb-shortcut-section');favoritesSection.setAttribute('aria-label','저장한 기능');
+      const favoriteHead=el('div','kb-section-head');
       editButton=button('순서 편집','kb-text-button');editButton.setAttribute('aria-pressed','false');editButton.addEventListener('click',()=>{editing=!editing;render();});favoriteHead.append(editButton);
-      favoriteRows=el('div','kb-shortcuts');favoritesSection.append(favoriteHead,favoriteRows,el('p','kb-preference-note','즐겨찾기와 최근 사용은 이 브라우저에 저장됩니다.'));
-      recentSection=el('section','kb-recent-section');recentSection.append(el('h2','','최근 사용'));recentRows=el('div','kb-shortcuts');recentSection.append(recentRows);
-      const toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultTitle,resultCount);
+      favoriteRows=el('div','kb-shortcuts');favoritesSection.append(favoriteRows,favoriteHead);
+      const toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultIcon=icon('all');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultIcon,resultTitle,resultCount);
       const views=el('div','kb-view-controls');views.setAttribute('aria-label','표시 방식');['cards','list'].forEach(view=>{const control=button(view==='cards'?'카드':'목록','kb-control');control.dataset.kbView=view;control.addEventListener('click',()=>{preferences.view(view);render();});views.append(control);});toolbar.append(heading,views);
-      grid.before(tools,favoritesSection,recentSection,toolbar);
+      grid.before(tools,favoritesSection,toolbar);
       empty=el('div','kb-empty');empty.hidden=true;const emptyText=el('p','', '검색 결과가 없습니다. 검색어나 선택한 업무를 확인해 주세요.');
       const reset=button('전체 기능 보기','kb-control');reset.addEventListener('click',()=>{category='all';query='';homeSearch.value='';updateHomeURL();render();homeSearch.focus();});empty.append(emptyText,reset);grid.after(empty);
       grid.querySelectorAll(':scope > article').forEach(card=>{
         const item=features.find(feature=>card.querySelector('a[href="'+feature.href+'"]'));
         if(!item)return;cards.set(item.id,card);card.classList.add('kb-feature-card');card.dataset.kbFeature=item.id;
-        const heading=card.querySelector('h2');heading.replaceChildren(link(item,'kb-feature-title'));
+        const heading=card.querySelector('h2'),titleLink=link(item,'kb-feature-title');titleLink.replaceChildren(icon(item.category),el('span','kb-feature-name',item.title));heading.replaceChildren(titleLink);
         const description=card.querySelector(':scope > p');if(description)description.textContent=item.description;
         const content=el('div','kb-card-content');content.append(heading);if(description)content.append(description);content.append(el('span','kb-card-category',categories.find(group=>group.id===item.category).title));
-        const live=el('div','kb-card-status');
+        const live=el('div','kb-card-status');live.hidden=true;
         // Move, never clone, live status nodes so existing collectors retain their IDs.
         [...card.children].forEach(node=>{
           if(node.classList.contains('icon')||node.tagName==='A')node.remove();
@@ -151,11 +165,26 @@
           else if(node.classList.contains('card-heading')){[...node.children].forEach(child=>live.append(child));node.remove();}
           else live.append(node);
         });
-        const pin=button('☆','kb-favorite-button');pin.dataset.kbPin=item.id;pin.addEventListener('click',()=>{preferences.toggle(item.id);render();status.textContent=item.title+(preferences.get().favorites.includes(item.id)?' 즐겨찾기에 추가했습니다.':' 즐겨찾기에서 해제했습니다.');if(!card.hidden)pin.focus();else homeSearch.focus();});
-        card.append(content,live,pin);
+        const originalMark=live.querySelector('.news-new-mark');if(originalMark){originalMark.classList.add('kb-new-mark');heading.append(originalMark);}
+        const pin=button('','kb-favorite-button');pin.append(icon('favorites'));pin.dataset.kbPin=item.id;pin.addEventListener('click',()=>{preferences.toggle(item.id);render();status.textContent=item.title+(preferences.get().favorites.includes(item.id)?' 즐겨찾기에 추가했습니다.':' 즐겨찾기에서 해제했습니다.');if(!card.hidden)pin.focus();else homeSearch.focus();});
+        const summary=el('div','kb-card-summary');summary.setAttribute('role','status');
+        card.append(content,summary,live,pin);
+        function summarize(){
+          const text=id=>doc.getElementById(id)?.textContent.trim().replace(/\s+/g,' ')||'';
+          let value='';
+          if(item.id==='claim-check')value=text('home-claim-status');
+          else if(item.id==='competitor-news')value=text('home-news-update').includes('확인 중')?'뉴스 갱신 중':text('home-news-badge');
+          else if(item.id==='agency-news')value=text('home-support-status').split(' · ')[0];
+          else if(item.id==='naver-ads')value=text('home-keyword-status');
+          else if(item.id==='search-visibility')value=/불가|실패|확인 필요/.test(text('home-visibility-status'))?'검색노출 확인 필요':text('home-visibility-next').replace(/\s*\(한국시간\)/,'');
+          else if(item.id==='reputation-watch'){const state=text('home-reputation-status');value=/찾지 못했습니다/.test(state)?'부정적 언급 후보 없음':state;}
+          summary.textContent=value;summary.title=value;summary.hidden=!value;
+          summary.classList.toggle('is-warning',/필요|실패|지연|불가/.test(value));
+        }
+        if(typeof win.MutationObserver==='function')new win.MutationObserver(summarize).observe(live,{subtree:true,childList:true,characterData:true});
+        summarize();
       });
       homeSearch.addEventListener('input',()=>{query=homeSearch.value;updateHomeURL();renderCards();});
-      homeFilter.addEventListener('change',()=>{category=homeFilter.value;updateHomeURL();render();});
     }
     function updateHomeURL() {
       const url=new URL(win.location.href);
@@ -167,39 +196,54 @@
       const focused=doc.activeElement?.dataset.kbCategory;
       nav.replaceChildren();
       if(home) {
+        mobileNav.replaceChildren();
         [{id:'all',title:'전체 기능'},{id:'favorites',title:'즐겨찾기'},...categories].forEach(group=>{
-          const control=button(group.title,'kb-category-button');control.dataset.kbCategory=group.id;control.setAttribute('aria-pressed',String(category===group.id));
-          control.append(el('span','',String(matchFeatures('',group.id,preferences.get().favorites).length)));
-          control.addEventListener('click',()=>{category=group.id;updateHomeURL();render();});nav.append(control);
+          [nav,mobileNav].forEach(target=>{
+            const control=button('','kb-category-button');control.dataset.kbCategory=group.id;control.setAttribute('aria-pressed',String(category===group.id));
+            control.append(icon(group.id),el('span','kb-category-label',group.title),newMark(group.id),el('span','kb-category-count',String(matchFeatures('',group.id,preferences.get().favorites).length)));
+            control.addEventListener('click',()=>{category=group.id;updateHomeURL();mobileMenu.open=false;render();if(target===mobileNav)mobileSummary.focus();});target.append(control);
+          });
+          if(category===group.id){mobileSummary.replaceChildren(icon(group.id),el('span','kb-category-label',group.title),newMark('all'),el('span','kb-menu-chevron','⌄'));}
         });
         if(focused)nav.querySelector('[data-kb-category="'+focused+'"]')?.focus();
       } else {
         const pinned=preferences.get().favorites;
-        if(pinned.length){const group=el('div','kb-nav-group');group.append(el('p','','즐겨찾기'));pinned.forEach(id=>group.append(link(features.find(item=>item.id===id),'kb-nav-link')));nav.append(group);}
-        categories.forEach(category=>{const group=el('details','kb-nav-group');group.open=current?.category===category.id||(!current&&category.id==='operations');group.append(el('summary','',category.title));features.filter(item=>item.category===category.id).forEach(item=>group.append(link(item,'kb-nav-link')));nav.append(group);});
+        const navLink=item=>{const anchor=link(item,'kb-nav-link');anchor.append(newMark(item.id));return anchor;};
+        if(pinned.length){const group=el('div','kb-nav-group'),title=el('p');title.append(icon('favorites'),el('span','','즐겨찾기'),newMark('favorites'));group.append(title);pinned.forEach(id=>group.append(navLink(features.find(item=>item.id===id))));nav.append(group);}
+        categories.forEach(category=>{const group=el('details','kb-nav-group');group.open=current?.category===category.id||(!current&&category.id==='operations');const summary=el('summary');summary.append(icon(category.id),el('span','kb-category-label',category.title),newMark(category.id));group.append(summary);features.filter(item=>item.category===category.id).forEach(item=>group.append(navLink(item)));nav.append(group);});
       }
     }
     function renderCards() {
       if(!home)return;
       const saved=preferences.get();const matches=matchFeatures(query,category,saved.favorites);const matching=new Set(matches.map(item=>item.id));
-      cards.forEach((card,id)=>{card.hidden=!matching.has(id);const pin=card.querySelector('[data-kb-pin]');const item=features.find(item=>item.id===id);const active=saved.favorites.includes(id);pin.textContent=active?'★':'☆';pin.setAttribute('aria-pressed',String(active));pin.setAttribute('aria-label',item.title+' 즐겨찾기 '+(active?'해제':'추가'));});
+      cards.forEach((card,id)=>{card.hidden=!matching.has(id);const pin=card.querySelector('[data-kb-pin]');const item=features.find(item=>item.id===id);const active=saved.favorites.includes(id);pin.setAttribute('aria-pressed',String(active));pin.setAttribute('aria-label',item.title+' 즐겨찾기 '+(active?'해제':'추가'));});
       grid.classList.toggle('kb-list-view',saved.view==='list');
       resultTitle.textContent=category==='all'?'전체 기능':category==='favorites'?'즐겨찾기':categories.find(group=>group.id===category).title;
-      resultCount.textContent=matches.length+'개';empty.hidden=matches.length>0;homeFilter.value=category;
+      resultIcon.src='/assets/icons/clay/'+category+'.png';
+      resultCount.textContent=matches.length+'개';empty.hidden=matches.length>0;
       doc.querySelectorAll('[data-kb-view]').forEach(control=>control.setAttribute('aria-pressed',String(control.dataset.kbView===saved.view)));
     }
     function renderShortcuts() {
       if(!home)return;
       const saved=preferences.get();favoriteRows.replaceChildren();
+      favoritesSection.hidden=!saved.favorites.length;
       editButton.hidden=saved.favorites.length<2;editButton.textContent=editing?'편집 완료':'순서 편집';editButton.setAttribute('aria-pressed',String(editing));
-      if(!saved.favorites.length)favoriteRows.append(el('p','kb-empty-favorites','카드의 ☆를 누르면 자주 쓰는 기능이 여기에 모입니다.'));
       saved.favorites.forEach((id,index)=>{const item=features.find(item=>item.id===id);const row=el('div','kb-shortcut');row.append(link(item,''));if(editing){[-1,1].forEach(delta=>{const control=button(delta<0?'←':'→','kb-reorder');control.disabled=delta<0?index===0:index===saved.favorites.length-1;control.setAttribute('aria-label',item.title+(delta<0?' 앞으로 이동':' 뒤로 이동'));control.addEventListener('click',()=>{preferences.move(id,delta);render();editButton.focus();status.textContent=item.title+' 순서를 변경했습니다.';});row.append(control);});}favoriteRows.append(row);});
-      recentSection.hidden=!saved.recent.length;recentRows.replaceChildren();saved.recent.forEach(id=>recentRows.append(link(features.find(item=>item.id===id),'kb-recent-link')));
     }
-    function render(){renderNav();renderCards();renderShortcuts();if(dialog.open)renderDialog();}
+    function render(){renderNav();renderCards();renderShortcuts();if(dialog.open)renderDialog();syncNewsMarkers();}
     win.addEventListener('storage',event=>{if(event.key===key||event.key===null){preferences.reload();render();}});
     win.addEventListener('pageshow',()=>{preferences.reload();render();});
     render();
+    win.NewsBadge?.subscribe(syncNewsMarkers);
+    // Home collectors already fetch these feeds. On other pages load only missing summaries,
+    // without acknowledging them as read; the actual feed page owns acknowledgement.
+    if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
+      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch']].filter(([,id])=>current?.id!==id);
+      const trackers=feeds.map(([feed,id])=>({id,tracker:win.NewsBadge.create(feed,{detail:false})}));
+      let loading=false;
+      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({id,tracker})=>{const response=await win.fetch('/api/'+id+'?summary=1',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(response.ok)tracker.update((await response.json()).article_ids);}));}finally{loading=false;}};
+      refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
+    }
   }
   return {features,categories,matchFeatures,createPreferences,mount};
 });

@@ -22,7 +22,7 @@
       const deadline = `${Number(data.deadline.slice(5,7))}월 ${Number(data.deadline.slice(8))}일`;
       if (home) {
         document.getElementById('home-claim-period').textContent = `${monthText(data.benefitMonth)} 급여 · ${deadline} 마감`;
-        home.innerHTML = data.branches.map(b => `<div class="claim-home-row"><strong>${escape(b.name)}</strong><span>${b.verifiedItems}/3 항목 · ${badge(b)}</span></div>`).join('');
+        home.textContent = data.allAccepted ? '안양·인천 접수 완료' : data.branches.map(b => `${b.name.replace(/점$/, '')} ${b.status==='accepted'?'접수 완료':'점검 필요'}`).join(' · ');
         const times = data.branches.map(b=>b.checkedAt).filter(Boolean).sort();
         document.getElementById('home-claim-time').textContent = times.length === 2 ? `${dateText(times[0])} 조회 기준` : '지점별 확인 기록을 확인해주세요.';
       }

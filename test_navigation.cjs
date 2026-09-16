@@ -20,24 +20,30 @@ test('aliases, Korean spacing and case insensitive multiword searches identify t
   assert.equal(matchFeatures('월급','favorites',['payroll'])[0].id,'payroll');
   assert.deepEqual(matchFeatures('<script>alert(1)</script>'),[]);
 });
-test('favorites keep chosen order after reload and recent history is limited to three unique destinations',()=>{
+test('favorites keep chosen order after reload, with list as the initial view',()=>{
   const saved=memory(),first=createPreferences(saved);
+  assert.equal(first.get().view,'list');
   first.toggle('payroll');first.toggle('naver-ads');first.toggle('statistics');first.move('statistics',-1);first.view('list');
-  for(const id of ['payroll','naver-ads','statistics','payroll','operating-costs'])first.visit(id);
   const next=createPreferences(saved);
-  assert.deepEqual(next.get(),{favorites:['payroll','statistics','naver-ads'],recent:['operating-costs','payroll','statistics'],view:'list'});
+  assert.deepEqual(next.get(),{favorites:['payroll','statistics','naver-ads'],view:'list'});
   next.toggle('statistics');assert.deepEqual(next.get().favorites,['payroll','naver-ads']);
-  next.move('payroll',-1);next.move('naver-ads',1);next.toggle('not-a-feature');next.visit('not-a-feature');
+  next.move('payroll',-1);next.move('naver-ads',1);next.toggle('not-a-feature');
   assert.deepEqual(next.get().favorites,['payroll','naver-ads']);
+  next.view('cards');assert.equal(createPreferences(saved).get().view,'cards');
+});
+test('the previous card preference migrates to list without losing favorites or retaining recent use',()=>{
+  const saved=memory();saved.setItem('vida-navigation-v1',JSON.stringify({favorites:['payroll'],recent:['statistics'],view:'cards'}));
+  const preferences=createPreferences(saved);assert.deepEqual(preferences.get(),{favorites:['payroll'],view:'list'});
+  assert.deepEqual(JSON.parse(saved.getItem('vida-navigation-v1')),{favorites:['payroll'],view:'list',layoutVersion:2});
 });
 test('storage corruption, obsolete IDs and unavailable storage do not break navigation',()=>{
   for(const raw of ['broken','null','[]','42','{"favorites":["payroll","payroll","removed"],"recent":"wrong","view":"unknown"}']) {
     const state=createPreferences({getItem:()=>raw,setItem(){}}).get();
-    assert.equal(state.view,'cards');assert.deepEqual(state.recent,[]);assert.ok(state.favorites.length<=1);
+    assert.equal(state.view,'list');assert.ok(!('recent' in state));assert.ok(state.favorites.length<=1);
   }
   const blocked=createPreferences({getItem(){throw Error('blocked');},setItem(){throw Error('full');}});
-  blocked.toggle('payroll');blocked.view('list');blocked.visit('statistics');
-  assert.deepEqual(blocked.get(),{favorites:['payroll'],recent:['statistics'],view:'list'});
+  blocked.toggle('payroll');blocked.view('list');
+  assert.deepEqual(blocked.get(),{favorites:['payroll'],view:'list'});
   const noStorage=createPreferences(null);noStorage.toggle('payroll');assert.deepEqual(noStorage.get().favorites,['payroll']);
 });
 test('every internal page loads shared navigation; external share links stay scoped',()=>{

@@ -37,3 +37,19 @@ test('only a successfully displayed visible detail page acknowledges a collectio
   home.update(['a','b']);assert.equal(badge.hidden,false);
   detail.update(['a','b']);listeners.pageshow.forEach(fn=>fn());assert.equal(badge.hidden,true);
 });
+
+test('shared menu counts survive navigation and clear only the feed successfully read',()=>{
+  const saved=storage(),listeners={},context={localStorage:saved,document:{hidden:false},addEventListener(name,fn){(listeners[name]??=[]).push(fn);}};
+  vm.runInNewContext(fs.readFileSync('assets/news-badge.js','utf8'),context);
+  let latest;context.NewsBadge.subscribe(counts=>{latest=counts;});
+  context.NewsBadge.create('competitor',{}).update(['news-a','news-b']);
+  context.NewsBadge.create('agency',{}).update(['agency-a']);
+  assert.equal(latest.competitor,2);assert.equal(latest.agency,1);
+  const next={localStorage:saved,document:{hidden:false},addEventListener(){}};
+  vm.runInNewContext(fs.readFileSync('assets/news-badge.js','utf8'),next);
+  assert.equal(next.NewsBadge.counts().competitor,2);
+  next.NewsBadge.create('competitor',{detail:true}).update(['news-a','news-b']);
+  assert.equal(next.NewsBadge.counts().competitor,0);assert.equal(next.NewsBadge.counts().agency,1);
+  listeners.storage.forEach(fn=>fn({key:'vida-news-seen-v1:competitor'}));
+  assert.equal(latest.competitor,0);assert.equal(latest.agency,1);
+});
