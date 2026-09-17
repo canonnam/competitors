@@ -91,8 +91,25 @@
     color: var(--ui-primary);
   }
   body.kb-navigable :is(.kb-category-button,.kb-nav-link,.kb-nav-group>summary) { min-height: 44px; box-sizing: border-box; }
-  body.kb-navigable .kb-actions { gap: 12px; }
+  body.kb-navigable .kb-header-inner { flex-wrap: wrap; }
+  body.kb-navigable .kb-actions { gap: 12px; min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
   body.kb-navigable .kb-actions>a { color: var(--ui-muted); font-size: 14px; font-weight: 600; text-decoration: none; }
+  body.kb-navigable .kb-site-links { display: flex; align-items: center; gap: 4px; }
+  body.kb-navigable .kb-actions .kb-site-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    min-height: var(--ui-control-height);
+    padding: 8px;
+    border-radius: var(--ui-control-radius);
+    color: var(--ui-muted);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    white-space: nowrap;
+  }
   body.kb-navigable .kb-header .kb-brand { color: var(--ui-text); }
 
   /* Compact explanations keep long guidance out of the main reading flow. */
@@ -177,6 +194,7 @@
 }
 
 @media screen and (hover:hover) {
+  body.kb-navigable .kb-actions .kb-site-link:hover { background: var(--ui-hover); color: var(--ui-text); }
   body.kb-navigable :is(.ui-button,.kb-actions>button,.kb-control,.secondary-button,button.secondary,
     .reset-button,.news-more,.agency-more,.claim-toolbar button,.visibility-run button,
     .support-actions button,.support-interest-button,.sp-upload,.knowledge-login-row button,
