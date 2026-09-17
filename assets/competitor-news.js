@@ -28,6 +28,40 @@
   const $ = id => document.getElementById(id);
   const home = $('home-news-meta'), timeline = $('news-timeline');
   if (!home && !timeline) return;
+  const rulesButton = $('news-rules-button'), rulesTooltip = $('news-rules-tooltip');
+  if (rulesButton && rulesTooltip) {
+    let pinned = false, hideTimer;
+    const hideRules = () => {
+      clearTimeout(hideTimer); pinned = false;
+      rulesTooltip.hidden = true; rulesButton.setAttribute('aria-expanded', 'false');
+    };
+    const showRules = () => {
+      clearTimeout(hideTimer); rulesTooltip.hidden = false;
+      rulesButton.setAttribute('aria-expanded', 'true');
+      const anchor = rulesButton.getBoundingClientRect(), panel = rulesTooltip.getBoundingClientRect();
+      const width = document.documentElement.clientWidth, height = window.innerHeight;
+      rulesTooltip.style.left = Math.max(12, Math.min(anchor.left, width - panel.width - 12)) + 'px';
+      const top = anchor.bottom + 8 + panel.height <= height - 12 ? anchor.bottom + 8 : anchor.top - panel.height - 8;
+      rulesTooltip.style.top = Math.max(12, Math.min(top, height - panel.height - 12)) + 'px';
+    };
+    const leaveRules = () => {
+      clearTimeout(hideTimer);
+      if (!pinned) hideTimer = setTimeout(hideRules, 180);
+    };
+    rulesButton.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') showRules(); });
+    rulesButton.addEventListener('pointerleave', leaveRules);
+    rulesButton.addEventListener('focus', showRules);
+    rulesButton.addEventListener('blur', hideRules);
+    rulesButton.addEventListener('click', () => { if (pinned) hideRules(); else { pinned = true; showRules(); } });
+    rulesTooltip.addEventListener('pointerenter', () => clearTimeout(hideTimer));
+    rulesTooltip.addEventListener('pointerleave', leaveRules);
+    document.addEventListener('pointerdown', event => {
+      if (!rulesButton.contains(event.target) && !rulesTooltip.contains(event.target)) hideRules();
+    });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') hideRules(); });
+    window.addEventListener('resize', hideRules);
+    window.addEventListener('scroll', event => { if (!rulesTooltip.contains(event.target)) hideRules(); }, true);
+  }
   const newMark=root.NewsBadge?.create('competitor',{badge:$('home-news-new'),detail:!!timeline});
   const date = value => value ? new Date(value).toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) : '확인 중';
   const collected = value => value ? new Date(value).toLocaleString('ko-KR', {

@@ -95,6 +95,41 @@
   body.kb-navigable .kb-actions>a { color: var(--ui-muted); font-size: 14px; font-weight: 600; text-decoration: none; }
   body.kb-navigable .kb-header .kb-brand { color: var(--ui-text); }
 
+  /* Compact explanations keep long guidance out of the main reading flow. */
+  body.kb-navigable .ui-button.ui-info-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: var(--ui-control-height);
+    padding: 8px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--ui-muted);
+  }
+  body.kb-navigable .ui-info-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  body.kb-navigable .ui-tooltip {
+    box-sizing: border-box;
+    position: fixed;
+    z-index: 1200;
+    width: min(480px, calc(100% - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-card-radius);
+    background: var(--ui-surface);
+    color: var(--ui-muted);
+    box-shadow: 0 8px 28px #202b3624;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+  body.kb-navigable .ui-tooltip[hidden] { display: none; }
+  body.kb-navigable .ui-tooltip p { margin: 8px 0 0; font-size: inherit; line-height: inherit; }
+  body.kb-navigable .ui-tooltip :is(strong,b) { color: var(--ui-text); }
+
   /* Search and chat composers keep their deliberately different geometry. */
   body.kb-navigable :is(input,select,textarea):not(.kb-search-input):where(:not([type="hidden"],[type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="submit"],[type="button"],.wiki-panel *)) {
     box-sizing: border-box;
