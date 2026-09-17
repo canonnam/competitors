@@ -15,20 +15,24 @@
     } catch { return ''; }
   }
   function unreadSupport(data, readIds) {
-    return (data.support?.items || []).filter(item=>item.active && item.preference!=='not_interested' && !readIds.has(item.id));
+    return (data.support?.items || []).filter(item=>item.active && item.preference!=='not_interested' && !item.preference_excluded && !readIds.has(item.id));
+  }
+  function isRecommended(item) {
+    return item.application_status.active && item.preference!=='not_interested' && !item.preference_excluded && !item.recommendation_pending;
   }
   function filterItems(items, {source='', query='', onlyUnread=false, activeOnly=true, preference='recommended', readIds=new Set()}={}) {
     query=query.trim().toLocaleLowerCase();
     return items.filter(item=>{
       const support=item.kind==='support';
       return (!source || item.source_id===source || (source==='public-news'&&!support))
-        && (preference==='all' || (preference==='recommended' ? (!support||item.preference!=='not_interested') : (support&&item.preference===preference)))
-        && (!onlyUnread || (support&&item.application_status.active&&!readIds.has(item.id)))
+        && (preference==='all' || (preference==='recommended' ? (!support||(item.preference!=='not_interested'&&!item.preference_excluded&&!item.recommendation_pending))
+          : preference==='excluded' ? (support&&item.preference==='neutral'&&item.preference_excluded) : (support&&item.preference===preference)))
+        && (!onlyUnread || (support&&isRecommended(item)&&!readIds.has(item.id)))
         && (!activeOnly || !support || item.application_status.active)
-        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[]),item.research_focus?.label||'',item.research_focus?.reason||'',item.preference_feedback?.reason||''].join(' ').toLocaleLowerCase().includes(query));
+        && (!query || [item.title,...item.topics,item.department,item.target||'',...(item.reasons||[]),...(item.preference_exclusion_reasons||[]),item.research_focus?.label||'',item.research_focus?.reason||'',item.preference_feedback?.reason||''].join(' ').toLocaleLowerCase().includes(query));
     });
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = {status,safeUrl,unreadSupport,filterItems};
+  if (typeof module !== 'undefined' && module.exports) module.exports = {status,safeUrl,unreadSupport,filterItems,isRecommended};
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id), home = $('home-agency-meta'), list = $('agency-list');
   if (!home && !list) return;
@@ -100,7 +104,7 @@
       }
       $('agency-sources').replaceChildren(fragment);
       $('support-alert-count').textContent=supportPending ? (supportDelayed?'지원사업 수집 지연':'지원사업 첫 수집 중') : (unread ? `새 지원사업 ${unread}건` : '새로 확인할 지원사업이 없습니다');
-      $('support-alert-detail').textContent=(supportDelayed ? '수집 지연 · 기존 후보와 원문을 확인해주세요. ' : '')+`접수기간이 지나지 않은 후보 ${data.support?.active||0}건 · 신청 자격은 원문 조건 확인 필요`;
+      $('support-alert-detail').textContent=(supportDelayed ? '수집 지연 · 기존 후보와 원문을 확인해주세요. ' : '')+`접수기간이 지나지 않은 추천 ${data.support?.active||0}건 · 관심 기준 제외 ${data.support?.preference_excluded||0}건 · 신청 자격은 원문 조건 확인 필요`;
       if($('support-compact-new')) {
         $('support-compact-new').textContent=supportPending?(supportDelayed?'수집 지연':'확인 중'):`새 공고 ${unread}건`;
         $('support-compact-new').classList.toggle('has-new',unread>0);
@@ -127,7 +131,8 @@
         article.classList.add('support-item');
         meta.append(make('span','support-match',item.recommendation));
         if(item.research_focus?.label)meta.append(make('span','support-research-match',item.research_focus.label));
-        if(item.application_status.active&&item.preference!=='not_interested'&&!readIds.has(item.id))meta.append(make('span','support-new','새 공고'));
+        if(item.preference_excluded&&item.preference==='neutral')meta.append(make('span','ui-status','관심 기준 제외'));
+        if(isRecommended(item)&&!readIds.has(item.id))meta.append(make('span','support-new','새 공고'));
       }
       article.append(meta,make('h2','',item.title));
       const tags=make('div','agency-tags');item.topics.forEach(topic=>tags.append(make('span','',topic)));
@@ -209,10 +214,14 @@
       saved=true;
       // Keep the acknowledged choice visible even if the subsequent report refresh fails.
       const item=current.items.find(item=>item.id===id);item.preference=preference;item.preference_reasons=[];item.preference_feedback=result.feedback||{reason,summary:''};
+      if(preference==='interested'){item.preference_excluded=false;item.preference_exclusion_reasons=[];}
+      // Without a refreshed report, a cancelled override may be subject to other
+      // saved exclusions again. Do not generate a new alert from stale inference.
+      item.recommendation_pending=preference==='neutral';
       const summaryItem=current.support.items.find(item=>item.id===id);
-      summaryItem.preference=preference;summaryItem.active=item.application_status.active&&preference!=='not_interested';
+      summaryItem.preference=preference;summaryItem.preference_excluded=item.preference_excluded;summaryItem.active=isRecommended(item);
       current.support.active=current.support.items.filter(item=>item.active).length;
-      current.article_ids=current.items.filter(item=>item.kind!=='support'||(item.application_status.active&&item.preference!=='not_interested')).map(item=>item.id);
+      current.article_ids=current.items.filter(item=>item.kind!=='support'||isRecommended(item)).map(item=>item.id);
       render(await loadReport());
       const effect=result.feedback?.summary||'추천에 반영했습니다.';
       message.textContent=preference==='neutral'?'관심 선택을 취소하고 추천에 반영했습니다.':preference==='interested'
@@ -273,7 +282,7 @@
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape')hideInfoTooltip();});
   window.addEventListener('scroll',hideInfoTooltip,{capture:true,passive:true});window.addEventListener('resize',hideInfoTooltip);
-  ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested'].includes($(id).value))$('agency-filter').value='bizinfo';drawList();}));
+  ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested','excluded'].includes($(id).value))$('agency-filter').value='bizinfo';drawList();}));
   $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();showSupportList();});
   $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='all';$('agency-search').value='';drawList();showSupportList();});
   $('support-mark-read')?.addEventListener('click',()=>{

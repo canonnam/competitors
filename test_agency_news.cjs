@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const {status,safeUrl,unreadSupport,filterItems}=require('./assets/agency-news.js');
+const {status,safeUrl,unreadSupport,filterItems,isRecommended}=require('./assets/agency-news.js');
 
 test('the public agency card follows competitor news and precedes AI Hub',()=>{
   const home=fs.readFileSync('index.html','utf8');
@@ -9,7 +9,7 @@ test('the public agency card follows competitor news and precedes AI Hub',()=>{
   const start=titles.indexOf('경쟁사 분석');
   assert.ok(start>=0);
   assert.deepEqual(titles.slice(start,start+4),['경쟁사 분석','경쟁사 및 요양원 뉴스','건보공단·복지부 뉴스·지원사업','AI 허브 활용데이터']);
-  assert.equal(titles.length,12);
+  assert.equal(titles.filter(title=>title==='건보공단·복지부 뉴스·지원사업').length,1);
   assert.ok(!fs.readFileSync('assets/site.css','utf8').includes('.card .icon{background:'));
 });
 
@@ -55,4 +55,22 @@ test('interest filters hide disliked support by default and allow restoring ever
   assert.deepEqual(ids({preference:'interested',activeOnly:false}),['yes','expired']);
   assert.deepEqual(ids({source:'public-news'}),['news']);
   assert.deepEqual(unreadSupport({support:{items:[{id:'yes',active:true},{id:'no',active:true,preference:'not_interested'}]}},new Set()).map(item=>item.id),['yes']);
+});
+
+test('company preference exclusions are consistent across default, all, excluded and unread views',()=>{
+  const base={kind:'support',source_id:'bizinfo',title:'지원사업',topics:[],application_status:{active:true},preference:'neutral'};
+  const excluded={...base,id:'excluded',preference_excluded:true,preference_exclusion_reasons:['농업·농식품 분야']};
+  const items=[{...base,id:'new'},excluded,{...base,id:'selected',preference:'interested',preference_excluded:false},
+    {...excluded,id:'disliked',preference:'not_interested'},{id:'news',title:'뉴스',topics:[]}];
+  const ids=options=>filterItems(items,options).map(i=>i.id);
+  assert.deepEqual(ids({}),['new','selected','news']);
+  assert.deepEqual(ids({preference:'excluded'}),['excluded']);
+  assert.deepEqual(ids({preference:'excluded',query:'농업'}),['excluded']);
+  assert.deepEqual(ids({preference:'all'}),['new','excluded','selected','disliked','news']);
+  assert.deepEqual(ids({preference:'all',onlyUnread:true}),['new','selected']);
+  assert.deepEqual(unreadSupport({support:{items:[{id:'excluded',active:true,preference_excluded:true},{id:'selected',active:true}]}},new Set()).map(i=>i.id),['selected']);
+  const pending={...base,id:'undo',recommendation_pending:true};
+  assert.equal(isRecommended(pending),false);
+  assert.deepEqual(filterItems([pending]),[]);
+  assert.deepEqual(filterItems([pending],{preference:'all'}),[pending]);
 });

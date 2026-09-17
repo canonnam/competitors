@@ -359,6 +359,10 @@ def apply_preferences(items, preferences):
     topic_weights = {}
     feedback = {identity: support_feedback.analyze_reason(saved.get('reason', ''))
                 for identity, saved in preferences.items() if saved['preference'] == 'not_interested'}
+    # A shared company criterion counts once, regardless of how many announcements
+    # were rejected for the same reason. Rebuild on every read so undo is immediate.
+    unique_rules = {(rule['mode'], rule['feature']): rule
+                    for reason in feedback.values() for rule in reason['rules']}
     current = {item['id']: item for item in items}
     for identity, saved in preferences.items():
         # Specific reasons replace broad negative topic votes. A scheduling issue
@@ -373,8 +377,15 @@ def apply_preferences(items, preferences):
         preference = preferences.get(item['id'], {}).get('preference', 'neutral')
         topics = set(item.get('topics', []))
         adjustment = round(max(-40, min(40, 12 * sum(topic_weights.get(t, 0) for t in topics))), 2)
-        matching = [support_feedback.matched_rules(item, reason) for reason in feedback.values()]
-        reason_adjustment = -min(60, 24 * sum(bool(rules) for rules in matching))
+        matching = support_feedback.matched_rules(item, {'rules': list(unique_rules.values())})
+        excluded_by = support_feedback.exclusion_rules(item, matching)
+        # An explicit positive selection overrides inferred company preferences,
+        # but never expiry, withdrawal or the collector's company eligibility.
+        if preference == 'interested':
+            adjustment = max(0, adjustment)
+            matching = []
+            excluded_by = []
+        reason_adjustment = -min(60, 24 * len(matching))
         explanation = []
         if preference == 'interested':
             explanation.append('관심있음으로 선택한 사업을 우선 추천합니다.')
@@ -386,16 +397,26 @@ def apply_preferences(items, preferences):
             explanation.append('관심 선택을 반영해 비슷한 분야의 추천 순위를 낮췄습니다.')
         if reason_adjustment:
             criteria = list(dict.fromkeys(rule['label'] + (' 관련성 미확인' if rule['mode'] == 'require' else '')
-                                        for rules in matching for rule in rules))
-            explanation.append('관심없음 이유 반영 · ' + ', '.join(criteria) + ' 조건 때문에 추천 순위를 낮췄습니다.')
+                                        for rule in matching))
+            action = '기본 추천과 새 공고 알림에서 제외했습니다. 전체 목록에서 관심있음으로 선택하면 다시 추천합니다.' if excluded_by else '추천 순위를 낮췄습니다.'
+            explanation.append('관심없음 이유 반영 · ' + ', '.join(criteria) + ' 조건 때문에 ' + action)
         priority = research_focus(item)
         item.update(preference=preference, preference_score=adjustment+reason_adjustment,
                     reason_preference_score=reason_adjustment,
+                    preference_excluded=bool(excluded_by),
+                    preference_exclusion_reasons=[rule['label'] + (' 관련성 미확인' if rule['mode'] == 'require' else '') for rule in excluded_by],
                     preference_feedback=feedback.get(item['id'], support_feedback.analyze_reason('')), research_focus=priority,
                     recommendation_score=item.get('score', 0)+adjustment+reason_adjustment+priority['score'], preference_reasons=explanation)
+        item['recommended'] = is_recommended(item)
     items.sort(key=lambda item: (item['application_status']['active'],
         {'interested': 1, 'neutral': 0, 'not_interested': -1}[item['preference']],
+        not item['preference_excluded'],
         item['recommendation_score'], item['published_at'], item['id']), reverse=True)
+
+
+def is_recommended(item):
+    return bool(item['application_status']['active'] and not item.get('withdrawn')
+                and item.get('preference') != 'not_interested' and not item.get('preference_excluded'))
 
 
 def collect(source, seen, now, fetcher, stop=None, review=False, archive=()):

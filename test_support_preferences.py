@@ -154,10 +154,68 @@ class SupportPreferenceTests(unittest.TestCase):
         items = deepcopy(self.supports())
         preferences = {str(i): {'preference': 'not_interested', 'topics': '["돌봄"]', 'reason': '시니어 케어와 관련된 사업만 원합니다.'} for i in range(20)}
         biz.apply_preferences(items, preferences)
-        self.assertTrue(all(row['reason_preference_score']==-60 for row in items))
+        self.assertTrue(all(row['reason_preference_score']==-24 for row in items))
         first = deepcopy(items)
         biz.apply_preferences(items, preferences)
         self.assertEqual(items, first)
+
+    def test_unique_rules_remain_bounded_and_explicit_interest_overrides_them(self):
+        items = deepcopy(self.supports())
+        prefs = {str(i): {'preference': 'not_interested', 'topics': '["돌봄"]', 'reason': reason}
+                 for i, reason in enumerate(['시니어 케어와 관련된 사업만 원합니다.', 'AI 과제만 원합니다.',
+                                            '연구과제만 원합니다.', '실증 과제만 원합니다.'])}
+        for item in items:
+            item.update(title='일반 기업 행사', target='국내 기업', benefit='행사 참가비')
+        biz.apply_preferences(items, prefs)
+        self.assertTrue(all(i['reason_preference_score']==-60 and i['preference_excluded'] for i in items))
+        prefs[items[0]['id']] = {'preference': 'interested', 'topics': '["돌봄"]', 'reason': ''}
+        biz.apply_preferences(items, prefs)
+        self.assertEqual(items[0]['reason_preference_score'], 0)
+        self.assertGreaterEqual(items[0]['preference_score'], 0)
+        self.assertFalse(items[0]['preference_excluded'])
+        self.assertTrue(items[0]['recommended'])
+
+    def test_sector_exclusion_flows_through_crawl_report_alerts_and_undo(self):
+        self.choose('not_interested', reason='농업 분야는 관심 없습니다.')
+        # A new matching announcement is collected and retained, but cannot become
+        # a recommendation/alert. Unrelated research remains discoverable.
+        news.sync(self.path, NOW, lambda url: listing([1, 2, 3, 4]) if 'View.do' in url
+                  else detail_html(detail(title='농업 AI 기술개발 지원', target='농업 기업')), [SOURCE])
+        rows = {i['id']: i for i in self.supports()}
+        self.assertIn('bizinfo:PBLN_4', rows)
+        self.assertTrue(rows['bizinfo:PBLN_4']['application_status']['active'])
+        self.assertTrue(rows['bizinfo:PBLN_4']['preference_excluded'])
+        self.assertNotIn('bizinfo:PBLN_4', self.report()['article_ids'])
+        self.assertIn('bizinfo:PBLN_2', self.report()['article_ids'])
+        self.assertEqual(news.report(self.path, NOW, summary=True)['support'], self.report()['support'])
+        self.choose('interested', 'bizinfo:PBLN_4', reason='')
+        selected = next(i for i in self.supports() if i['id']=='bizinfo:PBLN_4')
+        self.assertTrue(selected['recommended'])
+        self.assertEqual(selected['reason_preference_score'], 0)
+        self.choose('neutral', 'bizinfo:PBLN_4', reason='')
+        self.assertNotIn('bizinfo:PBLN_4', self.report()['article_ids'])
+        self.choose('not_interested', reason='이번에는 일정이 맞지 않습니다.')
+        self.assertIn('bizinfo:PBLN_4', self.report()['article_ids'])
+        self.assertFalse(any(i['preference_excluded'] for i in self.supports()))
+        self.assertEqual(self.report()['support']['total'], 4)
+
+    def test_repeated_condition_survives_until_last_supporting_reason_is_removed(self):
+        self.choose('not_interested', 'bizinfo:PBLN_1', '시니어 케어와 관련된 사업만 원합니다.')
+        self.choose('not_interested', 'bizinfo:PBLN_2', '시니어 케어와 관련된 사업만 원합니다.')
+        self.assertNotIn('bizinfo:PBLN_3', self.report()['article_ids'])
+        self.assertEqual(next(i for i in self.supports() if i['id']=='bizinfo:PBLN_3')['reason_preference_score'], -24)
+        self.choose('neutral', 'bizinfo:PBLN_1', '')
+        self.assertNotIn('bizinfo:PBLN_3', self.report()['article_ids'])
+        self.choose('neutral', 'bizinfo:PBLN_2', '')
+        self.assertIn('bizinfo:PBLN_3', self.report()['article_ids'])
+
+    def test_incidental_support_only_adjusts_rank_without_hiding_research(self):
+        items = deepcopy(self.supports())
+        for item in items:
+            item.update(title='시니어 AI 공동연구', target='국내 연구개발 기업', benefit='연구비 및 선택형 멘토링 지원')
+        biz.apply_preferences(items, {'other': {'preference': 'not_interested', 'topics': '[]', 'reason': '교육은 필요 없습니다.'}})
+        self.assertTrue(all(i['reason_preference_score']==-24 for i in items))
+        self.assertTrue(all(i['recommended'] and not i['preference_excluded'] for i in items))
 
     def test_api_validates_inputs_origin_and_storage_failures_without_webhooks(self):
         server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.App)

@@ -395,7 +395,7 @@ def report(path, now=None, summary=False):
     # Keep public news in its existing order and slots; rank only support announcements.
     ranked = iter(supports)
     items = [next(ranked) if item.get('kind') == 'support' else item for item in items]
-    recommended = lambda item: item['application_status']['active'] and item['preference'] != 'not_interested'
+    recommended = business_support.is_recommended
     source_status = []
     for source in SOURCES:
         state = saved.get(source['id'], {})
@@ -410,8 +410,10 @@ def report(path, now=None, summary=False):
               'support': {'total': len(supports), 'active': sum(recommended(item) for item in supports),
                           'interested': sum(item['preference'] == 'interested' for item in supports),
                           'not_interested': sum(item['preference'] == 'not_interested' for item in supports),
+                          'preference_excluded': sum(item['preference_excluded'] and item['preference'] == 'neutral' and item['application_status']['active'] for item in supports),
                           'items': [{'id': item['id'], 'first_seen_at': item.get('first_seen_at', item['collected_at']),
-                                     'active': recommended(item), 'preference': item['preference']} for item in supports]},
+                                     'active': recommended(item), 'preference': item['preference'],
+                                     'preference_excluded': item['preference_excluded']} for item in supports]},
               'sync': {'enabled': enabled(), 'schedule': SCHEDULE, 'target_count': len(SOURCES),
                        'stale': any(row['stale'] for row in source_status),
                        'errors': [row['agency']+' '+row['name'] for row in source_status if row.get('error')],
