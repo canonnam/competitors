@@ -57,6 +57,16 @@ class UIConsistencyTest(unittest.TestCase):
                 self.assertNotIn(FOUNDATION, page.stylesheets)
                 self.assertNotIn('/assets/navigation.js', page.scripts)
 
+    def test_internal_headers_use_resolvable_external_destinations(self):
+        for path in sorted(ROOT.glob('*.html')):
+            if path.name in EXTERNAL_PAGES:
+                continue
+            with self.subTest(page=path.name):
+                source = path.read_text(encoding='utf-8')
+                self.assertIn('href="https://www.thevida.co.kr/"', source)
+                self.assertIn('href="https://admin.thevida.co.kr/"', source)
+                self.assertNotIn('href="https://thevida.co.kr/"', source)
+
     def test_future_work_instructions_link_to_the_contract(self):
         instructions = (ROOT / 'AGENTS.md').read_text(encoding='utf-8')
         guideline = ROOT / 'docs/UI_UX_GUIDELINES.md'
