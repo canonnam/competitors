@@ -221,6 +221,16 @@
   font-size: 13px;
   color: var(--ui-muted);
 }
+.uiux-captures {
+  margin: 0;
+  padding-left: 22px;
+}
+.uiux-captures li {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--ui-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
 
 @media (max-width: 900px) {
   .uiux-kpis, .uiux-cols { grid-template-columns: 1fr; }

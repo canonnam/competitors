@@ -26,7 +26,7 @@
 <meta name="twitter:description" content="엔젤시스템·케어포·더비다 장기요양 ERP 화면을 나란히 비교한 UI/UX 분석입니다.">
 <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
 <meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
-<link rel="stylesheet" href="/assets/competitor-uiux.css?v=20260918-uxtest">
+<link rel="stylesheet" href="/assets/competitor-uiux.css?v=20260918-uxtest2">
 <link rel="stylesheet" href="/assets/site.css">
 <script src="/assets/site.js" defer></script>
 <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
@@ -41,7 +41,7 @@
   <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">경쟁사 UIUX 분석</span></nav>
   <p class="kb-eyebrow">SCREEN UX · ANGEL · CAREFOR · DERBIDA</p>
   <h1>경쟁사 UIUX 분석</h1>
-  <p class="kb-description">엔젤시스템·케어포·더비다의 장기요양 ERP 화면을 나란히 놓고, 누가·언제·얼마나 빨리·실수 없이 일을 끝내는지를 기준으로 비교합니다. 더비다는 자사 제품이지만 점수를 부풀리지 않았습니다. 2026-09-18 실입력 사용성 테스트(<a href="#uxtest">[UXTEST-20260918]</a>)를 함께 수록합니다. 기능·가격 비교는 <a href="/competitors.html">경쟁사 분석</a>에서 확인합니다.</p>
+  <p class="kb-description">엔젤시스템·케어포·더비다의 장기요양 ERP 화면을 나란히 놓고, 누가·언제·얼마나 빨리·실수 없이 일을 끝내는지를 기준으로 비교합니다. 더비다는 자사 제품이지만 점수를 부풀리지 않았습니다. 2026-09-18 실입력 사용성 테스트(<a href="#uxtest">[UXTEST-20260918]</a>, 더비다 보완 실입력 포함)를 함께 수록합니다. 기능·가격 비교는 <a href="/competitors.html">경쟁사 분석</a>에서 확인합니다.</p>
   <div class="heading-meta"><span>대상: 엔젤시스템 · 케어포 · 더비다</span><span>자료 기준 <time datetime="2026-09-18">2026. 09. 18</time></span><span>캡처 정성 분석 · 실입력 사용성 테스트 <a href="#uxtest">[UXTEST-20260918]</a></span></div>
 </section>
 
@@ -316,30 +316,46 @@
 <article class="uiux-block" id="uxtest">
   <p class="uiux-kicker">FIELD TEST · [UXTEST-20260918]</p>
   <h2>사용성 테스트(실입력)</h2>
-  <p class="uiux-lead">2026-09-18(KST) 운영 7메뉴(본인부담금·메시지·프로그램·회의/교육·정기점검·직원관리·설정)를 실제 화면에 들어가 입력·저장·삭제 흐름을 확인한 기록입니다. 화면 캡처 비교와 별개이며, 더비다 우열을 이 회차로 단정하지 않습니다.</p>
+  <p class="uiux-lead">2026-09-18(KST) 운영 7메뉴(본인부담금·메시지·프로그램·회의/교육·정기점검·직원관리·설정)를 실제 화면에 들어가 입력·저장·삭제 흐름을 확인한 기록입니다. 엔젤·케어포는 표식 데이터 정리까지, 더비다는 개발환경에서 보완 실입력을 완료했습니다. 화면 캡처 비교와 별개이며, 자사 제품이라도 편의성을 부풀리지 않습니다.</p>
   <div class="uiux-kpis">
     <div class="uiux-kpi"><div class="label">엔젤</div><div class="value">표식 데이터 정리 확인</div><div class="note">SMS는 저장 후 삭제되어 보이지 않음. 프로그램 표식 검색 결과 없음, 회의 목록은 빈 상태. 본인부담·점검·직원·설정은 조회 위주라 저장하지 않음.</div></div>
     <div class="uiux-kpi"><div class="label">케어포</div><div class="value">표식 데이터 정리 확인</div><div class="note">문자는 발송 없이 지우기. 프로그램 등록 건은 삭제 확인. 회의는 대상자 선택 UI가 불명확해 저장 중단. 점검·직원·설정은 미완료.</div></div>
-    <div class="uiux-kpi"><div class="label">더비다</div><div class="value">1차 실입력 미완료</div><div class="note">개발환경이라 기존 데이터는 삭제하지 않고 보존. A~G 메뉴 실입력은 이번 회차에서 수행하지 않아 기능 우열을 매기지 않습니다.</div></div>
+    <div class="uiux-kpi"><div class="label">더비다</div><div class="value">보완 실입력 완료</div><div class="note">본인부담금·메시지 임시저장·프로그램·회의·정기점검 입력 완료. 직원관리 비고는 저장 범위 불명확으로 미확정. 설정은 탐색만. 개발 데이터는 삭제하지 않음.</div></div>
   </div>
   <div class="uiux-callout" style="margin-bottom:18px">
-    <p><strong>데이터 처리.</strong> 엔젤·케어포에서 확인 가능한 표식 입력은 정리했습니다. 더비다는 개발환경 보존 원칙에 따라 삭제하지 않았고, 1차에서 더비다 실입력은 미완료입니다. 이 섹션은 후속 테스트 항목이지 더비다 편의성 판정이 아닙니다.</p>
+    <p><strong>데이터 처리.</strong> 엔젤·케어포에서 확인 가능한 표식 입력은 정리했습니다. 더비다는 개발환경에서 보완 실입력을 완료했고, 생성·저장한 데이터는 삭제하지 않았습니다. 실제 SMS 발송과 영구 설정 변경은 하지 않았습니다.</p>
+  </div>
+  <h3 class="uiux-sub">더비다 보완 테스트</h3>
+  <p class="uiux-lead">개발 환경에서 최소 생성·수정 흐름을 시도했습니다. 텍스트 입력은 가능한 경우 <code>[UXTEST-20260918]</code>로 시작했습니다.</p>
+  <div class="uiux-table-wrap">
+    <table class="uiux-table">
+      <thead><tr><th>메뉴</th><th>결과</th><th>마찰</th></tr></thead>
+      <tbody>
+        <tr><td>본인부담금</td><td>기존 상세에서 의료·약제비 행을 추가하고 표식 항목을 저장함</td><td>독립 신규보다 기존 대상자 상세의 행 추가에 의존. 최소 입력 범위를 스스로 판단해야 함</td></tr>
+        <tr><td>메시지</td><td>수신자 전체 해제 후 제목·본문 표식 입력, 임시저장. SMS 발송 없음</td><td>수신자 선택과 발송이 한 화면. 진입 직후 안전 모드가 기본값은 아님</td></tr>
+        <tr><td>프로그램</td><td>기존 그룹 1로 최소 일정 등록. 표식 텍스트 필드 입력</td><td>드롭다운의 ‘새로운 그룹’만으로는 이름 입력이 바로 보이지 않음</td></tr>
+        <tr><td>회의·교육</td><td>자유 회의를 선택해 주제·내용·결과를 표식으로 저장함</td><td>유형·참석자를 먼저 이해해야 함. 닫기 확인 팝업이 저장 성공과 분리되어 보임</td></tr>
+        <tr><td>정기점검</td><td>간호비품점검 양식으로 등록하고 등록 완료 모달을 확인함</td><td>양식 선택과 다음 단계가 분리된 다단계. 최소 입력 지점까지 스크롤이 필요함</td></tr>
+        <tr><td>직원관리</td><td>비고에 표식을 입력했으나 제출하지 않음. 저장 지속 여부는 미확정</td><td>프로필 저장 버튼이 불명확하고, 하단 저장은 비밀번호 변경에 연결된 것으로 보임</td></tr>
+        <tr><td>설정</td><td>계정설정 화면을 탐색만 함. 필드 수정·저장·탈퇴는 없음</td><td>계정설정·시설설정·문서관리·성능 모니터링이 하위 메뉴로 나뉨</td></tr>
+      </tbody>
+    </table>
   </div>
   <h3 class="uiux-sub">교차 비교</h3>
   <div class="uiux-table-wrap">
     <table class="uiux-table">
       <thead><tr><th>항목</th><th>엔젤</th><th>케어포</th><th>더비다</th></tr></thead>
       <tbody>
-        <tr><td>메뉴 탐색</td><td>메뉴 찾기로 직접 접근 가능하나 기능이 분산됨</td><td>전체메뉴 검색은 유용하나 명칭 불일치가 있음</td><td>이번 회차 미측정</td></tr>
-        <tr><td>기록 생성</td><td>화면별 필수값·팝업 흐름이 복잡</td><td>프로그램 등록은 명확하나 기록/정보관리 경로가 분리</td><td>이번 회차 미측정</td></tr>
-        <tr><td>안전성</td><td>실발송·실운영 데이터와 테스트 경계가 약함</td><td>지우기/삭제는 가능하나 초안 상태 표기가 약함</td><td>개발 데이터 보존 · 실입력 미완료</td></tr>
-        <tr><td>오류·차단 피드백</td><td>빈 결과의 원인 설명이 제한적</td><td>대상자 선택 UI가 불명확해 저장을 중단함</td><td>후속 측정 필요</td></tr>
-        <tr><td>이 회차 결론</td><td>기능 범위는 넓지만 학습 비용이 큼</td><td>업무 단계는 구조화됐으나 IA·용어 연결이 약함</td><td>근거 부족으로 판정 보류</td></tr>
+        <tr><td>메뉴 탐색</td><td>메뉴 찾기로 직접 접근 가능하지만 기능이 분산됨</td><td>전체메뉴 검색은 유용하나 명칭 불일치가 발생함</td><td>좌측 메뉴의 업무 그룹은 대체로 찾기 쉽지만 직원관리·설정이 분리되고 하위 메뉴가 많음</td></tr>
+        <tr><td>기록 생성</td><td>화면별 필수값과 팝업 흐름이 복잡함</td><td>프로그램 등록은 명확하나 기록/정보관리 경로가 분리됨</td><td>본인부담금·메시지 초안·프로그램·회의·정기점검은 생성 가능하나 다단계와 기존 데이터 의존이 있음</td></tr>
+        <tr><td>안전성</td><td>실발송·실운영 데이터와 테스트 경계가 약함</td><td>지우기/삭제는 가능하나 초안 상태 표기가 약함</td><td>수신자 전체 해제 후 임시저장으로 SMS를 피했고, 생성 데이터는 삭제하지 않음</td></tr>
+        <tr><td>오류·차단 피드백</td><td>빈 결과의 원인 설명이 제한적임</td><td>대상자 선택 UI가 불명확함</td><td>정기점검 완료 모달은 명확했지만 직원관리 비고 저장 범위와 새 그룹 생성 후속 입력이 불명확함</td></tr>
+        <tr><td>냉정한 결론</td><td>기능 범위는 넓지만 학습 비용이 큼</td><td>업무 단계는 구조화됐으나 IA와 용어 연결이 약함</td><td>주요 생성 흐름은 작동하지만 저장 범위·초안 안전성·다단계 경로의 안내가 더 필요함</td></tr>
       </tbody>
     </table>
   </div>
   <h3 class="uiux-sub">더비다 제품 권장 변경</h3>
-  <p class="uiux-lead">경쟁사에서 막힌 지점을 더비다 패턴으로 흡수하기 위한 후속 과제입니다. 이번에 측정하지 못한 더비다 실입력을 전제로, 우위로 읽히지 않게 적었습니다.</p>
+  <p class="uiux-lead">보완 실입력에서 확인한 저장 범위·초안 안전성·다단계 경로 문제를 더비다 패턴 안에서 고치기 위한 과제입니다. 생성 흐름이 작동했다는 이유로 우위로 읽히지 않게 적었습니다.</p>
   <ol class="uiux-rec">
     <li><b>업무명 중심 통합 IA.</b> 회의·교육·사례관리처럼 사용자가 부르는 업무명을 상위 메뉴로 두고, 세부 유형은 내부 탭으로 묶습니다.</li>
     <li><b>초안/테스트 상태 명시.</b> 저장 전 ‘초안’, 실제 발송 전 ‘발송 대기’를 구분하고 SMS 수신자·발송 버튼을 별도 단계로 나눕니다.</li>
@@ -347,9 +363,19 @@
     <li><b>생성 후 즉시 확인.</b> 저장 성공 안내에 식별자와 보기·수정·삭제를 두고, 목록 필터를 해당 항목에 맞춥니다.</li>
     <li><b>안전한 삭제.</b> 표식·초안만 지울 때도 확인 창에 대상명·작성일·삭제 범위를 보여줍니다.</li>
     <li><b>빈 결과 진단.</b> “없음”만 쓰지 말고 날짜·상태·대상자·권한 중 어떤 조건 때문인지 안내합니다.</li>
-    <li><b>권한·영구변경 경고.</b> 설정과 직원 상세는 저장 전 영향 범위와 변경 이력을 표시합니다.</li>
+    <li><b>권한·영구변경 경고.</b> 설정과 직원 상세는 저장 전 영향 범위와 변경 이력을 표시합니다. 직원관리 비고처럼 어떤 저장이 어떤 필드를 바꾸는지 버튼 옆에 밝힙니다.</li>
     <li><b>사용자 여정 계측.</b> 메뉴 진입→필수값 입력→저장 완료까지 단계별 성공률과 이탈 지점을 남깁니다.</li>
   </ol>
+  <h3 class="uiux-sub">캡처 목록</h3>
+  <p class="uiux-lead">현장 캡처는 로컬 테스트 산출물이며 이 페이지에 바이너리를 올리지 않았습니다. 원본 경로는 <code>derbida-ux-report/captures/usability/</code>입니다.</p>
+  <ul class="uiux-captures">
+    <li>angel-program-deleted.png</li>
+    <li>carefor-sms-deleted.png</li>
+    <li>derbida-copayment.png</li>
+    <li>derbida-message-draft.png</li>
+    <li>derbida-program.png</li>
+    <li>derbida-meeting.png</li>
+  </ul>
 </article>
 
 <article class="uiux-block" id="roadmap">
@@ -381,7 +407,7 @@
   </div>
 </article>
 
-<p class="uiux-note">본 문서는 화면 캡처 기준의 UI/UX 정성 분석과 2026-09-18 실입력 사용성 테스트(<code>[UXTEST-20260918]</code>)를 함께 수록합니다. 비교 캡처는 좌=엔젤 / 중=케어포 / 우=더비다입니다. 더비다 1차 실입력은 미완료이며 기능 우열 결론이 아닙니다. 작성일 2026-09-18 · 임상 8영역 + 운영 7영역.</p>
+<p class="uiux-note">본 문서는 화면 캡처 기준의 UI/UX 정성 분석과 2026-09-18 실입력 사용성 테스트(<code>[UXTEST-20260918]</code>)를 함께 수록합니다. 비교 캡처는 좌=엔젤 / 중=케어포 / 우=더비다입니다. 더비다는 보완 실입력을 완료했고 개발 데이터는 삭제하지 않았습니다. 주요 생성 흐름은 작동하지만 저장 범위·초안 안전성·다단계 경로 안내가 더 필요합니다. 작성일 2026-09-18 · 임상 8영역 + 운영 7영역.</p>
 </main>
 </body>
 </html>
