@@ -6,7 +6,10 @@ test('search page numbers use observed result pages, never average ad ranks',()=
   const row={status:'ready',stale:false,query:{average_ad_rank:2.1},matches:[{area:'web',page:4,position:2},{area:'ad',page:1,position:1}]};
   assert.equal(v.matchLabel(row,['web']),'4페이지 · 2번째');
   assert.equal(v.matchLabel(row,['place']),'측정 범위 내 미확인');
-  assert.equal(v.matchLabel({...row,status:'error',stale:true},['web']),'측정 불가');
+  assert.equal(v.matchLabel({...row,status:'error',stale:true},['web']),'4페이지 · 2번째');
+  assert.equal(v.matchLabel({...row,status:'error',stale:true},['place']),'측정 범위 내 미확인');
+  assert.equal(v.matchLabel({status:'error',stale:true},['web']),'측정 불가');
+  assert.equal(v.matchLabel({status:'pending'},['web']),'갱신 대기');
   assert.equal(v.matchLabel({...row,ad_coverage_complete:false},['ad','place_ad']),'광고 재측정 대기');
   assert.equal(v.matchLabel({...row,ad_coverage_complete:false},['web']),'4페이지 · 2번째');
 });
@@ -75,11 +78,31 @@ test('missed collection preserves dated last results without counting them as cu
   assert.equal(v.collectionState(scoped),'이번 점검 0/3개 완료 · 1개 확인 불가 · 2개 갱신 대기');
   assert.equal(v.filterRows(scoped.items.map(item=>({...item,keyword:'인천'})),'','absent').length,0);
   const home=v.homeSummary({enabled:true,keyword_source:{stale:false},providers:[{id:'naver',kind:'search',checked:0,expected:0,items:[]},provider]});
-  assert.match(home.text,/측정 불가 \(최근 확인 1\/2건 언급/);
+  assert.match(home.text,/이전 결과 1\/2건/);
 });
 
 test('no observation is never presented as a zero exposure result',()=>{
   const provider={kind:'ai',checked:0,expected:2,items:[{status:'pending'},{status:'error'}]};
   assert.equal(v.lastResult(provider),'');
   assert.equal(v.collectionState(provider),'이번 점검 0/2개 완료 · 1개 확인 불가 · 1개 갱신 대기');
+});
+
+test('naver cooldown shows last known ranks instead of a blanket 측정 불가',()=>{
+  const found={keyword:'숭의동요양원',status:'error',stale:true,observed_at:'2026-09-14T10:50:00+09:00',mentioned:true,first_page:1,
+    matches:[{area:'web',page:1,position:3},{area:'place',page:1,position:5}],error:'검색 제공처의 조회 제한 · 다음 정기 점검까지 중단'};
+  const absent={keyword:'미추홀구요양원',status:'error',stale:true,observed_at:'2026-09-14T10:50:00+09:00',mentioned:false,first_page:null,matches:[],
+    error:'검색 제공처의 조회 제한 · 다음 정기 점검까지 중단'};
+  const never={keyword:'신규키워드',status:'error',stale:true,error:'검색 제공처의 조회 제한 · 다음 정기 점검까지 중단'};
+  assert.equal(v.matchLabel(found,['web']),'1페이지 · 3번째');
+  assert.equal(v.matchLabel(found,['place']),'1페이지 · 5번째');
+  assert.equal(v.matchLabel(found,['ad','place_ad']),'측정 범위 내 미확인');
+  assert.equal(v.matchLabel(absent,['web']),'측정 범위 내 미확인');
+  assert.equal(v.matchLabel(never,['web']),'측정 불가');
+  const data={enabled:true,keyword_source:{stale:false},providers:[
+    {id:'naver',kind:'search',configured:true,checked:0,expected:3,first_page:0,collection_paused:true,items:[found,absent,never]},
+    {id:'openai',kind:'ai',configured:true,checked:0,mentioned:0,items:[]}]};
+  assert.equal(v.homeSummary(data).text,'네이버 첫 페이지(광고 제외) 이전 결과 1/2개 · AI 웹 언급 갱신 대기');
+  assert.equal(v.homeSummary(data).warning,true);
+  assert.equal(v.lastCounts(data.providers[0]).found,1);
+  assert.equal(v.lastCounts(data.providers[0]).total,2);
 });

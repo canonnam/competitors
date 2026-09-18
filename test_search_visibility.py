@@ -179,6 +179,28 @@ class VisibilityTests(unittest.TestCase):
         self.assertEqual(len(calls),1)
         self.assertEqual(self.report()['providers'][0]['items'][0]['status'],'error')
 
+    def test_naver_cooldown_keeps_previous_matches_without_counting_them_as_current(self):
+        v.sync_provider(self.path,'naver',[QUERY],self.config,NOW,fetcher=lambda _:page('더비다요양원'))
+        later=NOW+timedelta(days=2)
+        def failure(url):raise urllib.error.HTTPError(url,403,'Forbidden',{},None)
+        v.sync_provider(self.path,'naver',[QUERY],self.config,later,fetcher=failure)
+        naver=self.report(later)['providers'][0]
+        item=next(row for row in naver['items'] if row['keyword']==QUERY['keyword'])
+        self.assertTrue(naver['collection_paused'])
+        self.assertIn('조회 제한', naver['collection_error'])
+        self.assertEqual(naver['checked'],0)
+        self.assertEqual(naver['first_page'],0)
+        self.assertEqual(item['status'],'error')
+        self.assertTrue(item['stale'])
+        self.assertTrue(item['mentioned'])
+        self.assertTrue(item['matches'])
+        self.assertEqual(item['observed_at'],NOW.isoformat())
+        self.assertIn('조회 제한', item['error'])
+        calls=[]
+        v.sync_provider(self.path,'naver',[QUERY],self.config,later+timedelta(minutes=31),
+                        fetcher=lambda url:calls.append(url) or page('더비다요양원'))
+        self.assertEqual(calls,[])
+
     def test_naver_security_check_html_stops_remaining_queries(self):
         calls=[]
         def blocked(url):calls.append(url);return '<html>자동입력 방지</html>'
