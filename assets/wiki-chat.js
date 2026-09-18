@@ -47,7 +47,7 @@ function scroll() { messages.scrollTop = messages.scrollHeight; }
 function refreshSend() { send.disabled = !input.value.trim() || pending; }
 function safeSourceUrl(value) {
   if (typeof value !== 'string' || value.length > 3000 || /[\s\\\u0000-\u001f]/u.test(value)) return null;
-  if (['/competitors.html', '/competitor-news.html', '/operating-costs.html', '/payroll.html', '/claim-check.html', '/agency-news.html', '/ai-hub-data.html', '/naver-ads.html', '/search-visibility.html', '/reputation-watch.html', '/nearby-facilities.html', '/statistics.html'].includes(value)) return value;
+  if (['/competitors.html', '/competitor-uiux.html', '/competitor-news.html', '/operating-costs.html', '/payroll.html', '/claim-check.html', '/agency-news.html', '/ai-hub-data.html', '/naver-ads.html', '/search-visibility.html', '/reputation-watch.html', '/nearby-facilities.html', '/statistics.html'].includes(value)) return value;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
