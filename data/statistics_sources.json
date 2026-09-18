@@ -1,7 +1,172 @@
 {
-  "reviewedAt": "2026-09-08",
+  "reviewedAt": "2026-09-18",
   "scaleTo": 1800,
   "documents": [
+    {
+      "id": "ltc-2025",
+      "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0019&list_no=1491730&seq=1",
+      "sourceUrl": "https://repository.kihasa.re.kr/handle/201002/50024",
+      "sha256": "1a6207bfa2dc4e6e39e0cfd2eaf303117f30c87e326808e117755c0606612017",
+      "pdfPages": 1152,
+      "captures": [
+        {
+          "id": "recipient-age",
+          "pdfPage": 202,
+          "printedPage": 170,
+          "figure": "표 3-1",
+          "image": "/assets/statistics/recipient-age.png",
+          "capture": [
+            185,
+            470,
+            1148,
+            1610
+          ]
+        },
+        {
+          "id": "living-alone",
+          "pdfPage": 259,
+          "printedPage": 227,
+          "figure": "표 3-29",
+          "image": "/assets/statistics/living-alone.png",
+          "capture": [
+            200,
+            230,
+            1165,
+            1510
+          ]
+        },
+        {
+          "id": "stay-at-home",
+          "pdfPage": 294,
+          "printedPage": 262,
+          "figure": "표 3-45",
+          "image": "/assets/statistics/stay-at-home.png",
+          "capture": [
+            185,
+            230,
+            1148,
+            1550
+          ]
+        },
+        {
+          "id": "facility-choice-2025",
+          "pdfPage": 373,
+          "printedPage": 341,
+          "figure": "표 3-84",
+          "image": "/assets/statistics/facility-choice-2025.png",
+          "capture": [
+            200,
+            250,
+            1165,
+            1590
+          ]
+        },
+        {
+          "id": "family-system-satisfaction",
+          "pdfPage": 477,
+          "printedPage": 445,
+          "figure": "표 4-17",
+          "image": "/assets/statistics/family-system-satisfaction.png",
+          "capture": [
+            200,
+            230,
+            1165,
+            1600
+          ]
+        },
+        {
+          "id": "family-facility-needs",
+          "pdfPage": 570,
+          "printedPage": 538,
+          "figure": "표 4-72",
+          "image": "/assets/statistics/family-facility-needs.png",
+          "capture": [
+            200,
+            230,
+            1165,
+            1615
+          ]
+        },
+        {
+          "id": "digital-care-2025",
+          "pdfPage": 715,
+          "printedPage": 683,
+          "figure": "표 5-124",
+          "image": "/assets/statistics/digital-care-2025.png",
+          "capture": [
+            200,
+            840,
+            1165,
+            1620
+          ]
+        },
+        {
+          "id": "facility-safety-2025",
+          "pdfPage": 718,
+          "printedPage": 686,
+          "figure": "표 5-126",
+          "image": "/assets/statistics/facility-safety-2025.png",
+          "capture": [
+            185,
+            230,
+            1148,
+            1280
+          ]
+        },
+        {
+          "id": "accident-types-2025",
+          "pdfPage": 719,
+          "printedPage": 687,
+          "figure": "표 5-127",
+          "image": "/assets/statistics/accident-types-2025.png",
+          "capture": [
+            200,
+            560,
+            1165,
+            1035
+          ]
+        },
+        {
+          "id": "operating-difficulty",
+          "pdfPage": 734,
+          "printedPage": 702,
+          "figure": "표 5-141",
+          "image": "/assets/statistics/operating-difficulty.png",
+          "capture": [
+            185,
+            890,
+            1148,
+            1600
+          ]
+        },
+        {
+          "id": "worker-age",
+          "pdfPage": 772,
+          "printedPage": 740,
+          "figure": "표 6-1",
+          "image": "/assets/statistics/worker-age.png",
+          "capture": [
+            185,
+            555,
+            1148,
+            1620
+          ]
+        },
+        {
+          "id": "pay-improvement",
+          "pdfPage": 893,
+          "printedPage": 861,
+          "figure": "표 6-85",
+          "image": "/assets/statistics/pay-improvement.png",
+          "capture": [
+            200,
+            230,
+            1165,
+            1620
+          ]
+        }
+      ]
+    },
     {
       "id": "ltc-evaluation",
       "downloadUrl": "https://nabo.go.kr/board/file/down.do?fid=33318949",

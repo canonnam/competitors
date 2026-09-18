@@ -11,14 +11,15 @@ assert.deepEqual([...readSaved('["choosing-a-home","choosing-a-home","deleted",n
 assert.equal(filterItems({savedOnly:true,saved:new Set()}).length, 0);
 assert.deepEqual(filterItems({savedOnly:true,saved:new Set(['family-priorities']),topic:'돌봄·품질'}).map(x=>x.id), ['family-priorities']);
 assert.equal(filterItems({savedOnly:true,saved:new Set(['family-priorities']),topic:'입소·수요'}).length, 0);
-assert.deepEqual(filterItems({query:'  물리적   환경  '}).map(x=>x.id), ['choosing-a-home']);
+assert.deepEqual(filterItems({query:'  물리적   환경  '}).map(x=>x.id), ['choosing-a-home','facility-choice-2025']);
 assert.deepEqual(filterItems({query:'ＩＣＴ'}).map(x=>x.id), ['digital-care']);
 assert.equal(filterItems({query:'없는통계검색어'}).length, 0);
 assert.equal(filterItems({documentId:'housing'}).length, 2);
+assert.equal(filterItems({documentId:'ltc-2025'}).length, 12);
 assert.deepEqual(filterItems({view:'documents',query:'2023'}).map(x=>x.id), ['ltc-evaluation','housing']);
-assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 2);
+assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 3);
 assert.deepEqual(filterItems({topic:'기관평가'}).map(x=>x.id), ['facility-evaluation']);
-assert.equal(filterItems({topic:'안전·사고'}).length, 4);
+assert.equal(filterItems({topic:'안전·사고'}).length, 6);
 assert.deepEqual(filterItems({topic:'안전·사고',query:'낙상 재발'}).map(x=>x.id), ['fall-repeat']);
 assert.deepEqual(filterItems({view:'documents',query:'국회예산정책처'}).map(x=>x.id), ['ltc-evaluation']);
 assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing-a-home','fall-repeat']);
@@ -35,7 +36,7 @@ for (const doc of data.documents) {
   for (const url of [doc.downloadUrl,doc.sourceUrl,doc.relatedUrl].filter(Boolean)) {
     const parsed = new URL(url);
     assert.equal(parsed.protocol,'https:');
-    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr'].includes(parsed.hostname));
+    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr','www.mohw.go.kr'].includes(parsed.hostname));
   }
   assert.ok(doc.year <= Number(doc.published.slice(0,4)));
 }
