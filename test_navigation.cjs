@@ -12,7 +12,7 @@ test('directory covers every existing home card and deployable destination',()=>
   for(const item of features){assert.ok(fs.existsSync(item.href.slice(1)));assert.ok(categories.some(group=>group.id===item.category));}
 });
 test('aliases, Korean spacing and case insensitive multiword searches identify the right tool',()=>{
-  for(const [query,id] of [['손익','operating-costs'],['월급','payroll'],['SEO','search-visibility'],['근로 계약서','payroll'],['ｓｅｏ','search-visibility'],['네이버 광고','naver-ads']]) {
+  for(const [query,id] of [['손익','operating-costs'],['월급','payroll'],['SEO','search-visibility'],['근로 계약서','payroll'],['ｓｅｏ','search-visibility'],['네이버 광고','naver-ads'],['UIUX','competitor-uiux'],['화면 비교','competitor-uiux']]) {
     assert.ok(matchFeatures(query).some(item=>item.id===id),query);
   }
   assert.deepEqual(matchFeatures('손익','marketing'),[]);

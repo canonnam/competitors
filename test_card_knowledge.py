@@ -46,7 +46,7 @@ class CardKnowledgeTests(unittest.TestCase):
         homepage = (service.ROOT/'index.html').read_text(encoding='utf-8')
         pages = set(re.findall(r'<a href="(/[^"?#]+\.html)"', homepage))
         self.assertEqual(pages, set(service.PAGES.values()))
-        self.assertEqual(len(service.status()), 12)
+        self.assertEqual(len(service.status()), len(service.PAGES))
         for page in pages:
             self.assertEqual(service.safe_url(page), page)
             self.assertIn(repr(page), (service.ROOT/'assets/wiki-chat.js').read_text(encoding='utf-8'))
@@ -55,7 +55,8 @@ class CardKnowledgeTests(unittest.TestCase):
         questions = {'payroll': '인천점 근로계약서 사용법', 'claim_check': '안양점 청구 상태',
             'agency_news': '건보공단·복지부 뉴스', 'ai_hub': 'ERP에 연결할 AI 허브 데이터셋',
             'naver_ads': '더비다 인천점 이번달 광고비', 'search_visibility': '인천점 검색현황',
-            'reputation': '안양점 평판 점검', 'nearby': '안양점 주변 주야간보호', 'statistics': '직원 휴게 공간 통계자료'}
+            'reputation': '안양점 평판 점검', 'nearby': '안양점 주변 주야간보호', 'statistics': '직원 휴게 공간 통계자료',
+            'competitor_uiux': '장기요양 화면비교 UIUX'}
         for kind, q in questions.items():
             with self.subTest(kind=kind):
                 result = service.retrieve(q, today=NOW.date())
@@ -206,7 +207,7 @@ class CardKnowledgeTests(unittest.TestCase):
     def test_all_card_sources_survive_evidence_limit(self):
         rows=[service.evidence(kind,kind,str(n)) for kind in service.PAGES for n in range(5)]
         selected=service.select_evidence(rows)
-        self.assertEqual(len(selected),12)
+        self.assertEqual(len(selected), max(12, len(service.PAGES)))
         self.assertEqual({r['dataset'] for r in selected},set(service.PAGES))
 
 

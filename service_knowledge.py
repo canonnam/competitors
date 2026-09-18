@@ -457,11 +457,13 @@ def status():
             for key, path in paths.items()] + card_knowledge.status()
 
 
-def select_evidence(items, limit=12):
+def select_evidence(items, limit=None):
     """Keep at least one source from every requested card before extra excerpts."""
     groups = {}
     for item in items:
         groups.setdefault(item['dataset'], []).append(item)
+    if limit is None:
+        limit = max(12, len(groups))
     selected = []
     while groups and len(selected) < limit:
         for kind in list(groups):

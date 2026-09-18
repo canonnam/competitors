@@ -21,6 +21,7 @@ CARDS = {
     'reputation': ('더비다요양원 평판 점검', '/reputation-watch.html'),
     'nearby': ('주변 영업처 지도', '/nearby-facilities.html'),
     'statistics': ('통계자료', '/statistics.html'),
+    'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
 }
 ALIASES = {
     'payroll': ('급여계산', '급여계산기', '근로계약', '통상임금', '통상시급', '주휴시간', '주주야야', '연장수당', '야간수당'),
@@ -32,6 +33,7 @@ ALIASES = {
     'reputation': ('평판', '부정적언급', '부정언급', '불만', '악성리뷰'),
     'nearby': ('영업처', '주변', '인근', '가까운', '연락처', '전화번호', '지도'),
     'statistics': ('통계', '책갈피', '조사자료', '보건사회연구원', '실태조사'),
+    'competitor_uiux': ('uiux', '화면비교', 'ux비교', 'ui비교', '사용성비교'),
 }
 
 
@@ -283,8 +285,10 @@ def static_page(kind, question):
     parser.feed(path.read_text(encoding='utf-8'))
     content = re.sub(r'[ \t]+', ' ', ''.join(parser.parts)).strip()
     updated = '화면 자료 버전 ' + hashlib.sha256(path.read_bytes()).hexdigest()[:10]
-    if kind == 'ai_hub':
+    if kind in ('ai_hub', 'competitor_uiux'):
         dates = re.findall(r'확인일\s*(\d{4}-\d{2}-\d{2})', content)
+        if not dates:
+            dates = re.findall(r'(\d{4}-\d{2}-\d{2})', content)
         updated = dates[-1] if dates else updated
         return [evidence(kind, CARDS[kind][0], content, updated)]
     result = [evidence(kind, '급여 계산·계약서 사용 범위',
@@ -339,7 +343,7 @@ def nearby(question):
 
 
 def retrieve(kind, question, now):
-    if kind in ('ai_hub', 'payroll'):
+    if kind in ('ai_hub', 'payroll', 'competitor_uiux'):
         return static_page(kind, question)
     if kind == 'statistics':
         return statistics(question)
@@ -358,6 +362,7 @@ def status():
              'agency_news': [agency_news.db_path()], 'naver_ads': [naver_ads.db_path()],
              'search_visibility': [search_visibility.db_path(), naver_ads.db_path()],
              'reputation': [reputation_watch.db_path()], 'nearby': [ROOT / 'data/nearby_facilities.json'],
-             'statistics': [ROOT / 'data/statistics_knowledge.json']}
+             'statistics': [ROOT / 'data/statistics_knowledge.json'],
+             'competitor_uiux': [ROOT / 'competitor-uiux.html']}
     return [{'id': k, 'label': label, 'url': url, 'available': all(p.is_file() for p in paths[k]),
              'refresh': 'on_question'} for k, (label, url) in CARDS.items()]
