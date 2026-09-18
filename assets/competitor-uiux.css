@@ -105,13 +105,16 @@
 .uiux-shot img {
   width: 100%;
   height: auto;
+  max-height: min(72vh, 560px);
+  object-fit: contain;
+  object-position: top center;
   display: block;
   border: 1px solid var(--ui-border);
   border-radius: 8px;
   background: var(--ui-hover);
 }
 .uiux-shot figcaption {
-  margin-top: 8px;
+  margin: 0 0 8px;
   font-size: 12px;
   font-weight: 700;
   color: var(--ui-muted);
