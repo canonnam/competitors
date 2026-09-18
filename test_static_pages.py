@@ -42,6 +42,20 @@ class StaticPageDeploymentTests(unittest.TestCase):
                 self.assertEqual(content.count('class="kb-page-heading"'), 1)
                 self.assertIn('aria-current="page"', content)
 
+    def test_usability_section_records_derbida_complementary_input(self):
+        page = (ROOT / "competitor-uiux.html").read_text(encoding="utf-8")
+        self.assertIn('id="uxtest"', page)
+        self.assertIn("보완 실입력 완료", page)
+        self.assertIn("본인부담금·메시지 임시저장·프로그램·회의·정기점검 입력 완료", page)
+        self.assertIn("직원관리 비고는 저장 범위 불명확으로 미확정", page)
+        self.assertIn("설정은 탐색만", page)
+        self.assertIn("개발 데이터는 삭제하지 않음", page)
+        self.assertIn("주요 생성 흐름은 작동하지만 저장 범위·초안 안전성·다단계 경로의 안내가 더 필요함", page)
+        self.assertIn("derbida-message-draft.png", page)
+        self.assertNotIn("1차 실입력 미완료", page)
+        self.assertNotIn("판정 보류", page)
+        self.assertNotIn("이번 회차 미측정", page)
+
     def test_new_revenue_entries_keep_scope_year_and_sources(self):
         report = (ROOT / "competitors.html").read_text(encoding="utf-8")
         for key in ('easy', 'carefor', 'angel', 'jipangi', 'yoyangsys', 'happy', 'skt'):
