@@ -487,6 +487,9 @@ def report(path, ad_path=None, now=None, summary=False):
     for provider, metadata in [('naver', PROVIDERS['naver'])]:
         queries = search_queries if provider == 'naver' else ai_queries
         connected = configured(provider)
+        cooldown = states.get(provider+':cooldown', {})
+        paused = bool(cooldown and cooldown.get('serpapi', False) == bool(os.getenv('SERPAPI_KEY'))
+                      and timestamp(cooldown['until']) > now)
         items = []
         for query in queries:
             signature = query_signature(provider, query, config)
@@ -500,10 +503,9 @@ def report(path, ad_path=None, now=None, summary=False):
             status = 'ready' if fresh else 'unconfigured' if not connected else 'error' if state.get('error') else 'running' if state.get('running') else 'pending'
             if observation and provider != 'naver' and not observation.get('grounded') and not state.get('error'):
                 status = 'unverified'
-            cooldown = states.get(provider+':cooldown', {})
-            if not fresh and cooldown and cooldown.get('serpapi', False) == bool(os.getenv('SERPAPI_KEY')) and timestamp(cooldown['until']) > now:
+            if not fresh and paused:
                 status = 'error'
-                state = {**state, 'error': cooldown['error']}
+                state = {**state, 'error': cooldown.get('error') or '검색 제공처의 조회 제한 · 다음 정기 점검까지 중단'}
             branch = query.get('branch') or next((b['id'] for b in config.get('branches', []) if b['city'] == query.get('city')), None)
             branch_result = branch_observation(observation, branch, config)
             branch_result['history'] = [{'at': row['observed_at'], **{k: value for k, value in branch_observation(row, branch, config).items()
@@ -521,7 +523,9 @@ def report(path, ad_path=None, now=None, summary=False):
         checked = [item for item in items if item['status'] == 'ready']
         providers.append({'id': provider, **metadata, 'configured': connected, 'model': model_for(provider),
                           'expected': len(queries), 'checked': len(checked), 'mentioned': sum(bool(item.get('mentioned')) for item in checked),
-                          'first_page': sum(item.get('first_page') == 1 for item in checked), 'items': items})
+                          'first_page': sum(item.get('first_page') == 1 for item in checked),
+                          'collection_paused': paused, 'collection_error': cooldown.get('error', '') if paused else '',
+                          'items': items})
     providers.extend(web_search_results.reports(path, ai_queries, config, now, summary))
     if not summary:
         aeo_missions.attach(path, providers, config.get('branches', []))
