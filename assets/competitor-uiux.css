@@ -201,6 +201,21 @@
 .uiux-table th { background: var(--ui-hover); font-weight: 700; }
 .uiux-table td.win { background: var(--ui-success-bg); font-weight: 650; }
 
+.uiux-sub {
+  margin: 20px 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ui-text);
+}
+.uiux-rec {
+  margin: 0;
+  padding-left: 22px;
+}
+.uiux-rec li {
+  margin: 8px 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
 .uiux-note {
   margin: 24px 0 0;
   font-size: 13px;

@@ -18,7 +18,7 @@
     {id:'payroll', category:'operations', title:'급여 계산·근로계약서', description:'근무조건별 급여 계산과 계약서 작성', keywords:'월급 인건비 직원 채용 인사 노무 PDF'},
     {id:'claim-check', category:'operations', title:'지점별 청구 점검', description:'급여 청구 여부와 처리상태 확인', keywords:'공단 장기근속장려금 접수 안양 인천'},
     {id:'competitors', category:'market', title:'경쟁사 분석', description:'ERP·AI·디지털 돌봄 서비스 비교', keywords:'시장 기능 가격 운영 모델'},
-    {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 ERP 화면 UI/UX 비교', keywords:'UIUX UX 사용성 화면비교 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},
+    {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 화면 비교와 실입력 사용성 테스트', keywords:'UIUX UX 사용성 화면비교 UXTEST 실입력 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},
     {id:'competitor-news', category:'market', title:'경쟁사 및 요양원 뉴스', description:'업계 소식과 사건·안전·정책 기사', keywords:'경쟁 뉴스 낙상 제도 사고'},
     {id:'agency-news', category:'support', title:'건보공단·복지부 뉴스·지원사업', description:'공공기관 소식과 지원사업 공고', keywords:'정부 정책 공모 장기요양 제도'},
     {id:'ai-hub-data', category:'research', title:'AI 허브 활용데이터', description:'요양원 ERP와 연결할 데이터셋·활용안', keywords:'AI Hub 인공지능 연구 건강 간호'},
