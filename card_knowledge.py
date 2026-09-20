@@ -247,7 +247,7 @@ def claims(question, now, data):
     return [evidence('claim_check', '지점별 장기요양 청구 점검',
         '이번 점검 대상 급여제공월과 조회 시각을 구분하세요. 접수 완료는 지급 완료가 아닙니다. 과거 월의 청구 결과를 현재 월로 바꾸지 마세요.\n' + dump({
             '급여제공월': data['benefitMonth'], '마감일': data['deadline'],
-            '지점': [fields(r, 'name status label message checkedAt lastQueryFailureAt claims missing verifiedItems') for r in rows]}),
+            '지점': [fields(r, 'name status label message checkedAt lastQueryFailureAt claims missing verifiedItems laborCost') for r in rows]}),
         max((r.get('checkedAt') or '' for r in rows), default=''))]
 
 

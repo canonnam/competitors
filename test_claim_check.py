@@ -24,6 +24,14 @@ def sample():
         for ident, (_, number) in claims.BRANCHES.items()]}
 
 
+def labor_sample(ratio="63.20", moment=NOW):
+    return {"benefitMonth": "2026-08", "branches": [
+        {"id": ident, "institutionNumber": number, "laborCost": {
+            "benefitMonth": "2026-07", "year": 2026, "checkedAt": moment.isoformat(),
+            "querySucceeded": ratio is not None, "annualRatio": ratio}}
+        for ident, (_, number) in claims.BRANCHES.items()]}
+
+
 class ClaimCheckTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -241,6 +249,99 @@ class ClaimCheckTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             worker.join()
+
+    def test_labor_month_lags_claim_month_including_year_boundary(self):
+        self.assertEqual(claims.labor_period("2026-08"), ("2026-07", 2026))
+        self.assertEqual(claims.labor_period("2027-01"), ("2026-12", 2026))
+        self.assertEqual(claims.labor_period("2027-02"), ("2027-01", 2027))
+        result = self.result(sample())
+        self.assertTrue(result["allAccepted"])
+        self.assertFalse(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["laborCost"]["status"], "unqueried")
+
+    def test_labor_only_publish_preserves_claims_and_compares_exact_benchmark(self):
+        original = sample()
+        self.result(original)
+        for ratio, assessment in (("62.50", "check"), ("62.500001", "stable"), ("61.2", "check"), ("0", "check"), ("105.00", "stable")):
+            with self.subTest(ratio=ratio):
+                payload = labor_sample(ratio)
+                claims.save_labor_costs(payload, self.path, NOW)
+                result = claims.report(self.path, NOW)
+                labor = result["branches"][0]["laborCost"]
+                self.assertEqual(labor["annualRatio"], ratio)
+                self.assertEqual(labor["assessment"], assessment)
+                self.assertEqual(result["branches"][0]["claims"], original["branches"][0]["claims"])
+                self.assertTrue(result["allChecksComplete"])
+                verify_published(payload, result, labor_only=True)
+                wrong = copy.deepcopy(result)
+                wrong["branches"][0]["laborCost"]["annualRatio"] = "999"
+                with self.assertRaises(RuntimeError):
+                    verify_published(payload, wrong, labor_only=True)
+
+    def test_labor_failure_keeps_previous_ratio_without_changing_claim_status(self):
+        self.result(sample())
+        failed = labor_sample(None)
+        claims.save_labor_costs(failed, self.path, NOW)
+        result = claims.report(self.path, NOW)
+        self.assertTrue(result["allAccepted"])
+        self.assertFalse(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["laborCost"]["status"], "query_failed")
+        self.assertIsNone(result["branches"][0]["laborCost"]["annualRatio"])
+        claims.save_labor_costs(labor_sample(), self.path, NOW)
+        later = NOW + timedelta(hours=1)
+        failed = labor_sample(None, later)
+        claims.save_labor_costs(failed, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertTrue(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "63.20")
+        self.assertEqual(result["branches"][0]["laborCost"]["checkedAt"], NOW.isoformat())
+        self.assertEqual(result["branches"][0]["laborCost"]["lastQueryFailureAt"], later.isoformat())
+        verify_published(failed, result, labor_only=True)
+
+    def test_claim_and_labor_results_merge_independently(self):
+        self.result(sample())
+        claims.save_labor_costs(labor_sample(), self.path, NOW)
+        later = NOW + timedelta(hours=1)
+        incoming = sample()
+        for branch, labor in zip(incoming["branches"], labor_sample("64.00", later)["branches"]):
+            branch.update(checkedAt=later.isoformat(), querySucceeded=False, claims=[], laborCost=labor["laborCost"])
+        claims.save(incoming, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertTrue(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["checkedAt"], NOW.isoformat())
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "64.00")
+        incoming = sample()
+        for branch in incoming["branches"]:
+            branch["checkedAt"] = later.isoformat()
+        claims.save(incoming, self.path, later)
+        self.assertEqual(claims.report(self.path, later)["branches"][0]["laborCost"]["annualRatio"], "64.00")
+
+    def test_labor_wrong_month_year_invalid_ratio_and_secrets_rejected(self):
+        self.result(sample())
+        for changes in ({"benefitMonth": "2026-08"}, {"year": 2027}, {"annualRatio": "NaN"},
+                        {"annualRatio": "62.5%"}, {"annualRatio": "-1"}, {"annualRatio": 62.5},
+                        {"querySucceeded": False}, {"employeeName": "private"}):
+            incoming = labor_sample()
+            incoming["branches"][0]["laborCost"].update(changes)
+            with self.assertRaises(ValueError):
+                claims.save_labor_costs(incoming, self.path, NOW)
+
+    def test_new_month_never_reuses_old_labor_ratio_or_old_year_benchmark(self):
+        self.result(sample())
+        claims.save_labor_costs(labor_sample(), self.path, NOW)
+        result = claims.report(self.path, datetime(2026, 10, 6, tzinfo=claims.KST))
+        self.assertEqual(result["branches"][0]["laborCost"]["benefitMonth"], "2026-08")
+        self.assertIsNone(result["branches"][0]["laborCost"]["annualRatio"])
+        self.assertFalse(result["allChecksComplete"])
+        result = claims.report(self.path, datetime(2027, 3, 6, tzinfo=claims.KST))
+        self.assertIsNone(result["branches"][0]["laborCost"]["benchmarkRatio"])
+
+    def test_old_labor_cannot_overwrite_new_ratio(self):
+        self.result(sample())
+        later = NOW + timedelta(hours=1)
+        claims.save_labor_costs(labor_sample("64.00", later), self.path, later)
+        with self.assertRaises(ValueError):
+            claims.save_labor_costs(labor_sample(), self.path, later)
 
 
 if __name__ == "__main__":

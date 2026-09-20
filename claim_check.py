@@ -1,16 +1,20 @@
 """Current-month LTC claim checks. Certificate login runs on the owner's PC."""
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 import argparse
 import base64
 import copy
 import json
 import os
+import re
 import tempfile
 
 KST = timezone(timedelta(hours=9))
 BRANCHES = {"anyang": ("안양점", "14117000625"), "incheon": ("인천점", "12817700685")}
 REQUIRED_CLAIMS = (("노인요양시설(개정법)", "일반"), ("노인요양시설(개정법)", "의료"), ("장기근속장려금", "일반"))
+# The owner's operating benchmark; do not carry it into another year without confirmation.
+LABOR_BENCHMARKS = {2026: "62.5"}
 
 
 def now_kst():
@@ -27,6 +31,11 @@ def period(now=None):
     return previous.strftime("%Y-%m"), now.date().replace(day=10)
 
 
+def labor_period(benefit_month):
+    previous = datetime.strptime(benefit_month, "%Y-%m").date() - timedelta(days=1)
+    return previous.strftime("%Y-%m"), previous.year
+
+
 def timestamp(value):
     result = datetime.fromisoformat(value)
     if result.tzinfo is None:
@@ -37,6 +46,47 @@ def timestamp(value):
 def exact_keys(value, keys, optional=()):
     if not isinstance(value, dict) or not set(keys) <= set(value) or set(value) - set(keys) - set(optional):
         raise ValueError("점검 결과의 항목을 확인해주세요.")
+
+
+def validate_labor(labor, benefit_month, now):
+    exact_keys(labor, {"benefitMonth", "year", "checkedAt", "querySucceeded", "annualRatio"}, {"lastQueryFailureAt"})
+    month, year = labor_period(benefit_month)
+    if labor["benefitMonth"] != month or type(labor["year"]) is not int or labor["year"] != year:
+        raise ValueError("인건비는 청구 급여제공월의 직전 월과 해당 연도로 조회해야 합니다.")
+    if type(labor["querySucceeded"]) is not bool or timestamp(labor["checkedAt"]) > now + timedelta(minutes=5):
+        raise ValueError("인건비 조회 여부와 시각을 확인해주세요.")
+    ratio = labor["annualRatio"]
+    if labor["querySucceeded"]:
+        if not isinstance(ratio, str) or len(ratio) > 32 or not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", ratio):
+            raise ValueError("16번 연간비율을 % 기호 없는 숫자 문자열로 기록해주세요.")
+    elif ratio is not None:
+        raise ValueError("조회하지 못한 인건비 비율을 추정하지 마세요.")
+    if "lastQueryFailureAt" in labor:
+        if not labor["querySucceeded"] or not timestamp(labor["checkedAt"]) <= timestamp(labor["lastQueryFailureAt"]) <= now + timedelta(minutes=5):
+            raise ValueError("인건비 재조회 실패 시각을 확인해주세요.")
+    return labor
+
+
+def merge_labor(incoming, previous):
+    if incoming is None:
+        return copy.deepcopy(previous)
+    result = copy.deepcopy(incoming)
+    if previous is None:
+        return result
+    checked = timestamp(result["checkedAt"])
+    prior_checked = timestamp(previous["checkedAt"])
+    failed = previous.get("lastQueryFailureAt") if previous["querySucceeded"] else previous["checkedAt"]
+    if result["querySucceeded"]:
+        if previous["querySucceeded"] and checked < prior_checked:
+            raise ValueError("더 오래된 인건비 조회로 최신 비율을 덮어쓸 수 없습니다.")
+        if failed and timestamp(failed) >= checked:
+            result["lastQueryFailureAt"] = max((failed, result.get("lastQueryFailureAt", failed)), key=timestamp)
+    else:
+        if checked < max(prior_checked, timestamp(failed) if failed else prior_checked):
+            raise ValueError("더 오래된 인건비 조회로 최신 결과를 덮어쓸 수 없습니다.")
+        if previous["querySucceeded"]:
+            result = {**previous, "lastQueryFailureAt": result["checkedAt"]}
+    return result
 
 
 def validate(payload, now=None, require_current=True):
@@ -52,11 +102,13 @@ def validate(payload, now=None, require_current=True):
         raise ValueError("두 지점의 점검 결과가 필요합니다.")
     seen = set()
     for branch in branches:
-        exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"}, {"lastQueryFailureAt"})
+        exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"}, {"lastQueryFailureAt", "laborCost"})
         ident = branch["id"]
         if ident not in BRANCHES or ident in seen or branch["institutionNumber"] != BRANCHES[ident][1]:
             raise ValueError("지점과 기관 기호가 일치하지 않습니다.")
         seen.add(ident)
+        if "laborCost" in branch:
+            validate_labor(branch["laborCost"], month, now)
         if timestamp(branch["checkedAt"]) > now + timedelta(minutes=5):
             raise ValueError("확인 시각이 현재보다 늦습니다.")
         if type(branch["querySucceeded"]) is not bool:
@@ -92,6 +144,7 @@ def save(payload, path=None, now=None):
             prior = {b["id"]: b for b in old["branches"]}
             for index, branch in enumerate(payload["branches"]):
                 previous = prior[branch["id"]]
+                labor = merge_labor(branch.get("laborCost"), previous.get("laborCost"))
                 checked_at = timestamp(branch["checkedAt"])
                 previous_at = timestamp(previous["checkedAt"])
                 failed_at = previous.get("lastQueryFailureAt") if previous["querySucceeded"] else previous["checkedAt"]
@@ -109,6 +162,8 @@ def save(payload, path=None, now=None):
                         raise ValueError("더 오래된 점검으로 최신 결과를 덮어쓸 수 없습니다.")
                     if previous["querySucceeded"]:
                         payload["branches"][index] = {**previous, "lastQueryFailureAt": branch["checkedAt"]}
+                if labor is not None:
+                    payload["branches"][index]["laborCost"] = labor
     validate(payload, now)
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as output:
@@ -118,6 +173,35 @@ def save(payload, path=None, now=None):
         os.replace(temp_path, path)
     finally:
         temp_path.unlink(missing_ok=True)
+
+
+def validate_labor_payload(payload, now=None):
+    now = now or now_kst()
+    exact_keys(payload, {"benefitMonth", "branches"})
+    if payload["benefitMonth"] != period(now)[0]:
+        raise ValueError("이번 점검 대상 급여제공월만 저장할 수 있습니다.")
+    if not isinstance(payload["branches"], list) or len(payload["branches"]) != 2:
+        raise ValueError("두 지점의 인건비 결과가 필요합니다.")
+    seen = set()
+    for branch in payload["branches"]:
+        exact_keys(branch, {"id", "institutionNumber", "laborCost"})
+        ident = branch["id"]
+        if ident not in BRANCHES or ident in seen or branch["institutionNumber"] != BRANCHES[ident][1]:
+            raise ValueError("지점과 기관 기호가 일치하지 않습니다.")
+        seen.add(ident)
+        validate_labor(branch["laborCost"], payload["benefitMonth"], now)
+    return payload
+
+
+def save_labor_costs(payload, path=None, now=None):
+    now = now or now_kst()
+    payload = validate_labor_payload(payload, now)
+    path = Path(path or data_path())
+    current = validate(json.loads(path.read_text(encoding="utf-8")), now)
+    incoming = {b["id"]: b["laborCost"] for b in payload["branches"]}
+    for branch in current["branches"]:
+        branch["laborCost"] = merge_labor(incoming[branch["id"]], branch.get("laborCost"))
+    save(current, path, now)
 
 
 def report(path=None, now=None):
@@ -130,8 +214,19 @@ def report(path=None, now=None):
         if payload["benefitMonth"] == month:
             stored = {b["id"]: b for b in payload["branches"]}
     results = []
+    labor_month, labor_year = labor_period(month)
     for ident, (name, _) in BRANCHES.items():
         entry = stored.get(ident)
+        labor = entry.get("laborCost") if entry else None
+        labor_verified = bool(labor and labor["querySucceeded"])
+        benchmark = LABOR_BENCHMARKS.get(labor_year)
+        assessment = ("stable" if Decimal(labor["annualRatio"]) > Decimal(benchmark) else "check") if labor_verified and benchmark else "unverified" if not labor_verified else "no_benchmark"
+        labor_result = {"benefitMonth": labor_month, "year": labor_year, "sourceItem": 16,
+                        "status": "verified" if labor_verified else "query_failed" if labor else "unqueried",
+                        "annualRatio": labor["annualRatio"] if labor_verified else None,
+                        "checkedAt": labor["checkedAt"] if labor_verified else None,
+                        "lastQueryFailureAt": (labor.get("lastQueryFailureAt") if labor_verified else labor["checkedAt"]) if labor else None,
+                        "benchmarkRatio": benchmark, "assessment": assessment}
         claims = [c for c in entry["claims"] if (c["benefitType"], c["recipientType"]) in REQUIRED_CLAIMS] if entry else []
         missing = [{"benefitType": kind, "recipientType": recipient} for kind, recipient in REQUIRED_CLAIMS
                    if not any((c["benefitType"], c["recipientType"]) == (kind, recipient) for c in claims)]
@@ -152,18 +247,25 @@ def report(path=None, now=None):
                         "checkedAt": entry["checkedAt"] if entry and entry["querySucceeded"] else None,
                         "lastQueryFailureAt": (entry.get("lastQueryFailureAt") if entry["querySucceeded"] else entry["checkedAt"]) if entry else None,
                         "claims": claims, "count": len(claims), "missing": missing,
-                        "verifiedItems": 3 - len(missing)})
+                        "verifiedItems": 3 - len(missing), "laborCost": labor_result})
+    all_accepted = all(b["status"] == "accepted" for b in results)
+    all_labor = all(b["laborCost"]["status"] == "verified" for b in results)
     return {"benefitMonth": month, "deadline": deadline.isoformat(),
             "daysUntilDeadline": (deadline - now.astimezone(KST).date()).days,
             "generatedAt": now.astimezone(KST).isoformat(), "branches": results,
-            "allAccepted": all(b["status"] == "accepted" for b in results)}
+            "allAccepted": all_accepted, "allLaborCostsVerified": all_labor,
+            "allChecksComplete": all_accepted and all_labor}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--import-base64", help="Validated, credential-free check result")
+    parser.add_argument("--import-labor-base64", help="Update labor ratios without changing claim results")
     args = parser.parse_args()
-    if args.import_base64:
+    if args.import_labor_base64:
+        save_labor_costs(json.loads(base64.b64decode(args.import_labor_base64, validate=True)))
+        print("인건비 비율 저장 완료")
+    elif args.import_base64:
         save(json.loads(base64.b64decode(args.import_base64, validate=True)))
         print("점검 결과 저장 완료")
     else:

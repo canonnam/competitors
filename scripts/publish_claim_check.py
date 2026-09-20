@@ -17,22 +17,33 @@ ENVIRONMENT = "6a839bc7-ff57-4811-abdd-cb74b16d97d2"
 URL = "https://app.aivida.tech/api/claim-check"
 
 
-def verify_published(payload, saved):
+def verify_published(payload, saved, labor_only=False):
     actual = {b["id"]: b for b in saved["branches"]}
     if saved["benefitMonth"] != payload["benefitMonth"] or set(actual) != {b["id"] for b in payload["branches"]}:
         raise RuntimeError("저장 후 사이트의 대상 월과 지점을 확인하지 못했습니다.")
     for branch in payload["branches"]:
-        key = "checkedAt" if branch["querySucceeded"] else "lastQueryFailureAt"
-        if actual[branch["id"]].get(key) != branch["checkedAt"]:
-            raise RuntimeError("저장 후 사이트 응답을 확인하지 못했습니다. 같은 결과를 재확인해주세요.")
+        if not labor_only:
+            key = "checkedAt" if branch["querySucceeded"] else "lastQueryFailureAt"
+            if actual[branch["id"]].get(key) != branch["checkedAt"]:
+                raise RuntimeError("저장 후 사이트 응답을 확인하지 못했습니다. 같은 결과를 재확인해주세요.")
+        if "laborCost" in branch:
+            labor = branch["laborCost"]
+            published = actual[branch["id"]].get("laborCost", {})
+            key = "checkedAt" if labor["querySucceeded"] else "lastQueryFailureAt"
+            if published.get(key) != labor["checkedAt"] or published.get("benefitMonth") != labor["benefitMonth"] or published.get("year") != labor["year"]:
+                raise RuntimeError("인건비 조회월·연도·확인 시각이 사이트와 일치하지 않습니다.")
+            if labor["querySucceeded"] and published.get("annualRatio") != labor["annualRatio"]:
+                raise RuntimeError("16번 연간비율이 사이트에 반영되지 않았습니다.")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("result", type=Path, help="Credential-free JSON from a completed browser query")
     parser.add_argument("--publish", action="store_true", help="Write the verified result to the website")
+    parser.add_argument("--labor-only", action="store_true", help="Publish labor ratios without resubmitting claim results")
     args = parser.parse_args()
-    payload = claim_check.validate(json.loads(args.result.read_text(encoding="utf-8-sig")))
+    validator = claim_check.validate_labor_payload if args.labor_only else claim_check.validate
+    payload = validator(json.loads(args.result.read_text(encoding="utf-8-sig")))
     if not args.publish:
         print("두 지점·기관 기호·급여제공월·결과 형식 검증 완료. --publish로 반영합니다.")
         return
@@ -43,11 +54,11 @@ def main():
     if len(encoded) > 16000:
         raise ValueError("필수 청구 3개 항목의 상태만 포함해주세요.")
     command = [railway, "ssh", "--project", PROJECT, "--service", SERVICE, "--environment", ENVIRONMENT,
-               "--", "python", "/app/claim_check.py", "--import-base64", encoded]
+               "--", "python", "/app/claim_check.py", "--import-labor-base64" if args.labor_only else "--import-base64", encoded]
     subprocess.run(command, check=True, timeout=90)
     with urllib.request.urlopen(URL, timeout=20) as response:
         saved = json.load(response)
-    verify_published(payload, saved)
+    verify_published(payload, saved, args.labor_only)
     print("사이트 반영 확인: " + ", ".join(f'{b["name"]} {b["label"]} ({b["verifiedItems"]}/3 항목)' for b in saved["branches"]))
 
 
