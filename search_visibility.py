@@ -19,6 +19,7 @@ from competitor_news import KST, connect, normalized, timestamp
 import naver_ads
 import aeo_missions
 import web_search_results
+import naver_web_results
 
 ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('search_visibility')
@@ -400,6 +401,8 @@ def safe_error(exc):
 
 
 def sync_provider(path, provider, queries, config, now=None, fetcher=fetch_html, stop=None):
+    if config.get('naver_collection') == 'browser':
+        return []
     live_clock = now is None
     now = now or datetime.now(KST)
     if due_at(now).date() != now.astimezone(KST).date():
@@ -516,7 +519,7 @@ def report(path, ad_path=None, now=None, summary=False):
                     'history': [{'at': row['observed_at'], 'mentioned': row['mentioned'], 'first_page': row.get('first_page')} for row in records[:30] if provider == 'naver' or row.get('grounded')]}
             if provider == 'naver':
                 item['ad_coverage_complete'] = observation.get('ad_parser_version') == AD_PARSER_VERSION
-            if summary:
+            if summary and config.get('naver_collection') != 'browser':
                 item = {key: item.get(key) for key in ('keyword', 'branch', 'status', 'stale', 'mentioned', 'first_page', 'observed_at', 'error', 'last_attempt')}
                 item['branch_result'] = {k: value for k, value in branch_result.items() if k in {'mentioned', 'first_page', 'branch_unconfirmed'}}
             items.append(item)
@@ -526,11 +529,13 @@ def report(path, ad_path=None, now=None, summary=False):
                           'first_page': sum(item.get('first_page') == 1 for item in checked),
                           'collection_paused': paused, 'collection_error': cooldown.get('error', '') if paused else '',
                           'items': items})
+    if config.get('naver_collection') == 'browser':
+        providers[0] = naver_web_results.report(path, providers[0], config, now, summary, ad_report.get('stale'))
     providers.extend(web_search_results.reports(path, ai_queries, config, now, summary))
     if not summary:
         aeo_missions.attach(path, providers, config.get('branches', []))
     return {'brand': config['brand'], 'schedule': SCHEDULE, 'enabled': enabled(), 'due_at': due_at(now).isoformat(), 'next_run': next_scheduled(now).isoformat(),
-            'naver_collection': 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
+            'naver_collection': 'Computer Use' if config.get('naver_collection') == 'browser' else 'SerpApi' if os.getenv('SERPAPI_KEY') else '공개 검색 페이지',
             'max_pages': config['max_pages'], 'owned_urls': config.get('owned_urls', []), 'providers': providers,
             'branches': [{'id': b['id'], 'name': b['name']} for b in config.get('branches', [])],
             'keyword_source': {'updated_at': ad_report.get('updated_at'), 'stale': ad_report.get('stale'), 'total': len(search_queries),
@@ -554,7 +559,7 @@ def start_scheduler(path, ad_path=None):
                 LOG.warning('Visibility scheduler retry: %s', provider)
             stop.wait(60)
 
-    if enabled():
+    if enabled() and settings().get('naver_collection') != 'browser':
         for provider in ('naver',):
             threading.Thread(target=run, args=(provider,), daemon=True, name='visibility-'+provider).start()
     return stop

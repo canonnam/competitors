@@ -39,6 +39,9 @@ class VisibilityTests(unittest.TestCase):
         self.path=Path(self.temp.name)/'visibility.db';v.init_db(self.path)
         self.adpath=Path(self.temp.name)/'ads.db';v.naver_ads.init_db(self.adpath)
         self.config=deepcopy(v.settings())
+        self.config['naver_collection']='server'
+        settings_patch=patch.object(v,'settings',return_value=self.config)
+        settings_patch.start();self.addCleanup(settings_patch.stop)
         self.env=patch.dict(os.environ,{'OPENAI_API_KEY':'test-key','GEMINI_API_KEY':'','PERPLEXITY_API_KEY':'','SERPAPI_KEY':''})
         self.env.start()
         self.addCleanup(self.env.stop);self.addCleanup(self.temp.cleanup)

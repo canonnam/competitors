@@ -29,6 +29,9 @@ def submit(path, body, now=None):
     now = now or datetime.now(KST)
     if not isinstance(body, dict):
         raise ValueError('웹 결과 요청 형식을 확인해주세요.')
+    if body.get('provider') == 'naver':
+        import naver_web_results
+        return naver_web_results.submit(path, body, now)
     for field, limit in (('provider', 30), ('keyword', 300), ('branch', 40), ('request_id', 36),
                          ('answer', 50000), ('reason', 1500), ('session_context', 300), ('model', 100),
                          ('conversation_url', 2000), ('observed_at', 40), ('capture_method', 20), ('status', 20)):

@@ -383,7 +383,7 @@ class App(SimpleHTTPRequestHandler):
     def save_web_result(self):
         try:
             wiki_chat.check_origin(self)
-            result = web_search_results.submit(search_visibility.db_path(), wiki_chat.read_json(self, 250000))
+            result = web_search_results.submit(search_visibility.db_path(), wiki_chat.read_json(self, 2000000))
         except wiki_chat.ChatError as exc:
             wiki_chat.send_json(self, exc.status, {'error': str(exc)})
             return

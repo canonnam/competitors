@@ -20,7 +20,7 @@ COPY data /app/data
 COPY service_knowledge.py /app/
 COPY card_knowledge.py /app/
 COPY aeo_missions.py /app/
-COPY web_search_results.py /app/
+COPY web_search_results.py naver_web_results.py /app/
 COPY support_applications.py support_documents.py support-prep.html /app/
 COPY support_projects.py support-projects.html support-share.html /app/
 COPY website_intake.py website-requests.html /app/
