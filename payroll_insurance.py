@@ -141,10 +141,11 @@ def validate(payload):
         clean['totals'] = summarize(clean['rows'])
         clean['groups'] = [dict(role=g, **summarize([r for r in clean['rows'] if r['role'] == g])) for g in ROLES]
         individual = clean['totals']['insurance']
-        comparable = {'healthCare': 2 * (individual['health'] + individual['care']),
+        health_care = [individual[k] for k in ('health', 'care') if individual[k] is not None]
+        comparable = {'healthCare': 2 * sum(health_care) if health_care else None,
                       **{k: individual[k] for k in ('pension', 'employment', 'accident')}}
         clean['reconciliation'] = {k: {'individual': v, 'portal': clean['portalTotals'][k],
-                                    'difference': None if clean['portalTotals'][k] is None else clean['portalTotals'][k] - v}
+                                    'difference': None if clean['portalTotals'][k] is None or v is None else clean['portalTotals'][k] - v}
                                    for k, v in comparable.items()}
         result['branches'].append(clean)
     result['branches'].sort(key=lambda b: b['id'])
