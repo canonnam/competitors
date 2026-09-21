@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY claim_check.py claim-check.html app.py naver_ads.py competitor_news.py wiki_chat.py agency_news.py business_support.py support_feedback.py search_visibility.py reputation_watch.py index.html competitors.html competitor-uiux.html competitor-news.html agency-news.html ai-hub-data.html naver-ads.html search-visibility.html reputation-watch.html operating-costs.html nearby-facilities.html statistics.html knowledge.html /app/
 COPY assets /app/assets
 COPY payroll.html /app/
+COPY payroll_insurance.py payroll-insurance.html /app/
 COPY robots.txt favicon.ico /app/
 COPY data /app/data
 COPY service_knowledge.py /app/

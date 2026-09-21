@@ -12,6 +12,7 @@ import json
 import re
 
 CARDS = {
+    'payroll_insurance': ('월별 급여·4대보험', '/payroll-insurance.html'),
     'payroll': ('급여 계산·근로계약서', '/payroll.html'),
     'claim_check': ('지점별 청구 점검', '/claim-check.html'),
     'agency_news': ('건보공단·복지부 뉴스·지원사업', '/agency-news.html'),
@@ -24,6 +25,7 @@ CARDS = {
     'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
 }
 ALIASES = {
+    'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
     'payroll': ('급여계산', '급여계산기', '근로계약', '통상임금', '통상시급', '주휴시간', '주주야야', '연장수당', '야간수당'),
     'claim_check': ('청구점검', '청구현황', '청구상태', '청구여부', '청구마감', '접수완료', '청구처리'),
     'agency_news': ('건보공단', '복지부', '공공기관', '기관뉴스', '지원사업', '지원금', '정부지원', '공고', '지원추천', '사업추천'),
@@ -343,6 +345,10 @@ def nearby(question):
 
 
 def retrieve(kind, question, now):
+    if kind == 'payroll_insurance':
+        from service_knowledge import evidence
+        return [evidence(kind, '월별 급여·4대보험 접근 안내',
+            '안양·인천의 직원별 급여와 보험료, 직책별 합계를 담당자 로그인 후 조회합니다. 매월 10일 전월분을 수집합니다. 개인정보 보호를 위해 공개 채팅에서는 실제 이름·급여·보험료·직책별 금액을 읽거나 답하지 않습니다. 전용 화면에서 확인해주세요.')]
     if kind in ('ai_hub', 'payroll', 'competitor_uiux'):
         return static_page(kind, question)
     if kind == 'statistics':
@@ -358,6 +364,7 @@ def status():
     from service_knowledge import ROOT
     import agency_news, naver_ads, search_visibility, reputation_watch, claim_check
     paths = {'payroll': [ROOT / 'payroll.html', ROOT / 'assets/contracts/templates.json'],
+             'payroll_insurance': [ROOT / 'payroll-insurance.html'],
              'ai_hub': [ROOT / 'ai-hub-data.html'], 'claim_check': [claim_check.data_path()],
              'agency_news': [agency_news.db_path()], 'naver_ads': [naver_ads.db_path()],
              'search_visibility': [search_visibility.db_path(), naver_ads.db_path()],

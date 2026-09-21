@@ -12,6 +12,7 @@ import agency_news
 import search_visibility
 import reputation_watch
 import claim_check
+import payroll_insurance
 import aeo_missions
 import web_search_results
 import support_applications
@@ -70,6 +71,8 @@ class App(SimpleHTTPRequestHandler):
             return
         if website_intake.handle(self, "GET"):
             return
+        if payroll_insurance.handle(self, "GET"):
+            return
         if support_applications.handle(self, "GET"):
             return
         if urllib.parse.urlsplit(self.path).path == "/api/claim-check":
@@ -104,6 +107,8 @@ class App(SimpleHTTPRequestHandler):
         if support_projects.handle(self, "HEAD"):
             return
         if website_intake.handle(self, "HEAD"):
+            return
+        if payroll_insurance.handle(self, "HEAD"):
             return
         if support_applications.handle(self, "HEAD"):
             return
@@ -279,7 +284,7 @@ class App(SimpleHTTPRequestHandler):
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
-        public_pages.update({'support-projects.html', 'support-share.html'})
+        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
@@ -295,6 +300,8 @@ class App(SimpleHTTPRequestHandler):
         if support_projects.handle(self, "POST"):
             return
         if website_intake.handle(self, "POST"):
+            return
+        if payroll_insurance.handle(self, "POST"):
             return
         if support_applications.handle(self, "POST"):
             return
