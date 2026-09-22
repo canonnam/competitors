@@ -73,10 +73,10 @@
     container.innerHTML=`<div class="dash-heading"><h1 id="dashboard-title">대시보드</h1><time class="dash-date"></time></div>
       <div class="dash-metrics" data-dash-slot="metrics" aria-label="핵심 현황"></div>
       <div class="dash-columns">
+        <section class="dash-panel dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">월별 운영손익</h2><a href="/operating-costs.html">운영비 상세 보기</a></div><div data-dash-slot="operating"></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="requests-time"></span><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests" aria-label="신청 현황 새로고침">새로고침</button></div></section>
         <section class="dash-panel dash-ads-panel" aria-labelledby="dashboard-ads-title"><div class="dash-panel-head"><h2 id="dashboard-ads-title">네이버 광고 노출·클릭 추이</h2><a href="/naver-ads.html">광고 상세</a></div><div data-dash-slot="ads"></div></section>
-        <section class="dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">운영비 분석</h2><a href="/operating-costs.html">상세 보기</a></div><div data-dash-slot="operating"></div></section>
       </div>
       <section class="dash-shortcuts" aria-labelledby="dashboard-shortcuts-title"><h2 id="dashboard-shortcuts-title">주요 업무 바로가기</h2><div class="dash-shortcut-grid">
         <a href="/website-requests.html"><strong>상담·무료체험 신청</strong><span>신청 내역과 처리 상태 확인</span></a>
@@ -89,7 +89,9 @@
       const target=container.querySelector('[data-dash-slot="'+name+'"]');
       if(target._html===html)return;
       const focus=target.contains(doc.activeElement)?doc.activeElement?.getAttribute('data-dash-key'):null;
+      const scrolls=[...target.querySelectorAll('[data-dash-scroll]')].map(el=>[el.dataset.dashScroll,el.scrollLeft]);
       target.innerHTML=html;target._html=html;
+      for(const [key,left] of scrolls){const element=[...target.querySelectorAll('[data-dash-scroll]')].find(el=>el.dataset.dashScroll===key);if(element)element.scrollLeft=left;}
       if(focus)[...target.querySelectorAll('[data-dash-key]')].find(el=>el.dataset.dashKey===focus)?.focus({preventScroll:true});
     }
     function draw() {
@@ -110,7 +112,8 @@
       container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error);
       const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
       slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
-      slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
+      const operatingExpanded=!!container.querySelector('[data-dash-slot="operating"] details[open]');
+      slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating,operatingExpanded):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
     }
     redraw=draw;win.NewsBadge?.subscribe(draw);draw();
     win.addEventListener('pageshow',draw);

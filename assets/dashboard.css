@@ -21,30 +21,34 @@
 .dash-ads-panel { grid-column:1 / -1; }
 .dash-operating { grid-column:1 / -1; min-width:0; }
 .dash-operating-meta { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-.dash-operating-meta a { color:var(--ui-primary); font-size:14px; text-underline-offset:3px; }
-.dash-operating-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
-.dash-operating .branch-card { min-width:0; display:flex; flex-direction:column; padding:24px; background:var(--ui-surface); border:1px solid var(--ui-border); border-top:3px solid var(--ui-success); border-radius:var(--ui-card-radius); }
-.dash-operating .branch-card.incheon { border-top-color:var(--ui-primary); }
-.dash-operating .card-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.dash-operating .location { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:700; }
-.dash-operating .location i { flex-shrink:0; width:8px; height:8px; border-radius:50%; background:var(--ui-success); }
-.dash-operating .location i.incheon { background:var(--ui-primary); }
-.dash-operating .badge { background:var(--ui-success-bg); color:var(--ui-success); white-space:nowrap; }
-.dash-operating .badge.loss { background:var(--ui-error-bg); color:var(--ui-error); }
-.dash-operating .profit-line { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 12px; margin:24px 0 8px; }
-.dash-operating .profit-line strong { font-size:32px; line-height:1.3; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-.dash-operating .profit-line span,.dash-operating .change { color:var(--ui-muted); font-size:14px; }
-.dash-operating .positive { color:var(--ui-success); }
-.dash-operating .negative { color:var(--ui-error); }
-.dash-operating .mini-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; border-top:1px solid var(--ui-border); padding-top:20px; margin:24px 0 20px; }
-.dash-operating .mini-stats span { color:var(--ui-muted); font-size:13px; }
-.dash-operating .mini-stats strong { display:block; margin-top:8px; font-size:18px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-.dash-operating .card-note { padding:12px; margin-top:auto; border-radius:var(--ui-control-radius); background:var(--ui-page); color:var(--ui-muted); font-size:14px; }
-.dash-operating .empty { padding:24px 0; color:var(--ui-muted); }
-.dash-operating .dash-footnote { margin-top:12px; }
-@media(max-width:760px) { .dash-operating-grid { grid-template-columns:1fr; } .dash-operating .branch-card { padding:16px; } }
-@media(max-width:380px) { .dash-operating .mini-stats { grid-template-columns:1fr; gap:12px; } .dash-operating .mini-stats>div { display:flex; align-items:baseline; justify-content:space-between; gap:8px; } .dash-operating .mini-stats strong { margin:0; } .dash-operating .profit-line strong { font-size:28px; } }
-@media print { .dash-operating .branch-card { break-inside:avoid; } }
+.dash-profit-legend { display:flex; align-items:center; gap:16px; font-size:13px; color:var(--ui-muted); }
+.dash-profit-legend span { display:flex; align-items:center; gap:8px; }
+.dash-profit-legend i { width:10px; height:10px; border-radius:2px; }
+.dash-operating .anyang { background:var(--ui-success); }
+.dash-operating .incheon { background:var(--ui-primary); }
+.dash-operating-scroll { overflow-x:auto; padding:16px 4px 4px; }
+.dash-profit-chart { padding:12px 0 36px 60px; }
+.dash-profit-plot { position:relative; height:280px; }
+.dash-profit-grid,.dash-profit-months { position:absolute; inset:0; }
+.dash-profit-gridline { position:absolute; left:0; right:0; border-top:1px solid var(--ui-border); }
+.dash-profit-gridline.is-zero { border-color:var(--ui-muted); }
+.dash-profit-gridline>span { position:absolute; right:100%; transform:translateY(-50%); padding-right:12px; color:var(--ui-muted); font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dash-profit-months { display:flex; }
+.dash-profit-month { position:relative; flex:1; min-width:0; }
+.dash-profit-pair { position:relative; height:100%; }
+.dash-profit-bar { position:absolute; left:calc(12% + var(--branch)*44%); width:32%; max-width:36px; min-height:2px; border-radius:4px; opacity:.55; text-decoration:none; }
+.dash-profit-bar.is-latest,.dash-profit-bar:hover,.dash-profit-bar:focus-visible { opacity:1; }
+/* 작은 값도 클릭할 수 있도록 수치 막대와 별도로 터치 영역을 확보한다. */
+.dash-profit-bar::after { content:""; position:absolute; inset:50% 0 auto; transform:translateY(-50%); height:100%; min-height:24px; }
+.dash-profit-missing { position:absolute; left:calc(12% + var(--branch)*44%); width:32%; text-align:center; transform:translateY(-50%); color:var(--ui-muted); font-size:12px; }
+.dash-profit-month-label { position:absolute; top:calc(100% + 12px); left:0; right:0; color:var(--ui-muted); font-size:13px; text-align:center; font-variant-numeric:tabular-nums; }
+.dash-operating-footer { margin-top:12px; }
+.dash-operating-footer summary { cursor:pointer; width:fit-content; color:var(--ui-primary); font-size:14px; padding:8px 0; }
+.dash-operating-footer a { color:var(--ui-primary); text-underline-offset:3px; }
+.dash-operating-footer .dash-table-wrap { max-height:280px; overflow:auto; }
+.dash-profit-mobile-hint { display:none; }
+@media(max-width:760px) { .dash-profit-mobile-hint { display:block; } .dash-profit-plot { height:240px; } }
+@media print { .dash-operating-footer .dash-table-wrap { max-height:none; overflow:visible; } .dash-operating-scroll { overflow:visible; } .dash-profit-chart { min-width:0!important; } }
 .dash-ad-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:16px; }
 .dash-ad-chart { min-width:0; margin:0; color:var(--ui-primary); }
 .dash-ad-clicks { color:var(--ui-success); }

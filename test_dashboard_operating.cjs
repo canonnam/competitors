@@ -1,24 +1,65 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const {prepare,render,start}=require('./assets/dashboard-operating.js');
+const {prepare,profitScale,barGeometry,render,start}=require('./assets/dashboard-operating.js');
 const Cards=require('./assets/operating-cards.js');
-const M=require('./assets/operating-model.js');
 const report=JSON.parse(fs.readFileSync('data/operating_report.json','utf8'));
-test('latest registered month and branch figures match the existing report cards',()=>{
+test('latest registered year shows chronological branch profit bars from the actual report',()=>{
   const view=prepare(report);assert.equal(view.month,'2026-08');
+  assert.equal(view.year,'2026');assert.equal(view.rows.length,8);
+  assert.deepEqual(view.rows.map(row=>row.month),Array.from({length:8},(_,i)=>'2026-0'+(i+1)));
   const html=render({data:report});
-  for(const expected of ['2,145.3만원','703.3만원','2,518.5만원','387.5만원','64.8%','65.7%','23.4%','6.4%','2026년 8월','2026-09-16','자동 수집하지 않습니다'])assert.ok(html.includes(expected),expected);
-  for(const b of view.branches)assert.ok(html.includes(Cards.render(b,b.months.find(m=>m.month===view.month),b.months.find(m=>m.month===M.previousMonth(view.month)))));
-  assert.match(html,/상환·자금 이동으로 실제 자금은 줄었습니다/);
+  for(const expected of ['2,145.3만원','703.3만원','-2,526.2만원','2026년','2026-09-16','자동 수집하지 않습니다'])assert.ok(html.includes(expected),expected);
+  assert.doesNotMatch(html,/branch-card|profit-line|수입 대비 인건비/);
+  for(const row of view.rows)for(const [i,branch] of view.branches.entries()) {
+    assert.equal(row.profits[i],branch.months.find(m=>m.month===row.month).profit);
+    assert.ok(html.includes(`data-profit="${row.profits[i]}"`));
+    assert.ok(html.includes(`href="/operating-costs.html?year=2026&month=${row.month}"`));
+  }
+  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,16);
+  assert.equal((html.match(/ is-latest/g)||[]).length,2);
+  const reordered=structuredClone(report);reordered.branches.reverse();reordered.branches.forEach(b=>b.months.reverse());
+  assert.deepEqual(prepare(reordered).rows,view.rows);
 });
-test('a common latest month never mixes different periods or fills missing months with zero',()=>{
+test('missing branches and months stay gaps, including months absent from both branches',()=>{
   const partial=structuredClone(report);partial.branches[1].months=partial.branches[1].months.filter(m=>m.month!=='2026-08');
+  partial.branches.forEach(b=>b.months=b.months.filter(m=>m.month!=='2026-04'));
   assert.equal(prepare(partial).month,'2026-08');
-  const html=render({data:partial});assert.match(html,/이 달의 자료가 없습니다/);assert.doesNotMatch(html,/703.3만원/);
+  assert.deepEqual(prepare(partial).rows[3],{month:'2026-04',profits:[null,null]});
+  assert.equal(prepare(partial).rows.at(-1).profits[1],null);
+  const html=render({data:partial});assert.match(html,/자료 없음/);assert.doesNotMatch(html,/703.3만원/);
+  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,13);
+  assert.equal((html.match(/class="dash-profit-missing"/g)||[]).length,3);
   assert.match(render({data:{schemaVersion:1,branches:[]}}),/아직 등록된/);
+  assert.ok(prepare({...partial,branches:[partial.branches[0]]}).rows.every(row=>row.profits[1]===null));
   const b=report.branches[0],m=b.months.at(-1);
   assert.match(Cards.render(b,m,b.months[0]),/전월 자료 없음/);
+});
+
+test('year rollover selects the latest data year without filling unreported future months',()=>{
+  const next=structuredClone(report);next.branches[0].months.push({...next.branches[0].months.at(-1),month:'2027-02'});
+  const view=prepare(next);assert.equal(view.year,'2027');assert.deepEqual(view.rows.map(r=>r.month),['2027-02']);
+  assert.equal(view.rows[0].profits[1],null);
+  assert.match(render({data:next}),/year=2027&month=2027-02/);
+  assert.doesNotMatch(render({data:next}),/year=2026&month=/);
+});
+
+test('positive, negative, mixed, zero and small values use a finite shared zero baseline',()=>{
+  const scale=profitScale(prepare(report).rows.flatMap(row=>row.profits.map(v=>v/10000)));
+  assert.deepEqual(scale.ticks,[4000,3000,2000,1000,0,-1000,-2000,-3000]);
+  for(const values of [[100,200],[-100,-200],[100,-200],[0,0],[.0001,-.0002],[]]) {
+    const s=profitScale(values);assert.ok(s.max>s.min);assert.ok(s.zero>=0&&s.zero<=100);
+    assert.ok(s.ticks.includes(0));
+    for(const value of values) {
+      const bar=barGeometry(value,s);
+      assert.ok(Number.isFinite(bar.top)&&Number.isFinite(bar.height));
+      assert.ok(bar.top>=-1e-10&&bar.top+bar.height<=100+1e-10);
+      assert.ok(Math.abs((value>0?bar.top+bar.height:bar.top)-s.zero)<1e-10);
+      if(value===0)assert.equal(bar.height,0);
+    }
+  }
+  const zeros=structuredClone(report);zeros.branches.forEach(b=>b.months.forEach(m=>m.profit=0));
+  const html=render({data:zeros});assert.doesNotMatch(html,/NaN|Infinity|dash-profit-missing/);assert.match(html,/0.0만원/);
 });
 test('negative profit, zero revenue, repayment and refunds retain financial meaning',()=>{
   const b={id:'anyang',name:'안양점'},m={month:'2026-08',revenue:0,cost:10000,profit:-10000,cashChange:10000,accounts:[{group:'인건비',expense:-1000}]};
