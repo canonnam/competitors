@@ -431,7 +431,7 @@ def live_setup():
             'speechConfig': {'languageCode': 'ko-KR'},
         },
         'systemInstruction': {'parts': [{'text': LIVE_INSTRUCTION}]},
-        'inputAudioTranscription': {},
+        'inputAudioTranscription': {'languageCodes': ['ko-KR']},
         'outputAudioTranscription': {},
         # The UI has explicit start/end buttons, so pauses must not end a turn.
         'realtimeInputConfig': {'automaticActivityDetection': {'disabled': True}},
@@ -592,8 +592,11 @@ def finalize(eval_id, transcript):
     row = load(eval_id=eval_id)
     answers = json.loads(row['answers'])
     rubric = score_answers(answers)
+    skipped = {item['scenario_id'] for item in transcript if item.get('kind') == 'skipped'}
+    for item, scenario in zip(rubric['items'], SCENARIOS):
+        item['skipped'] = scenario['id'] in skipped
     gemini, note = gemini_score(answers, rubric)
-    needs = rubric['needs_human']
+    needs = rubric['needs_human'] or bool(skipped)
     if gemini is not None and abs(gemini - rubric['auto_score']) >= 15:
         needs = True
     if os.getenv('GEMINI_API_KEY', '').strip() and gemini is None:
@@ -637,6 +640,10 @@ def append_message(token, text):
         transcript.append({'role': 'assistant', 'text': reply, 'at': now_iso(), 'scenario_id': scenario['id']})
         save_fields(row['id'], transcript=json.dumps(transcript, ensure_ascii=False), answers=json.dumps(answers, ensure_ascii=False), status='in_progress')
         return
+    advance_scenario(row, scenario, transcript, answers, reply)
+
+
+def advance_scenario(row, scenario, transcript, answers, reply):
     index = row['scenario_index'] + 1
     if index >= len(SCENARIOS):
         transcript.append({'role': 'assistant', 'text': DONE_TEXT, 'at': now_iso(), 'scenario_id': scenario['id']})
@@ -649,6 +656,19 @@ def append_message(token, text):
         row['id'], status='in_progress', scenario_index=index,
         transcript=json.dumps(transcript, ensure_ascii=False), answers=json.dumps(answers, ensure_ascii=False),
     )
+
+
+def skip_scenario(token, scenario_id):
+    row = load(token=token)
+    if display_status(row) != 'in_progress' or not row['verified']:
+        raise PermissionError('진행 중인 평가에서만 문항을 건너뛸 수 있습니다.')
+    scenario = scenario_by_index(row['scenario_index'])
+    if not scenario or scenario_id != scenario['id']:
+        raise ValueError('현재 문항이 변경되었습니다. 화면을 새로고침해 주세요.')
+    transcript = json.loads(row['transcript'])
+    transcript.append({'role': 'staff', 'kind': 'skipped', 'text': '이 문항을 건너뛰었습니다.',
+                       'at': now_iso(), 'scenario_id': scenario['id']})
+    advance_scenario(row, scenario, transcript, json.loads(row['answers']), '문항을 건너뛰었습니다.')
 
 
 def public_state(row, authenticated):
@@ -677,6 +697,7 @@ def public_state(row, authenticated):
             'total': len(SCENARIOS),
         }
         payload['input_open'] = status == 'in_progress'
+        payload['scenario_id'] = SCENARIOS[row['scenario_index']]['id'] if status == 'in_progress' else None
     else:
         payload['messages'] = []
         payload['input_open'] = False
@@ -730,7 +751,7 @@ def handle(handler, method):
     try:
         if public:
             token, _, action = path[len(PUBLIC):].partition('/')
-            if not re.fullmatch(r'[A-Za-z0-9_-]{20,120}', token) or action not in ('', 'consent', 'verify', 'message', 'live-token'):
+            if not re.fullmatch(r'[A-Za-z0-9_-]{20,120}', token) or action not in ('', 'consent', 'verify', 'message', 'skip', 'live-token'):
                 raise LookupError('평가 링크를 확인해 주세요.')
             if action == '' and method in ('GET', 'HEAD'):
                 support.send_json(handler, 200, state_for(handler, token), head)
@@ -757,6 +778,14 @@ def handle(handler, method):
                 support.send_json(handler, 200, state_for(handler, token), head)
             elif action == 'live-token':
                 support.send_json(handler, 200, live_credentials(handler, token), head)
+            elif action == 'skip':
+                row = load(token=token)
+                if not cookie_ok(handler, row):
+                    raise wiki_chat.ChatError(401, '본인 확인 후 이어서 답해 주세요.')
+                if not isinstance(body, dict):
+                    raise ValueError('현재 문항을 확인해 주세요.')
+                skip_scenario(token, body.get('scenario_id'))
+                support.send_json(handler, 200, state_for(handler, token), head)
             return True
         if not support.authenticated(handler):
             raise wiki_chat.ChatError(401, '담당자 접근 키로 로그인해주세요.')

@@ -66,16 +66,9 @@
   function useVoice(data) {
     return mode === 'voice' && !!(data.voice && data.voice.available && data.input_open);
   }
-  function downsample(input, fromRate, toRate) {
-    if (fromRate === toRate) return input;
-    const ratio = fromRate / toRate;
-    const length = Math.floor(input.length / ratio);
-    const output = new Float32Array(length);
-    for (let index = 0; index < length; index += 1) output[index] = input[Math.floor(index * ratio)];
-    return output;
-  }
-  function pcm16Base64(float32, fromRate) {
-    const audio = downsample(float32, fromRate, 16000);
+  function pcm16Base64(audio) {
+    // Send every sample at its native rate; the service resamples without
+    // the aliasing and lost chunk boundaries of client-side decimation.
     if (!audio.length) return '';
     const bytes = new Uint8Array(audio.length * 2);
     const view = new DataView(bytes.buffer);
@@ -167,8 +160,9 @@
   function mountText(data) {
     const reason = textReason || '음성 연결 준비가 되지 않아 글로 답합니다. 상황을 읽고 아래에 적어 주세요.';
     app.append(node('p', 'ui-status', reason));
+    let retry = null;
     if (data.voice && data.voice.available) {
-      const retry = node('button', 'ui-button voice-retry', '음성 다시 시도');
+      retry = node('button', 'ui-button voice-retry', '음성 다시 시도');
       retry.type = 'button';
       retry.addEventListener('click', () => { mode = 'voice'; textReason = ''; render(current); });
       app.append(retry);
@@ -189,12 +183,39 @@
     form.addEventListener('submit', async event => {
       event.preventDefault();
       button.disabled = true;
+      skip.disabled = true;
+      input.disabled = true;
+      if (retry) retry.disabled = true;
       note.textContent = '보내는 중…';
       try { const next = await call('/message', {text: input.value}); textDraft = ''; render(next); }
-      catch (error) { note.textContent = error.message; note.dataset.status = 'error'; button.disabled = false; }
+      catch (error) { note.textContent = error.message; note.dataset.status = 'error'; button.disabled = false; skip.disabled = false; input.disabled = false; if (retry) retry.disabled = false; }
     });
     app.append(form);
+    const skip = mountSkip(() => { button.disabled = true; input.disabled = true; if (retry) retry.disabled = true; }, () => { button.disabled = false; input.disabled = false; if (retry) retry.disabled = false; });
     input.focus();
+  }
+  function mountSkip(before, failed) {
+    const area = node('div', 'skip-question');
+    const button = node('button', 'ui-button', current.progress.current === current.progress.total ? '마지막 문항 건너뛰고 완료' : '이 문항 건너뛰기');
+    button.type = 'button';
+    const note = node('p', 'hint', '건너뛴 문항은 다시 돌아올 수 없습니다. 아직 보내지 않은 답변은 저장되지 않으며, 제출한 내용까지 평가됩니다.');
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      before();
+      try {
+        const next = await call('/skip', {scenario_id: current.scenario_id});
+        textDraft = '';
+        render(next);
+      } catch (error) {
+        note.textContent = error.message;
+        note.setAttribute('role', 'alert');
+        button.disabled = false;
+        failed();
+      }
+    });
+    area.append(button, note);
+    app.append(area);
+    return button;
   }
   function mountVoice(data) {
     const session = {open: true, generation: 0};
@@ -214,6 +235,10 @@
     let connectTimer = 0;
     let readTimer = 0;
     let playbackTimer = 0;
+    let readyTimer = 0;
+    let tailTimer = 0;
+    let reviewEdited = false;
+    let quietFrames = 0;
     let cancelConnect = null;
     const state = node('p', 'ui-status voice-state', '상황을 들으려면 아래 버튼을 누르세요.');
     state.setAttribute('role', 'status');
@@ -222,14 +247,43 @@
     mic.setAttribute('aria-pressed', 'false');
     const live = node('p', 'live-line', '');
     live.setAttribute('aria-live', 'polite');
-    const hint = node('p', 'hint', '상황을 들은 뒤 ‘답변 말하기’를 누르세요. 말씀을 마치면 ‘답변 끝내기’를 누르세요.');
+    const hint = node('p', 'hint', '‘답변 말하기’를 누르고 시작음과 ‘지금 말씀하세요’ 표시를 기다리세요. 말씀을 마치면 ‘답변 끝내기’를 누르세요.');
+    const indicator = node('div', 'recording-indicator');
+    indicator.setAttribute('aria-hidden', 'true');
+    indicator.append(node('span', 'recording-dot'));
+    const level = node('meter', 'mic-level');
+    level.min = 0; level.max = 1; level.value = 0;
+    level.setAttribute('aria-label', '마이크 입력 음량');
+    const levelText = node('p', 'hint mic-level-hint', '녹음이 시작되면 마이크 입력 크기가 표시됩니다.');
+    const review = node('form', 'voice-review');
+    review.hidden = true;
+    const reviewLabel = node('label', '', '인식된 답변 확인');
+    const reviewInput = node('textarea');
+    reviewInput.maxLength = 2000; reviewInput.required = true;
+    reviewInput.setAttribute('aria-label', '인식된 답변');
+    reviewInput.addEventListener('input', () => { reviewEdited = true; textDraft = reviewInput.value; });
+    reviewLabel.append(reviewInput);
+    const send = node('button', 'ui-button ui-button--primary', '확인하고 답변 보내기');
+    send.type = 'submit';
+    const again = node('button', 'ui-button', '다시 말하기');
+    again.type = 'button';
+    review.append(reviewLabel, node('p', 'hint', '다르게 인식된 부분은 직접 고친 뒤 보내세요.'), send, again);
     const textButton = node('button', 'ui-button', '글로 답하기');
     textButton.type = 'button';
     const stage = node('section', 'voice');
-    stage.append(state, mic, live, hint, textButton);
+    stage.append(state, indicator, mic, level, levelText, live, hint, review, textButton);
     app.append(stage);
+    const skip = mountSkip(() => {
+      if (phase === 'review') textDraft = reviewInput.value;
+      phase = 'skipping'; setState('문항을 건너뛰는 중입니다.');
+      mic.disabled = true; textButton.disabled = true; send.disabled = true; again.disabled = true;
+      if (player) player.stop();
+      closeVoice();
+    }, () => { mode = 'text'; textReason = '문항을 건너뛰지 못했습니다. 답변을 보내거나 다시 시도해 주세요.'; paint(current); });
 
     function setState(text, kind) {
+      stage.dataset.phase = phase;
+      skip.disabled = !['idle', 'connecting', 'reading', 'ready', 'review'].includes(phase);
       state.textContent = text;
       if (kind) state.dataset.status = kind;
       else delete state.dataset.status;
@@ -241,6 +295,9 @@
     }
     function stopMic() {
       window.clearTimeout(captureTimer);
+      window.clearTimeout(tailTimer);
+      window.clearTimeout(readyTimer);
+      level.value = 0;
       if (processor) {
         processor.onaudioprocess = null;
         try { processor.disconnect(); } catch (error) { /* already disconnected */ }
@@ -265,6 +322,7 @@
     };
     session.sync = function (next) {
       current = next;
+      skip.textContent = next.progress.current === next.progress.total ? '마지막 문항 건너뛰고 완료' : '이 문항 건너뛰기';
       const progress = app.querySelectorAll('.progress')[1];
       const list = app.querySelector('.transcript');
       if (progress) progress.textContent = '진행 ' + next.progress.current + '/' + next.progress.total;
@@ -277,7 +335,8 @@
       }
     };
     function fallback(message) {
-      if (finalHeard || interimHeard) textDraft = finalHeard || interimHeard;
+      if (phase === 'review' || phase === 'saving') textDraft = reviewInput.value;
+      else if (finalHeard || interimHeard) textDraft = heardText();
       mode = 'text';
       textReason = message;
       const snapshot = current;
@@ -287,15 +346,18 @@
     function remember(piece, finalText) {
       if (!piece) return;
       if (finalText) {
-        if (!finalHeard) finalHeard = piece;
-        else if (piece.indexOf(finalHeard) === 0) finalHeard = piece;
-        else if (finalHeard.indexOf(piece) === -1) finalHeard += piece;
-        live.textContent = finalHeard;
-        return;
+        // Final messages are incremental. Repeated words are real speech too.
+        finalHeard += piece;
+        interimHeard = '';
+      } else interimHeard = piece;
+      live.textContent = heardText();
+      if (phase === 'review' && !reviewEdited) reviewInput.value = heardText();
+      if (phase === 'waiting') {
+        window.clearTimeout(waitTimer);
+        waitTimer = window.setTimeout(deliver, 1800);
       }
-      interimHeard = piece;
-      if (!finalHeard) live.textContent = interimHeard;
     }
+    function heardText() { return (finalHeard + interimHeard).trim(); }
     function speak(text) {
       if (!session.open || !socket || socket.readyState !== 1) {
         phase = 'idle';
@@ -311,6 +373,8 @@
       }
       if (player) player.stop();
       phase = 'reading';
+      review.hidden = true;
+      mic.hidden = false;
       finalHeard = '';
       interimHeard = '';
       live.textContent = '';
@@ -339,18 +403,19 @@
       }
       if (phase !== 'waiting') return;
       window.clearTimeout(waitTimer);
-      waitTimer = window.setTimeout(deliver, 700);
+      waitTimer = window.setTimeout(deliver, finalHeard || interimHeard ? 1800 : 8000);
     }
     function deliver() {
       if (!session.open || phase !== 'waiting') return;
-      const text = (finalHeard || interimHeard).replace(/\s+/g, ' ').trim();
-      if (!text) {
-        phase = 'ready';
-        setState('음성이 들리지 않았습니다. 다시 말씀해 주세요.');
-        setMic('답변 말하기', false, false);
-        return;
-      }
-      submitAnswer(text);
+      const text = heardText();
+      phase = 'review';
+      reviewEdited = false;
+      reviewInput.value = text;
+      review.hidden = false;
+      mic.hidden = true;
+      send.disabled = false; again.disabled = false;
+      setState(text ? '인식된 답변을 확인한 뒤 보내 주세요.' : '음성이 잘 들리지 않았습니다. 다시 말하거나 답변을 직접 적어 주세요.', text ? 'success' : 'warning');
+      reviewInput.focus();
     }
     async function handleMessage(event, generation, onReady, onError) {
       if (!session.open || generation !== session.generation) return;
@@ -370,7 +435,7 @@
         if (!(inline && inline.data && player) || phase !== 'reading') return;
         try { player.enqueue(inline.data); } catch (error) { /* 깨진 음성 조각은 건너뛴다 */ }
       });
-      if (phase === 'capturing' || phase === 'waiting') {
+      if (phase === 'capturing' || phase === 'stopping' || phase === 'waiting' || phase === 'review') {
         const interim = content.interimInputTranscription || content.interim_input_transcription;
         const finalText = content.inputTranscription || content.input_transcription;
         if (interim && interim.text) remember(interim.text, false);
@@ -378,7 +443,7 @@
       }
       if (content.turnComplete || content.turn_complete) onTurnComplete();
     }
-    function openSocket(speakText) {
+    function openSocket(speakText, readPrompt = true) {
       return call('/live-token', {}).then(creds => new Promise((resolve, reject) => {
         if (!session.open) { resolve(); return; }
         const ws = new WebSocket(creds.websocket_url + '?access_token=' + encodeURIComponent(creds.token));
@@ -400,7 +465,7 @@
               model: creds.model,
               generationConfig: {responseModalities: ['AUDIO'], speechConfig: {languageCode: 'ko-KR'}},
               systemInstruction: {parts: [{text: creds.system_instruction}]},
-              inputAudioTranscription: {},
+              inputAudioTranscription: {languageCodes: ['ko-KR']},
               outputAudioTranscription: {},
               realtimeInputConfig: {automaticActivityDetection: {disabled: true}},
             }
@@ -411,7 +476,8 @@
           settled = true;
           window.clearTimeout(connectTimer);
           resolve();
-          speak(speakText || creds.speak || assistantText(current));
+          if (readPrompt) speak(speakText || creds.speak || assistantText(current));
+          else { phase = 'ready'; setState('답변할 준비가 되었습니다.'); setMic('답변 말하기', false, false); }
         }, fail);
         ws.onerror = () => fail('음성 서버에 연결하지 못했습니다. 네트워크를 확인한 뒤 다시 시도하거나 글로 답해 주세요.');
         ws.onclose = event => {
@@ -423,6 +489,10 @@
           }
           if (phase === 'saving') return;
           socket = null;
+          if (phase === 'capturing' || phase === 'stopping' || phase === 'waiting' || phase === 'review') {
+            fallback('음성 연결이 끊겼습니다. 인식된 답변을 확인하고 글로 이어서 보내 주세요.');
+            return;
+          }
           window.clearTimeout(readTimer);
           window.clearTimeout(playbackTimer);
           stopMic();
@@ -434,6 +504,7 @@
     }
     async function submitAnswer(text) {
       phase = 'saving';
+      reviewInput.disabled = true; send.disabled = true; again.disabled = true;
       textButton.disabled = true;
       window.clearTimeout(waitTimer);
       setState('처리 중');
@@ -443,6 +514,7 @@
         textDraft = '';
         finalHeard = '';
         interimHeard = '';
+        review.hidden = true; reviewInput.disabled = false;
         textButton.disabled = false;
         current = data;
         if (!session.open) return;
@@ -468,13 +540,18 @@
     }
     function stopCapture() {
       if (phase !== 'capturing') return;
-      phase = 'waiting';
-      setState('처리 중');
+      phase = 'stopping';
+      setState('말씀을 글로 정리하고 있습니다. 잠시 기다려 주세요.');
       setMic('답변 끝내기', true, true);
-      stopMic();
-      if (socket && socket.readyState === 1) socket.send(JSON.stringify({realtimeInput: {activityEnd: {}}}));
-      window.clearTimeout(waitTimer);
-      waitTimer = window.setTimeout(deliver, 8000);
+      // Drain the audio callback buffer so the final syllable is not cut off.
+      tailTimer = window.setTimeout(() => {
+        if (!session.open || phase !== 'stopping') return;
+        phase = 'waiting';
+        stopMic();
+        if (socket && socket.readyState === 1) socket.send(JSON.stringify({realtimeInput: {activityEnd: {}}}));
+        window.clearTimeout(waitTimer);
+        waitTimer = window.setTimeout(deliver, 8000);
+      }, 300);
     }
     async function startMic() {
       phase = 'permission';
@@ -482,29 +559,55 @@
       setMic('마이크 준비 중', false, true);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Error('mic');
       if (!context.createScriptProcessor) throw Error('mic');
-      stream = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, echoCancellation: true, noiseSuppression: true}});
+      stream = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true}});
       if (!session.open) { stopMic(); return; }
       if (!socket || socket.readyState !== 1) throw Error('connection closed');
-      socket.send(JSON.stringify({realtimeInput: {activityStart: {}}}));
       sourceNode = context.createMediaStreamSource(stream);
       processor = context.createScriptProcessor(4096, 1, 1);
       mute = context.createGain();
       mute.gain.value = 0;
       processor.onaudioprocess = event => {
-        if (phase !== 'capturing' || !socket || socket.readyState !== 1) return;
-        const encoded = pcm16Base64(event.inputBuffer.getChannelData(0), context.sampleRate);
-        if (encoded) socket.send(JSON.stringify({realtimeInput: {audio: {data: encoded, mimeType: 'audio/pcm;rate=16000'}}}));
+        if (phase === 'arming' && socket && socket.readyState === 1) {
+          window.clearTimeout(readyTimer);
+          socket.send(JSON.stringify({realtimeInput: {activityStart: {}}}));
+          phase = 'capturing';
+          playStartCue();
+          setState('지금 말씀하세요 · 녹음 중', 'success');
+          setMic('답변 끝내기', true, false);
+          captureTimer = window.setTimeout(() => { if (session.open && phase === 'capturing') stopCapture(); }, 60000);
+        }
+        if (!['capturing', 'stopping'].includes(phase) || !socket || socket.readyState !== 1) return;
+        const samples = event.inputBuffer.getChannelData(0);
+        let energy = 0;
+        for (const sample of samples) energy += sample * sample;
+        const rms = Math.sqrt(energy / samples.length);
+        level.value = Math.min(1, rms * 6);
+        quietFrames = rms < 0.008 ? quietFrames + 1 : 0;
+        levelText.textContent = quietFrames > 24 ? '소리가 작습니다. 마이크에 조금 더 가까이 말씀해 주세요.' : '마이크가 듣고 있습니다. 평소 목소리로 말씀해 주세요.';
+        const encoded = pcm16Base64(samples);
+        if (encoded) socket.send(JSON.stringify({realtimeInput: {audio: {data: encoded, mimeType: 'audio/pcm;rate=' + context.sampleRate}}}));
       };
+      phase = 'arming';
+      finalHeard = ''; interimHeard = ''; quietFrames = 0; reviewEdited = false;
+      live.textContent = ''; review.hidden = true; mic.hidden = false;
+      setState('시작음을 기다려 주세요. 마이크 입력을 확인하고 있습니다.');
+      readyTimer = window.setTimeout(() => { if (session.open && phase === 'arming') fallback('마이크 입력을 받지 못했습니다. 마이크를 확인하거나 글로 답해 주세요.'); }, 5000);
       sourceNode.connect(processor);
       processor.connect(mute);
       mute.connect(context.destination);
-      phase = 'capturing';
-      finalHeard = '';
-      interimHeard = '';
-      live.textContent = '';
-      setState('말하는 중');
-      setMic('답변 끝내기', true, false);
-      captureTimer = window.setTimeout(() => { if (session.open && phase === 'capturing') stopCapture(); }, 60000);
+    }
+    function playStartCue() {
+      try {
+        const tone = context.createOscillator(), gain = context.createGain();
+        const now = context.currentTime;
+        tone.frequency.value = 880;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.015);
+        gain.gain.linearRampToValueAtTime(0, now + 0.16);
+        tone.connect(gain); gain.connect(context.destination);
+        tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+        tone.start(now); tone.stop(now + 0.18);
+      } catch (error) { /* The visible recording cue remains available. */ }
     }
     async function onMic() {
       if (!session.open || mic.disabled) return;
@@ -522,12 +625,29 @@
         return;
       }
       if (phase !== 'idle') return;
+      phase = 'connecting';
       setMic('상황 듣기', false, true);
       setState('연결 중');
       try { await openSocket(assistantText(current)); }
       catch (error) { if (session.open) fallback(error.message || '음성 연결을 열지 못했습니다. 글로 답해 주세요.'); }
     }
     mic.addEventListener('click', () => { onMic(); });
+    review.addEventListener('submit', event => {
+      event.preventDefault();
+      if (phase !== 'review' || !reviewInput.value.trim()) return;
+      submitAnswer(reviewInput.value.trim());
+    });
+    again.addEventListener('click', async () => {
+      if (phase !== 'review') return;
+      textDraft = reviewInput.value;
+      finalHeard = textDraft; interimHeard = '';
+      review.hidden = true; mic.hidden = false;
+      phase = 'connecting'; setState('다시 말할 준비를 하고 있습니다.'); setMic('마이크 준비 중', false, true);
+      session.generation += 1;
+      if (socket) { socket.close(); socket = null; }
+      try { await context.resume(); await openSocket('', false); if (session.open) await startMic(); }
+      catch (error) { if (session.open) fallback('다시 녹음하지 못했습니다. 인식된 답변을 글로 확인해 주세요.'); }
+    });
     textButton.addEventListener('click', () => fallback('글로 답하는 중입니다. 상황을 읽고 아래에 적어 주세요.'));
   }
   function consent() {
