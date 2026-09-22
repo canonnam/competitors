@@ -27,6 +27,14 @@ ROLE = '요양보호사'
 BRANCHES = {'': '지점 미지정', 'incheon': '인천점', 'anyang': '안양점'}
 STATUS_LABELS = {'pending': '미시작', 'in_progress': '진행중', 'completed': '완료', 'expired': '만료'}
 DONE_TEXT = '제출 완료. 결과는 시설장 확인 후 안내됩니다.'
+LIVE_WS = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained'
+LIVE_INSTRUCTION = (
+    '당신은 요양원 요양보호사 지침 숙지 평가의 한국어 음성 진행자입니다. '
+    '한 번에 상황 하나만 진행합니다. 점수, 정답, 키워드 목록은 말하지 마세요. '
+    '사용자가 [읽기]로 시작하는 글을 보내면 그 글만 자연스러운 한국어로 읽어 주세요. 질문이나 설명을 덧붙이지 마세요. '
+    '사용자가 말로 답하면 듣기만 하고, 다음 상황이나 채점은 서버가 정합니다. '
+    '되묻기는 서버가 [읽기]로 준 문장이 있을 때만 읽으며, 한 상황을 두 번 넘게 되묻지 마세요.'
+)
 
 SCENARIOS = [
     {
@@ -397,6 +405,91 @@ def local_reply(scenario, answer, turns):
     return '확인했습니다.', True
 
 
+def live_model_id():
+    name = os.getenv('STAFF_EVAL_LIVE_MODEL', '').strip() or 'gemini-3.8-live'
+    if name.startswith('models/'):
+        name = name.split('/', 1)[1]
+    if not re.fullmatch(r'[A-Za-z0-9._-]{3,80}', name):
+        return 'gemini-3.8-live'
+    return name
+
+
+def last_assistant(row):
+    for item in reversed(json.loads(row['transcript'])):
+        if item.get('role') == 'assistant' and item.get('text'):
+            return item['text']
+    return ''
+
+
+def mint_live_token():
+    """짧은 Live 토큰만 만든다. GEMINI_API_KEY는 이 요청 헤더에만 둔다."""
+    key = os.getenv('GEMINI_API_KEY', '').strip()
+    if not key:
+        raise RuntimeError('missing')
+    model = 'models/' + live_model_id()
+    moment = datetime.now(timezone.utc)
+    payload = {
+        'uses': 1,
+        'expireTime': (moment + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'newSessionExpireTime': (moment + timedelta(minutes=2)).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'liveConnectConstraints': {
+            'model': model,
+            'config': {
+                'sessionResumption': {},
+                'responseModalities': ['AUDIO'],
+                'systemInstruction': {'parts': [{'text': LIVE_INSTRUCTION}]},
+                'inputAudioTranscription': {'languageCodes': ['ko-KR']},
+                'outputAudioTranscription': {},
+                'speechConfig': {'languageCode': 'ko-KR'},
+            },
+        },
+    }
+    request = urllib.request.Request(
+        'https://generativelanguage.googleapis.com/v1beta/auth_tokens',
+        data=json.dumps(payload).encode(),
+        headers={'Content-Type': 'application/json', 'x-goog-api-key': key},
+        method='POST',
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            data = json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError('live') from exc
+    name = scrub(str(data.get('name') or '')).strip()
+    if not name or key in name or len(name) > 500:
+        raise RuntimeError('live')
+    return name
+
+
+def live_credentials(handler, token):
+    row = load(token=token)
+    if not cookie_ok(handler, row) or not row['verified']:
+        raise wiki_chat_error(401, '본인 확인 후 이어서 답해 주세요.')
+    status = display_status(row)
+    if status == 'expired':
+        raise PermissionError('평가 링크가 만료되었습니다.')
+    if status != 'in_progress':
+        raise PermissionError('이미 제출된 평가입니다. 다시 보려면 시설장에게 요청해 주세요.')
+    try:
+        ephemeral = mint_live_token()
+    except RuntimeError as exc:
+        raise wiki_chat_error(503, '음성 연결을 열지 못했습니다. 글로 답해 주세요.') from exc
+    return {
+        'token': ephemeral,
+        'model': 'models/' + live_model_id(),
+        'websocket_url': LIVE_WS,
+        'system_instruction': LIVE_INSTRUCTION,
+        'speak': last_assistant(row),
+        'input_rate': 16000,
+        'output_rate': 24000,
+    }
+
+
+def wiki_chat_error(status, message):
+    import wiki_chat
+    return wiki_chat.ChatError(status, message)
+
+
 def gemini_models():
     primary = os.getenv('STAFF_EVAL_GEMINI_MODEL') or os.getenv('SEARCH_GEMINI_MODEL') or 'gemini-2.5-flash'
     ordered = []
@@ -560,6 +653,7 @@ def public_state(row, authenticated):
         'needs_name': not row['birthdate'] and not row['employee_hint'],
         'progress': {'current': min(row['scenario_index'] + 1, len(SCENARIOS)) if status != 'pending' else 0, 'total': len(SCENARIOS)},
         'done_message': DONE_TEXT if status == 'completed' else '',
+        'voice': {'preferred': True, 'available': bool(os.getenv('GEMINI_API_KEY', '').strip())},
     }
     if authenticated and row['verified'] and status != 'expired':
         payload['messages'] = json.loads(row['transcript'])
@@ -621,7 +715,7 @@ def handle(handler, method):
     try:
         if public:
             token, _, action = path[len(PUBLIC):].partition('/')
-            if not re.fullmatch(r'[A-Za-z0-9_-]{20,120}', token) or action not in ('', 'consent', 'verify', 'message'):
+            if not re.fullmatch(r'[A-Za-z0-9_-]{20,120}', token) or action not in ('', 'consent', 'verify', 'message', 'live-token'):
                 raise LookupError('평가 링크를 확인해 주세요.')
             if action == '' and method in ('GET', 'HEAD'):
                 support.send_json(handler, 200, state_for(handler, token), head)
@@ -646,6 +740,8 @@ def handle(handler, method):
                     raise ValueError('답변을 입력해 주세요.')
                 append_message(token, body.get('text', ''))
                 support.send_json(handler, 200, state_for(handler, token), head)
+            elif action == 'live-token':
+                support.send_json(handler, 200, live_credentials(handler, token), head)
             return True
         if not support.authenticated(handler):
             raise wiki_chat.ChatError(401, '담당자 접근 키로 로그인해주세요.')
