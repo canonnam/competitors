@@ -35,9 +35,21 @@
     const label=labor.assessment==='stable'?'안정':labor.assessment==='check'?'점검 필요':'운영 기준 미설정';
     return {value:`${labor.annualRatio}%`,label,tone:label==='안정'?'success':label==='점검 필요'?'warning':''};
   }
+  function visibilityMetric(record) {
+    const metric={id:'visibility',title:'검색노출 현황',value:'—',note:'검색노출 확인 중',href:sources.visibility.href,warning:false};
+    if(record?.error)return {...metric,note:'검색노출 연결 확인 필요',warning:true};
+    if(!record?.data)return metric;
+    const data=record.data,naver=data.providers?.find(provider=>provider.id==='naver');
+    if(!naver?.configured)return {...metric,note:'네이버 검색 점검 연결 필요',warning:true};
+    const valid=[naver.expected,naver.checked,naver.first_page].every(value=>Number.isSafeInteger(value)&&value>=0)&&naver.first_page<=naver.checked&&naver.checked<=naver.expected;
+    if(!valid)return {...metric,note:'검색노출 집계 확인 필요',warning:true};
+    const issue=data.enabled===false?'자동 점검 중지':naver.collection_paused||naver.collection_error?'수집 상태 확인 필요':data.keyword_source?.stale?'키워드 갱신 대기':!naver.checked?(naver.items||[]).some(item=>item.status==='error')?'측정 불가':'갱신 대기':'';
+    return {...metric,value:naver.checked?`${number(naver.first_page)} / ${number(naver.checked)}개`:'—',
+      note:naver.expected?`네이버 첫 페이지 · 광고 제외 · 점검 ${number(naver.checked)}/${number(naver.expected)}개 완료${issue?' · '+issue:''}`:'점검할 네이버 키워드가 없습니다',
+      warning:!naver.checked||naver.checked<naver.expected||!!issue};
+  }
   function snapshot(records,counts={}) {
     const ready=id=>!!records[id]?.data&&!records[id].error;
-    const claims=records.claims?.data;
     const support=records.agency?.data?.support;
     const supportCollected=ready('agency')&&records.agency.data.sources?.some(source=>source.id==='bizinfo'&&source.last_success);
     const keywords=records.keywords?.data;
@@ -47,7 +59,7 @@
       metrics:[
         {id:'news',title:'미확인 새 소식',value:bothNews?number(counts.competitor+counts.agency)+'건':'—',note:bothNews?(newsWarning?'이전 수집 포함 · 갱신 상태 확인':'경쟁사·요양원 + 정책·지원사업'):['competitor','agency'].some(id=>records[id]?.error)?'일부 소식을 불러오지 못했습니다':'새 소식 확인 중',href:'#dashboard-news',warning:newsWarning},
         {id:'support',title:'추천 지원사업',value:supportCollected&&Number.isFinite(support?.active)?number(support.active)+'건':'—',note:supportCollected?(records.agency.status?.warning?'수집 상태 확인 필요 · 저장된 추천':'관심·추천 기준 반영 · 접수 조건 확인'):records.agency?.error?'지원사업 연결 확인 필요':ready('agency')?'지원사업 첫 수집 대기':'추천 확인 중',href:sources.agency.href,warning:records.agency?.status?.warning},
-        {id:'claims',title:'청구 접수 완료',value:ready('claims')?`${(claims.branches||[]).filter(b=>b.status==='accepted').length} / ${(claims.branches||[]).length}지점`:'—',note:ready('claims')?`${claims.benefitMonth} 급여제공분 · 저장 결과`:records.claims?.error?'청구 결과 연결 확인 필요':'청구 상태 확인 중',href:sources.claims.href,warning:!!records.claims?.error||ready('claims')&&(claims.branches||[]).some(b=>b.status!=='accepted')},
+        visibilityMetric(records.visibility),
         {id:'keywords',title:'광고 평균 3위 이내',value:ready('keywords')&&keywords.updated_at?number(keywords.top_count)+'개':'—',note:ready('keywords')?(records.keywords.status?.warning?'갱신 대기 · 이전 집계':keywords.updated_at?`최근 7일 · 집행 가능 ${number(keywords.eligible_top_count)}개`:'아직 수집된 순위가 없습니다'):records.keywords?.error?'광고 순위 연결 확인 필요':'키워드 확인 중',href:sources.keywords.href,warning:records.keywords?.status?.warning}
       ]
     };

@@ -50,8 +50,14 @@ try {
   assert.match(d.querySelector('[data-dash-key="metric-news"]').textContent,/3건/);
   const claims={benefitMonth:'2026-08',deadline:'2026-09-10',branches:['anyang','incheon'].map((id,i)=>({id,name:id,status:'accepted',label:'접수 완료',message:'필수 청구 접수 완료',checkedAt:'2026-09-10T13:52:10+09:00',lastQueryFailureAt:'2026-09-10T20:04:28+09:00',laborCost:{status:'verified',annualRatio:i?'68.7':'63.7',assessment:'stable',year:2026,benefitMonth:'2026-07',benchmarkRatio:'62.5',checkedAt:'2026-09-20T23:41:00+09:00'}}))};
   w.HomeDashboard.update('claims',claims);
-  assert.match(d.querySelector('[data-dash-key="metric-claims"]').textContent,/2 \/ 2지점/);
-  assert.equal(d.querySelector('[data-dash-key="metric-claims"]').hasAttribute('data-warning'),false);
+  assert.equal(d.querySelector('[data-dash-key="metric-claims"]'),null);
+  w.HomeDashboard.update('visibility',{enabled:true,providers:[{id:'naver',configured:true,checked:2,expected:8,first_page:1}]});
+  const searchMetric=d.querySelector('[data-dash-key="metric-visibility"]');
+  assert.equal(searchMetric.getAttribute('href'),'/search-visibility.html');
+  assert.match(searchMetric.textContent,/검색노출 현황1 \/ 2개.*점검 2\/8개 완료/);
+  searchMetric.focus();w.HomeDashboard.fail('visibility');
+  assert.equal(d.activeElement.dataset.dashKey,'metric-visibility');
+  assert.match(d.activeElement.textContent,/—.*연결 확인 필요/);
   assert.equal(d.querySelectorAll('.dash-branch-table [data-status="warning"]').length,0);
   assert.doesNotMatch(d.querySelector('[data-dash-slot="branches"]').textContent,/재조회 실패/);
   assert.match(d.querySelector('[data-dash-slot="branches-time"]').textContent,/청구 9\. 10\..*인건비 9\. 20\./,'verification dates are summarized once');
