@@ -35,7 +35,8 @@
     }
     const claims=records.claims?.data;
     if(ready('claims'))for(const branch of claims.branches||[]) {
-      if(branch.status!=='accepted'||branch.lastQueryFailureAt)attention.push({key:'claim-'+branch.id,title:branch.name+' 청구',href:sources.claims.href,label:branch.lastQueryFailureAt?'재조회 필요':'청구 점검',detail:branch.lastQueryFailureAt?'최근 조회에 실패했습니다. 이전 확인 결과가 남아 있습니다.':branch.message});
+      // A later query failure does not undo verified acceptance; history stays on the detail page.
+      if(branch.status!=='accepted')attention.push({key:'claim-'+branch.id,title:branch.name+' 청구',href:sources.claims.href,label:'청구 점검',detail:branch.message});
     }
     const reputation=records.reputation?.data?.counts;
     if(ready('reputation')&&((reputation?.concern||0)+(reputation?.uncertain||0)>0))attention.push({key:'review-reputation',title:'평판 원문 검토',href:sources.reputation.href,label:'검토 후보',detail:`부정적 언급 후보 ${number(reputation.concern)}건 · 대상·맥락 확인 ${number(reputation.uncertain)}건. 원문에서 사실 여부를 확인해주세요.`});
@@ -50,7 +51,7 @@
       metrics:[
         {id:'news',title:'미확인 새 소식',value:bothNews?number(counts.competitor+counts.agency)+'건':'—',note:bothNews?(newsWarning?'이전 수집 포함 · 갱신 상태 확인':'경쟁사·요양원 + 정책·지원사업'):['competitor','agency'].some(id=>records[id]?.error)?'일부 소식을 불러오지 못했습니다':'새 소식 확인 중',href:'#dashboard-news',warning:newsWarning},
         {id:'support',title:'추천 지원사업',value:supportCollected&&Number.isFinite(support?.active)?number(support.active)+'건':'—',note:supportCollected?(records.agency.status?.warning?'수집 상태 확인 필요 · 저장된 추천':'관심·추천 기준 반영 · 접수 조건 확인'):records.agency?.error?'지원사업 연결 확인 필요':ready('agency')?'지원사업 첫 수집 대기':'추천 확인 중',href:sources.agency.href,warning:records.agency?.status?.warning},
-        {id:'claims',title:'청구 접수 완료',value:ready('claims')?`${(claims.branches||[]).filter(b=>b.status==='accepted').length} / ${(claims.branches||[]).length}지점`:'—',note:ready('claims')?`${claims.benefitMonth} 급여제공분 · 저장 결과`:records.claims?.error?'청구 결과 연결 확인 필요':'청구 상태 확인 중',href:sources.claims.href,warning:!!records.claims?.error||ready('claims')&&(claims.branches||[]).some(b=>b.status!=='accepted'||b.lastQueryFailureAt)},
+        {id:'claims',title:'청구 접수 완료',value:ready('claims')?`${(claims.branches||[]).filter(b=>b.status==='accepted').length} / ${(claims.branches||[]).length}지점`:'—',note:ready('claims')?`${claims.benefitMonth} 급여제공분 · 저장 결과`:records.claims?.error?'청구 결과 연결 확인 필요':'청구 상태 확인 중',href:sources.claims.href,warning:!!records.claims?.error||ready('claims')&&(claims.branches||[]).some(b=>b.status!=='accepted')},
         {id:'keywords',title:'광고 평균 3위 이내',value:ready('keywords')&&keywords.updated_at?number(keywords.top_count)+'개':'—',note:ready('keywords')?(records.keywords.status?.warning?'갱신 대기 · 이전 집계':keywords.updated_at?`최근 7일 · 집행 가능 ${number(keywords.eligible_top_count)}개`:'아직 수집된 순위가 없습니다'):records.keywords?.error?'광고 순위 연결 확인 필요':'키워드 확인 중',href:sources.keywords.href,warning:records.keywords?.status?.warning}
       ]
     };
@@ -91,7 +92,7 @@
       slot('attention-count',esc(view.pending?`확인 중 ${view.pending}개 · 현재 ${view.attention.length}개 항목`:`${view.attention.length}개 항목`));
       slot('attention',view.attention.length?`<ul class="dash-attention-list">${view.attention.map(item=>`<li><a href="${item.href}" data-dash-key="attention-${item.key}"><div class="dash-attention-heading"><strong>${esc(item.title)}</strong>${badge(item.label,true)}</div><p>${esc(item.detail)}</p></a></li>`).join('')}</ul>`:`<p class="dash-empty">${view.pending?'각 기능의 최근 상태를 확인하고 있습니다.':'현재 연결된 점검에서 확인이 필요한 항목이 없습니다.'}</p>`);
       const claim=state.claims?.data;
-      slot('claims',claim?`<p class="dash-meta">${esc(claim.benefitMonth)} 급여제공분 · ${esc(claim.deadline)} 청구 마감</p>${state.claims.error?'<p class="dash-warning">연결 확인 필요 · 아래는 이전 조회 결과입니다.</p>':''}<div class="dash-branches">${(claim.branches||[]).map(branch=>`<a href="/claim-check.html" class="dash-branch" data-dash-key="branch-${esc(branch.id)}"><div><h3>${esc(branch.name)}</h3>${badge(branch.label,branch.status!=='accepted'||!!branch.lastQueryFailureAt||state.claims.error)}</div><p>${esc(branch.message)}</p><small>조회 ${esc(date(branch.checkedAt))}${branch.lastQueryFailureAt?' · 재조회 실패':''}</small></a>`).join('')}</div>`:`<p class="dash-empty">${state.claims?.error?'청구 결과를 불러오지 못했습니다. 상세 보기에서 다시 확인해주세요.':'안양점·인천점의 청구 상태를 확인하고 있습니다.'}</p>`);
+      slot('claims',claim?`<p class="dash-meta">${esc(claim.benefitMonth)} 급여제공분 · ${esc(claim.deadline)} 청구 마감</p>${state.claims.error?'<p class="dash-warning">연결 확인 필요 · 아래는 이전 조회 결과입니다.</p>':''}<div class="dash-branches">${(claim.branches||[]).map(branch=>`<a href="/claim-check.html" class="dash-branch" data-dash-key="branch-${esc(branch.id)}"><div><h3>${esc(branch.name)}</h3>${badge(branch.label,branch.status!=='accepted')}</div><p>${esc(branch.message)}</p><small>조회 ${esc(date(branch.checkedAt))}</small></a>`).join('')}</div>`:`<p class="dash-empty">${state.claims?.error?'청구 결과를 불러오지 못했습니다. 상세 보기에서 다시 확인해주세요.':'안양점·인천점의 청구 상태를 확인하고 있습니다.'}</p>`);
       slot('news',['competitor','agency'].map(id=>{
         const record=state[id],data=record?.data;
         return row(id,sources[id].title,data?`미확인 ${number(counts[id])}건 · 전체 ${number(data.total)}건`:record?.error?'소식을 불러오지 못했습니다.':'최근 소식 확인 중',data?`전체 수집 ${date(data.updated_at)}${record.error?' · 이전 결과':''}`:record?.error?'상세 화면에서 다시 확인해주세요.':'수집 결과를 불러옵니다.');

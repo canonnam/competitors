@@ -42,8 +42,25 @@ try {
   assert.match(d.querySelector('[data-dash-slot="attention"]').textContent,/연결 확인 필요/);
   w.HomeDashboard.update('agency',{support:{active:1},sources:[{id:'bizinfo',last_success:'2026-09-22'}]});
   assert.match(d.querySelector('[data-dash-key="metric-news"]').textContent,/3건/);
+  const claims={benefitMonth:'2026-08',deadline:'2026-09-10',branches:['anyang','incheon'].map(id=>({id,name:id,status:'accepted',label:'접수 완료',message:'필수 청구 접수 완료',checkedAt:'2026-09-10T13:52:10+09:00',lastQueryFailureAt:'2026-09-10T20:04:28+09:00'}))};
+  w.HomeDashboard.update('claims',claims);
+  assert.match(d.querySelector('[data-dash-key="metric-claims"]').textContent,/2 \/ 2지점/);
+  assert.equal(d.querySelector('[data-dash-key="metric-claims"]').hasAttribute('data-warning'),false);
+  assert.equal(d.querySelectorAll('[data-dash-slot="attention"] a[href="/claim-check.html"]').length,0);
+  assert.equal(d.querySelectorAll('.dash-branch [data-status="warning"]').length,0);
+  assert.doesNotMatch(d.querySelector('[data-dash-slot="claims"]').textContent,/재조회 실패/);
+  assert.ok([...d.querySelectorAll('.dash-branch small')].every(el=>/조회.*9\. 10\./.test(el.textContent)),'verified timestamps stay visible');
+  assert.ok(claims.branches.every(branch=>branch.lastQueryFailureAt),'failure history is not removed from data');
+  w.HomeDashboard.fail('claims');
+  assert.match(d.querySelector('[data-dash-key="attention-claims"]').textContent,/연결 확인 필요/);
+  assert.match(d.querySelector('[data-dash-slot="claims"] .dash-warning').textContent,/이전 조회 결과/);
+  assert.equal(d.querySelectorAll('.dash-branch [data-status="warning"]').length,0,'connection failures do not relabel accepted branches');
+  w.HomeDashboard.update('claims',claims);
+  assert.equal(d.querySelector('[data-dash-key="attention-claims"]'),null);
   w.HomeDashboard.update('claims',{benefitMonth:'2026-08',deadline:'2026-09-10',branches:[{id:'x',name:'<img src=x onerror=alert(1)>',status:'check',label:'확인',message:'<script>alert(1)</script>'}]});
   assert.equal(dashboard.querySelectorAll('img,script').length,0,'untrusted data stays text');
+  assert.ok(d.querySelector('[data-dash-key="attention-claim-x"]'),'unaccepted branch still needs attention');
+  assert.ok(d.querySelector('.dash-branch [data-status="warning"]'));
   select('all');assert.equal(grid.classList.contains('kb-list-view'),false,'saved view survives dashboard');
   console.log('PASS: default dashboard, 16 intact cards, live nodes, search, menu, favorites, saved view, error/recovery, focus, escaping and unread preservation');
 } finally {dom.window.close();}

@@ -18,10 +18,27 @@ test('support before first collection stays unknown, then uses only recommended 
   data.sources[0].last_success='2026-09-22T00:10:00Z';
   assert.equal(metric(snapshot({agency:record(data)}),'support').value,'2건');
 });
-test('accepted claims with a failed requery remain visible but still require attention',()=>{
+test('only unaccepted claims require attention even when accepted claims have a failed requery',()=>{
   const claims={benefitMonth:'2026-08',branches:[{id:'anyang',name:'안양점',status:'accepted',lastQueryFailureAt:'2026-09-22'}, {id:'incheon',name:'인천점',status:'check',message:'청구 항목 확인 필요'}]};
   const result=snapshot({claims:record(claims)});
-  assert.equal(metric(result,'claims').value,'1 / 2지점');assert.equal(result.attention.length,2);assert.equal(metric(result,'claims').warning,true);
+  assert.equal(metric(result,'claims').value,'1 / 2지점');assert.equal(metric(result,'claims').warning,true);
+  assert.deepEqual(result.attention.map(item=>item.key),['claim-incheon']);
+  assert.equal(result.attention[0].detail,'청구 항목 확인 필요');
+});
+test('all accepted claims remain complete without warnings after historical query failures',()=>{
+  const claims={benefitMonth:'2026-08',branches:['anyang','incheon'].map(id=>({id,status:'accepted',lastQueryFailureAt:'2026-09-10T20:04:28+09:00'}))};
+  const result=snapshot({claims:record(claims)});
+  assert.equal(metric(result,'claims').value,'2 / 2지점');assert.equal(metric(result,'claims').warning,false);
+  assert.deepEqual(result.attention,[]);
+  assert.ok(claims.branches.every(branch=>branch.lastQueryFailureAt),'failure history is preserved');
+});
+test('current claim feed failures still require attention without changing saved acceptance',()=>{
+  const claims={benefitMonth:'2026-08',branches:[{id:'anyang',status:'accepted'}]};
+  const result=snapshot({claims:{data:claims,error:true,status:{label:'연결 확인 필요',warning:true}}});
+  assert.equal(metric(result,'claims').value,'—');assert.equal(metric(result,'claims').warning,true);
+  assert.deepEqual(result.attention.map(item=>item.key),['claims']);
+  assert.equal(result.attention[0].label,'연결 확인 필요');
+  assert.equal(claims.branches[0].status,'accepted');
 });
 test('incomplete reputation checks and previous keyword data are not labelled healthy',()=>{
   const result=snapshot({reputation:record({counts:{concern:0,uncertain:2}},{warning:true,label:'점검 지연'}),keywords:record({updated_at:'2026-09-20',top_count:6,eligible_top_count:0},{warning:true,label:'갱신 대기'})});
