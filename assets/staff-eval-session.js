@@ -654,7 +654,7 @@
     app.append(node('h2', '', '평가 안내'));
     app.append(node('p', '', '요양보호사 지침 숙지와 상황판단을 음성으로 확인합니다. 마이크를 허용해 주세요. 음성이 어려우면 글로 답할 수 있습니다.'));
     app.append(node('p', '', '대화 내용과 자동 채점 초안은 시설 지식창고 서버에 저장됩니다. 음성은 글로 옮겨 저장합니다.'));
-    app.append(node('p', '', '결과는 시설장만 확인합니다. 점수는 이 화면에서 바로 보여 주지 않고, 시설장 확인 후 안내됩니다.'));
+    app.append(node('p', '', '대화 내용과 평가 결과는 별도 로그인 없이 열리는 관리 화면에서 조회할 수 있습니다. 이 응시 화면에는 점수를 표시하지 않으며, 시설장 확인 후 안내됩니다.'));
     const form = node('form');
     const label = node('label', 'check');
     const box = document.createElement('input');

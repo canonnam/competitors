@@ -1,4 +1,4 @@
-/* Fetch only authenticated totals, never applicant details. No browser storage. */
+/* Fetch only totals, never applicant details. No browser storage or login. */
 (function(root,factory) {
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -18,7 +18,6 @@
           credentials:'same-origin',cache:'no-store',signal:request.signal
         });
         if(controller!==request)return;
-        if(response.status===401) {dashboard.update('requests',null,{locked:true});return;}
         if(!response.ok)throw new Error('request');
         const data=await response.json();
         if(controller!==request)return;

@@ -98,7 +98,7 @@ class PayrollInsuranceTests(unittest.TestCase):
         m.save(sample())
         evidence=card_knowledge.retrieve('payroll_insurance','직원 급여 알려줘',datetime.now(m.KST))
         self.assertNotIn('테스트직원',json.dumps(evidence,ensure_ascii=False))
-        self.assertIn('담당자',str(evidence))
+        self.assertIn('전용 화면',str(evidence))
 
 
 class EndpointTests(unittest.TestCase):
@@ -117,17 +117,17 @@ class EndpointTests(unittest.TestCase):
             c.request(method,path);r=c.getresponse();return r.status,r.headers,r.read()
         finally:c.close()
 
-    def test_auth_get_head_csv_post(self):
-        with patch('support_applications.authenticated',return_value=False):
+    def test_open_get_head_csv_and_read_only_post(self):
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,{'PAYROLL_INSURANCE_DIR':temp}):
+            m.save(sample())
             for path in ('/api/support/payroll-insurance','/api/support/payroll-insurance?format=csv'):
                 for method in ('GET','HEAD','POST'):
                     status,headers,body=self.request(path,method)
-                    self.assertEqual(status,401);self.assertEqual(headers['Cache-Control'],'no-store')
-                    self.assertNotIn('테스트직원'.encode(),body)
+                    self.assertEqual(status,405 if method=='POST' else 200);self.assertEqual(headers['Cache-Control'],'no-store')
                     if method=='HEAD':self.assertEqual(body,b'')
 
-    def test_authenticated_api_and_static_deny(self):
-        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,{'PAYROLL_INSURANCE_DIR':temp}), patch('support_applications.authenticated',return_value=True):
+    def test_open_api_and_static_deny(self):
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,{'PAYROLL_INSURANCE_DIR':temp}):
             m.save(sample())
             status,headers,body=self.request('/api/support/payroll-insurance?month=2026-08')
             self.assertEqual(status,200);self.assertEqual(json.loads(body)['report']['month'],'2026-08')

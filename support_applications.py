@@ -2,20 +2,16 @@
 from __future__ import annotations
 
 import base64
-from collections import defaultdict, deque
 from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
-import hmac
 import http.client
-from http.cookies import SimpleCookie
 import io
 import json
 import logging
 import os
 from pathlib import Path
 import re
-import secrets
 import sqlite3
 import threading
 import time
@@ -33,8 +29,6 @@ import wiki_chat
 LOG = logging.getLogger('support_applications')
 PREFIX = '/api/support/'
 COOKIE = 'support_operator'
-LOGIN_ATTEMPTS = defaultdict(deque)
-LOGIN_LOCK = threading.Lock()
 COMPANY_FIELDS = ('name', 'business_number', 'corporate_number', 'established_date', 'industry', 'business_type',
                   'website', 'representative', 'representative_career', 'contact_name', 'email', 'phone', 'address', 'postal_code')
 BRANCH_FIELDS = ('name', 'type', 'address', 'postal_code', 'business_number', 'facility_number', 'notes')
@@ -723,32 +717,15 @@ def start_worker():
 
 
 def authenticated(handler):
-    try:
-        cookie = SimpleCookie(handler.headers.get('Cookie', '')); token = cookie[COOKIE].value
-    except (KeyError, ValueError): return False
-    with closing(connect()) as db:
-        return bool(db.execute('SELECT 1 FROM support_sessions WHERE hash=? AND expires>?', (hashlib.sha256(token.encode()).hexdigest(), time.time())).fetchone())
+    """Compatibility for older integrations; operator-key access was removed."""
+    return True
 
 
 def login(handler, body):
-    client = handler.client_address[0]
-    if os.getenv('RAILWAY_ENVIRONMENT_ID'): client = handler.headers.get('X-Forwarded-For', client).split(',')[-1].strip()
-    with LOGIN_LOCK:
-        attempts = LOGIN_ATTEMPTS[client]
-        while attempts and attempts[0] < time.time() - 900: attempts.popleft()
-        if len(attempts) >= 8: raise wiki_chat.ChatError(429, '입력 시도가 많습니다. 15분 후 다시 시도해주세요.')
-        attempts.append(time.time())
-    expected = os.getenv('SUPPORT_ACCESS_KEY', '')
-    supplied = body.get('key', '')
-    if not expected: raise wiki_chat.ChatError(503, '담당자 접근 키가 아직 설정되지 않았습니다.')
-    if not isinstance(supplied, str) or not hmac.compare_digest(expected.encode(), supplied.encode()): raise wiki_chat.ChatError(401, '접근 키를 확인해주세요.')
-    token = secrets.token_urlsafe(32)
-    with closing(connect()) as db, db:
-        db.execute('DELETE FROM support_sessions WHERE expires<?', (time.time(),))
-        db.execute('INSERT INTO support_sessions VALUES(?,?)', (hashlib.sha256(token.encode()).hexdigest(), time.time() + 7 * 86400))
-    cookie = f'{COOKIE}={token}; Path=/api/support/; Max-Age=604800; HttpOnly; SameSite=Strict'
-    if os.getenv('RAILWAY_ENVIRONMENT_ID') or handler.headers.get('X-Forwarded-Proto') == 'https': cookie += '; Secure'
-    send_json(handler, 200, {'authenticated': True}, cookie=cookie)
+    # Older cached pages can still call login/logout, but no credential or
+    # session is created. Clear any obsolete operator cookie.
+    send_json(handler, 200, {'authenticated': True, 'access_mode': 'open'},
+              cookie=f'{COOKIE}=; Path=/api/support/; Max-Age=0; HttpOnly; SameSite=Strict')
 
 
 def send_json(handler, status, payload, head=False, cookie=None):
@@ -777,12 +754,11 @@ def handle(handler, method):
         if method not in ('GET', 'HEAD', 'POST'): raise wiki_chat.ChatError(405, '지원하지 않는 요청입니다.')
         if method == 'POST': wiki_chat.check_origin(handler)
         if route == 'session' and method in ('GET', 'HEAD'):
-            send_json(handler, 200, {'authenticated': authenticated(handler), 'configured': bool(os.getenv('SUPPORT_ACCESS_KEY')), 'ai_ready': bool(os.getenv('OPENAI_API_KEY'))}, head); return True
+            send_json(handler, 200, {'authenticated': True, 'configured': True, 'access_mode': 'open', 'ai_ready': bool(os.getenv('OPENAI_API_KEY'))}, head); return True
         if route == 'login' and method == 'POST':
             body = wiki_chat.read_json(handler, 3000)
             if not isinstance(body, dict): raise ValueError('입력 형식을 확인해주세요.')
             login(handler, body); return True
-        if not authenticated(handler): raise wiki_chat.ChatError(401, '담당자 접근 키로 로그인해주세요.')
         body = wiki_chat.read_json(handler, 18_000_000 if route == 'assets/upload' else 1_500_000) if method == 'POST' else {}
         if not isinstance(body, dict): raise ValueError('요청 형식을 확인해주세요.')
         if method in ('GET', 'HEAD'):
@@ -806,9 +782,7 @@ def handle(handler, method):
             else: raise wiki_chat.ChatError(404, '요청한 기능을 찾지 못했습니다.')
         else:
             if route == 'logout':
-                cookie = SimpleCookie(handler.headers.get('Cookie', '')); token = cookie[COOKIE].value
-                with closing(connect()) as db, db: db.execute('DELETE FROM support_sessions WHERE hash=?', (hashlib.sha256(token.encode()).hexdigest(),))
-                send_json(handler, 200, {'authenticated': False}, cookie=f'{COOKIE}=; Path=/api/support/; Max-Age=0; HttpOnly; SameSite=Strict'); return True
+                login(handler, body); return True
             elif route == 'profile': result = save_profile(body)
             elif route == 'cases/sync': result = {'added': sync_interests()}
             elif route == 'case/collect': result = {'queued': ensure_case(body.get('case_id'), True)}

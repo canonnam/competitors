@@ -22,14 +22,14 @@ test('requests only aggregate endpoint with existing cookies, no cache, and no p
   assert.equal(requested[0].options.cache,'no-store');
   assert.deepEqual(f.calls.at(-1).data,totals);
 });
-test('401 clears previous totals and presents login, not zero or an error',async()=>{
+test('unexpected authorization failures clear previous totals without requesting a key',async()=>{
   let authenticated=true;
   const f=fixture(async()=>authenticated?{ok:true,json:async()=>totals}:{status:401});
   await flush();authenticated=false;
   await f.collector.refresh();
-  assert.equal(f.calls.at(-1).data,null);
-  assert.equal(f.calls.at(-1).status.locked,true);
-  assert.equal(f.calls.at(-1).error,undefined);
+  assert.equal(f.calls.at(-1).data,undefined);
+  assert.equal(f.calls.at(-1).status,undefined);
+  assert.equal(f.calls.at(-1).error,true);
 });
 test('network failures and incomplete counts cannot render healthy or zero totals',async()=>{
   for(const response of [{ok:false,status:503},{ok:true,json:async()=>({...totals,counts:{new:0}})}]) {
@@ -39,7 +39,7 @@ test('network failures and incomplete counts cannot render healthy or zero total
   const f=fixture(async()=>{throw new Error('offline');});await flush();
   assert.equal(f.calls.at(-1).error,true);
 });
-test('hiding the page clears private totals and blocks stale responses after logout or navigation',async()=>{
+test('hiding the page clears totals and blocks stale responses after navigation',async()=>{
   let resolve;
   const f=fixture(()=>new Promise(done=>resolve=done));
   f.win.document.hidden=true;f.documentEvents.visibilitychange();
@@ -47,7 +47,7 @@ test('hiding the page clears private totals and blocks stale responses after log
   assert.equal(f.calls.at(-1).data,null);
   assert.equal(f.calls.some(call=>call.data===totals),false);
 });
-test('duplicate refreshes are coalesced and returning to the page rechecks authentication',async()=>{
+test('duplicate refreshes are coalesced and returning to the page refreshes totals',async()=>{
   let resolve,requests=0;
   const f=fixture(()=>{requests++;return new Promise(done=>resolve=done);});
   f.events.focus();f.events.pageshow();await f.collector.refresh();
@@ -55,6 +55,6 @@ test('duplicate refreshes are coalesced and returning to the page rechecks authe
   resolve({ok:true,json:async()=>totals});await flush();
   f.events.pagehide();assert.equal(f.calls.at(-1).data,null);
   f.events.pageshow();assert.equal(requests,2);
-  resolve({status:401});await flush();
-  assert.equal(f.calls.at(-1).status.locked,true);
+  resolve({ok:true,json:async()=>totals});await flush();
+  assert.deepEqual(f.calls.at(-1).data,totals);
 });

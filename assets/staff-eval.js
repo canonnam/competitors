@@ -3,20 +3,19 @@
   const $ = id => document.getElementById(id);
   let selected = '';
   function status(text, kind) { const node = $('eval-status'); node.textContent = text; if (kind) node.dataset.status = kind; else node.removeAttribute('data-status'); }
-  function lock() { $('eval-app').hidden = true; $('eval-lock').hidden = false; $('eval-key').value = ''; }
   async function api(path, options = {}) {
     const response = await fetch(path, {cache: 'no-store', credentials: 'same-origin', ...options});
     const body = await response.json();
-    if (!response.ok) { if (response.status === 401) lock(); throw Error(body.error || '요청을 처리하지 못했습니다.'); }
+    if (!response.ok) throw Error(body.error || '요청을 처리하지 못했습니다.');
     return body;
   }
-  function support(path, options) { return api('/api/support/' + path, options); }
   function itemButton(row) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ui-button';
     const name = document.createElement('strong');
     name.textContent = row.name + ' · ' + row.branch_label;
+    name.title = name.textContent;
     const state = document.createElement('span');
     state.className = 'ui-status';
     if (row.needs_human || row.status === 'expired') state.dataset.status = 'warning';
@@ -24,7 +23,7 @@
     state.textContent = row.status_label + (row.needs_human ? ' · 사람 확인 필요' : '');
     const scores = document.createElement('small');
     scores.textContent = '자동 ' + (row.auto_score == null ? '—' : row.auto_score) + ' · 확정 ' + (row.confirmed_score == null ? '—' : row.confirmed_score);
-    button.append(name, state, scores);
+    button.append(name, scores, state);
     button.addEventListener('click', () => openDetail(row.id));
     return button;
   }
@@ -68,7 +67,14 @@
     body.replaceChildren();
     (row.items || []).forEach(item => {
       const tr = document.createElement('tr');
-      [item.code, item.title + (item.skipped ? ' · 건너뜀' : ''), item.score, item.steps.map(step => (step.met ? '충족' : '빠짐') + ' ' + step.label).join(', '), item.skipped ? '확인 필요' : item.order_ok ? '맞음' : '확인'].forEach(value => {
+      const confirmed = item.steps.filter(step => step.met).map(step => step.label);
+      const pending = item.steps.filter(step => !step.met).map(step => step.label);
+      const summary = item.answer_status === 'unanswered' ? '제출된 답변 없음' : [
+        confirmed.length ? '확인된 내용: ' + confirmed.join(', ') : '',
+        pending.length ? '추가 확인 필요: ' + pending.join(', ') : ''
+      ].filter(Boolean).join(' · ');
+      const orderLabels = {insufficient: '판단 근거 부족', review: '순서 확인 필요', partial: '확인된 항목 간 일치', matched: '확인된 항목 간 일치'};
+      [item.code, item.title + (item.skipped ? ' · 건너뜀' : ''), item.score, summary, orderLabels[item.order_status] || '확인 필요'].forEach(value => {
         const cell = document.createElement('td');
         cell.textContent = String(value);
         tr.append(cell);
@@ -81,21 +87,6 @@
     row.transcript.forEach(message => transcript.append(bubble(message)));
     $('eval-detail').scrollIntoView({block: 'start'});
   }
-  $('eval-login').addEventListener('submit', async event => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    status('로그인 중…');
-    try {
-      await support('login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key: $('eval-key').value})});
-      $('eval-key').value = '';
-      $('eval-lock').hidden = true;
-      $('eval-app').hidden = false;
-      await refresh();
-      status('평가 링크를 만들 수 있습니다.', 'success');
-    } catch (error) { status(error.message, 'error'); }
-    finally { button.disabled = false; }
-  });
   $('eval-create').addEventListener('submit', async event => {
     event.preventDefault();
     const button = event.submitter;
@@ -121,10 +112,6 @@
     catch { $('eval-link').select(); status('링크를 길게 눌러 복사해 주세요.', 'warning'); }
   });
   $('eval-filter').addEventListener('change', () => refresh().catch(error => status(error.message, 'error')));
-  $('eval-logout').addEventListener('click', async () => {
-    try { await support('logout', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'}); lock(); status('로그아웃되었습니다.'); }
-    catch (error) { status(error.message, 'error'); }
-  });
   $('eval-confirm').addEventListener('submit', async event => {
     event.preventDefault();
     if (!selected) return;
@@ -147,11 +134,7 @@
       status('다시 응시할 수 있게 초기화했습니다.', 'success');
     } catch (error) { status(error.message, 'error'); }
   });
-  support('session').then(async session => {
-    if (!session.authenticated) { lock(); status(session.configured ? '담당자 접근 키로 로그인해주세요.' : '담당자 접근 키 설정이 필요합니다.', session.configured ? '' : 'warning'); return; }
-    $('eval-lock').hidden = true;
-    $('eval-app').hidden = false;
-    await refresh();
+  refresh().then(() => {
     status('평가 링크를 만들거나 결과를 확인하세요.', 'success');
   }).catch(error => status(error.message, 'error'));
 })();

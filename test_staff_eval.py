@@ -115,12 +115,36 @@ class StaffEvalTests(unittest.TestCase):
         self.assertIn('어떻게', reply)
         self.assertTrue(staff_eval.local_reply(staff_eval.SCENARIOS[0], '일단 봤습니다', 2)[1])
 
+    def test_detail_explains_legacy_missing_answers_without_rescoring(self):
+        self.login()
+        created = self.create()
+        answers = {'fall': '시설장에게 보고하고 기록합니다.', 'infection': '잘 대응하겠습니다.', 'rights': '시설장에게 보고합니다.'}
+        legacy = staff_eval.score_answers(answers)
+        # Older stored results say order_ok=True even for an empty answer.
+        self.assertTrue(legacy['items'][2]['order_ok'])
+        staff_eval.save_fields(created['id'], status='completed', answers=json.dumps(answers),
+                               items=json.dumps(legacy['items']), auto_score=legacy['auto_score'], confirmed_score=42,
+                               transcript=json.dumps([{'role': 'staff', 'scenario_id': 'privacy', 'kind': 'skipped', 'text': '건너뜀'}]))
+        detail = staff_eval.detail(created['id'])
+        items = {item['id']: item for item in detail['items']}
+        self.assertEqual(items['fall']['answer_status'], 'answered')
+        self.assertEqual(items['fall']['order_status'], 'partial')
+        self.assertEqual(items['infection']['answer_status'], 'answered')
+        self.assertEqual(items['infection']['order_status'], 'insufficient')
+        self.assertEqual(items['pressure']['answer_status'], 'unanswered')
+        self.assertEqual(items['pressure']['order_status'], 'insufficient')
+        self.assertEqual(items['rights']['order_status'], 'insufficient')
+        self.assertTrue(items['privacy']['skipped'])
+        self.assertEqual(detail['auto_score'], legacy['auto_score'])
+        self.assertEqual(detail['confirmed_score'], 42)
+        self.assertEqual(json.loads(staff_eval.load(eval_id=created['id'])['items']), legacy['items'])
+
     def test_link_flow_hides_score_until_admin_confirms(self):
-        self.assertEqual(self.request('/api/support/staff-eval')[0], 401)
+        self.assertEqual(self.request('/api/support/staff-eval')[0], 200)
+        self.assertEqual(self.request('/api/support/profile')[0], 200)
         self.assertEqual(self.request('/staff_eval.py')[0], 404)
         self.assertEqual(self.request('/staff-eval.html')[0], 200)
         self.assertEqual(self.request('/staff-eval-session.html')[0], 200)
-        self.login()
         created = self.create()
         self.assertTrue(created['url'].startswith('/staff-eval-session.html#'))
         status, public = self.staff_call('', None)

@@ -1,4 +1,4 @@
-"""Private website inquiry inbox. The integration credential can only create records."""
+"""Website inquiry inbox with direct access; ingestion uses a server credential."""
 from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
@@ -125,7 +125,7 @@ def update(body):
 
 
 def summary():
-    """Authenticated aggregate only; never load applicant details or staff notes."""
+    """Dashboard aggregate only; never load applicant details or staff notes."""
     counts = dict.fromkeys(STATUSES, 0)
     kinds = dict.fromkeys(('visit', 'trial', 'pricing'), 0)
     latest = None
@@ -156,7 +156,6 @@ def handle(handler, method):
             result = save(wiki_chat.read_json(handler, 16000))
             status = 200 if result['duplicate'] else 201
         else:
-            if not support.authenticated(handler): raise IntakeError(401, '담당자 접근 키로 로그인해 주세요.')
             if parts.path == ADMIN and method in ('GET', 'HEAD'):
                 result = listing(urllib.parse.parse_qs(parts.query))
             elif parts.path == ADMIN + '/summary' and method in ('GET', 'HEAD'):
