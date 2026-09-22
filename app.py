@@ -18,6 +18,7 @@ import web_search_results
 import support_applications
 import support_projects
 import website_intake
+import staff_eval
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -50,8 +51,9 @@ def post_json(url, payload, headers=None):
 
 class App(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
-        if self.path.startswith('/api/project-share/'):
-            super().log_message('%s', 'Grant shared view request (token redacted)')
+        path = urllib.parse.urlsplit(self.path).path
+        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/'):
+            super().log_message('%s', 'Tokenized request (token redacted)')
         else:
             super().log_message(fmt, *args)
 
@@ -72,6 +74,8 @@ class App(SimpleHTTPRequestHandler):
         if website_intake.handle(self, "GET"):
             return
         if payroll_insurance.handle(self, "GET"):
+            return
+        if staff_eval.handle(self, "GET"):
             return
         if support_applications.handle(self, "GET"):
             return
@@ -109,6 +113,8 @@ class App(SimpleHTTPRequestHandler):
         if website_intake.handle(self, "HEAD"):
             return
         if payroll_insurance.handle(self, "HEAD"):
+            return
+        if staff_eval.handle(self, "HEAD"):
             return
         if support_applications.handle(self, "HEAD"):
             return
@@ -284,7 +290,7 @@ class App(SimpleHTTPRequestHandler):
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
-        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html'})
+        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
@@ -302,6 +308,8 @@ class App(SimpleHTTPRequestHandler):
         if website_intake.handle(self, "POST"):
             return
         if payroll_insurance.handle(self, "POST"):
+            return
+        if staff_eval.handle(self, "POST"):
             return
         if support_applications.handle(self, "POST"):
             return
@@ -440,6 +448,7 @@ if __name__ == "__main__":
     support_applications.init_db()
     support_projects.init_db()
     website_intake.init_db()
+    staff_eval.init_db()
     wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
     scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())
