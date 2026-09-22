@@ -52,7 +52,8 @@ try {
   assert.equal(d.querySelector('[data-dash-key="metric-claims"]').hasAttribute('data-warning'),false);
   assert.equal(d.querySelectorAll('.dash-branch-table [data-status="warning"]').length,0);
   assert.doesNotMatch(d.querySelector('[data-dash-slot="branches"]').textContent,/재조회 실패/);
-  assert.match(d.querySelector('[data-dash-slot="branches"]').textContent,/조회.*9\. 10\./,'verified timestamps stay visible');
+  assert.match(d.querySelector('[data-dash-slot="branches-time"]').textContent,/청구 9\. 10\..*인건비 9\. 20\./,'verification dates are summarized once');
+  assert.equal(d.querySelectorAll('.dash-branch-table small').length,0,'rows only show the core statuses');
   assert.deepEqual([...d.querySelectorAll('.dash-labor-value strong')].map(el=>el.textContent),['63.7%','68.7%']);
   assert.match(d.querySelector('[data-dash-slot="branches"]').textContent,/2026-07 조회분/);
   assert.ok(claims.branches.every(branch=>branch.lastQueryFailureAt),'failure history is not removed from data');
@@ -67,18 +68,21 @@ try {
   const requestSlot=d.querySelector('[data-dash-slot="requests"]');
   assert.doesNotMatch(requestSlot.textContent,/0건/,'loading is not zero');
   w.HomeDashboard.update('requests',null,{locked:true});
-  assert.match(requestSlot.textContent,/담당자 로그인 필요/);
+  assert.match(requestSlot.textContent,/담당자 로그인 후/);
   const totals={counts:{new:2,contacted:1,completed:3,archived:0},kinds:{visit:2,trial:3,pricing:1},total:6,generatedAt:'2026-09-22T10:00:00+09:00',lastReceivedAt:'2026-09-21T09:00:00+09:00'};
   w.HomeDashboard.update('requests',totals);
   assert.deepEqual([...requestSlot.querySelectorAll('dd')].map(el=>el.textContent),['2건','1건','3건','0건']);
-  assert.match(requestSlot.textContent,/운영 사이트 접수 기준 · 개발 사이트 제외/);
+  assert.match(requestSlot.textContent,/운영 사이트 누적 · 개발 사이트 제외/);
+  assert.doesNotMatch(requestSlot.textContent,/최근 접수|방문상담/,'secondary breakdown is left in request management');
+  assert.match(d.querySelector('[data-dash-slot="requests-time"]').textContent,/조회/);
   w.HomeDashboard.fail('requests');
   assert.equal(requestSlot.querySelectorAll('dd').length,0,'private totals disappear on fetch failure');
   w.HomeDashboard.update('requests',totals);
   w.HomeDashboard.update('requests',null,{locked:true});
   assert.equal(requestSlot.querySelectorAll('dd').length,0,'private totals disappear on logout');
+  assert.equal(d.querySelector('[data-dash-slot="requests-time"]').textContent,'','private freshness metadata is cleared too');
   w.HomeDashboard.update('requests',{...totals,total:0,lastReceivedAt:null,counts:{new:0,contacted:0,completed:0,archived:0},kinds:{visit:0,trial:0,pricing:0}});
-  assert.match(requestSlot.textContent,/아직 운영 사이트에서 접수된 신청이 없습니다/);
+  assert.match(requestSlot.textContent,/접수된 신청이 없습니다/);
   select('all');assert.equal(grid.classList.contains('kb-list-view'),false,'saved view survives dashboard');
   console.log('PASS: dashboard sections, branch/labor status, authenticated totals, live nodes, navigation, error/recovery, focus, escaping and unread preservation');
 } finally {dom.window.close();}
