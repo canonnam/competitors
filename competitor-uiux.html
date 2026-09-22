@@ -74,6 +74,8 @@
   <a href="#s14">정기점검</a>
   <a href="#s15">직원관리</a>
   <a href="#s16">설정</a>
+  <a href="#s17">물리치료</a>
+  <a href="#s18">목욕</a>
   <a href="#uxtest">사용성 테스트</a>
   <a href="#roadmap">개선 로드맵</a>
 </nav>
@@ -101,6 +103,8 @@
         <tr><td>정기점검</td><td>월별: 케어포 / 연간총괄: 엔젤</td><td>소방·전기·가스 월칸은 케어포, 기관운영 전체 점검은 엔젤. 더비다는 로그형.</td></tr>
         <tr><td>직원관리</td><td class="win">케어포</td><td>목록+상세+자격·4대보험·연차까지 마스터디테일이 실무 HR에 가장 가깝다.</td></tr>
         <tr><td>설정</td><td>시설환경: 케어포 / 기관정보: 엔젤</td><td>시설·서비스 토글 감사는 케어포, 기관 식별·직인·결재는 엔젤. 더비다 캡처는 계정설정만.</td></tr>
+        <tr><td>물리치료</td><td>일정·밀도: 케어포 / 일지: 엔젤</td><td>셋 다 제공기록형. 케어포는 일정·현황 그리드, 엔젤은 일지, 더비다는 기록 화면. 단독 우위 없음.</td></tr>
+        <tr><td>목욕 기록</td><td>일정·제공: 엔젤·케어포</td><td>엔젤·케어포는 목욕 일정과 제공현황이 있음. 더비다는 메뉴에서 목욕을 찾지 못함.</td></tr>
       </tbody>
     </table>
   </div>
@@ -359,6 +363,40 @@
   </div>
   <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>비밀번호 바꾸는 일은 더비다가 가장 쉽습니다. 그건 공정한 승리가 아닙니다.</b> 시설장이 기관/서비스 동작을 점검할 때는 케어포 상태 컬럼이, 원무가 직인·기관번호·결재를 넣을 때는 엔젤이 편합니다.</p></div>
   <p class="uiux-insight"><b>인사이트.</b> 설정 비교에서 진 제품은 UI가 못생겨서가 아니라 보여줄 설정 면적이 좁아서입니다. 영업·평가용 캡처는 시설설정을 찍어야 합니다.</p>
+</article>
+
+<article class="uiux-block uiux-screen" id="s17">
+  <p class="uiux-kicker">17 · 임상</p>
+  <h2>물리치료 <span class="uiux-badge" data-status="warning">일정·밀도: 케어포 · 일지: 엔젤</span></h2>
+  <p class="uiux-lead">세 제품 모두 제공기록형입니다. 케어포는 일정·현황 그리드가 촘촘하고, 엔젤은 일지형, 더비다는 여백이 있는 기록 화면입니다. 편한 쪽은 그날 일이 일정 확인인지 일지 작성인지에 따라 갈리며, 더비다 단독 우위가 아닙니다.</p>
+  <figure class="uiux-shot">
+    <figcaption>좌=엔젤 / 중=케어포 / 우=더비다</figcaption>
+    <img src="/assets/competitor-uiux/17-physio.jpg" width="1800" height="346" alt="물리치료 화면 비교. 왼쪽 엔젤 물리치료일지, 가운데 케어포 물리·작업치료 제공기록, 오른쪽 더비다 물리치료 기록">
+  </figure>
+  <div class="uiux-cols">
+    <div class="uiux-sys"><h3><span class="uiux-dot angel" aria-hidden="true"></span>엔젤</h3><ul><li><b>장점</b> 물리치료일지로 실시 내용·서명을 한 장에 남김</li><li><b>단점</b> 칸이 작아 오늘 일정·미실시 스캔은 약함</li></ul><div class="tagline">일지형 제공기록</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot care" aria-hidden="true"></span>케어포</h3><ul><li><b>장점</b> 물리·작업치료 일정과 제공현황이 한 그리드에 촘촘함</li><li><b>단점</b> 셀이 작아 터치·가독은 중간</li></ul><div class="tagline">일정·현황 밀도 최강</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot vida" aria-hidden="true"></span>더비다</h3><ul><li><b>장점</b> 기록 화면의 여백·구분이 한 건 읽기에는 편함</li><li><b>단점</b> 일정·미제공을 훑는 밀도는 케어포에 못 미침</li></ul><div class="tagline">기록 UI는 읽힘 · 일정 밀도는 과제</div></div>
+  </div>
+  <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>하루 일정을 보고 빠진 치료를 찾는 일은 케어포, 끝난 치료를 일지로 남기는 일은 엔젤이 편합니다.</b> 더비다 기록 화면은 읽기 쉽지만, 그 이유만으로 더 편리하다고 쓰지 않습니다.</p></div>
+  <p class="uiux-insight"><b>인사이트.</b> 물리치료 UX의 승부처는 폼의 여백이 아니라 오늘 누구를 했는지가 한눈에 보이는가입니다.</p>
+</article>
+
+<article class="uiux-block uiux-screen" id="s18">
+  <p class="uiux-kicker">18 · 임상</p>
+  <h2>목욕 기록 <span class="uiux-badge" data-status="warning">일정·제공: 엔젤·케어포 · 더비다 메뉴 없음</span></h2>
+  <p class="uiux-lead">엔젤은 목욕일정관리, 케어포는 목욕일정 및 제공현황이 있습니다. 더비다는 내비게이션에서 목욕 메뉴를 찾지 못했습니다. 미제공이거나 다른 모듈에 흡수된 상태이며, 이 비교에서는 자사 약점입니다.</p>
+  <figure class="uiux-shot">
+    <figcaption>좌=엔젤 / 중=케어포 / 우=더비다</figcaption>
+    <img src="/assets/competitor-uiux/18-bathing.jpg" width="1800" height="325" alt="목욕 화면 비교. 왼쪽 엔젤 목욕일정관리, 가운데 케어포 목욕일정 및 제공현황, 오른쪽 더비다 목욕 메뉴 없음 안내">
+  </figure>
+  <div class="uiux-cols">
+    <div class="uiux-sys"><h3><span class="uiux-dot angel" aria-hidden="true"></span>엔젤</h3><ul><li><b>장점</b> 목욕일정관리로 일정·제공을 대장처럼 다룸</li><li><b>단점</b> 고밀도 표. 상태 구분은 색보다 칸에 의존</li></ul><div class="tagline">일정 대장형</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot care" aria-hidden="true"></span>케어포</h3><ul><li><b>장점</b> 목욕일정과 제공현황이 한 화면에 있음</li><li><b>단점</b> 그리드가 촘촘해 첫인상 부담</li></ul><div class="tagline">일정·제공현황형</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot vida" aria-hidden="true"></span>더비다</h3><ul><li><b>장점</b> 이 캡처에서 장점으로 볼 목욕 UI가 없음</li><li><b>단점</b> 메뉴에 목욕이 없음. 미제공이거나 다른 모듈에 숨어 있음</li></ul><div class="tagline">메뉴 부재 · 자사 약점</div></div>
+  </div>
+  <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>목욕 일정과 제공현황은 엔젤·케어포가 갖추고 있습니다.</b> 더비다는 이 메뉴를 열 수 없어 편의성 비교에서 열세입니다. 다른 화면에 기능이 있다면, 메뉴 이름부터 찾아지지 않는 것이 약점입니다.</p></div>
+  <p class="uiux-insight"><b>인사이트.</b> 없는 메뉴는 다른 화면의 가독성으로 메워지지 않습니다. 목욕이 다른 모듈에 있다면, 그 이름이 메뉴와 검색에 보여야 합니다.</p>
 </article>
 
 <article class="uiux-block" id="uxtest">
