@@ -58,6 +58,8 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.request('GET', intake.INGEST)[0], 405)
         for method in ('GET', 'HEAD'):
             self.assertEqual(self.request(method, intake.ADMIN, headers={'Authorization': 'Bearer test-create-only'})[0], 401)
+            self.assertEqual(self.request(method, intake.ADMIN+'/summary')[0], 401)
+            self.assertEqual(self.request(method, intake.ADMIN+'/summary', headers={'Authorization': 'Bearer test-create-only'})[0], 401)
         self.assertEqual(self.request('POST', intake.ADMIN+'/status', {'status':'completed'})[0], 401)
 
     def test_validation_and_consent(self):
@@ -93,6 +95,33 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.submit(p)[0], 409)
         for _ in range(4): self.assertEqual(self.submit(self.payload())[0], 201)
         self.assertEqual(self.submit(self.payload())[0], 429)
+
+    def test_authenticated_summary_is_production_only_and_contains_no_applicant_data(self):
+        cookie = self.login()
+        empty = self.request('GET', intake.ADMIN+'/summary', headers=cookie)[2]
+        self.assertEqual(empty['counts'], dict.fromkeys(intake.STATUSES, 0))
+        self.assertEqual(empty['total'], 0)
+        self.assertIsNone(empty['lastReceivedAt'])
+        for kind, state in zip(('visit', 'trial', 'pricing', 'visit'), intake.STATUSES):
+            p = self.payload(kind); p['environment'] = 'production'
+            self.assertEqual(self.submit(p)[0], 201)
+            intake.update({'id': p['id'], 'status': state, 'note': 'PRIVATE NOTE'})
+        self.assertEqual(self.submit(self.payload())[0], 201)  # Development record excluded.
+        status, headers, result = self.request('GET', intake.ADMIN+'/summary', headers=cookie)
+        self.assertEqual(status, 200)
+        self.assertEqual(headers['Cache-Control'], 'no-store')
+        self.assertEqual(result['counts'], dict.fromkeys(intake.STATUSES, 1))
+        self.assertEqual(result['kinds'], {'visit': 2, 'trial': 1, 'pricing': 1})
+        self.assertEqual(result['total'], 4)
+        self.assertEqual(result['environment'], 'production')
+        self.assertTrue(result['lastReceivedAt'])
+        self.assertEqual(set(result), {'counts', 'kinds', 'total', 'environment', 'lastReceivedAt', 'generatedAt'})
+        self.assertNotIn('가상', json.dumps(result, ensure_ascii=False))
+        self.assertNotIn('PRIVATE NOTE', json.dumps(result))
+        self.assertEqual(self.request('HEAD', intake.ADMIN+'/summary', headers=cookie)[2], b'')
+        self.assertEqual(self.request('POST', intake.ADMIN+'/summary', {}, cookie)[0], 405)
+        self.request('POST', '/api/support/logout', {}, cookie)
+        self.assertEqual(self.request('GET', intake.ADMIN+'/summary', headers=cookie)[0], 401)
 
     def test_private_files_not_served(self):
         for path in ('/website_intake.py', '/data/website-intake.db', '/.env'):

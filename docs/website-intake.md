@@ -6,6 +6,7 @@
 
 - `POST /api/website-intake`: 서버 간 접수 전용. `WEBSITE_INTAKE_SECRET` Bearer 인증. 조회·상태 변경 권한 없음.
 - `GET /api/support/website-requests`: 담당자 세션 필수. 유형·상태·개발/운영 사이트 필터, 30건 단위 페이지.
+- `GET /api/support/website-requests/summary`: 같은 담당자 세션 필수. 대시보드용 운영 사이트 상태별·유형별 건수와 최근 접수/조회 시각만 반환한다. 개발 사이트는 제외하고 신청자·연락처·메모는 반환하지 않는다. 비로그인 401, 응답은 no-store. 홈은 로그인 후 집계만 표시하고 숨김·인증 만료·조회 실패 시 집계를 지운다.
 - `POST /api/support/website-requests/status`: 담당자 세션과 동일 출처 검증. 새 접수/상담 중/상담 완료/보관함, 담당자 메모.
 - `WEBSITE_INTAKE_DB_PATH` 기본 `/data/website-intake.db`. Railway의 기존 영구 볼륨 사용. 배포 시 유지.
 - 접수 ID는 UUID이며 동일 ID 재시도는 기존 접수를 반환합니다. 동일 ID의 내용 변경은 거부합니다. 익명화된 발신자 식별값당 10분에 5건으로 제한합니다.

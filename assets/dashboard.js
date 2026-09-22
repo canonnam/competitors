@@ -1,5 +1,5 @@
-/* Home overview consumes the existing collectors; it never starts a second request
-   or acknowledges news. Private workflows remain behind their existing login. */
+/* Home overview consumes existing collectors without acknowledging news.
+   Inquiry totals use a separate authenticated, aggregate-only collector. */
 (function(root, factory) {
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -12,7 +12,8 @@
     claims:{title:'지점별 청구',href:'/claim-check.html'},
     keywords:{title:'네이버 광고',href:'/naver-ads.html'},
     visibility:{title:'검색노출',href:'/search-visibility.html'},
-    reputation:{title:'평판 점검',href:'/reputation-watch.html'}
+    reputation:{title:'평판 점검',href:'/reputation-watch.html'},
+    requests:{title:'상담·무료체험 신청 현황',href:'/website-requests.html'}
   };
   const state={};
   let redraw=()=>{};
@@ -24,30 +25,23 @@
   }
   function fail(id) {
     if(!sources[id])return;
-    state[id]={...state[id],error:true,status:{label:'연결 확인 필요',warning:true}};redraw();
+    state[id]={...(id==='requests'?{}:state[id]),error:true,status:{label:'연결 확인 필요',warning:true}};redraw();
+  }
+  function laborStatus(labor) {
+    const verified=labor?.status==='verified'&&labor.annualRatio!==null&&labor.annualRatio!==''&&Number.isFinite(Number(labor.annualRatio));
+    if(!verified)return {value:'—',label:labor?.status==='query_failed'?'조회 실패':'미조회',tone:'warning'};
+    const label=labor.assessment==='stable'?'안정':labor.assessment==='check'?'점검 필요':'운영 기준 미설정';
+    return {value:`${labor.annualRatio}%`,label,tone:label==='안정'?'success':label==='점검 필요'?'warning':''};
   }
   function snapshot(records,counts={}) {
     const ready=id=>!!records[id]?.data&&!records[id].error;
-    const attention=[];
-    for(const [id,source] of Object.entries(sources)) {
-      const record=records[id];
-      if(record?.error||record?.status?.warning)attention.push({key:id,...source,label:record.status?.label||'확인 필요',detail:record.error?'저장 결과를 불러오지 못했습니다. 상세 화면에서 다시 확인해주세요.':record.status?.detail||'최근 수집·점검 상태와 저장된 결과를 확인해주세요.'});
-    }
     const claims=records.claims?.data;
-    if(ready('claims'))for(const branch of claims.branches||[]) {
-      // A later query failure does not undo verified acceptance; history stays on the detail page.
-      if(branch.status!=='accepted')attention.push({key:'claim-'+branch.id,title:branch.name+' 청구',href:sources.claims.href,label:'청구 점검',detail:branch.message});
-    }
-    const reputation=records.reputation?.data?.counts;
-    if(ready('reputation')&&((reputation?.concern||0)+(reputation?.uncertain||0)>0))attention.push({key:'review-reputation',title:'평판 원문 검토',href:sources.reputation.href,label:'검토 후보',detail:`부정적 언급 후보 ${number(reputation.concern)}건 · 대상·맥락 확인 ${number(reputation.uncertain)}건. 원문에서 사실 여부를 확인해주세요.`});
     const support=records.agency?.data?.support;
     const supportCollected=ready('agency')&&records.agency.data.sources?.some(source=>source.id==='bizinfo'&&source.last_success);
     const keywords=records.keywords?.data;
     const bothNews=ready('competitor')&&ready('agency')&&Number.isFinite(counts.competitor)&&Number.isFinite(counts.agency);
     const newsWarning=['competitor','agency'].some(id=>records[id]?.status?.warning);
     return {
-      attention,
-      pending:Object.keys(sources).filter(id=>!records[id]).length,
       metrics:[
         {id:'news',title:'미확인 새 소식',value:bothNews?number(counts.competitor+counts.agency)+'건':'—',note:bothNews?(newsWarning?'이전 수집 포함 · 갱신 상태 확인':'경쟁사·요양원 + 정책·지원사업'):['competitor','agency'].some(id=>records[id]?.error)?'일부 소식을 불러오지 못했습니다':'새 소식 확인 중',href:'#dashboard-news',warning:newsWarning},
         {id:'support',title:'추천 지원사업',value:supportCollected&&Number.isFinite(support?.active)?number(support.active)+'건':'—',note:supportCollected?(records.agency.status?.warning?'수집 상태 확인 필요 · 저장된 추천':'관심·추천 기준 반영 · 접수 조건 확인'):records.agency?.error?'지원사업 연결 확인 필요':ready('agency')?'지원사업 첫 수집 대기':'추천 확인 중',href:sources.agency.href,warning:records.agency?.status?.warning},
@@ -59,13 +53,13 @@
   function mount(win,container) {
     const doc=win.document;
     const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const badge=(text,warning=false)=>`<span class="ui-status"${warning?' data-status="warning"':''}>${esc(text)}</span>`;
+    const badge=(text,tone='')=>`<span class="ui-status"${tone?` data-status="${tone===true?'warning':esc(tone)}"`:''}>${esc(text)}</span>`;
     container.className='kb-dashboard';container.id='kb-dashboard';container.setAttribute('aria-labelledby','dashboard-title');
     container.innerHTML=`<div class="dash-heading"><div><h1 id="dashboard-title">대시보드</h1><p>오늘 확인할 소식과 업무</p></div><time class="dash-date"></time></div>
       <div class="dash-metrics" data-dash-slot="metrics" aria-label="핵심 현황"></div>
       <div class="dash-columns">
-        <section class="dash-panel" aria-labelledby="dashboard-attention-title"><div class="dash-panel-head"><h2 id="dashboard-attention-title">확인할 항목</h2><span data-dash-slot="attention-count" class="dash-meta" role="status"></span></div><div data-dash-slot="attention"></div></section>
-        <section class="dash-panel" aria-labelledby="dashboard-claims-title"><div class="dash-panel-head"><h2 id="dashboard-claims-title">지점별 청구</h2><a href="/claim-check.html">상세 보기</a></div><div data-dash-slot="claims"></div></section>
+        <section class="dash-panel" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html">청구·인건비 상세</a></div><div data-dash-slot="branches"></div></section>
+        <section class="dash-panel" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 신청 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests">현황 새로고침</button></section>
         <section class="dash-panel" id="dashboard-news" aria-labelledby="dashboard-news-title"><div class="dash-panel-head"><h2 id="dashboard-news-title">시장·정책 새 소식</h2></div><div data-dash-slot="news"></div><p class="dash-footnote">미확인 수는 이 브라우저의 읽음 기록 기준입니다.</p></section>
         <section class="dash-panel" aria-labelledby="dashboard-marketing-title"><div class="dash-panel-head"><h2 id="dashboard-marketing-title">마케팅·점검 현황</h2></div><div data-dash-slot="marketing"></div></section>
       </div>
@@ -89,10 +83,14 @@
       const view=snapshot(state,counts);
       container.querySelector('.dash-date').textContent=new Date().toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric',weekday:'long'});
       slot('metrics',view.metrics.map(item=>`<a class="dash-metric" href="${item.href}" data-dash-key="metric-${item.id}"${item.warning?' data-warning="true"':''}><span>${esc(item.title)}</span><strong>${esc(item.value)}</strong><small>${esc(item.note)}</small></a>`).join(''));
-      slot('attention-count',esc(view.pending?`확인 중 ${view.pending}개 · 현재 ${view.attention.length}개 항목`:`${view.attention.length}개 항목`));
-      slot('attention',view.attention.length?`<ul class="dash-attention-list">${view.attention.map(item=>`<li><a href="${item.href}" data-dash-key="attention-${item.key}"><div class="dash-attention-heading"><strong>${esc(item.title)}</strong>${badge(item.label,true)}</div><p>${esc(item.detail)}</p></a></li>`).join('')}</ul>`:`<p class="dash-empty">${view.pending?'각 기능의 최근 상태를 확인하고 있습니다.':'현재 연결된 점검에서 확인이 필요한 항목이 없습니다.'}</p>`);
       const claim=state.claims?.data;
-      slot('claims',claim?`<p class="dash-meta">${esc(claim.benefitMonth)} 급여제공분 · ${esc(claim.deadline)} 청구 마감</p>${state.claims.error?'<p class="dash-warning">연결 확인 필요 · 아래는 이전 조회 결과입니다.</p>':''}<div class="dash-branches">${(claim.branches||[]).map(branch=>`<a href="/claim-check.html" class="dash-branch" data-dash-key="branch-${esc(branch.id)}"><div><h3>${esc(branch.name)}</h3>${badge(branch.label,branch.status!=='accepted')}</div><p>${esc(branch.message)}</p><small>조회 ${esc(date(branch.checkedAt))}</small></a>`).join('')}</div>`:`<p class="dash-empty">${state.claims?.error?'청구 결과를 불러오지 못했습니다. 상세 보기에서 다시 확인해주세요.':'안양점·인천점의 청구 상태를 확인하고 있습니다.'}</p>`);
+      slot('branches',claim?`<p class="dash-meta">청구 ${esc(claim.benefitMonth)} 급여제공분 · ${esc(claim.deadline)} 마감</p>${state.claims.error?'<p class="dash-warning">연결 확인 필요 · 아래는 이전 조회 결과입니다.</p>':''}<div class="dash-table-wrap"><table class="dash-branch-table"><caption class="dash-sr-only">지점별 청구 접수 및 연간 인건비 비율</caption><thead><tr><th scope="col">지점</th><th scope="col">청구 접수</th><th scope="col">연간 인건비 비율</th></tr></thead><tbody>${(claim.branches||[]).map(branch=>{
+        const labor=branch.laborCost,status=laborStatus(labor);
+        return `<tr><th scope="row">${esc(branch.name)}</th><td>${badge(branch.label,branch.status==='accepted'?'success':'warning')}<small>조회 ${esc(date(branch.checkedAt))}</small><span class="dash-sr-only">${esc(branch.message)}</span></td><td><div class="dash-labor-value"><strong>${esc(status.value)}</strong>${badge(status.label,status.tone)}</div>${labor?`<small>${esc(labor.year)}년 · ${esc(labor.benefitMonth)} 조회분</small><small>${labor.benchmarkRatio?`기준 ${esc(labor.benchmarkRatio)}% 초과 시 안정`:'운영 기준 미설정'}</small><small>조회 ${esc(date(labor.checkedAt))}</small>`:''}</td></tr>`;
+      }).join('')}</tbody></table></div><p class="dash-footnote">공단 저장 결과 기준 · 인건비는 청구 급여제공월의 직전 월로 조회합니다.</p>`:`<p class="dash-empty">${state.claims?.error?'지점별 상태를 불러오지 못했습니다. 상세 화면에서 다시 확인해주세요.':'청구·인건비 상태를 확인하고 있습니다.'}</p>`);
+      const request=state.requests,data=request?.data;
+      slot('requests',request?.status?.locked?`<div class="dash-locked">${badge('담당자 로그인 필요')}<p>로그인하면 새 접수와 상담 처리 현황을 확인할 수 있습니다.</p><a class="ui-button" href="/website-requests.html" data-dash-key="requests-login">로그인하고 현황 보기</a></div>`:request?.error?'<p class="dash-empty">신청 현황을 불러오지 못했습니다. 새로고침하거나 신청 관리에서 확인해주세요.</p>':data?`<p class="dash-meta">운영 사이트 접수 기준 · 개발 사이트 제외</p><dl class="dash-request-counts">${Object.entries({new:'새 접수',contacted:'상담 중',completed:'상담 완료',archived:'보관함'}).map(([key,label])=>`<div${key==='new'&&data.counts[key]>0?' data-status="warning"':''}><dt>${label}</dt><dd>${number(data.counts[key])}<span>건</span></dd></div>`).join('')}</dl><p class="dash-meta">방문상담 ${number(data.kinds.visit)}건 · 무료체험 ${number(data.kinds.trial)}건 · 비용 문의 ${number(data.kinds.pricing)}건</p><p class="dash-footnote">${data.total===0?'아직 운영 사이트에서 접수된 신청이 없습니다.':`최근 접수 ${esc(date(data.lastReceivedAt))}`}<br>현황 조회 ${esc(date(data.generatedAt))}</p>`:'<p class="dash-empty">담당자 로그인 및 신청 현황을 확인하고 있습니다.</p>');
+      container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error&&!request.status?.locked);
       slot('news',['competitor','agency'].map(id=>{
         const record=state[id],data=record?.data;
         return row(id,sources[id].title,data?`미확인 ${number(counts[id])}건 · 전체 ${number(data.total)}건`:record?.error?'소식을 불러오지 못했습니다.':'최근 소식 확인 중',data?`전체 수집 ${date(data.updated_at)}${record.error?' · 이전 결과':''}`:record?.error?'상세 화면에서 다시 확인해주세요.':'수집 결과를 불러옵니다.');
@@ -107,5 +105,5 @@
     win.addEventListener('pageshow',draw);
     return container;
   }
-  return {update,fail,mount,snapshot};
+  return {update,fail,mount,snapshot,laborStatus};
 });

@@ -124,9 +124,26 @@ def update(body):
     return {'saved': True}
 
 
+def summary():
+    """Authenticated aggregate only; never load applicant details or staff notes."""
+    counts = dict.fromkeys(STATUSES, 0)
+    kinds = dict.fromkeys(('visit', 'trial', 'pricing'), 0)
+    latest = None
+    with closing(connect()) as db:
+        rows = db.execute('''SELECT kind,status,COUNT(*) n,MAX(created) latest
+            FROM website_requests WHERE environment='production' GROUP BY kind,status''')
+        for row in rows:
+            counts[row['status']] += row['n']
+            kinds[row['kind']] += row['n']
+            latest = max(latest or row['latest'], row['latest'])
+    return {'counts': counts, 'kinds': kinds, 'total': sum(counts.values()),
+            'environment': 'production', 'lastReceivedAt': latest,
+            'generatedAt': datetime.now(timezone.utc).isoformat(timespec='seconds')}
+
+
 def handle(handler, method):
     parts = urllib.parse.urlsplit(handler.path)
-    if parts.path not in (INGEST, ADMIN, ADMIN + '/status'): return False
+    if parts.path not in (INGEST, ADMIN, ADMIN + '/status', ADMIN + '/summary'): return False
     import support_applications as support
     import wiki_chat
     try:
@@ -142,6 +159,8 @@ def handle(handler, method):
             if not support.authenticated(handler): raise IntakeError(401, '담당자 접근 키로 로그인해 주세요.')
             if parts.path == ADMIN and method in ('GET', 'HEAD'):
                 result = listing(urllib.parse.parse_qs(parts.query))
+            elif parts.path == ADMIN + '/summary' and method in ('GET', 'HEAD'):
+                result = summary()
             elif parts.path == ADMIN + '/status' and method == 'POST':
                 wiki_chat.check_origin(handler)
                 result = update(wiki_chat.read_json(handler, 10000))
