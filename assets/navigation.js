@@ -133,26 +133,24 @@
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
     doc.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&!doc.querySelector('dialog[open], .modal.open')){event.preventDefault();openDialog();}});
 
-    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, empty, grid, toolbar, dashboard;
+    let homeTools, searchLabel, homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, empty, grid, toolbar, dashboard;
     const cards=new Map();
     if(home) {
       grid=main.querySelector('.grid');
-      const tools=el('section','kb-home-tools');tools.setAttribute('aria-label','기능 탐색');
-      const searchLabel=el('label','kb-search-label','기능 검색');searchLabel.htmlFor='kb-home-search';
+      homeTools=el('section','kb-home-tools');homeTools.setAttribute('aria-label','기능 탐색');
+      searchLabel=el('label','kb-search-label','기능 검색');searchLabel.htmlFor='kb-home-search';
       homeSearch=el('input','kb-search-input');homeSearch.id='kb-home-search';homeSearch.type='search';homeSearch.placeholder='급여, 손익, 네이버…';homeSearch.value=query;
       mobileMenu=el('details','kb-mobile-menu');mobileSummary=el('summary');mobileNav=el('nav','kb-mobile-categories');mobileNav.setAttribute('aria-label','모바일 업무별 기능');mobileMenu.append(mobileSummary,mobileNav);
-      tools.append(searchLabel,homeSearch,mobileMenu);
+      homeTools.append(searchLabel,homeSearch,mobileMenu);
       favoritesSection=el('section','kb-shortcut-section');favoritesSection.setAttribute('aria-label','저장한 기능');
       const favoriteHead=el('div','kb-section-head');
       editButton=button('순서 편집','kb-text-button');editButton.setAttribute('aria-pressed','false');editButton.addEventListener('click',()=>{editing=!editing;render();});favoriteHead.append(editButton);
       favoriteRows=el('div','kb-shortcuts');favoritesSection.append(favoriteRows,favoriteHead);
       toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultTitle,resultCount);
       const views=el('div','kb-view-controls');views.setAttribute('aria-label','표시 방식');['cards','list'].forEach(view=>{const control=button(view==='cards'?'카드':'목록','kb-control');control.dataset.kbView=view;control.addEventListener('click',()=>{preferences.view(view);render();});views.append(control);});toolbar.append(heading,views);
-      grid.before(tools,favoritesSection,toolbar);
+      grid.before(homeTools,favoritesSection,toolbar);
       if(hasDashboard){
-        dashboard=win.HomeDashboard.mount(win,el('section'));tools.after(dashboard);
-        const allFeatures=button('전체 기능 보기','ui-button');allFeatures.addEventListener('click',()=>{category='all';query='';homeSearch.value='';updateHomeURL();render();homeSearch.focus();});
-        dashboard.querySelector('.dash-heading').append(allFeatures);
+        dashboard=win.HomeDashboard.mount(win,el('section'));homeTools.after(dashboard);
       }
       empty=el('div','kb-empty');empty.hidden=true;const emptyText=el('p','', '검색 결과가 없습니다. 검색어나 선택한 업무를 확인해 주세요.');
       const reset=button('전체 기능 보기','kb-control');reset.addEventListener('click',()=>{category='all';query='';homeSearch.value='';updateHomeURL();render();homeSearch.focus();});empty.append(emptyText,reset);grid.after(empty);
@@ -226,6 +224,9 @@
       if(!home)return;
       const overview=category==='dashboard'&&!query;
       if(dashboard)dashboard.hidden=!overview;
+      // 검색만 접고 모바일 카테고리 메뉴는 유지한다.
+      searchLabel.hidden=overview;homeSearch.hidden=overview;
+      homeTools.classList.toggle('kb-dashboard-tools',overview);
       grid.hidden=overview;toolbar.hidden=overview;
       if(overview){empty.hidden=true;return;}
       const saved=preferences.get();const matches=matchFeatures(query,category,saved.favorites);const matching=new Set(matches.map(item=>item.id));

@@ -70,7 +70,7 @@
     const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const badge=(text,tone='')=>`<span class="ui-status"${tone?` data-status="${tone===true?'warning':esc(tone)}"`:''}>${esc(text)}</span>`;
     container.className='kb-dashboard';container.id='kb-dashboard';container.setAttribute('aria-labelledby','dashboard-title');
-    container.innerHTML=`<div class="dash-heading"><div><h1 id="dashboard-title">대시보드</h1><p>오늘 확인할 소식과 업무</p></div><time class="dash-date"></time></div>
+    container.innerHTML=`<div class="dash-heading"><h1 id="dashboard-title">대시보드</h1><time class="dash-date"></time></div>
       <div class="dash-metrics" data-dash-slot="metrics" aria-label="핵심 현황"></div>
       <div class="dash-columns">
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>

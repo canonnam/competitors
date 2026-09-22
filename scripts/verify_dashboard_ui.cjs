@@ -19,6 +19,19 @@ const dom=boot(),w=dom.window,d=w.document;
 try {
   const dashboard=d.getElementById('kb-dashboard'),grid=d.querySelector('main > .grid');
   assert.equal(dashboard.hidden,false);assert.equal(grid.hidden,true);
+  const input=d.getElementById('kb-home-search'),searchLabel=d.querySelector('label[for="kb-home-search"]');
+  assert.equal(input.hidden,true);assert.equal(searchLabel.hidden,true);
+  assert.equal(dashboard.querySelector('.dash-heading button'),null);
+  assert.equal(dashboard.querySelector('.dash-heading p'),null);
+  assert.equal(dashboard.querySelector('.dash-heading h1').textContent,'대시보드');
+  assert.match(dashboard.querySelector('.dash-date').textContent,/\d{4}년/);
+  const mobileMenu=d.querySelector('.kb-mobile-menu');
+  assert.equal(mobileMenu.closest('[hidden]'),null,'dashboard keeps mobile navigation');
+  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));
+  const dialog=d.querySelector('dialog[open]');
+  assert.ok(dialog,'keyboard search remains available');
+  assert.equal(d.activeElement,dialog.querySelector('input'));
+  dialog.querySelector('button').click();assert.equal(dialog.open,false);
   assert.ok(d.body.classList.contains('kb-navigation-ready'));
   assert.equal(d.getElementById('dashboard-attention-title'),null);
   assert.equal(d.getElementById('dashboard-claims-title'),null);
@@ -30,9 +43,14 @@ try {
   assert.equal(d.getElementById('dashboard-marketing-title'),null);
   const select=id=>d.querySelector('#kb-navigation [data-kb-category="'+id+'"]').click();
   select('all');assert.equal(dashboard.hidden,true);assert.equal(grid.hidden,false);assert.equal(w.location.search,'?category=all');
+  assert.equal(input.hidden,false);assert.equal(searchLabel.hidden,false);
   d.querySelector('[data-kb-view="cards"]').click();assert.equal(grid.classList.contains('kb-list-view'),false);
   select('dashboard');assert.equal(dashboard.hidden,false);
-  const input=d.getElementById('kb-home-search');input.value='손익';input.dispatchEvent(new w.Event('input'));
+  assert.equal(input.hidden,true);assert.equal(searchLabel.hidden,true);
+  mobileMenu.open=true;mobileMenu.querySelector('[data-kb-category="all"]').click();
+  assert.equal(mobileMenu.open,false);assert.equal(d.activeElement,mobileMenu.querySelector('summary'));
+  assert.equal(input.hidden,false);assert.equal(searchLabel.hidden,false);
+  input.value='손익';input.dispatchEvent(new w.Event('input'));
   assert.equal(dashboard.hidden,true);assert.equal(grid.querySelectorAll('article:not([hidden])').length,1);
   assert.equal(grid.querySelector('article:not([hidden])').dataset.kbFeature,'operating-costs');
   select('dashboard');assert.equal(input.value,'');assert.equal(w.location.search,'');
@@ -128,6 +146,8 @@ try {
 for(const [query,isDashboard] of [['?category=all',false],['?category=operations',false],['?q=손익',false],['?category=dashboard&q=손익',false],['?category=invalid',true]]) {
   const current=boot(query);
   assert.equal(current.window.document.getElementById('kb-dashboard').hidden,!isDashboard,query);
+  assert.equal(current.window.document.getElementById('kb-home-search').hidden,isDashboard,query+' search');
+  assert.equal(current.window.document.querySelector('label[for="kb-home-search"]').hidden,isDashboard,query+' search label');
   current.window.close();
 }
 console.log('PASS: direct URLs and old category/search links');

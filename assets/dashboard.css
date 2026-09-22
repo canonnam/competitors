@@ -1,9 +1,12 @@
 /* Dashboard uses the shared UI tokens; only home layout is defined here. */
-.kb-dashboard { margin-top:28px; }
+.kb-dashboard { margin-top:20px; }
+.kb-dashboard-tools .kb-mobile-menu { margin-top:0; }
+@media (min-width:1180px) { .kb-dashboard { margin-top:0; } }
 .kb-dashboard :is(h1,h2,h3,p,ul) { margin:0; }
 .dash-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
 .dash-heading h1 { font-size:28px; line-height:1.4; letter-spacing:-.03em; }
-.dash-heading p,.dash-date,.dash-meta,.dash-footnote { font-size:14px; color:var(--ui-muted); }
+.dash-date,.dash-meta,.dash-footnote { font-size:14px; color:var(--ui-muted); }
+.dash-date { margin-left:auto; text-align:right; }
 .dash-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:24px; }
 .dash-metric { display:flex; flex-direction:column; gap:8px; min-width:0; padding:20px; background:var(--ui-surface); border:1px solid var(--ui-border); border-top:3px solid var(--ui-primary); border-radius:var(--ui-card-radius); color:var(--ui-text); text-decoration:none; }
 .dash-metric>span { font-size:14px; font-weight:600; }
