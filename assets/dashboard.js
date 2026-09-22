@@ -13,7 +13,8 @@
     keywords:{title:'네이버 광고',href:'/naver-ads.html'},
     visibility:{title:'검색노출',href:'/search-visibility.html'},
     reputation:{title:'평판 점검',href:'/reputation-watch.html'},
-    requests:{title:'상담·무료체험 신청 현황',href:'/website-requests.html'}
+    requests:{title:'상담·무료체험 신청 현황',href:'/website-requests.html'},
+    ads:{title:'네이버 광고 추이',href:'/naver-ads.html'}
   };
   const state={};
   let redraw=()=>{};
@@ -61,6 +62,7 @@
       <div class="dash-columns">
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="requests-time"></span><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests" aria-label="신청 현황 새로고침">새로고침</button></div></section>
+        <section class="dash-panel dash-ads-panel" aria-labelledby="dashboard-ads-title"><div class="dash-panel-head"><h2 id="dashboard-ads-title">네이버 광고 노출·클릭 추이</h2><a href="/naver-ads.html">광고 상세</a></div><div data-dash-slot="ads"></div></section>
         <section class="dash-panel" id="dashboard-news" aria-labelledby="dashboard-news-title"><div class="dash-panel-head"><h2 id="dashboard-news-title">시장·정책 새 소식</h2></div><div data-dash-slot="news"></div><p class="dash-footnote">미확인 수는 이 브라우저의 읽음 기록 기준입니다.</p></section>
         <section class="dash-panel" aria-labelledby="dashboard-marketing-title"><div class="dash-panel-head"><h2 id="dashboard-marketing-title">마케팅·점검 현황</h2></div><div data-dash-slot="marketing"></div></section>
       </div>
@@ -95,6 +97,8 @@
       slot('requests',request?.status?.locked?`<div class="dash-locked"><p>담당자 로그인 후 신청 현황을 확인하세요.</p><a class="ui-button" href="/website-requests.html" data-dash-key="requests-login">담당자 로그인</a></div>`:request?.error?'<p class="dash-empty">신청 현황 조회 실패 · 다시 새로고침해주세요.</p>':data?`<p class="dash-meta">운영 사이트 누적 · 개발 사이트 제외</p><dl class="dash-request-counts">${Object.entries({new:'새 접수',contacted:'상담 중',completed:'상담 완료',archived:'보관함'}).map(([key,label])=>`<div${key==='new'&&data.counts[key]>0?' data-status="warning"':''}><dt>${label}</dt><dd>${number(data.counts[key])}<span>건</span></dd></div>`).join('')}</dl>${data.total===0?'<p class="dash-meta">접수된 신청이 없습니다.</p>':''}`:'<p class="dash-empty">신청 현황 확인 중</p>');
       slot('requests-time',data&&!request.error?`조회 ${esc(date(data.generatedAt))}`:'');
       container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error&&!request.status?.locked);
+      const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
+      slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
       slot('news',['competitor','agency'].map(id=>{
         const record=state[id],data=record?.data;
         return row(id,sources[id].title,data?`미확인 ${number(counts[id])}건 · 전체 ${number(data.total)}건`:record?.error?'소식을 불러오지 못했습니다.':'최근 소식 확인 중',data?`전체 수집 ${date(data.updated_at)}${record.error?' · 이전 결과':''}`:record?.error?'상세 화면에서 다시 확인해주세요.':'수집 결과를 불러옵니다.');

@@ -202,8 +202,11 @@ class App(SimpleHTTPRequestHandler):
 
     def send_ad_report(self, head_only=False):
         try:
-            reporter = naver_ads.keyword_report if urllib.parse.urlsplit(self.path).path == "/api/naver-ad-keywords" else naver_ads.report
-            payload = reporter(naver_ads.db_path())
+            parts = urllib.parse.urlsplit(self.path)
+            if parts.path == "/api/naver-ad-keywords":
+                payload = naver_ads.keyword_report(naver_ads.db_path())
+            else:
+                payload = naver_ads.report(naver_ads.db_path(), summary=urllib.parse.parse_qs(parts.query).get("summary") == ["1"])
             status = 200
         except (sqlite3.Error, OSError, ValueError):
             payload = {"error": "광고 보고서를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."}

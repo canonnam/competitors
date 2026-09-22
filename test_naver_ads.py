@@ -131,7 +131,7 @@ class ReportTests(unittest.TestCase):
         try:
             with patch.object(ads,"db_path",return_value=self.path):
                 for method in ("GET","HEAD"):
-                    for path,status in (("/api/naver-ads",200),("/api/naver-ad-keywords",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
+                    for path,status in (("/api/naver-ads",200),("/api/naver-ads?summary=1",200),("/api/naver-ad-keywords",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
                         with self.subTest(method=method,path=path):
                             connection=http.client.HTTPConnection("127.0.0.1",server.server_port,timeout=5)
                             connection.request(method,path)
@@ -142,6 +142,28 @@ class ReportTests(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_dashboard_summary_matches_campaign_totals_without_creatives_or_history(self):
+        with ads.connect(self.path) as db:
+            db.execute("INSERT INTO entities VALUES ('campaign-2','campaign','플레이스','Second',1)")
+            db.execute("INSERT INTO entities VALUES ('creative-1','creative','플레이스','Creative',1)")
+            db.executemany("INSERT INTO metrics VALUES (?,?,?,?,?)", [
+                ('campaign-1','2026-09-06',100,5,900), ('campaign-2','2026-09-06',30,2,100),
+                ('creative-1','2026-09-06',900,50,2000), ('campaign-1','2026-08-24',0,0,0),
+                ('campaign-1','2026-08-23',999,99,1000), ('campaign-1','2026-09-07',999,99,1000)])
+        full=ads.report(self.path,self.now)
+        compact=ads.report(self.path,self.now,summary=True)
+        expected=[r for r in full['daily'] if r['level']=='campaign' and '2026-08-24'<=r['date']<='2026-09-06']
+        for metric in ('impressions','clicks'):
+            self.assertEqual(sum(r[metric] for r in compact['daily']),sum(r[metric] for r in expected))
+        self.assertEqual(compact['daily'],[
+            {'date':'2026-08-24','level':'campaign','impressions':0,'clicks':0},
+            {'date':'2026-09-06','level':'campaign','impressions':130,'clicks':7}])
+        self.assertEqual(compact['window_days'],14)
+        self.assertEqual(compact['sync'],full['sync'])
+        self.assertNotIn('keywords',compact);self.assertNotIn('history',compact)
+        with ads.connect(self.path) as db: db.execute("DELETE FROM state WHERE key='through'")
+        self.assertEqual(ads.report(self.path,self.now,summary=True)['daily'],[])
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ const html=fs.readFileSync('index.html','utf8');
 function boot(query='') {
   const dom=new JSDOM(html,{url:'https://app.aivida.tech/'+query,runScripts:'outside-only'}),w=dom.window;
   w.setInterval=()=>0;
+  w.DashboardAds=require('../assets/dashboard-ads.js');
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   w.HTMLDialogElement.prototype.close=function(){this.open=false;};
   const liveNodes=[...w.document.querySelectorAll('[id^="home-"]')];
@@ -22,6 +23,7 @@ try {
   assert.equal(d.getElementById('dashboard-claims-title'),null);
   assert.ok(d.getElementById('dashboard-branches-title'));
   assert.ok(d.getElementById('dashboard-requests-title'));
+  assert.ok(d.getElementById('dashboard-ads-title'));
   const select=id=>d.querySelector('#kb-navigation [data-kb-category="'+id+'"]').click();
   select('all');assert.equal(dashboard.hidden,true);assert.equal(grid.hidden,false);assert.equal(w.location.search,'?category=all');
   d.querySelector('[data-kb-view="cards"]').click();assert.equal(grid.classList.contains('kb-list-view'),false);
@@ -83,8 +85,21 @@ try {
   assert.equal(d.querySelector('[data-dash-slot="requests-time"]').textContent,'','private freshness metadata is cleared too');
   w.HomeDashboard.update('requests',{...totals,total:0,lastReceivedAt:null,counts:{new:0,contacted:0,completed:0,archived:0},kinds:{visit:0,trial:0,pricing:0}});
   assert.match(requestSlot.textContent,/접수된 신청이 없습니다/);
+  const ads={branch:'인천점',through:'2026-09-21',updated_at:'2026-09-22T10:30:00+09:00',sync:{enabled:true},daily:[{level:'campaign',date:'2026-09-21',impressions:200,clicks:5}]};
+  w.HomeDashboard.update('ads',ads);
+  const adSlot=d.querySelector('[data-dash-slot="ads"]');
+  assert.equal(adSlot.querySelectorAll('svg[role="img"]').length,2);
+  assert.equal(adSlot.querySelectorAll('tbody tr').length,14);
+  assert.match(adSlot.textContent,/200회/);assert.match(adSlot.textContent,/5회/);
+  adSlot.querySelector('details').open=true;
+  adSlot.querySelector('summary').focus();
+  w.HomeDashboard.fail('ads');
+  assert.match(adSlot.textContent,/이전에 불러온 결과/);
+  assert.ok(adSlot.querySelector('details').open);
+  assert.equal(d.activeElement.dataset.dashKey,'ads-values');
+  assert.equal(adSlot.querySelectorAll('svg[role="img"]').length,2);
   select('all');assert.equal(grid.classList.contains('kb-list-view'),false,'saved view survives dashboard');
-  console.log('PASS: dashboard sections, branch/labor status, authenticated totals, live nodes, navigation, error/recovery, focus, escaping and unread preservation');
+  console.log('PASS: dashboard sections, branch/labor status, authenticated totals, ad charts and gaps, live nodes, navigation, error/recovery, focus, escaping and unread preservation');
 } finally {dom.window.close();}
 for(const [query,isDashboard] of [['?category=all',false],['?category=operations',false],['?q=손익',false],['?category=dashboard&q=손익',false],['?category=invalid',true]]) {
   const current=boot(query);

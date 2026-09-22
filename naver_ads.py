@@ -344,12 +344,21 @@ def start_scheduler(path):
     return stop
 
 
-def report(path, now=None):
+def report(path, now=None, summary=False):
     now = now or datetime.now(KST)
     with connect(path) as db:
         db.execute("BEGIN")
         state = state_dict(db)
-        daily = [dict(row) for row in db.execute("""SELECT m.day AS date,e.level,e.channel,
+        if summary:
+            through = state.get("through")
+            first = (date.fromisoformat(through) - timedelta(days=13)).isoformat() if through else None
+            daily = [dict(row) for row in db.execute("""SELECT m.day AS date,'campaign' AS level,
+                SUM(m.impressions) AS impressions,SUM(m.clicks) AS clicks
+                FROM metrics m JOIN entities e ON e.id=m.entity_id
+                WHERE e.level='campaign' AND m.day BETWEEN ? AND ?
+                GROUP BY m.day ORDER BY m.day""", (first, through))] if through else []
+        else:
+            daily = [dict(row) for row in db.execute("""SELECT m.day AS date,e.level,e.channel,
             CASE WHEN e.level='creative' THEN e.id ELSE e.channel END AS entity,
             CASE WHEN e.level='creative' THEN e.title ELSE e.channel END AS title,
             SUM(m.impressions) AS impressions,SUM(m.clicks) AS clicks,SUM(m.cost) AS cost
@@ -357,14 +366,17 @@ def report(path, now=None):
             GROUP BY m.day,e.level,entity,title ORDER BY m.day,e.level,entity""")]
     config = load_config()
     enabled = configured(config) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true"
-    archive_file = ROOT / "data" / "naver_ads_history.json"
-    archive = json.loads(archive_file.read_text(encoding="utf-8")) if archive_file.exists() else {}
-    return {"branch": "더비다요양원 인천점", "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),
+    result = {"branch": "더비다요양원 인천점", "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),
             "since": state.get("since"), "through": state.get("through"), "updated_at": state.get("updated_at"),
-            "daily": daily, "history": archive, "keywords": keyword_report(path, now, state),
+            "daily": daily,
             "sync": {"enabled": enabled, "next_run": next_run(now) if enabled else None,
                      "stale": state.get("through", "") < due_target(now), "error": state.get("last_error", ""),
-                     "schedule": "매일 10:30 (한국시간)", "target_date": due_target(now)},
+                     "schedule": "매일 10:30 (한국시간)", "target_date": due_target(now)}}
+    if summary:
+        return {**result, "window_days": 14}
+    archive_file = ROOT / "data" / "naver_ads_history.json"
+    archive = json.loads(archive_file.read_text(encoding="utf-8")) if archive_file.exists() else {}
+    return {**result, "history": archive, "keywords": keyword_report(path, now, state),
             "notes": ["광고비는 부가세 포함이며 CTR·CPC는 합산 지표에서 계산합니다.",
                       "조회 가능한 캠페인 기준입니다. 수집 전에 삭제된 항목은 누락될 수 있습니다.",
                       "소재 합계는 삭제·확장소재 및 집계 반올림으로 캠페인 합계와 다를 수 있습니다.",
