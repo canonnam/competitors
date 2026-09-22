@@ -23,6 +23,7 @@ CARDS = {
     'nearby': ('주변 영업처 지도', '/nearby-facilities.html'),
     'statistics': ('통계자료', '/statistics.html'),
     'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
+    'staff_eval': ('종사자 평가', '/staff-eval.html'),
 }
 ALIASES = {
     'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
@@ -36,6 +37,7 @@ ALIASES = {
     'nearby': ('영업처', '주변', '인근', '가까운', '연락처', '전화번호', '지도'),
     'statistics': ('통계', '책갈피', '조사자료', '보건사회연구원', '실태조사'),
     'competitor_uiux': ('uiux', '화면비교', 'ux비교', 'ui비교', '사용성비교'),
+    'staff_eval': ('종사자평가', '요양보호사평가', '지침숙지', '상황판단평가'),
 }
 
 
@@ -349,6 +351,11 @@ def retrieve(kind, question, now):
         from service_knowledge import evidence
         return [evidence(kind, '월별 급여·4대보험 접근 안내',
             '안양·인천의 직원별 급여와 보험료, 직책별 합계를 담당자 로그인 후 조회합니다. 매월 10일 전월분을 수집합니다. 개인정보 보호를 위해 공개 채팅에서는 실제 이름·급여·보험료·직책별 금액을 읽거나 답하지 않습니다. 전용 화면에서 확인해주세요.')]
+    if kind == 'staff_eval':
+        from service_knowledge import evidence
+        return [evidence(kind, '종사자 평가 안내',
+            '요양보호사 지침 숙지와 상황판단을 대화로 확인하는 테스트 화면입니다. 시설 담당자가 일회용 링크를 만들어 공유합니다. '
+            '대화 원문, 자동 점수, 확정 점수는 담당자 로그인 뒤에만 보이며 공개 채팅에서는 개인 평가 결과를 읽거나 답하지 않습니다.')]
     if kind in ('ai_hub', 'payroll', 'competitor_uiux'):
         return static_page(kind, question)
     if kind == 'statistics':
@@ -370,6 +377,7 @@ def status():
              'search_visibility': [search_visibility.db_path(), naver_ads.db_path()],
              'reputation': [reputation_watch.db_path()], 'nearby': [ROOT / 'data/nearby_facilities.json'],
              'statistics': [ROOT / 'data/statistics_knowledge.json'],
-             'competitor_uiux': [ROOT / 'competitor-uiux.html']}
+             'competitor_uiux': [ROOT / 'competitor-uiux.html'],
+             'staff_eval': [ROOT / 'staff-eval.html']}
     return [{'id': k, 'label': label, 'url': url, 'available': all(p.is_file() for p in paths[k]),
              'refresh': 'on_question'} for k, (label, url) in CARDS.items()]

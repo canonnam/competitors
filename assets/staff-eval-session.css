@@ -1,0 +1,25 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #f5f8fc; color: #202b36; font: 16px/1.6 Pretendard, "Noto Sans KR", system-ui, sans-serif; }
+.bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #fff; border-bottom: 1px solid #dde3ec; }
+.bar span { color: #596777; font-weight: 700; }
+main { width: min(480px, 100%); margin: 0 auto; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
+h1 { font-size: 28px; line-height: 1.25; margin: 8px 0; }
+h2 { font-size: 20px; margin: 0 0 8px; }
+p { margin: 8px 0; }
+label { display: block; font-weight: 700; margin-top: 12px; }
+input, textarea, button { font: inherit; font-size: 16px; }
+input[type="text"], input[type="date"], input:not([type="checkbox"]), textarea { width: 100%; margin-top: 6px; min-height: 48px; padding: 10px 12px; border: 1px solid #dde3ec; border-radius: 8px; background: #fff; }
+textarea { min-height: 120px; resize: vertical; }
+button { min-height: 48px; border-radius: 8px; border: 1px solid #dde3ec; background: #fff; font-weight: 800; }
+button.primary { width: 100%; margin-top: 16px; border: 0; background: #4356ad; color: #fff; }
+button:disabled { opacity: .55; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; }
+.check input { width: 22px; height: 22px; margin-top: 2px; }
+.progress { font-weight: 800; color: #4356ad; }
+.bubble { border-radius: 12px; padding: 12px; margin: 8px 0; white-space: pre-wrap; }
+.bubble.assistant { background: #fff; border: 1px solid #dde3ec; }
+.bubble.staff { background: #eef1fc; }
+.status { min-height: 24px; }
+.status[data-status="error"] { color: #a33131; }
+.done { background: #e8f4ed; border-radius: 12px; padding: 12px; }

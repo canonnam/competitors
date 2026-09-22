@@ -6,7 +6,7 @@ import unittest
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-EXTERNAL_PAGES = {'support-share.html'}
+EXTERNAL_PAGES = {'support-share.html', 'staff-eval-session.html'}
 FOUNDATION = '/assets/ui-foundation.css'
 
 

@@ -49,7 +49,7 @@ test('storage corruption, obsolete IDs and unavailable storage do not break navi
 test('every internal page loads shared navigation; external share links stay scoped',()=>{
   for(const file of fs.readdirSync('.').filter(name=>name.endsWith('.html'))){
     const html=fs.readFileSync(file,'utf8');
-    if(file==='support-share.html'){assert.ok(!html.includes('/assets/navigation.js'));continue;}
+    if(file==='support-share.html'||file==='staff-eval-session.html'){assert.ok(!html.includes('/assets/navigation.js'));assert.ok(!html.includes('/assets/navigation.css'));continue;}
     assert.ok(html.includes('/assets/navigation.js'),file);assert.ok(html.includes('/assets/navigation.css'),file);
     assert.equal((html.match(/\/assets\/navigation.js/g)||[]).length,1,file);
   }
