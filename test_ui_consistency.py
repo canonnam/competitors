@@ -54,7 +54,12 @@ class UIConsistencyTest(unittest.TestCase):
         for name in EXTERNAL_PAGES:
             with self.subTest(page=name):
                 page = Page((ROOT / name).read_text(encoding='utf-8'))
-                self.assertNotIn(FOUNDATION, page.stylesheets)
+                if name == 'staff-eval-session.html':
+                    self.assertEqual(page.stylesheets.count(FOUNDATION), 1)
+                    self.assertEqual(page.stylesheets[-1], FOUNDATION)
+                    self.assertIn('class="ui-standalone"', (ROOT / name).read_text(encoding='utf-8'))
+                else:
+                    self.assertNotIn(FOUNDATION, page.stylesheets)
                 self.assertNotIn('/assets/navigation.js', page.scripts)
 
     def test_internal_headers_use_resolvable_external_destinations(self):

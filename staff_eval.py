@@ -8,6 +8,7 @@ from http.cookies import SimpleCookie
 import hashlib
 import hmac
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -421,28 +422,36 @@ def last_assistant(row):
     return ''
 
 
+def live_setup():
+    """Raw Live API schema (the SDK's LiveConnectConfig is not a wire message)."""
+    return {
+        'model': 'models/' + live_model_id(),
+        'generationConfig': {
+            'responseModalities': ['AUDIO'],
+            'speechConfig': {'languageCode': 'ko-KR'},
+        },
+        'systemInstruction': {'parts': [{'text': LIVE_INSTRUCTION}]},
+        'inputAudioTranscription': {},
+        'outputAudioTranscription': {},
+        # The UI has explicit start/end buttons, so pauses must not end a turn.
+        'realtimeInputConfig': {'automaticActivityDetection': {'disabled': True}},
+    }
+
+
 def mint_live_token():
     """짧은 Live 토큰만 만든다. GEMINI_API_KEY는 이 요청 헤더에만 둔다."""
     key = os.getenv('GEMINI_API_KEY', '').strip()
     if not key:
         raise RuntimeError('missing')
-    model = 'models/' + live_model_id()
     moment = datetime.now(timezone.utc)
     payload = {
         'uses': 1,
         'expireTime': (moment + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'newSessionExpireTime': (moment + timedelta(minutes=2)).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'liveConnectConstraints': {
-            'model': model,
-            'config': {
-                'sessionResumption': {},
-                'responseModalities': ['AUDIO'],
-                'systemInstruction': {'parts': [{'text': LIVE_INSTRUCTION}]},
-                'inputAudioTranscription': {'languageCodes': ['ko-KR']},
-                'outputAudioTranscription': {},
-                'speechConfig': {'languageCode': 'ko-KR'},
-            },
-        },
+        # REST AuthToken takes BidiGenerateContentSetup directly, not the
+        # SDK-only liveConnectConstraints wrapper. Omitting fieldMask locks
+        # the entire setup to this server-provided evaluation configuration.
+        'bidiGenerateContentSetup': live_setup(),
     }
     request = urllib.request.Request(
         'https://generativelanguage.googleapis.com/v1beta/auth_tokens',
@@ -454,9 +463,14 @@ def mint_live_token():
         with urllib.request.urlopen(request, timeout=15) as response:
             data = json.loads(response.read().decode())
     except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+        # Never log request headers, credentials, upstream bodies or answers.
+        logging.getLogger(__name__).warning(
+            'staff_eval live token failed: type=%s status=%s',
+            type(exc).__name__, getattr(exc, 'code', None),
+        )
         raise RuntimeError('live') from exc
-    name = scrub(str(data.get('name') or '')).strip()
-    if not name or key in name or len(name) > 500:
+    name = str(data.get('name') or '').strip() if isinstance(data, dict) else ''
+    if not name.startswith('auth_tokens/') or key in name or len(name) > 500:
         raise RuntimeError('live')
     return name
 
@@ -473,10 +487,11 @@ def live_credentials(handler, token):
     try:
         ephemeral = mint_live_token()
     except RuntimeError as exc:
-        raise wiki_chat_error(503, '음성 연결을 열지 못했습니다. 글로 답해 주세요.') from exc
+        raise wiki_chat_error(503, '음성 연결을 준비하지 못했습니다. 잠시 후 다시 시도하거나 글로 답해 주세요.') from exc
     return {
         'token': ephemeral,
         'model': 'models/' + live_model_id(),
+        'setup': live_setup(),
         'websocket_url': LIVE_WS,
         'system_instruction': LIVE_INSTRUCTION,
         'speak': last_assistant(row),

@@ -7,11 +7,13 @@
   let textReason = '';
   let voice = null;
   let current = null;
+  let textDraft = '';
 
   function node(tag, className, text) {
     const el = document.createElement(tag);
     if (className) el.className = className;
     if (text != null) el.textContent = text;
+    if (el.classList.contains('ui-status')) el.setAttribute('role', 'status');
     return el;
   }
   function closeVoice() {
@@ -22,8 +24,8 @@
   }
   function show(message, kind) {
     closeVoice();
-    app.replaceChildren(node('p', 'status', message));
-    if (kind) app.firstChild.dataset.status = kind;
+    app.replaceChildren(node('h1', '', '종사자 평가'), node('p', 'ui-status', message));
+    if (kind) app.lastChild.dataset.status = kind;
   }
   async function call(path, body) {
     const response = await fetch(base + path, {
@@ -37,9 +39,21 @@
   }
   function messageList(data) {
     const list = node('div', 'transcript');
-    (data.messages || []).forEach(message => {
-      list.append(node('div', 'bubble ' + (message.role === 'staff' ? 'staff' : 'assistant'), message.text));
-    });
+    const messages = data.messages || [];
+    function bubble(message) {
+      const item = node('div', 'bubble ' + (message.role === 'staff' ? 'staff' : 'assistant'));
+      item.append(node('span', 'speaker', message.role === 'staff' ? '내 답변' : '평가 안내'), node('p', '', message.text));
+      return item;
+    }
+    if (data.input_open && messages.length) {
+      list.append(bubble(messages[messages.length - 1]));
+      if (messages.length > 1) {
+        const history = node('details', 'history');
+        history.append(node('summary', '', '이전 대화 보기'));
+        messages.slice(0, -1).forEach(message => history.append(bubble(message)));
+        list.append(history);
+      }
+    } else messages.forEach(message => list.append(bubble(message)));
     return list;
   }
   function assistantText(data) {
@@ -125,17 +139,26 @@
     app.append(node('p', 'progress', data.role + ' · ' + data.branch_label));
     app.append(node('h1', '', data.name));
     if (data.status === 'expired') {
-      app.append(node('p', '', '평가 링크가 만료되었습니다. 시설장에게 새 링크를 요청해 주세요.'));
+      const note = node('p', 'ui-status', '평가 링크가 만료되었습니다. 시설장에게 새 링크를 요청해 주세요.');
+      note.dataset.status = 'warning';
+      app.append(note);
       return;
     }
     if (data.status === 'completed') {
-      app.append(node('p', 'done', data.done_message || '제출 완료. 결과는 시설장 확인 후 안내됩니다.'));
+      const note = node('p', 'ui-status done', data.done_message || '제출 완료. 결과는 시설장 확인 후 안내됩니다.');
+      note.dataset.status = 'success';
+      app.append(note);
       app.append(messageList(data));
       return;
     }
     if (!data.consented) return consent();
     if (!data.authenticated) return identity(data);
     app.append(node('p', 'progress', '진행 ' + data.progress.current + '/' + data.progress.total));
+    const progress = node('progress', 'evaluation-progress');
+    progress.max = data.progress.total;
+    progress.value = data.progress.current - 1;
+    progress.setAttribute('aria-label', '완료한 상황');
+    app.append(progress);
     app.append(messageList(data));
     if (!data.input_open) return;
     if (useVoice(data)) mountVoice(data);
@@ -143,23 +166,31 @@
   }
   function mountText(data) {
     const reason = textReason || '음성 연결 준비가 되지 않아 글로 답합니다. 상황을 읽고 아래에 적어 주세요.';
-    app.append(node('p', 'status', reason));
+    app.append(node('p', 'ui-status', reason));
+    if (data.voice && data.voice.available) {
+      const retry = node('button', 'ui-button voice-retry', '음성 다시 시도');
+      retry.type = 'button';
+      retry.addEventListener('click', () => { mode = 'voice'; textReason = ''; render(current); });
+      app.append(retry);
+    }
     const form = node('form');
     const label = node('label', '', '답변');
     const input = node('textarea');
     input.required = true;
     input.maxLength = 2000;
     input.setAttribute('aria-label', '상황에 대한 답변');
+    input.value = textDraft;
+    input.addEventListener('input', () => { textDraft = input.value; });
     label.append(input);
-    const button = node('button', 'primary', '보내기');
+    const button = node('button', 'ui-button ui-button--primary form-submit', '답변 보내기');
     button.type = 'submit';
-    const note = node('p', 'status', '');
+    const note = node('p', 'ui-status', '');
     form.append(label, button, note);
     form.addEventListener('submit', async event => {
       event.preventDefault();
       button.disabled = true;
       note.textContent = '보내는 중…';
-      try { render(await call('/message', {text: input.value})); }
+      try { const next = await call('/message', {text: input.value}); textDraft = ''; render(next); }
       catch (error) { note.textContent = error.message; note.dataset.status = 'error'; button.disabled = false; }
     });
     app.append(form);
@@ -179,27 +210,37 @@
     let finalHeard = '';
     let interimHeard = '';
     let waitTimer = 0;
-    const state = node('p', 'voice-state', '상황을 들으려면 아래 버튼을 누르세요.');
+    let captureTimer = 0;
+    let connectTimer = 0;
+    let readTimer = 0;
+    let playbackTimer = 0;
+    let cancelConnect = null;
+    const state = node('p', 'ui-status voice-state', '상황을 들으려면 아래 버튼을 누르세요.');
     state.setAttribute('role', 'status');
-    const mic = node('button', 'mic', '상황 듣기');
+    const mic = node('button', 'ui-button ui-button--primary mic', '상황 듣기');
     mic.type = 'button';
     mic.setAttribute('aria-pressed', 'false');
     const live = node('p', 'live-line', '');
     live.setAttribute('aria-live', 'polite');
-    const hint = node('p', 'hint', '버튼을 한 번 누르면 답을 시작하고, 다시 누르면 그 답을 보냅니다.');
-    const textButton = node('button', 'linkish', '글로 답하기');
+    const hint = node('p', 'hint', '상황을 들은 뒤 ‘답변 말하기’를 누르세요. 말씀을 마치면 ‘답변 끝내기’를 누르세요.');
+    const textButton = node('button', 'ui-button', '글로 답하기');
     textButton.type = 'button';
     const stage = node('section', 'voice');
     stage.append(state, mic, live, hint, textButton);
     app.append(stage);
 
-    function setState(text) { state.textContent = text; }
+    function setState(text, kind) {
+      state.textContent = text;
+      if (kind) state.dataset.status = kind;
+      else delete state.dataset.status;
+    }
     function setMic(label, pressed, disabled) {
       mic.textContent = label;
       mic.setAttribute('aria-pressed', pressed ? 'true' : 'false');
       mic.disabled = !!disabled;
     }
     function stopMic() {
+      window.clearTimeout(captureTimer);
       if (processor) {
         processor.onaudioprocess = null;
         try { processor.disconnect(); } catch (error) { /* already disconnected */ }
@@ -213,6 +254,10 @@
       session.open = false;
       session.generation += 1;
       window.clearTimeout(waitTimer);
+      window.clearTimeout(connectTimer);
+      window.clearTimeout(readTimer);
+      window.clearTimeout(playbackTimer);
+      if (cancelConnect) cancelConnect();
       if (socket) { const closing = socket; socket = null; try { closing.close(); } catch (error) { /* already closed */ } }
       stopMic();
       if (player) player.stop();
@@ -223,18 +268,16 @@
       const progress = app.querySelectorAll('.progress')[1];
       const list = app.querySelector('.transcript');
       if (progress) progress.textContent = '진행 ' + next.progress.current + '/' + next.progress.total;
-      if (list) {
-        list.replaceChildren();
-        (next.messages || []).forEach(message => {
-          list.append(node('div', 'bubble ' + (message.role === 'staff' ? 'staff' : 'assistant'), message.text));
-        });
-      }
+      const meter = app.querySelector('.evaluation-progress');
+      if (meter) meter.value = next.progress.current - 1;
+      if (list) list.replaceWith(messageList(next));
       if (next.status === 'completed' || !next.input_open) {
         closeVoice();
         paint(next);
       }
     };
     function fallback(message) {
+      if (finalHeard || interimHeard) textDraft = finalHeard || interimHeard;
       mode = 'text';
       textReason = message;
       const snapshot = current;
@@ -262,7 +305,7 @@
       }
       if (!text) {
         phase = 'ready';
-        setState('듣는 중');
+        setState('답변할 준비가 되었습니다.');
         setMic('답변 말하기', false, false);
         return;
       }
@@ -273,15 +316,23 @@
       live.textContent = '';
       setState('AI가 말하는 중');
       setMic('상황 듣기', false, true);
-      socket.send(JSON.stringify({realtimeInput: {text: '[읽기]\n' + text}}));
+      socket.send(JSON.stringify({clientContent: {
+        turns: [{role: 'user', parts: [{text: '[읽기]\n' + text}]}], turnComplete: true
+      }}));
+      window.clearTimeout(readTimer);
+      readTimer = window.setTimeout(() => {
+        if (session.open && phase === 'reading') fallback('상황 음성을 받지 못했습니다. 다시 시도하거나 글로 답해 주세요.');
+      }, 45000);
     }
     function onTurnComplete() {
       if (phase === 'reading') {
+        window.clearTimeout(readTimer);
         const delay = player ? player.remaining() : 0;
-        window.setTimeout(() => {
+        window.clearTimeout(playbackTimer);
+        playbackTimer = window.setTimeout(() => {
           if (!session.open || phase !== 'reading') return;
           phase = 'ready';
-          setState('듣는 중');
+          setState('답변할 준비가 되었습니다.');
           setMic('답변 말하기', false, false);
         }, delay * 1000 + 80);
         return;
@@ -301,7 +352,7 @@
       }
       submitAnswer(text);
     }
-    async function handleMessage(event, generation, onReady) {
+    async function handleMessage(event, generation, onReady, onError) {
       if (!session.open || generation !== session.generation) return;
       let raw = event.data;
       if (typeof Blob !== 'undefined' && raw instanceof Blob) raw = await raw.text();
@@ -309,14 +360,14 @@
       try { message = JSON.parse(raw); } catch (error) { return; }
       if (!session.open || generation !== session.generation) return;
       if (message.setupComplete) { onReady(); return; }
-      if (message.error) { fallback('음성 연결을 열지 못했습니다. 글로 답해 주세요.'); return; }
+      if (message.error) { onError('음성 서비스에 연결하지 못했습니다. 다시 시도하거나 글로 답해 주세요.'); return; }
       const content = message.serverContent;
       if (!content) return;
       if (content.interrupted && player) player.stop();
       const parts = (content.modelTurn && content.modelTurn.parts) || [];
       parts.forEach(part => {
         const inline = part.inlineData || part.inline_data;
-        if (!(inline && inline.data && player) || phase === 'capturing') return;
+        if (!(inline && inline.data && player) || phase !== 'reading') return;
         try { player.enqueue(inline.data); } catch (error) { /* 깨진 음성 조각은 건너뛴다 */ }
       });
       if (phase === 'capturing' || phase === 'waiting') {
@@ -329,58 +380,70 @@
     }
     function openSocket(speakText) {
       return call('/live-token', {}).then(creds => new Promise((resolve, reject) => {
-        if (!session.open) return;
+        if (!session.open) { resolve(); return; }
         const ws = new WebSocket(creds.websocket_url + '?access_token=' + encodeURIComponent(creds.token));
         socket = ws;
-        const generation = session.generation;
+        const generation = ++session.generation;
         let settled = false;
+        cancelConnect = () => { if (!settled) { settled = true; resolve(); } };
+        function fail(message) {
+          if (!session.open || generation !== session.generation) return;
+          window.clearTimeout(connectTimer);
+          if (!settled) { settled = true; reject(Error(message)); }
+          else fallback(message);
+        }
+        connectTimer = window.setTimeout(() => fail('음성 연결 시간이 초과되었습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.'), 15000);
         if (!player && context) player = createPlayer(context, creds.output_rate || 24000);
         ws.onopen = () => {
           ws.send(JSON.stringify({
-            setup: {
+            setup: creds.setup || {
               model: creds.model,
-              responseModalities: ['AUDIO'],
+              generationConfig: {responseModalities: ['AUDIO'], speechConfig: {languageCode: 'ko-KR'}},
               systemInstruction: {parts: [{text: creds.system_instruction}]},
-              inputAudioTranscription: {languageCodes: ['ko-KR']},
+              inputAudioTranscription: {},
               outputAudioTranscription: {},
-              speechConfig: {languageCode: 'ko-KR'}
+              realtimeInputConfig: {automaticActivityDetection: {disabled: true}},
             }
           }));
         };
         ws.onmessage = event => handleMessage(event, generation, () => {
           if (settled || !session.open) return;
           settled = true;
+          window.clearTimeout(connectTimer);
           resolve();
           speak(speakText || creds.speak || assistantText(current));
-        });
-        ws.onerror = () => {
-          if (settled) return;
-          settled = true;
-          reject(Error('음성 연결을 열지 못했습니다. 글로 답해 주세요.'));
-        };
-        ws.onclose = () => {
+        }, fail);
+        ws.onerror = () => fail('음성 서버에 연결하지 못했습니다. 네트워크를 확인한 뒤 다시 시도하거나 글로 답해 주세요.');
+        ws.onclose = event => {
           if (!session.open || generation !== session.generation) return;
+          window.clearTimeout(connectTimer);
           if (!settled) {
-            settled = true;
-            reject(Error('음성 연결을 열지 못했습니다. 글로 답해 주세요.'));
+            fail(event.code === 1008 ? '음성 연결 설정을 확인하지 못했습니다. 다시 시도하거나 담당자에게 알려 주세요.' : '음성 연결이 종료되었습니다. 다시 시도하거나 글로 답해 주세요.');
             return;
           }
           if (phase === 'saving') return;
           socket = null;
+          window.clearTimeout(readTimer);
+          window.clearTimeout(playbackTimer);
           stopMic();
           phase = 'idle';
-          setState('음성 연결이 끊겼습니다. 상황 듣기를 다시 누르거나 글로 답해 주세요.');
+          setState('음성 연결이 끊겼습니다. 상황 듣기를 다시 누르거나 글로 답해 주세요.', 'warning');
           setMic('상황 듣기', false, false);
         };
       }));
     }
     async function submitAnswer(text) {
       phase = 'saving';
+      textButton.disabled = true;
       window.clearTimeout(waitTimer);
       setState('처리 중');
       setMic('답변 말하기', false, true);
       try {
         const data = await call('/message', {text: text});
+        textDraft = '';
+        finalHeard = '';
+        interimHeard = '';
+        textButton.disabled = false;
         current = data;
         if (!session.open) return;
         if (data.status === 'completed' || !data.input_open) {
@@ -399,9 +462,8 @@
         }
       } catch (error) {
         if (!session.open) return;
-        phase = 'ready';
-        setState(error.message);
-        setMic('답변 말하기', false, false);
+        textDraft = text;
+        fallback(error.message + ' 인식한 답변을 확인하고 다시 보내 주세요.');
       }
     }
     function stopCapture() {
@@ -410,15 +472,20 @@
       setState('처리 중');
       setMic('답변 끝내기', true, true);
       stopMic();
-      if (socket && socket.readyState === 1) socket.send(JSON.stringify({realtimeInput: {audioStreamEnd: true}}));
+      if (socket && socket.readyState === 1) socket.send(JSON.stringify({realtimeInput: {activityEnd: {}}}));
       window.clearTimeout(waitTimer);
       waitTimer = window.setTimeout(deliver, 8000);
     }
     async function startMic() {
+      phase = 'permission';
+      setState('마이크를 준비하는 중입니다.');
+      setMic('마이크 준비 중', false, true);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Error('mic');
       if (!context.createScriptProcessor) throw Error('mic');
       stream = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, echoCancellation: true, noiseSuppression: true}});
       if (!session.open) { stopMic(); return; }
+      if (!socket || socket.readyState !== 1) throw Error('connection closed');
+      socket.send(JSON.stringify({realtimeInput: {activityStart: {}}}));
       sourceNode = context.createMediaStreamSource(stream);
       processor = context.createScriptProcessor(4096, 1, 1);
       mute = context.createGain();
@@ -437,11 +504,12 @@
       live.textContent = '';
       setState('말하는 중');
       setMic('답변 끝내기', true, false);
-      window.setTimeout(() => { if (session.open && phase === 'capturing') stopCapture(); }, 60000);
+      captureTimer = window.setTimeout(() => { if (session.open && phase === 'capturing') stopCapture(); }, 60000);
     }
     async function onMic() {
       if (!session.open || mic.disabled) return;
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) { fallback('이 브라우저에서 음성을 사용할 수 없습니다. 글로 답하거나 다른 브라우저에서 열어 주세요.'); return; }
       if (!context && AudioCtx) {
         context = new AudioCtx();
         player = createPlayer(context, 24000);
@@ -473,7 +541,7 @@
     box.type = 'checkbox';
     box.required = true;
     label.append(box, document.createTextNode('안내를 확인했고 평가에 동의합니다.'));
-    const button = node('button', 'primary', '동의하고 시작');
+    const button = node('button', 'ui-button ui-button--primary form-submit', '동의하고 시작');
     button.type = 'submit';
     form.append(label, button);
     form.addEventListener('submit', async event => {
@@ -517,9 +585,9 @@
       label.append(input);
       form.append(label);
     }
-    const button = node('button', 'primary', '확인하고 평가 시작');
+    const button = node('button', 'ui-button ui-button--primary form-submit', '확인하고 평가 시작');
     button.type = 'submit';
-    const note = node('p', 'status', '');
+    const note = node('p', 'ui-status', '');
     form.append(button, note);
     form.addEventListener('submit', async event => {
       event.preventDefault();

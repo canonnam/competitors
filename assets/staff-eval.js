@@ -18,6 +18,9 @@
     const name = document.createElement('strong');
     name.textContent = row.name + ' · ' + row.branch_label;
     const state = document.createElement('span');
+    state.className = 'ui-status';
+    if (row.needs_human || row.status === 'expired') state.dataset.status = 'warning';
+    else if (row.status === 'completed') state.dataset.status = 'success';
     state.textContent = row.status_label + (row.needs_human ? ' · 사람 확인 필요' : '');
     const scores = document.createElement('small');
     scores.textContent = '자동 ' + (row.auto_score == null ? '—' : row.auto_score) + ' · 확정 ' + (row.confirmed_score == null ? '—' : row.confirmed_score);
@@ -31,7 +34,11 @@
     const list = $('eval-list');
     list.replaceChildren();
     $('eval-empty').hidden = data.evaluations.length > 0;
-    data.evaluations.forEach(row => list.append(itemButton(row)));
+    data.evaluations.forEach(row => {
+      const item = document.createElement('li');
+      item.append(itemButton(row));
+      list.append(item);
+    });
     return data;
   }
   function bubble(message) {
@@ -72,7 +79,7 @@
     transcript.replaceChildren();
     if (!row.transcript.length) transcript.append('아직 대화가 없습니다.');
     row.transcript.forEach(message => transcript.append(bubble(message)));
-    $('eval-detail').scrollIntoView({block: 'nearest'});
+    $('eval-detail').scrollIntoView({block: 'start'});
   }
   $('eval-login').addEventListener('submit', async event => {
     event.preventDefault();

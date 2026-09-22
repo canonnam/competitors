@@ -1,19 +1,31 @@
 .eval-panel { background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: var(--ui-card-radius); padding: 16px; margin: 16px 0; }
 .eval-panel h2 { margin: 0 0 8px; font-size: 20px; }
-.eval-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.eval-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 16px; margin: 20px 0 16px; }
 .eval-fields label, .eval-row label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; }
 .eval-optional { font-weight: 500; color: var(--ui-muted); }
 .eval-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
 .eval-spread { justify-content: space-between; align-items: center; }
 .eval-row input { flex: 1 1 180px; }
+.eval-fields label, .eval-row > * { min-width: 0; }
+.eval-fields :is(input,select) { width: 100%; }
+.eval-panel > p { color: var(--ui-muted); }
+.eval-panel :is(p,strong,span,small) { overflow-wrap: anywhere; }
+.eval-created { border-top: 1px solid var(--ui-border); padding-top: 16px; }
+.eval-created > label, #eval-login > label { display: block; margin-bottom: 8px; font-weight: 600; }
 .eval-created, .eval-note { margin-top: 12px; }
 .eval-note { color: var(--ui-muted); }
 .eval-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
-.eval-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+.eval-list button { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; }
+.eval-list small { grid-column: 1 / -1; }
+.eval-list .ui-status { justify-self: end; text-align: left; }
 .eval-list small { color: var(--ui-muted); font-weight: 500; }
-.eval-score-line { display: flex; flex-wrap: wrap; gap: 16px; }
+.eval-score-line { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.eval-score-line p { margin: 0; padding: 16px; background: var(--ui-page); border-radius: var(--ui-card-radius); color: var(--ui-muted); font-size: 14px; }
+.eval-score-line strong { display: block; font-size: 28px; color: var(--ui-text); }
+#eval-confirm { border-top: 1px solid var(--ui-border); padding-top: 20px; margin-top: 20px; }
 .eval-table-wrap { overflow: auto; max-width: 100%; }
-.eval-table-wrap table { width: 100%; border-collapse: collapse; }
+.eval-table-wrap table { width: 100%; min-width: 600px; border-collapse: collapse; }
+#eval-detail { scroll-margin-top: 100px; }
 .eval-table-wrap th, .eval-table-wrap td { border-bottom: 1px solid var(--ui-border); text-align: left; padding: 8px; vertical-align: top; }
 .eval-transcript { display: grid; gap: 8px; }
 .eval-bubble { border-radius: var(--ui-card-radius); padding: 10px 12px; white-space: pre-wrap; }
@@ -23,4 +35,7 @@
 @media (max-width: 700px) {
   .eval-spread { align-items: stretch; }
   .eval-spread h2 { width: 100%; }
+  .eval-list button { grid-template-columns: minmax(0, 1fr); }
+  .eval-list .ui-status { justify-self: start; }
+  .eval-score-line { grid-template-columns: 1fr; }
 }
