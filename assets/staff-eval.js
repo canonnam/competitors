@@ -68,7 +68,7 @@
     body.replaceChildren();
     (row.items || []).forEach(item => {
       const tr = document.createElement('tr');
-      [item.code, item.title, item.score, item.steps.map(step => (step.met ? '충족' : '빠짐') + ' ' + step.label).join(', '), item.order_ok ? '맞음' : '확인'].forEach(value => {
+      [item.code, item.title + (item.skipped ? ' · 건너뜀' : ''), item.score, item.steps.map(step => (step.met ? '충족' : '빠짐') + ' ' + step.label).join(', '), item.skipped ? '확인 필요' : item.order_ok ? '맞음' : '확인'].forEach(value => {
         const cell = document.createElement('td');
         cell.textContent = String(value);
         tr.append(cell);
