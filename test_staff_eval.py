@@ -256,7 +256,7 @@ class StaffEvalTests(unittest.TestCase):
             self.assertEqual(config['model'], 'models/gemini-3.8-live')
             self.assertEqual(config['generationConfig']['responseModalities'], ['AUDIO'])
             self.assertEqual(config['generationConfig']['speechConfig']['languageCode'], 'ko-KR')
-            self.assertEqual(config['inputAudioTranscription'], {})
+            self.assertEqual(config['inputAudioTranscription'], {'languageCodes': ['ko-KR']})
             self.assertTrue(config['realtimeInputConfig']['automaticActivityDetection']['disabled'])
             self.assertNotIn('responseModalities', config)
             self.assertNotIn('speechConfig', config)
@@ -306,6 +306,36 @@ class StaffEvalTests(unittest.TestCase):
             status, ready = self.staff_call('live-token', {})
         self.assertEqual(status, 200)
         self.assertEqual(ready['token'], 'auth_tokens/retry')
+
+    def test_skip_authentication_stale_request_and_completion(self):
+        self.login()
+        created = self.create()
+        self.assertEqual(self.staff_call('skip', {'scenario_id': 'fall'})[0], 401)
+        self.staff_call('consent', {'accepted': True})
+        _, state = self.staff_call('verify', {'employee_hint': '4321'})
+        self.assertEqual(state['scenario_id'], 'fall')
+        self.assertEqual(self.staff_call('skip', {})[0], 400)
+        self.assertEqual(self.staff_call('message', {'text': '우선 부축합니다.'})[0], 200)
+        for scenario in staff_eval.SCENARIOS:
+            status, state = self.staff_call('skip', {'scenario_id': scenario['id']})
+            self.assertEqual(status, 200, state)
+            # A repeated request cannot accidentally skip the next scenario.
+            self.assertIn(self.staff_call('skip', {'scenario_id': scenario['id']})[0], (400, 403))
+        self.assertEqual(state['status'], 'completed')
+        self.assertNotIn('auto_score', walk_keys(state))
+        detail = staff_eval.detail(created['id'])
+        self.assertTrue(detail['needs_human'])
+        self.assertTrue(all(item['skipped'] for item in detail['items']))
+        self.assertGreater(detail['items'][0]['score'], 0)  # Earlier submitted answer retained.
+        self.assertEqual([item['score'] for item in detail['items'][1:]], [0] * 5)
+        self.assertEqual(len([m for m in detail['transcript'] if m.get('kind') == 'skipped']), 6)
+        staff_eval.retake({'id': created['id']})
+        self.assertEqual(staff_eval.detail(created['id'])['items'], [])
+        self.staff = ''
+        self.staff_call('consent', {'accepted': True})
+        self.staff_call('verify', {'employee_hint': '4321'})
+        staff_eval.save_fields(created['id'], expires=time.time() - 10)
+        self.assertEqual(self.staff_call('skip', {'scenario_id': 'fall'})[0], 403)
 
     def test_card_registration_and_image_copy(self):
         home = Path('index.html').read_text(encoding='utf-8')
