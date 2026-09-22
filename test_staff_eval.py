@@ -1,6 +1,7 @@
 """종사자 평가 링크, 본인 확인, 루브릭 채점, 담당자 확정."""
 from contextlib import closing
 import http.client
+import io
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 import app
@@ -58,8 +60,8 @@ class StaffEvalTests(unittest.TestCase):
         staff_eval.init_db()
         self.server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.App)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
-        self.addCleanup(self.server.shutdown)
         self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
         self.admin = ''
         self.staff = ''
 
@@ -248,10 +250,16 @@ class StaffEvalTests(unittest.TestCase):
             self.assertTrue(request.full_url.endswith('/v1beta/auth_tokens'))
             body = json.loads(request.data.decode())
             self.assertEqual(body['uses'], 1)
-            config = body['liveConnectConstraints']['config']
-            self.assertEqual(body['liveConnectConstraints']['model'], 'models/gemini-3.8-live')
-            self.assertEqual(config['responseModalities'], ['AUDIO'])
-            self.assertEqual(config['inputAudioTranscription']['languageCodes'], ['ko-KR'])
+            # REST AuthToken schema, not the SDK's LiveConnectConstraints.
+            self.assertNotIn('liveConnectConstraints', body)
+            config = body['bidiGenerateContentSetup']
+            self.assertEqual(config['model'], 'models/gemini-3.8-live')
+            self.assertEqual(config['generationConfig']['responseModalities'], ['AUDIO'])
+            self.assertEqual(config['generationConfig']['speechConfig']['languageCode'], 'ko-KR')
+            self.assertEqual(config['inputAudioTranscription'], {})
+            self.assertTrue(config['realtimeInputConfig']['automaticActivityDetection']['disabled'])
+            self.assertNotIn('responseModalities', config)
+            self.assertNotIn('speechConfig', config)
             instruction = config['systemInstruction']['parts'][0]['text']
             self.assertIn('요양보호사', instruction)
             self.assertIn('[읽기]', instruction)
@@ -263,6 +271,7 @@ class StaffEvalTests(unittest.TestCase):
         self.assertEqual(status, 200, payload)
         self.assertEqual(payload['token'], 'auth_tokens/ephemeral-demo')
         self.assertEqual(payload['model'], 'models/gemini-3.8-live')
+        self.assertEqual(payload['setup'], staff_eval.live_setup())
         self.assertIn('BidiGenerateContentConstrained', payload['websocket_url'])
         self.assertNotIn('key=', payload['websocket_url'])
         self.assertNotIn('test-gemini-key', json.dumps(payload))
@@ -279,6 +288,24 @@ class StaffEvalTests(unittest.TestCase):
         admin = Path('staff-eval.html').read_text(encoding='utf-8')
         self.assertNotIn('지금은 글로 답합니다', admin)
         self.assertIn('말로 답', admin)
+
+    def test_live_token_provider_failure_is_safe_and_retryable(self):
+        self.login()
+        self.create()
+        self.staff_call('consent', {'accepted': True})
+        self.staff_call('verify', {'employee_hint': '4321'})
+        os.environ['GEMINI_API_KEY'] = 'test-secret-not-for-output'
+        error = urllib.error.HTTPError('https://generativelanguage.googleapis.com/v1beta/auth_tokens', 400, 'Bad Request', {}, io.BytesIO(b'test-secret-not-for-output'))
+        with patch('staff_eval.urllib.request.urlopen', side_effect=error), self.assertLogs('staff_eval', level='WARNING') as logs:
+            status, payload = self.staff_call('live-token', {})
+        self.assertEqual(status, 503)
+        self.assertIn('다시 시도', payload['error'])
+        self.assertNotIn('test-secret-not-for-output', json.dumps(payload) + ''.join(logs.output))
+        self.assertIn('status=400', ''.join(logs.output))
+        with patch('staff_eval.mint_live_token', return_value='auth_tokens/retry'):
+            status, ready = self.staff_call('live-token', {})
+        self.assertEqual(status, 200)
+        self.assertEqual(ready['token'], 'auth_tokens/retry')
 
     def test_card_registration_and_image_copy(self):
         home = Path('index.html').read_text(encoding='utf-8')
