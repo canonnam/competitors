@@ -212,6 +212,74 @@ class StaffEvalTests(unittest.TestCase):
         rubric = staff_eval.score_answers({item['id']: GOOD[index] for index, item in enumerate(staff_eval.SCENARIOS)})
         self.assertGreaterEqual(abs(score - rubric['auto_score']), 15)
 
+    def test_live_token_is_ephemeral_and_text_remains(self):
+        self.login()
+        self.create()
+        self.staff_call('consent', {'accepted': True})
+        status, started = self.staff_call('verify', {'employee_hint': '4321'})
+        self.assertEqual(status, 200, started)
+        self.assertTrue(started['voice']['preferred'])
+        self.assertFalse(started['voice']['available'])
+        status, missing = self.staff_call('live-token', {})
+        self.assertEqual(status, 503, missing)
+        self.assertIn('글로', missing['error'])
+        self.assertNotIn('token', missing)
+        self.assertEqual(self.request('/api/staff-eval/' + self.token + '/live-token', {})[0], 401)
+
+        os.environ['GEMINI_API_KEY'] = 'test-gemini-key'
+        os.environ['STAFF_EVAL_LIVE_MODEL'] = 'not a model'
+        self.assertEqual(staff_eval.live_model_id(), 'gemini-3.8-live')
+        os.environ['STAFF_EVAL_LIVE_MODEL'] = ''
+        status, ready = self.staff_call('')
+        self.assertTrue(ready['voice']['available'])
+        self.assertNotIn('test-gemini-key', json.dumps(ready))
+
+        class Response:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return json.dumps({'name': 'auth_tokens/ephemeral-demo'}).encode()
+
+        def urlopen(request, timeout=15):
+            self.assertNotIn('test-gemini-key', request.full_url)
+            self.assertEqual(request.get_header('X-goog-api-key'), 'test-gemini-key')
+            self.assertTrue(request.full_url.endswith('/v1beta/auth_tokens'))
+            body = json.loads(request.data.decode())
+            self.assertEqual(body['uses'], 1)
+            config = body['liveConnectConstraints']['config']
+            self.assertEqual(body['liveConnectConstraints']['model'], 'models/gemini-3.8-live')
+            self.assertEqual(config['responseModalities'], ['AUDIO'])
+            self.assertEqual(config['inputAudioTranscription']['languageCodes'], ['ko-KR'])
+            instruction = config['systemInstruction']['parts'][0]['text']
+            self.assertIn('요양보호사', instruction)
+            self.assertIn('[읽기]', instruction)
+            self.assertNotIn('test-gemini-key', request.data.decode())
+            return Response()
+
+        with patch('staff_eval.urllib.request.urlopen', side_effect=urlopen):
+            status, payload = self.staff_call('live-token', {})
+        self.assertEqual(status, 200, payload)
+        self.assertEqual(payload['token'], 'auth_tokens/ephemeral-demo')
+        self.assertEqual(payload['model'], 'models/gemini-3.8-live')
+        self.assertIn('BidiGenerateContentConstrained', payload['websocket_url'])
+        self.assertNotIn('key=', payload['websocket_url'])
+        self.assertNotIn('test-gemini-key', json.dumps(payload))
+        self.assertIn('낙상', payload['speak'])
+        self.assertNotIn('auto_score', walk_keys(payload))
+        status, state = self.staff_call('message', {'text': GOOD[0]})
+        self.assertEqual(status, 200, state)
+        self.assertNotIn('auto_score', walk_keys(state))
+        page = Path('assets/staff-eval-session.js').read_text(encoding='utf-8')
+        self.assertIn('상황 듣기', page)
+        self.assertIn('글로 답하기', page)
+        self.assertIn('access_token', page)
+        self.assertNotIn('GEMINI_API_KEY', page)
+        admin = Path('staff-eval.html').read_text(encoding='utf-8')
+        self.assertNotIn('지금은 글로 답합니다', admin)
+        self.assertIn('말로 답', admin)
+
     def test_card_registration_and_image_copy(self):
         home = Path('index.html').read_text(encoding='utf-8')
         self.assertIn('href="/staff-eval.html"', home)
