@@ -1,0 +1,44 @@
+/* Dashboard uses the shared UI tokens; only home layout is defined here. */
+.kb-dashboard { margin-top:28px; }
+.kb-dashboard :is(h1,h2,h3,p,ul) { margin:0; }
+.dash-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+.dash-heading h1 { font-size:28px; line-height:1.4; letter-spacing:-.03em; }
+.dash-heading p,.dash-date,.dash-meta,.dash-footnote { font-size:14px; color:var(--ui-muted); }
+.dash-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:24px; }
+.dash-metric { display:flex; flex-direction:column; gap:8px; min-width:0; padding:20px; background:var(--ui-surface); border:1px solid var(--ui-border); border-top:3px solid var(--ui-primary); border-radius:var(--ui-card-radius); color:var(--ui-text); text-decoration:none; }
+.dash-metric>span { font-size:14px; font-weight:600; }
+.dash-metric>strong { font-size:28px; line-height:1.4; font-variant-numeric:tabular-nums; }
+.dash-metric>small { font-size:13px; color:var(--ui-muted); }
+.dash-metric[data-warning=true] { border-top-color:var(--ui-warning); }
+.dash-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; align-items:start; }
+.dash-panel { min-width:0; padding:20px; border:1px solid var(--ui-border); border-radius:var(--ui-card-radius); background:var(--ui-surface); scroll-margin-top:100px; }
+.dash-panel-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:16px; }
+.kb-dashboard h2 { font-size:18px; line-height:1.5; }
+.dash-panel-head>a { color:var(--ui-primary); font-size:14px; text-underline-offset:3px; }
+.dash-attention-list { list-style:none; padding:0; max-height:360px; overflow-y:auto; }
+.dash-attention-list li+li { border-top:1px solid var(--ui-border); }
+.dash-attention-list a { display:block; padding:14px 8px; color:var(--ui-text); text-decoration:none; border-radius:var(--ui-control-radius); }
+.dash-attention-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.dash-attention-list p,.dash-branch p,.dash-row p { color:var(--ui-muted); font-size:14px; line-height:1.7; margin-top:6px; overflow-wrap:anywhere; }
+.dash-empty { padding:20px 0; font-size:15px; color:var(--ui-muted); }
+.dash-warning { font-size:14px; color:var(--ui-warning); }
+.dash-branches { display:grid; gap:12px; margin-top:12px; }
+.dash-branch { display:block; text-decoration:none; color:var(--ui-text); border:1px solid var(--ui-border); border-radius:var(--ui-control-radius); padding:16px; }
+.dash-branch>div { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; gap:8px; }
+.dash-branch h3 { font-size:16px; }
+.dash-branch small,.dash-row small { display:block; margin-top:8px; font-size:13px; color:var(--ui-muted); }
+.dash-row { display:flex; justify-content:space-between; gap:12px; padding:14px 8px; text-decoration:none; color:var(--ui-text); border-radius:var(--ui-control-radius); }
+.dash-row+.dash-row { border-top:1px solid var(--ui-border); }
+.dash-row>div { min-width:0; flex:1; }
+.dash-row>span { flex-shrink:0; }
+.kb-dashboard .ui-status { white-space:normal; }
+.kb-dashboard .dash-footnote { margin-top:12px; }
+.dash-shortcuts { margin:24px 0 16px; }
+.dash-shortcut-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:12px; }
+.dash-shortcut-grid a { display:flex; flex-direction:column; gap:6px; background:var(--ui-surface); color:var(--ui-text); text-decoration:none; border:1px solid var(--ui-border); border-radius:var(--ui-card-radius); padding:16px; font-size:14px; }
+.dash-shortcut-grid span { color:var(--ui-muted); }
+@media(hover:hover) { .kb-dashboard :is(.dash-metric,.dash-branch,.dash-row,.dash-attention-list a,.dash-shortcut-grid a):hover { background:var(--ui-hover); } }
+@media(max-width:1000px) { .dash-metrics,.dash-shortcut-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:760px) { .dash-columns { grid-template-columns:1fr; } .dash-row { flex-wrap:wrap; } .dash-panel { padding:16px; } }
+@media(max-width:380px) { .dash-metrics,.dash-shortcut-grid { grid-template-columns:1fr; } .dash-metric { padding:16px; } }
+@media print { .dash-attention-list { max-height:none; overflow:visible; } .dash-shortcuts { display:none; } }

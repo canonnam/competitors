@@ -145,6 +145,7 @@
       drawList();
     }
     newMark?.update(data.article_ids);
+    if(home)root.HomeDashboard?.update('competitor',data,syncStatus(data));
   }
   async function refresh() {
     if (loading) return;
@@ -155,6 +156,7 @@
       if (!response.ok) throw new Error('News request failed');
       render(await response.json());
     } catch {
+      if(home)root.HomeDashboard?.fail('competitor');
       if (current) drawStatus({...current, sync: {...current.sync, stale: true, errors: ['뉴스 연결']}});
       else {
         const status = $('news-sync-status') || $('home-news-update');

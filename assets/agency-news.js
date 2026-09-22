@@ -244,9 +244,10 @@
   async function refresh() {
     if(loading||saving||reasonDialog?.open)return;loading=true;const started=revision;
     try {
-      const data=await loadReport();if(started===revision)render(data);
+      const data=await loadReport();if(started===revision){render(data);if(home)root.HomeDashboard?.update('agency',data,status(data));}
     } catch {
       if(started!==revision)return;
+      if(home)root.HomeDashboard?.fail('agency');
       const message=$('agency-sync')||$('home-agency-update');message.textContent='연결 확인 필요 · 기존 자료와 원문 게시판을 확인해주세요.';message.classList.add('is-warning');
       const badge=$('home-agency-badge');if(badge){badge.querySelector('span').textContent='연결 확인 필요';badge.classList.add('is-warning');badge.title=message.textContent;badge.setAttribute('aria-label',message.textContent);}
     } finally {loading=false;}

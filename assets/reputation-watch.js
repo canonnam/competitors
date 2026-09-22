@@ -41,6 +41,7 @@
       home.textContent=headline(data);home.classList.toggle('is-warning',status.warning||counts.concern>0||counts.uncertain>0);
       const badge=$('home-reputation-badge');badge.classList.toggle('is-warning',status.warning);badge.querySelector('span').textContent=status.label;
       badge.setAttribute('aria-label',`${data.sync.schedule} · ${status.label}`);
+      root.HomeDashboard?.update('reputation',data,{...status,detail:headline(data)});
     }else{
       $('reputation-sync').textContent=`${data.sync.enabled?data.sync.schedule:'자동 점검 중지'} · 최근 전체 완료 ${when(data.updated_at)} · 다음 정기 점검 ${when(data.sync.next_run)}`;
       $('reputation-overview').innerHTML=[['부정적 언급 후보',counts.concern,'최근 30일 감지 · 사실 확인 필요'],['대상·맥락 확인',counts.uncertain,'대상이나 의미가 불명확한 표현'],['분류한 공개 글',`${counts.reviewed} / ${counts.documents}`,'오늘 수집한 중복 제외 글'],['정상 확인 수집처',`${data.sync.checked_sources} / ${data.sync.expected_sources}`,'실패한 수집처는 완료로 세지 않음']].map(([title,value,description],i)=>`<article class="visibility-metric ${i===0&&counts.concern?'has-concern':!data.sync.complete?'is-pending':''}"><h2>${title}</h2><strong>${i<2&&!value&&!data.sync.complete?'미확인':value}</strong><p>${description}</p></article>`).join('');
@@ -56,7 +57,7 @@
   async function refresh(){
     if(loading)return;loading=true;
     try{const response=await fetch('/api/reputation-watch'+(home?'?summary=1':''),{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error();render(await response.json());}
-    catch{if(home){home.textContent='평판 점검 결과 연결 확인 필요';home.classList.add('is-warning');$('home-reputation-badge').querySelector('span').textContent='연결 확인 필요';}else{$('reputation-status').textContent='점검 결과를 불러오지 못했습니다. 표시된 기록은 이전 조회 결과입니다.';$('reputation-status').className='reputation-status is-warning';}}
+    catch{if(home){root.HomeDashboard?.fail('reputation');home.textContent='평판 점검 결과 연결 확인 필요';home.classList.add('is-warning');$('home-reputation-badge').querySelector('span').textContent='연결 확인 필요';}else{$('reputation-status').textContent='점검 결과를 불러오지 못했습니다. 표시된 기록은 이전 조회 결과입니다.';$('reputation-status').className='reputation-status is-warning';}}
     finally{loading=false;}
   }
   if(list){$('reputation-refresh').addEventListener('click',refresh);['reputation-query','reputation-filter','reputation-branch'].forEach(id=>$(id).addEventListener(id.endsWith('query')?'input':'change',()=>{if(current)drawList();}));}

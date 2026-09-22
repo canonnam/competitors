@@ -33,6 +33,7 @@
         home.textContent = data.allAccepted ? '안양·인천 접수 완료' : data.branches.map(b => `${b.name.replace(/점$/, '')} ${b.status==='accepted'?'접수 완료':'점검 필요'}`).join(' · ');
         const times = data.branches.map(b=>b.checkedAt).filter(Boolean).sort();
         document.getElementById('home-claim-time').textContent = times.length === 2 ? `${dateText(times[0])} 조회 기준` : '지점별 확인 기록을 확인해주세요.';
+        window.HomeDashboard?.update('claims',data);
       }
       if (grid) {
         document.getElementById('claim-period').textContent = `${monthText(data.benefitMonth)} 급여제공분`;
@@ -44,6 +45,7 @@
       }
     } catch (_) {
       if (home) {
+        window.HomeDashboard?.fail('claims');
         home.textContent = '점검 · 청구 상태를 불러오지 못했습니다.';
         document.getElementById('home-claim-time').textContent = '';
       }

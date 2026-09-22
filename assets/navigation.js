@@ -75,9 +75,12 @@
     const home=doc.body.classList.contains('kb-homepage');
     const current=features.find(item=>item.href===win.location.pathname);
     const params=new URLSearchParams(win.location.search);
-    const allowedCategories=new Set(['all','favorites',...categories.map(item=>item.id)]);
-    let category=allowedCategories.has(params.get('category'))?params.get('category'):'all';
+    const hasDashboard=home&&!!win.HomeDashboard;
+    const defaultCategory=hasDashboard?'dashboard':'all';
+    const allowedCategories=new Set(['all','favorites',...categories.map(item=>item.id),...(hasDashboard?['dashboard']:[])]);
+    let category=allowedCategories.has(params.get('category'))?params.get('category'):params.get('q')?'all':defaultCategory;
     let query=home?(params.get('q')||''):'';
+    if(query&&category==='dashboard')category='all';
     let editing=false;
     const el=(tag, className, text)=>{const node=doc.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
@@ -103,7 +106,7 @@
       const observer=new win.ResizeObserver(()=>doc.body.style.setProperty('--kb-header-height',header.getBoundingClientRect().height+'px'));
       observer.observe(header);
     }
-    const homeLink=el('a','kb-sidebar-home','지식 창고 홈');homeLink.href='/';sidebar.append(homeLink);
+    const homeLink=el('a','kb-sidebar-home','대시보드');homeLink.href='/';if(!home)sidebar.append(homeLink);
     const nav=el('nav','kb-feature-nav');nav.setAttribute('aria-label','업무별 기능');sidebar.append(nav);
     const status=el('p','kb-sr-only');status.setAttribute('role','status');doc.body.append(status);
 
@@ -129,7 +132,7 @@
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
     doc.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&!doc.querySelector('dialog[open], .modal.open')){event.preventDefault();openDialog();}});
 
-    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, empty, grid;
+    let homeSearch, mobileMenu, mobileSummary, mobileNav, favoritesSection, favoriteRows, editButton, resultCount, resultTitle, empty, grid, toolbar, dashboard;
     const cards=new Map();
     if(home) {
       grid=main.querySelector('.grid');
@@ -142,9 +145,14 @@
       const favoriteHead=el('div','kb-section-head');
       editButton=button('순서 편집','kb-text-button');editButton.setAttribute('aria-pressed','false');editButton.addEventListener('click',()=>{editing=!editing;render();});favoriteHead.append(editButton);
       favoriteRows=el('div','kb-shortcuts');favoritesSection.append(favoriteRows,favoriteHead);
-      const toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultTitle,resultCount);
+      toolbar=el('div','kb-results-toolbar');const heading=el('h2');resultTitle=el('span');resultCount=el('span','kb-result-count');resultCount.setAttribute('role','status');heading.append(resultTitle,resultCount);
       const views=el('div','kb-view-controls');views.setAttribute('aria-label','표시 방식');['cards','list'].forEach(view=>{const control=button(view==='cards'?'카드':'목록','kb-control');control.dataset.kbView=view;control.addEventListener('click',()=>{preferences.view(view);render();});views.append(control);});toolbar.append(heading,views);
       grid.before(tools,favoritesSection,toolbar);
+      if(hasDashboard){
+        dashboard=win.HomeDashboard.mount(win,el('section'));tools.after(dashboard);
+        const allFeatures=button('전체 기능 보기','ui-button');allFeatures.addEventListener('click',()=>{category='all';query='';homeSearch.value='';updateHomeURL();render();homeSearch.focus();});
+        dashboard.querySelector('.dash-heading').append(allFeatures);
+      }
       empty=el('div','kb-empty');empty.hidden=true;const emptyText=el('p','', '검색 결과가 없습니다. 검색어나 선택한 업무를 확인해 주세요.');
       const reset=button('전체 기능 보기','kb-control');reset.addEventListener('click',()=>{category='all';query='';homeSearch.value='';updateHomeURL();render();homeSearch.focus();});empty.append(emptyText,reset);grid.after(empty);
       grid.querySelectorAll(':scope > article').forEach(card=>{
@@ -182,12 +190,12 @@
         if(typeof win.MutationObserver==='function')new win.MutationObserver(summarize).observe(live,{subtree:true,childList:true,characterData:true});
         summarize();
       });
-      homeSearch.addEventListener('input',()=>{query=homeSearch.value;updateHomeURL();renderCards();});
+      homeSearch.addEventListener('input',()=>{query=homeSearch.value;if(category==='dashboard')category='all';updateHomeURL();render();});
     }
     function updateHomeURL() {
       const url=new URL(win.location.href);
       query?url.searchParams.set('q',query):url.searchParams.delete('q');
-      category==='all'?url.searchParams.delete('category'):url.searchParams.set('category',category);
+      category===defaultCategory?url.searchParams.delete('category'):url.searchParams.set('category',category);
       win.history.replaceState(null,'',url.pathname+url.search+url.hash);
     }
     function renderNav() {
@@ -195,13 +203,14 @@
       nav.replaceChildren();
       if(home) {
         mobileNav.replaceChildren();
-        [{id:'all',title:'전체 기능'},{id:'favorites',title:'즐겨찾기'},...categories].forEach(group=>{
+        [...(hasDashboard?[{id:'dashboard',title:'대시보드'}]:[]),{id:'all',title:'전체 기능'},{id:'favorites',title:'즐겨찾기'},...categories].forEach(group=>{
           [nav,mobileNav].forEach(target=>{
             const control=button('','kb-category-button');control.dataset.kbCategory=group.id;control.setAttribute('aria-pressed',String(category===group.id));
-            control.append(icon(group.id),el('span','kb-category-label',group.title),newMark(group.id),el('span','kb-category-count',String(matchFeatures('',group.id,preferences.get().favorites).length)));
-            control.addEventListener('click',()=>{category=group.id;updateHomeURL();mobileMenu.open=false;render();if(target===mobileNav)mobileSummary.focus();});target.append(control);
+            control.append(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title));
+            if(group.id!=='dashboard')control.append(newMark(group.id),el('span','kb-category-count',String(matchFeatures('',group.id,preferences.get().favorites).length)));
+            control.addEventListener('click',()=>{category=group.id;if(category==='dashboard'){query='';homeSearch.value='';}updateHomeURL();mobileMenu.open=false;render();if(target===mobileNav)mobileSummary.focus();});target.append(control);
           });
-          if(category===group.id){mobileSummary.replaceChildren(icon(group.id),el('span','kb-category-label',group.title),newMark('all'),el('span','kb-menu-chevron','⌄'));}
+          if(category===group.id){mobileSummary.replaceChildren(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title),newMark('all'),el('span','kb-menu-chevron','⌄'));}
         });
         if(focused)nav.querySelector('[data-kb-category="'+focused+'"]')?.focus();
       } else {
@@ -213,6 +222,10 @@
     }
     function renderCards() {
       if(!home)return;
+      const overview=category==='dashboard'&&!query;
+      if(dashboard)dashboard.hidden=!overview;
+      grid.hidden=overview;toolbar.hidden=overview;
+      if(overview){empty.hidden=true;return;}
       const saved=preferences.get();const matches=matchFeatures(query,category,saved.favorites);const matching=new Set(matches.map(item=>item.id));
       cards.forEach((card,id)=>{card.hidden=!matching.has(id);const pin=card.querySelector('[data-kb-pin]');const item=features.find(item=>item.id===id);const active=saved.favorites.includes(id);pin.setAttribute('aria-pressed',String(active));pin.setAttribute('aria-label',item.title+' 즐겨찾기 '+(active?'해제':'추가'));});
       grid.classList.toggle('kb-list-view',saved.view==='list');
@@ -230,6 +243,7 @@
     function render(){renderNav();renderCards();renderShortcuts();if(dialog.open)renderDialog();syncNewsMarkers();}
     win.addEventListener('storage',event=>{if(event.key===key||event.key===null){preferences.reload();render();}});
     win.addEventListener('pageshow',()=>{preferences.reload();render();});
+    win.addEventListener('popstate',()=>{const next=new URLSearchParams(win.location.search);query=next.get('q')||'';category=allowedCategories.has(next.get('category'))?next.get('category'):query?'all':defaultCategory;if(query&&category==='dashboard')category='all';if(homeSearch)homeSearch.value=query;render();});
     render();
     // Reveal the home only after the category/search UI has transformed the
     // legacy card markup, preventing the old three-column grid from flashing.

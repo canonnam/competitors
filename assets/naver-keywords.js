@@ -64,8 +64,10 @@
       try {
         const response=await fetch('/api/naver-ad-keywords',{cache:'no-store',signal:AbortSignal.timeout(15000)});
         if(!response.ok)throw new Error('request');
-        renderSignal(home,summary(await response.json()));
-      } catch { renderSignal(home,{tone:'is-warning',text:'키워드 순위 연결 확인 필요'}); }
+        const data=await response.json(),status=summary(data);
+        renderSignal(home,status);
+        root.HomeDashboard?.update('keywords',data,{label:data.updated_at?(status.tone==='is-warning'?'갱신 대기':'집계 완료'):'수집 대기',detail:status.text,warning:status.tone==='is-warning'});
+      } catch { root.HomeDashboard?.fail('keywords');renderSignal(home,{tone:'is-warning',text:'키워드 순위 연결 확인 필요'}); }
     };
     refresh();
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
