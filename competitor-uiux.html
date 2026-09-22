@@ -76,6 +76,8 @@
   <a href="#s16">설정</a>
   <a href="#s17">물리치료</a>
   <a href="#s18">목욕</a>
+  <a href="#s19">대시보드</a>
+  <a href="#s20">입퇴소·상담</a>
   <a href="#uxtest">사용성 테스트</a>
   <a href="#roadmap">개선 로드맵</a>
 </nav>
@@ -105,6 +107,8 @@
         <tr><td>설정</td><td>시설환경: 케어포 / 기관정보: 엔젤</td><td>시설·서비스 토글 감사는 케어포, 기관 식별·직인·결재는 엔젤. 더비다 캡처는 계정설정만.</td></tr>
         <tr><td>물리치료</td><td>일정·밀도: 케어포 / 일지: 엔젤</td><td>셋 다 제공기록형. 케어포는 일정·현황 그리드, 엔젤은 일지, 더비다는 기록 화면. 단독 우위 없음.</td></tr>
         <tr><td>목욕 기록</td><td>일정·제공: 엔젤·케어포</td><td>엔젤·케어포는 목욕 일정과 제공현황이 있음. 더비다는 메뉴에서 목욕을 찾지 못함.</td></tr>
+        <tr><td>대시보드</td><td>현황 밀도: 엔젤 / 업무 진입: 케어포</td><td>엔젤은 고밀도 현황판, 케어포는 업무 진입 메인, 더비다는 KPI·카드. 한눈에 보기는 위젯 구성에 따라 갈리며 단독 우위 없음.</td></tr>
+        <tr><td>입퇴소·상담</td><td>상담일지: 케어포 / 입소자 현황: 엔젤</td><td>캡처 범위가 다름. 엔젤은 입소자현황, 케어포는 상담·면담일지, 더비다는 입소자 관리.</td></tr>
       </tbody>
     </table>
   </div>
@@ -397,6 +401,40 @@
   </div>
   <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>목욕 일정과 제공현황은 엔젤·케어포가 갖추고 있습니다.</b> 더비다는 이 메뉴를 열 수 없어 편의성 비교에서 열세입니다. 다른 화면에 기능이 있다면, 메뉴 이름부터 찾아지지 않는 것이 약점입니다.</p></div>
   <p class="uiux-insight"><b>인사이트.</b> 없는 메뉴는 다른 화면의 가독성으로 메워지지 않습니다. 목욕이 다른 모듈에 있다면, 그 이름이 메뉴와 검색에 보여야 합니다.</p>
+</article>
+
+<article class="uiux-block uiux-screen" id="s19">
+  <p class="uiux-kicker">19 · 운영</p>
+  <h2>대시보드 <span class="uiux-badge" data-status="warning">현황 밀도: 엔젤 · 업무 진입: 케어포</span></h2>
+  <p class="uiux-lead">엔젤은 레거시 고밀도 홈·현황판, 케어포는 업무로 들어가는 메인, 더비다는 KPI·카드형입니다. “한눈에 시설 상태”는 데이터 밀도와 위젯 구성에 따라 갈리며, 더비다 단독 우위가 아닙니다.</p>
+  <figure class="uiux-shot">
+    <figcaption>좌=엔젤 / 중=케어포 / 우=더비다</figcaption>
+    <img src="/assets/competitor-uiux/19-dashboard.jpg" width="1800" height="391" alt="대시보드 화면 비교. 왼쪽 엔젤 고밀도 홈·현황판, 가운데 케어포 업무 진입 메인, 오른쪽 더비다 KPI·카드형 대시보드">
+  </figure>
+  <div class="uiux-cols">
+    <div class="uiux-sys"><h3><span class="uiux-dot angel" aria-hidden="true"></span>엔젤</h3><ul><li><b>장점</b> 현황 숫자가 한 화면에 많이 들어가 시설 상태를 훑기 좋음</li><li><b>단점</b> 레거시 고밀도. 어디부터 볼지 학습 비용이 큼</li></ul><div class="tagline">고밀도 현황판</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot care" aria-hidden="true"></span>케어포</h3><ul><li><b>장점</b> 메인에서 오늘 업무 메뉴로 바로 들어감</li><li><b>단점</b> 시설 전체 숫자를 한 판에서 보는 밀도는 엔젤보다 얕음</li></ul><div class="tagline">업무 진입 메인</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot vida" aria-hidden="true"></span>더비다</h3><ul><li><b>장점</b> 카드·KPI라 첫 화면 읽기는 쉬움</li><li><b>단점</b> 위젯이 적거나 비어 있으면 시설 상태가 안 보임. 카드형이 밀도 승리는 아님</li></ul><div class="tagline">카드형은 읽힘 · 밀도는 위젯에 달림</div></div>
+  </div>
+  <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>숫자를 많이 훑는 시설장에게는 엔젤 현황판, 출근해서 오늘 메뉴로 들어가는 담당에게는 케어포 메인이 편합니다.</b> 더비다 카드는 읽기 쉬워도, 위젯에 시설 상태가 채워져 있지 않으면 우위가 아닙니다.</p></div>
+  <p class="uiux-insight"><b>인사이트.</b> 대시보드의 승부처는 카드 모양보다, 오늘 결정에 필요한 숫자가 비지 않고 들어가 있는가입니다.</p>
+</article>
+
+<article class="uiux-block uiux-screen" id="s20">
+  <p class="uiux-kicker">20 · 임상</p>
+  <h2>입퇴소·상담 <span class="uiux-badge" data-status="warning">상담: 케어포 · 입소자 현황: 엔젤</span></h2>
+  <p class="uiux-lead">이 캡처는 같은 화면이 아닙니다. 엔젤은 입소자현황, 케어포는 상담일지·면담일지, 더비다는 입소자 관리입니다. 범위를 맞춰 읽지 않으면 편의성 비교가 왜곡됩니다.</p>
+  <figure class="uiux-shot">
+    <figcaption>좌=엔젤 / 중=케어포 / 우=더비다</figcaption>
+    <img src="/assets/competitor-uiux/20-admission.jpg" width="1800" height="391" alt="입퇴소·상담 화면 비교. 왼쪽 엔젤 입소자현황, 가운데 케어포 상담일지·면담일지, 오른쪽 더비다 입소자 관리. 세 캡처의 화면 범위는 같지 않음">
+  </figure>
+  <div class="uiux-cols">
+    <div class="uiux-sys"><h3><span class="uiux-dot angel" aria-hidden="true"></span>엔젤</h3><ul><li><b>장점</b> 입소자현황으로 재원·상태를 목록에서 봄</li><li><b>단점</b> 상담·면담 루프는 이 캡처에 없음</li></ul><div class="tagline">입소자 현황 목록</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot care" aria-hidden="true"></span>케어포</h3><ul><li><b>장점</b> 상담일지·면담일지가 직설적. 상담 기록을 바로 씀</li><li><b>단점</b> 입소자 전체 현황은 이 캡처의 주제가 아님</li></ul><div class="tagline">상담·면담 일지형</div></div>
+    <div class="uiux-sys"><h3><span class="uiux-dot vida" aria-hidden="true"></span>더비다</h3><ul><li><b>장점</b> 입소자 관리 목록으로 사람 단위 진입은 가능</li><li><b>단점</b> 상담·면담 일지는 이 캡처에 안 보임. 엔젤 현황·케어포 상담과 같은 일인지 확인 불가</li></ul><div class="tagline">입소자 관리 · 상담 범위 미검증</div></div>
+  </div>
+  <div class="uiux-verdict"><div class="t">더 편한 쪽</div><p><b>상담을 적고 찾는 일은 케어포 일지가 가장 직설적입니다.</b> 입소자 목록·현황은 엔젤과 더비다 쪽에 가깝습니다. 세 화면을 한 등수로 줄이지 않습니다.</p></div>
+  <p class="uiux-insight"><b>인사이트.</b> 범위가 다른 캡처를 한 줄 승자로 적으면 상담도, 입소자 현황도 잘못 이깁니다.</p>
 </article>
 
 <article class="uiux-block" id="uxtest">
