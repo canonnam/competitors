@@ -301,6 +301,28 @@ def listing(branch=''):
     return {'evaluations': items, 'ai_ready': bool(os.getenv('GEMINI_API_KEY', '').strip()), 'role': ROLE}
 
 
+def review_items(row):
+    """Explain stored rubric results without recalculating or changing scores."""
+    answers = json.loads(row['answers'])
+    skipped = {message.get('scenario_id') for message in json.loads(row['transcript'])
+               if message.get('kind') == 'skipped'}
+    items = json.loads(row['items'])
+    for item in items:
+        answered = bool(answers.get(item['id'], '').strip())
+        item['skipped'] = bool(item.get('skipped') or item['id'] in skipped)
+        item['answer_status'] = 'answered' if answered else 'unanswered'
+        present = sum(bool(step['met']) for step in item['steps'])
+        if not answered or present < 2:
+            item['order_status'] = 'insufficient'
+        elif not item['order_ok']:
+            item['order_status'] = 'review'
+        elif present < len(item['steps']):
+            item['order_status'] = 'partial'
+        else:
+            item['order_status'] = 'matched'
+    return items
+
+
 def detail(eval_id):
     row = load(eval_id=eval_id)
     status = display_status(row)
@@ -312,7 +334,7 @@ def detail(eval_id):
         'url': '/staff-eval-session.html#' + row['token'],
         'status': status,
         'status_label': STATUS_LABELS[status],
-        'items': json.loads(row['items']),
+        'items': review_items(row),
         'transcript': json.loads(row['transcript']),
         'gemini_score': row['gemini_score'],
         'gemini_note': row['gemini_note'],
@@ -787,8 +809,8 @@ def handle(handler, method):
                 skip_scenario(token, body.get('scenario_id'))
                 support.send_json(handler, 200, state_for(handler, token), head)
             return True
-        if not support.authenticated(handler):
-            raise wiki_chat.ChatError(401, '담당자 접근 키로 로그인해주세요.')
+        # This feature opens directly without the shared support access key.
+        # Participant token/cookie checks above and POST origin checks remain.
         route = path[len(ADMIN):]
         if method == 'POST':
             wiki_chat.check_origin(handler)

@@ -212,7 +212,6 @@ def handle(handler, method):
             if path!=PUBLIC+token:raise LookupError('공유 화면을 찾을 수 없습니다.')
             result=shared_payload(row)
         else:
-            if not support.authenticated(handler):raise wiki_chat.ChatError(401,'담당자 접근 키로 로그인해주세요.')
             route=path[len(ADMIN):]
             if method=='POST':
                 wiki_chat.check_origin(handler)

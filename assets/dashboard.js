@@ -1,5 +1,5 @@
 /* Home overview consumes existing collectors without acknowledging news.
-   Inquiry totals use a separate authenticated, aggregate-only collector. */
+   Inquiry totals use a separate aggregate-only collector without a login. */
 (function(root, factory) {
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -79,8 +79,8 @@
         <section class="dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">운영비 분석</h2><a href="/operating-costs.html">상세 보기</a></div><div data-dash-slot="operating"></div></section>
       </div>
       <section class="dash-shortcuts" aria-labelledby="dashboard-shortcuts-title"><h2 id="dashboard-shortcuts-title">주요 업무 바로가기</h2><div class="dash-shortcut-grid">
-        <a href="/website-requests.html"><strong>상담·무료체험 신청</strong><span>로그인 후 신청 내역 확인</span></a>
-        <a href="/payroll-insurance.html"><strong>월별 급여·4대보험</strong><span>담당자 로그인 후 확인</span></a>
+        <a href="/website-requests.html"><strong>상담·무료체험 신청</strong><span>신청 내역과 처리 상태 확인</span></a>
+        <a href="/payroll-insurance.html"><strong>월별 급여·4대보험</strong><span>월별 급여·보험료 확인</span></a>
         <a href="/operating-costs.html"><strong>운영비 분석</strong><span>지점별 수입·비용 비교</span></a>
         <a href="/support-projects.html"><strong>지원사업 준비·기록</strong><span>참여 과제와 준비 현황</span></a>
       </div></section>`;
@@ -105,9 +105,9 @@
       }).join('')}</tbody></table></div>`:`<p class="dash-empty">${state.claims?.error?'지점별 상태 조회 실패 · 상세 보기에서 확인해주세요.':'청구·인건비 확인 중'}</p>`);
       slot('branches-time',claim?`저장 조회 · 청구 ${esc(oldestDate(branches.map(branch=>branch.checkedAt)))} · 인건비 ${esc(oldestDate(branches.map(branch=>branch.laborCost?.checkedAt)))}`:'');
       const request=state.requests,data=request?.data;
-      slot('requests',request?.status?.locked?`<div class="dash-locked"><p>담당자 로그인 후 신청 현황을 확인하세요.</p><a class="ui-button" href="/website-requests.html" data-dash-key="requests-login">담당자 로그인</a></div>`:request?.error?'<p class="dash-empty">신청 현황 조회 실패 · 다시 새로고침해주세요.</p>':data?`<p class="dash-meta">운영 사이트 누적 · 개발 사이트 제외</p><dl class="dash-request-counts">${Object.entries({new:'새 접수',contacted:'상담 중',completed:'상담 완료',archived:'보관함'}).map(([key,label])=>`<div${key==='new'&&data.counts[key]>0?' data-status="warning"':''}><dt>${label}</dt><dd>${number(data.counts[key])}<span>건</span></dd></div>`).join('')}</dl>${data.total===0?'<p class="dash-meta">접수된 신청이 없습니다.</p>':''}`:'<p class="dash-empty">신청 현황 확인 중</p>');
+      slot('requests',request?.error?'<p class="dash-empty">신청 현황 조회 실패 · 다시 새로고침해주세요.</p>':data?`<p class="dash-meta">운영 사이트 누적 · 개발 사이트 제외</p><dl class="dash-request-counts">${Object.entries({new:'새 접수',contacted:'상담 중',completed:'상담 완료',archived:'보관함'}).map(([key,label])=>`<div${key==='new'&&data.counts[key]>0?' data-status="warning"':''}><dt>${label}</dt><dd>${number(data.counts[key])}<span>건</span></dd></div>`).join('')}</dl>${data.total===0?'<p class="dash-meta">접수된 신청이 없습니다.</p>':''}`:'<p class="dash-empty">신청 현황 확인 중</p>');
       slot('requests-time',data&&!request.error?`조회 ${esc(date(data.generatedAt))}`:'');
-      container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error&&!request.status?.locked);
+      container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error);
       const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
       slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
       slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');

@@ -1,4 +1,4 @@
-/* Private support applications: no business data or credentials in browser storage. */
+/* Support applications: no business data or credentials in browser storage. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -13,7 +13,7 @@
   const longFields = new Set(['representative_career','career','notes','overview','problem','customers','product','technology','difference','business_model','schedule','goals','budget','content']);
   const stateLabels = {queued:'대기 중',collecting:'양식 수집 중',running:'초안 작성 중',ready:'준비 완료',needs_review:'확인 필요',failed:'처리 확인 필요'};
   const kindLabels = {form:'신청 양식',consent:'동의·확약',notice:'공고·안내',reference:'참고 자료'};
-  let signedIn = false, p = null, references = [], currentCase = null, currentDraft = null, profileDirty = false, draftDirty = false, view = 'cases', reference = null, rewriteId = '', polling = false, busy = false;
+  let p = null, references = [], currentCase = null, currentDraft = null, profileDirty = false, draftDirty = false, view = 'cases', reference = null, rewriteId = '', polling = false, busy = false;
   let modelCatalog = null;
   const make = (tag, cls='', text='') => { const n=document.createElement(tag); if(cls)n.className=cls; if(text)n.textContent=text; return n; };
   const button = (text, action, cls='') => { const b=make('button',cls,text);b.type='button';b.addEventListener('click',action);return b; };
@@ -24,13 +24,12 @@
   async function api(route, body){
     const response=await fetch('/api/support/'+route,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(180000)});
     const data=await response.json();
-    if(!response.ok){if(response.status===401&&route!=='login'){signedIn=false;showAuth();}throw new Error(data.error||'요청을 처리하지 못했습니다.');}return data;
+    if(!response.ok){throw new Error(data.error||'요청을 처리하지 못했습니다.');}return data;
   }
   async function action(fn, node){
     if(node)node.disabled=true;
     try{await fn();}catch(e){message(e.name==='TimeoutError'?'처리 시간이 길어졌습니다. 잠시 후 상태를 확인해주세요.':e.message,true);}finally{if(node)node.disabled=false;}
   }
-  function showAuth(){ $('workspace').hidden=!signedIn;$('login-section').hidden=signedIn;$('logout').hidden=!signedIn; }
   function checkDirty(){return !(profileDirty||draftDirty)||window.confirm('저장하지 않은 수정 내용이 있습니다. 저장하지 않고 이동할까요?');}
   function selectOptions(node, items, placeholder, selected){
     const old=selected??node.value;node.replaceChildren(new Option(placeholder,''));for(const item of items)node.add(new Option(item.name,item.id));node.value=old;if(!node.value&&items.length===1)node.value=items[0].id;
@@ -42,7 +41,6 @@
   const checked = id => [...$(id).querySelectorAll('input:checked')].map(x=>x.value);
   function sourceLabel(key){const parts=key.split('.'),section={company:'회사',branch:'신청 사업장',members:'참여 팀원',plan:'기준 사업계획',records:'실적·인증',references:'참고 문서'}[parts[0]]||'등록 자료';return section+' · '+(labels[parts.at(-1)]||'문서 내용');}
   async function route(){
-    if(!signedIn)return;
     const hash=location.hash.slice(1)||'cases';
     view=hash.startsWith('case=')?'case':hash==='profile'?'profile':'cases';
     for(const name of ['cases','profile','case'])$(name+'-view').hidden=name!==view;
@@ -205,8 +203,6 @@
     const saved=await api('draft/save',{id:currentDraft.id,values:draftValues()});draftDirty=false;
     await loadCase(currentCase.id,false);currentDraft=saved;$('draft-version').value=saved.id;renderDraft();message('수정본을 새 버전으로 저장했습니다. 이전 초안도 보관되어 있습니다.');
   }
-  $('login-form').addEventListener('submit',e=>{e.preventDefault();action(async()=>{await api('login',{key:$('access-key').value});$('access-key').value='';signedIn=true;showAuth();await route();},e.submitter);});
-  $('logout').addEventListener('click',()=>{if(!checkDirty())return;action(async()=>{await api('logout',{});signedIn=false;p=null;currentDraft=null;profileDirty=draftDirty=false;$('profile-sections').replaceChildren();$('draft-editor').replaceChildren();$('reference-list').replaceChildren();references=[];showAuth();message('신청 자료를 잠갔습니다.');});});
   $('profile-form').addEventListener('submit',e=>{e.preventDefault();action(async()=>{gatherProfile();p=await api('profile',{revision:p.revision,data:p.data});profileDirty=false;$('profile-revision').textContent=`기본 자료 v${p.revision} · 저장 ${date(p.updated)}`;message('기본 데이터를 저장했습니다.');},e.submitter);});
   $('sync-interests').addEventListener('click',e=>action(async()=>{const r=await api('cases/sync',{});await loadCases();message(r.added?`${r.added}개 관심 사업의 양식 수집을 시작했습니다.`:'관심 사업이 모두 연결되어 있습니다.');},e.currentTarget));
   $('reference-upload').addEventListener('change',e=>action(()=>uploadFiles(e.target.files,'',e.target)));
@@ -228,6 +224,6 @@
   document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a||!a.getAttribute('href')?.startsWith('#'))return;if((profileDirty||draftDirty)&&!checkDirty()){e.preventDefault();return;}if(profileDirty)p=null;profileDirty=draftDirty=false;});
   window.addEventListener('beforeunload',e=>{if(profileDirty||draftDirty){e.preventDefault();e.returnValue='';}});
   window.addEventListener('hashchange',()=>action(route));
-  setInterval(async()=>{if(!signedIn||polling||busy||document.hidden)return;polling=true;try{if(view==='cases')await loadCases();else if(view==='case'&&currentCase?.jobs.some(j=>['queued','running'].includes(j.state)))await loadCase(currentCase.id);}catch{/* Retain the visible result on background refresh failure. */}finally{polling=false;}},5000);
-  action(async()=>{const session=await api('session');signedIn=session.authenticated;$('login-status').textContent=session.configured?'접근 키는 담당자에게 제공된 키를 사용하세요.':'담당자 접근 키 설정이 필요합니다.';showAuth();if(signedIn)await route();});
+  setInterval(async()=>{if(polling||busy||document.hidden)return;polling=true;try{if(view==='cases')await loadCases();else if(view==='case'&&currentCase?.jobs.some(j=>['queued','running'].includes(j.state)))await loadCase(currentCase.id);}catch{/* Retain the visible result on background refresh failure. */}finally{polling=false;}},5000);
+  action(route);
 })();

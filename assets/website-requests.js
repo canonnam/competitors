@@ -67,7 +67,6 @@
     $("filters").querySelector("button").disabled = busy;
     $("previous").disabled = busy || page <= 1;
     $("next").disabled = busy || page * 30 >= total;
-    $("logout").disabled = saving;
     $("request-rows")
       .querySelectorAll("button")
       .forEach((button) => {
@@ -79,22 +78,6 @@
         control.disabled = saving;
       });
   }
-  function auth(signedIn) {
-    $("workspace").hidden = !signedIn;
-    $("login-section").hidden = signedIn;
-    $("logout").hidden = !signedIn;
-    if (!signedIn) {
-      loadVersion++;
-      loading = false;
-      items = [];
-      selectedId = null;
-      drafts.clear();
-      $("request-rows").replaceChildren();
-      $("counts").replaceChildren();
-      $("result-count").textContent = "";
-      renderDetail();
-    }
-  }
   async function api(path, body) {
     const response = await fetch("/api/support/" + path, {
       method: body === undefined ? "GET" : "POST",
@@ -105,7 +88,6 @@
     });
     const data = await response.json();
     if (!response.ok) {
-      if (response.status === 401) auth(false);
       throw new Error(data.error || "요청을 처리하지 못했습니다.");
     }
     return data;
@@ -401,22 +383,6 @@
       }
     }
   }
-  $("login-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    action(async () => {
-      await api("login", { key: $("access-key").value });
-      $("access-key").value = "";
-      auth(true);
-      await load();
-    }, event.submitter);
-  });
-  $("logout").addEventListener("click", (event) =>
-    action(async () => {
-      await api("logout", {});
-      auth(false);
-      message("로그아웃했습니다.");
-    }, event.currentTarget),
-  );
   $("filters").addEventListener("submit", (event) => {
     event.preventDefault();
     if (loading || saving) return;
@@ -439,9 +405,5 @@
       event.returnValue = "";
     }
   });
-  action(async () => {
-    const session = await api("session");
-    auth(session.authenticated);
-    if (session.authenticated) await load();
-  });
+  action(load);
 })();

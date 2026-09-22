@@ -350,12 +350,12 @@ def retrieve(kind, question, now):
     if kind == 'payroll_insurance':
         from service_knowledge import evidence
         return [evidence(kind, '월별 급여·4대보험 접근 안내',
-            '안양·인천의 직원별 급여와 보험료, 직책별 합계를 담당자 로그인 후 조회합니다. 매월 10일 전월분을 수집합니다. 개인정보 보호를 위해 공개 채팅에서는 실제 이름·급여·보험료·직책별 금액을 읽거나 답하지 않습니다. 전용 화면에서 확인해주세요.')]
+            '안양·인천의 직원별 급여와 보험료, 직책별 합계를 전용 화면에서 조회합니다. 매월 10일 전월분을 수집합니다. 개인정보 보호를 위해 공개 채팅에서는 실제 이름·급여·보험료·직책별 금액을 읽거나 답하지 않습니다. 전용 화면에서 확인해주세요.')]
     if kind == 'staff_eval':
         from service_knowledge import evidence
         return [evidence(kind, '종사자 평가 안내',
             '요양보호사 지침 숙지와 상황판단을 대화로 확인하는 테스트 화면입니다. 시설 담당자가 일회용 링크를 만들어 공유합니다. '
-            '대화 원문, 자동 점수, 확정 점수는 담당자 로그인 뒤에만 보이며 공개 채팅에서는 개인 평가 결과를 읽거나 답하지 않습니다.')]
+            '평가 관리 화면은 별도 접근 키 없이 열립니다. 대화 원문과 점수는 해당 화면에서 확인하며 공개 채팅에서는 개인 평가 결과를 읽거나 답하지 않습니다.')]
     if kind in ('ai_hub', 'payroll', 'competitor_uiux'):
         return static_page(kind, question)
     if kind == 'statistics':

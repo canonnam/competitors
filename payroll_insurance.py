@@ -233,8 +233,6 @@ def handle(handler, method):
     import support_applications as auth
     head = method == 'HEAD'
     try:
-        if not auth.authenticated(handler):
-            auth.send_json(handler, 401, {'error': '담당자 접근 키로 로그인해주세요.'}, head); return True
         if method not in ('GET', 'HEAD'):
             auth.send_json(handler, 405, {'error': '조회 전용 화면입니다.'}, head); return True
         query = parse_qs(parts.query)

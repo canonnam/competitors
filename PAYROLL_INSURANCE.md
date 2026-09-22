@@ -4,7 +4,7 @@
 
 ## 접근과 보관
 
-- 기존 담당자 접근 키(SUPPORT_ACCESS_KEY)와 /api/support/ 세션을 재사용한다. 개인 자료 GET/HEAD/CSV는 인증 필수이며 no-store. 새 공개 데이터 API/브라우저 쓰기 API는 없다.
+- 사용자 요청에 따라 별도 담당자 접근 키 없이 화면과 GET/HEAD/CSV를 조회한다. 응답은 no-store이며 브라우저 쓰기 API는 제공하지 않는다.
 - /data/payroll-insurance/YYYY-MM.json에 최소한의 성명·직책·금액만 저장한다. 동일 월 수정 전 버전은 history에 보존한다. 개인 자료는 Git, 정적 assets/data, 공개 채팅 근거에 넣지 않는다.
 - ERP/인증서 비밀번호, JWT, 생년월일, 주민번호, 계좌, 연락처는 게시하지 않는다. 인증 정보는 이 업무를 승인한 원래 작업에서만 참조하며 실행 프로세스 메모리에서 사용한다.
 - 실패는 YYYY-MM.failure.json에 별도로 기록한다. 기존 성공 결과와 실제 확인 시각을 바꾸거나 이전 달을 새 달로 복사하지 않는다.
@@ -42,6 +42,6 @@ python scripts/publish_payroll_insurance.py --failure YYYY-MM --publish
 - 가입 여부/자료 없음/0원은 다르다. 결측은 null, 원본 0은 0, 환급은 음수. 존재하는 원본 내역의 합계이며 사업장 최종 납부액과 같다고 단정하지 않는다.
 - 직책은 해당 월 급여대장 우선. 사회복지사, 간호(조무)사, 물리(작업)치료사, 요양보호사 및 기타/미확인으로 집계한다. 해당 월 퇴사자 정산도 포함.
 - 건강 CSV의 중복 헤더는 열 번호로 구분(건강 13, 요양 26). 같은 사람의 복수 정산 행은 합산한다. 모든 개인별 원본 금액과 결과 합계, 직책별 합계, 두 지점 합계를 검증한다.
-- 브라우저에서 새로고침/지점선택/직원검색/다운로드/로그아웃을 확인한다. 공개 HTTP에서 개인정보 API와 파일이 차단되는지 검사한다. 로그인 후만 개인 자료를 노출한다.
+- 브라우저에서 키 입력 없이 새로고침/지점선택/직원검색/다운로드를 확인한다. API는 직접 조회되지만 서버 원본 파일과 코드의 정적 다운로드는 차단되는지 검사한다.
 
 테스트: python -m unittest test_payroll_insurance.py test_ui_consistency.py test_site_identity.py test_card_knowledge.py, node --test test_navigation.cjs.

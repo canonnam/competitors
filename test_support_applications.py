@@ -185,7 +185,7 @@ class SupportTests(unittest.TestCase):
         with patch.object(docs.socket,'getaddrinfo',return_value=[(2,1,6,'',('127.0.0.1',443))]):
             with self.assertRaises(ValueError):docs.PublicHTTPS('example.com').connect()
 
-    def test_auth_download_head_and_cross_origin_write(self):
+    def test_open_access_download_head_and_cross_origin_write(self):
         asset=self.configured();server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         self.addCleanup(server.server_close);self.addCleanup(server.shutdown)
@@ -195,10 +195,12 @@ class SupportTests(unittest.TestCase):
             if origin:headers['Origin']=origin
             if body is not None:headers['Content-Type']='application/json'
             c.request(method,'/api/support/'+route,None if body is None else json.dumps(body),headers);r=c.getresponse();raw=r.read();result=(r.status,dict(r.getheaders()),raw);c.close();return result
-        self.assertEqual(request('GET','profile')[0],401)
-        self.assertEqual(request('GET','models')[0],401)
-        self.assertEqual(request('HEAD','assets/file?id='+asset['id'])[0],401)
-        code,headers,_=request('POST','login',{'key':'test-key-only'});self.assertEqual(code,200)
+        self.assertEqual(request('GET','profile')[0],200)
+        self.assertEqual(request('GET','models')[0],200)
+        self.assertEqual(request('HEAD','assets/file?id='+asset['id'])[0],200)
+        with patch.dict(os.environ, {'SUPPORT_ACCESS_KEY': ''}):
+            self.assertEqual(json.loads(request('GET','session')[2])['access_mode'],'open')
+            code,headers,_=request('POST','login',{});self.assertEqual(code,200)
         cookie=headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         self.assertEqual(request('GET','profile',cookie=cookie)[0],200)
         code,headers,raw=request('GET','models',cookie=cookie);catalog=json.loads(raw)
@@ -207,7 +209,8 @@ class SupportTests(unittest.TestCase):
         self.assertEqual(len(catalog['models']),5);self.assertEqual(catalog['currency'],'USD')
         self.assertEqual(request('POST','profile',support.profile(),cookie=cookie,origin='https://evil.example')[0],403)
         code,headers,raw=request('GET','assets/file?id='+asset['id'],cookie=cookie);self.assertEqual(code,200);self.assertEqual(headers['Cache-Control'],'no-store');self.assertTrue(raw.startswith(b'PK'))
-        self.assertEqual(request('POST','logout',{},cookie=cookie)[0],200);self.assertEqual(request('GET','profile',cookie=cookie)[0],401)
+        self.assertEqual(request('POST','logout',{},cookie=cookie)[0],200);self.assertEqual(request('GET','profile',cookie=cookie)[0],200)
+        self.assertEqual(request('POST','logout',{})[0],200)
 
 
 class AITransportTests(unittest.TestCase):

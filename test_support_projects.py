@@ -39,9 +39,10 @@ class GrantTests(unittest.TestCase):
     def share(self,sections=None,file_ids=None):
         result=grants.share_create({'id':self.pid,'sections':sections or ['overview','requirements','consortium'],'file_ids':file_ids or []})
         return result,result['url'].split('#')[1]
-    def test_authentication_and_static_source_protection(self):
-        for path in ['/api/support/projects','/api/support/projects/detail?id='+self.pid,'/api/support/projects/file?id=unknown']:
-            self.assertEqual(self.request(path,auth=False)[0],401)
+    def test_open_access_and_static_source_protection(self):
+        for path in ['/api/support/projects','/api/support/projects/detail?id='+self.pid]:
+            self.assertEqual(self.request(path,auth=False)[0],200)
+        self.assertEqual(self.request('/api/support/projects/file?id=unknown',auth=False)[0],404)
         for path in ['/support_projects.py','/data/ax-2026-project.json','/.local/notice.txt']:
             self.assertEqual(self.request(path,auth=False)[0],404)
         self.assertEqual(self.request('/support-projects.html')[0],200)
@@ -73,7 +74,7 @@ class GrantTests(unittest.TestCase):
         for key in ['tasks','scenarios','journal']:self.assertNotIn(key,payload['data'])
         self.assertNotIn(b'PRIVATE',raw)
         self.assertEqual(self.request('/api/project-share/'+token,{},auth=False)[0],405)
-        self.assertEqual(self.request('/api/support/projects/save',p,auth=False)[0],401)
+        self.assertEqual(self.request('/api/support/projects/save',grants.get_project(self.pid),auth=False)[0],200)
     def test_files_exact_scope_dedup_and_cross_project(self):
         body={'id':self.pid,'name':'공고.txt','base64':base64.b64encode(b'notice').decode(),'kind':'공고'}
         f=grants.upload(body);self.assertEqual(f['id'],grants.upload(body)['id'])

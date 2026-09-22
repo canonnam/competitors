@@ -7,11 +7,10 @@
   const node = (tag, text, cls) => {const el=document.createElement(tag); if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
   function status(text, type='') {$('status').textContent=text;$('status').dataset.status=type;}
   function clear() {report=null;$('data').hidden=true;$('download').disabled=true;$('source').textContent='';$('totals').replaceChildren();for(const id of ['groups','people','reconcile'])$(id).tBodies[0].replaceChildren();}
-  function lock() {++requestId;clear();$('workspace').hidden=true;$('lock').hidden=false;$('key').value='';}
   async function api(path, options={}) {
     const response=await fetch('/api/support/'+path,{cache:'no-store',credentials:'same-origin',...options});
     const body=await response.json();
-    if(!response.ok){if(response.status===401)lock();throw Error(body.error||'조회에 실패했습니다.');}
+    if(!response.ok){throw Error(body.error||'조회에 실패했습니다.');}
     return body;
   }
   function appendRow(table, values, total=false) {
@@ -55,7 +54,7 @@
     try{
       const data=await api('payroll-insurance'+(period?'?month='+encodeURIComponent(period):''));
       if(id!==requestId)return;
-      $('workspace').hidden=false;$('lock').hidden=true;
+
       const selected=period||data.report?.month||data.expectedMonth;
       const periods=[...new Set([...data.months,selected])].sort().reverse();
       $('month').replaceChildren(...periods.map(m=>{const o=node('option',m+(data.months.includes(m)?'':' (자료 없음)'));o.value=m;return o;}));$('month').value=selected;
@@ -70,17 +69,11 @@
     }catch(error){if(id===requestId||$('workspace').hidden)status(error.message,'error');}
     finally{if(id===requestId)$('refresh').disabled=false;}
   }
-  $('login').addEventListener('submit',async event=>{
-    event.preventDefault();const button=$('login').querySelector('button');button.disabled=true;status('로그인 중…');
-    try{await api('login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:$('key').value})});$('key').value='';await load();}
-    catch(error){status(error.message,'error');}finally{button.disabled=false;}
-  });
-  $('logout').addEventListener('click',async()=>{try{await api('logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});lock();status('로그아웃되었습니다.');}catch(error){status(error.message,'error');}});
   $('refresh').addEventListener('click',()=>load($('month').value));
   $('month').addEventListener('change',()=>load($('month').value));
   $('branch').addEventListener('change',render);
   $('search').addEventListener('input',renderPeople);
   $('download').addEventListener('click',()=>{if(report)window.location.href='/api/support/payroll-insurance?month='+encodeURIComponent(report.month)+'&branch='+encodeURIComponent($('branch').value)+'&format=csv';});
   window.addEventListener('pageshow',event=>{if(event.persisted)load($('month').value);});
-  api('session').then(session=>{if(session.authenticated)load();else{lock();status(session.configured?'담당자 접근 키로 로그인해주세요.':'담당자 접근 키 설정이 필요합니다.',session.configured?'':'warning');}}).catch(error=>status(error.message,'error'));
+  load();
 })();

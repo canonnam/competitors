@@ -98,8 +98,8 @@ try {
   assert.ok(d.querySelector('.dash-branch-table [data-status="warning"]'),'unaccepted branch still needs attention');
   const requestSlot=d.querySelector('[data-dash-slot="requests"]');
   assert.doesNotMatch(requestSlot.textContent,/0건/,'loading is not zero');
-  w.HomeDashboard.update('requests',null,{locked:true});
-  assert.match(requestSlot.textContent,/담당자 로그인 후/);
+  w.HomeDashboard.update('requests',null);
+  assert.doesNotMatch(requestSlot.textContent,/담당자 로그인/);
   const totals={counts:{new:2,contacted:1,completed:3,archived:0},kinds:{visit:2,trial:3,pricing:1},total:6,generatedAt:'2026-09-22T10:00:00+09:00',lastReceivedAt:'2026-09-21T09:00:00+09:00'};
   w.HomeDashboard.update('requests',totals);
   assert.deepEqual([...requestSlot.querySelectorAll('dd')].map(el=>el.textContent),['2건','1건','3건','0건']);
@@ -109,8 +109,8 @@ try {
   w.HomeDashboard.fail('requests');
   assert.equal(requestSlot.querySelectorAll('dd').length,0,'private totals disappear on fetch failure');
   w.HomeDashboard.update('requests',totals);
-  w.HomeDashboard.update('requests',null,{locked:true});
-  assert.equal(requestSlot.querySelectorAll('dd').length,0,'private totals disappear on logout');
+  w.HomeDashboard.update('requests',null);
+  assert.equal(requestSlot.querySelectorAll('dd').length,0,'totals disappear while reloading');
   assert.equal(d.querySelector('[data-dash-slot="requests-time"]').textContent,'','private freshness metadata is cleared too');
   w.HomeDashboard.update('requests',{...totals,total:0,lastReceivedAt:null,counts:{new:0,contacted:0,completed:0,archived:0},kinds:{visit:0,trial:0,pricing:0}});
   assert.match(requestSlot.textContent,/접수된 신청이 없습니다/);
@@ -141,7 +141,7 @@ try {
   assert.equal(d.activeElement.dataset.dashKey,'ads-values');
   assert.equal(adSlot.querySelectorAll('svg[role="img"]').length,2);
   select('all');assert.equal(grid.classList.contains('kb-list-view'),false,'saved view survives dashboard');
-  console.log('PASS: dashboard sections, branch/labor status, authenticated totals, ad charts and gaps, live nodes, navigation, error/recovery, focus, escaping and unread preservation');
+  console.log('PASS: dashboard sections, branch/labor status, open-access totals, ad charts and gaps, live nodes, navigation, error/recovery, focus, escaping and unread preservation');
 } finally {dom.window.close();}
 for(const [query,isDashboard] of [['?category=all',false],['?category=operations',false],['?q=손익',false],['?category=dashboard&q=손익',false],['?category=invalid',true]]) {
   const current=boot(query);

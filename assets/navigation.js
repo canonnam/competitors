@@ -177,7 +177,7 @@
           const text=id=>doc.getElementById(id)?.textContent.trim().replace(/\s+/g,' ')||'';
           let value='';
           if(item.id==='claim-check')value=text('home-claim-status');
-          else if(item.id==='payroll-insurance')value='매월 10일 · 담당자 로그인';
+          else if(item.id==='payroll-insurance')value='매월 10일 갱신';
           else if(item.id==='staff-eval')value=text('home-staff-eval-badge')||'테스트 · 요양보호사';
           else if(item.id==='competitor-news')value=text('home-news-update').includes('확인 중')?'뉴스 갱신 중':text('home-news-badge');
           else if(item.id==='agency-news')value=text('home-support-status').split(' · ')[0];
