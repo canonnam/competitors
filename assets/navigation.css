@@ -1,4 +1,6 @@
 /* Scoped navigation styles preserve the individual tools' existing layouts. */
+/* Hold the legacy home grid until navigation.js has converted it. */
+body.kb-homepage:not(.kb-navigation-ready) > main { visibility:hidden; }
 .kb-navigable { --kb-nav-ink:var(--ui-text,#202b36); --kb-nav-muted:var(--ui-muted,#596777); --kb-nav-line:var(--ui-border,#dde3ec); --kb-nav-blue:var(--ui-primary,#4356ad); --kb-nav-tint:var(--ui-selected,#eef1fc); --kb-nav-hover:var(--ui-hover,#f0f1f3); }
 .kb-navigable [hidden] { display:none!important; }
 .kb-sidebar,.kb-feature-dialog,.kb-search-trigger,.kb-home-tools,.kb-shortcut-section,.kb-results-toolbar { font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif; letter-spacing:normal; }

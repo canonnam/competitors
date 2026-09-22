@@ -231,6 +231,9 @@
     win.addEventListener('storage',event=>{if(event.key===key||event.key===null){preferences.reload();render();}});
     win.addEventListener('pageshow',()=>{preferences.reload();render();});
     render();
+    // Reveal the home only after the category/search UI has transformed the
+    // legacy card markup, preventing the old three-column grid from flashing.
+    if(home) doc.body.classList.add('kb-navigation-ready');
     win.NewsBadge?.subscribe(syncNewsMarkers);
     // Home collectors already fetch these feeds. On other pages load only missing summaries,
     // without acknowledging them as read; the actual feed page owns acknowledgement.
