@@ -42,13 +42,9 @@
 .dash-profit-bar::after { content:""; position:absolute; inset:50% 0 auto; transform:translateY(-50%); height:100%; min-height:24px; }
 .dash-profit-missing { position:absolute; left:calc(12% + var(--branch)*44%); width:32%; text-align:center; transform:translateY(-50%); color:var(--ui-muted); font-size:12px; }
 .dash-profit-month-label { position:absolute; top:calc(100% + 12px); left:0; right:0; color:var(--ui-muted); font-size:13px; text-align:center; font-variant-numeric:tabular-nums; }
-.dash-operating-footer { margin-top:12px; }
-.dash-operating-footer summary { cursor:pointer; width:fit-content; color:var(--ui-primary); font-size:14px; padding:8px 0; }
-.dash-operating-footer a { color:var(--ui-primary); text-underline-offset:3px; }
-.dash-operating-footer .dash-table-wrap { max-height:280px; overflow:auto; }
 .dash-profit-mobile-hint { display:none; }
 @media(max-width:760px) { .dash-profit-mobile-hint { display:block; } .dash-profit-plot { height:240px; } }
-@media print { .dash-operating-footer .dash-table-wrap { max-height:none; overflow:visible; } .dash-operating-scroll { overflow:visible; } .dash-profit-chart { min-width:0!important; } }
+@media print { .dash-operating-scroll { overflow:visible; } .dash-profit-chart { min-width:0!important; } }
 .dash-ad-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:16px; }
 .dash-ad-chart { min-width:0; margin:0; color:var(--ui-primary); }
 .dash-ad-clicks { color:var(--ui-success); }

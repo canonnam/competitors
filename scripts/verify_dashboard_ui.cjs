@@ -126,16 +126,15 @@ try {
   assert.equal(operating.querySelectorAll('.branch-card').length,0);
   assert.equal(operating.querySelectorAll('.dash-profit-bar').length,16);
   assert.deepEqual([...operating.querySelectorAll('.dash-profit-bar.is-latest')].map(e=>Number(e.dataset.profit)),[21453202,7032975]);
-  assert.match(operating.textContent,/2026년.*실제 입출금 기준/);
+  assert.doesNotMatch(operating.textContent,/실제 입출금 기준|자료 기준|월별 수치 보기|자동 수집하지 않습니다/);
   const operatingLink=operating.querySelector('[data-dash-key="operating-2026-08-anyang"]');
   assert.equal(new URL(operatingLink.href).searchParams.get('month'),'2026-08');
-  operating.querySelector('details').open=true;
   operating.querySelector('.dash-operating-scroll').scrollLeft=120;
   operatingLink.focus();w.HomeDashboard.fail('operating');
   assert.match(operating.textContent,/이전에 불러온 자료/);
   assert.equal(d.activeElement.dataset.dashKey,'operating-2026-08-anyang');
   assert.equal(operating.querySelectorAll('.dash-profit-bar').length,16);
-  assert.equal(operating.querySelector('details').open,true);
+  assert.equal(operating.querySelector('details'),null);
   assert.equal(operating.querySelector('.dash-operating-scroll').scrollLeft,120);
   w.HomeDashboard.update('operating',report);assert.equal(operating.querySelector('.dash-warning'),null);
   assert.equal(adSlot.querySelectorAll('tbody tr').length,14);

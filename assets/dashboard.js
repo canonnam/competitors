@@ -112,8 +112,7 @@
       container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error);
       const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
       slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
-      const operatingExpanded=!!container.querySelector('[data-dash-slot="operating"] details[open]');
-      slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating,operatingExpanded):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
+      slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
     }
     redraw=draw;win.NewsBadge?.subscribe(draw);draw();
     win.addEventListener('pageshow',draw);

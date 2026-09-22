@@ -9,7 +9,8 @@ test('latest registered year shows chronological branch profit bars from the act
   assert.equal(view.year,'2026');assert.equal(view.rows.length,8);
   assert.deepEqual(view.rows.map(row=>row.month),Array.from({length:8},(_,i)=>'2026-0'+(i+1)));
   const html=render({data:report});
-  for(const expected of ['2,145.3만원','703.3만원','-2,526.2만원','2026년','2026-09-16','자동 수집하지 않습니다'])assert.ok(html.includes(expected),expected);
+  for(const expected of ['2,145.3만원','703.3만원','-2,526.2만원'])assert.ok(html.includes(expected),expected);
+  for(const removed of ['실제 입출금 기준','자료 기준','월별 수치 보기','자동 수집하지 않습니다'])assert.ok(!html.includes(removed),removed);
   assert.doesNotMatch(html,/branch-card|profit-line|수입 대비 인건비/);
   for(const row of view.rows)for(const [i,branch] of view.branches.entries()) {
     assert.equal(row.profits[i],branch.months.find(m=>m.month===row.month).profit);
