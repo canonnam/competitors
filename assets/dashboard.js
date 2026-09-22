@@ -14,7 +14,8 @@
     visibility:{title:'검색노출',href:'/search-visibility.html'},
     reputation:{title:'평판 점검',href:'/reputation-watch.html'},
     requests:{title:'상담·무료체험 신청 현황',href:'/website-requests.html'},
-    ads:{title:'네이버 광고 추이',href:'/naver-ads.html'}
+    ads:{title:'네이버 광고 추이',href:'/naver-ads.html'},
+    operating:{title:'운영비 분석',href:'/operating-costs.html'}
   };
   const state={};
   let redraw=()=>{};
@@ -57,7 +58,7 @@
     const newsWarning=['competitor','agency'].some(id=>records[id]?.status?.warning);
     return {
       metrics:[
-        {id:'news',title:'미확인 새 소식',value:bothNews?number(counts.competitor+counts.agency)+'건':'—',note:bothNews?(newsWarning?'이전 수집 포함 · 갱신 상태 확인':'경쟁사·요양원 + 정책·지원사업'):['competitor','agency'].some(id=>records[id]?.error)?'일부 소식을 불러오지 못했습니다':'새 소식 확인 중',href:'#dashboard-news',warning:newsWarning},
+        {id:'news',title:'미확인 새 소식',value:bothNews?number(counts.competitor+counts.agency)+'건':'—',note:bothNews?(newsWarning?'이전 수집 포함 · 갱신 상태 확인':'경쟁사·요양원 + 정책·지원사업'):['competitor','agency'].some(id=>records[id]?.error)?'일부 소식을 불러오지 못했습니다':'새 소식 확인 중',href:'/?category=all&q=%EB%89%B4%EC%8A%A4',warning:newsWarning},
         {id:'support',title:'추천 지원사업',value:supportCollected&&Number.isFinite(support?.active)?number(support.active)+'건':'—',note:supportCollected?(records.agency.status?.warning?'수집 상태 확인 필요 · 저장된 추천':'관심·추천 기준 반영 · 접수 조건 확인'):records.agency?.error?'지원사업 연결 확인 필요':ready('agency')?'지원사업 첫 수집 대기':'추천 확인 중',href:sources.agency.href,warning:records.agency?.status?.warning},
         visibilityMetric(records.visibility),
         {id:'keywords',title:'광고 평균 3위 이내',value:ready('keywords')&&keywords.updated_at?number(keywords.top_count)+'개':'—',note:ready('keywords')?(records.keywords.status?.warning?'갱신 대기 · 이전 집계':keywords.updated_at?`최근 7일 · 집행 가능 ${number(keywords.eligible_top_count)}개`:'아직 수집된 순위가 없습니다'):records.keywords?.error?'광고 순위 연결 확인 필요':'키워드 확인 중',href:sources.keywords.href,warning:records.keywords?.status?.warning}
@@ -75,8 +76,7 @@
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="requests-time"></span><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests" aria-label="신청 현황 새로고침">새로고침</button></div></section>
         <section class="dash-panel dash-ads-panel" aria-labelledby="dashboard-ads-title"><div class="dash-panel-head"><h2 id="dashboard-ads-title">네이버 광고 노출·클릭 추이</h2><a href="/naver-ads.html">광고 상세</a></div><div data-dash-slot="ads"></div></section>
-        <section class="dash-panel" id="dashboard-news" aria-labelledby="dashboard-news-title"><div class="dash-panel-head"><h2 id="dashboard-news-title">시장·정책 새 소식</h2></div><div data-dash-slot="news"></div><p class="dash-footnote">미확인 수는 이 브라우저의 읽음 기록 기준입니다.</p></section>
-        <section class="dash-panel" aria-labelledby="dashboard-marketing-title"><div class="dash-panel-head"><h2 id="dashboard-marketing-title">마케팅·점검 현황</h2></div><div data-dash-slot="marketing"></div></section>
+        <section class="dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">운영비 분석</h2><a href="/operating-costs.html">상세 보기</a></div><div data-dash-slot="operating"></div></section>
       </div>
       <section class="dash-shortcuts" aria-labelledby="dashboard-shortcuts-title"><h2 id="dashboard-shortcuts-title">주요 업무 바로가기</h2><div class="dash-shortcut-grid">
         <a href="/website-requests.html"><strong>상담·무료체험 신청</strong><span>로그인 후 신청 내역 확인</span></a>
@@ -92,7 +92,6 @@
       target.innerHTML=html;target._html=html;
       if(focus)[...target.querySelectorAll('[data-dash-key]')].find(el=>el.dataset.dashKey===focus)?.focus({preventScroll:true});
     }
-    const row=(id,title,description,meta,tone)=>`<a class="dash-row" href="${sources[id].href}" data-dash-key="${id}"><div><strong>${esc(title)}</strong><p>${esc(description)}</p><small>${esc(meta)}</small></div><span>${badge(state[id]?.error?'연결 확인 필요':tone||state[id]?.status?.label||'확인 중',state[id]?.error||state[id]?.status?.warning)}</span></a>`;
     function draw() {
       const counts=win.NewsBadge?.counts()||{};
       const view=snapshot(state,counts);
@@ -111,15 +110,7 @@
       container.querySelector('[data-dash-refresh="requests"]').disabled=!request||(!request.data&&!request.error&&!request.status?.locked);
       const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
       slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
-      slot('news',['competitor','agency'].map(id=>{
-        const record=state[id],data=record?.data;
-        return row(id,sources[id].title,data?`미확인 ${number(counts[id])}건 · 전체 ${number(data.total)}건`:record?.error?'소식을 불러오지 못했습니다.':'최근 소식 확인 중',data?`전체 수집 ${date(data.updated_at)}${record.error?' · 이전 결과':''}`:record?.error?'상세 화면에서 다시 확인해주세요.':'수집 결과를 불러옵니다.');
-      }).join(''));
-      slot('marketing',['keywords','visibility','reputation'].map(id=>{
-        const record=state[id],data=record?.data;
-        const meta=id==='visibility'?`다음 점검 ${date(data?.next_run)}`:`수집 ${date(data?.updated_at)}`;
-        return row(id,sources[id].title,record?.error?'저장 결과 연결을 확인해주세요.':record?.status?.detail||record?.status?.label||'점검 상태 확인 중',data?meta:'최근 결과를 불러옵니다.');
-      }).join(''));
+      slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
     }
     redraw=draw;win.NewsBadge?.subscribe(draw);draw();
     win.addEventListener('pageshow',draw);

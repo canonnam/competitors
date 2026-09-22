@@ -7,6 +7,7 @@ function boot(query='') {
   const dom=new JSDOM(html,{url:'https://app.aivida.tech/'+query,runScripts:'outside-only'}),w=dom.window;
   w.setInterval=()=>0;
   w.DashboardAds=require('../assets/dashboard-ads.js');
+  w.DashboardOperating=require('../assets/dashboard-operating.js');
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   w.HTMLDialogElement.prototype.close=function(){this.open=false;};
   const liveNodes=[...w.document.querySelectorAll('[id^="home-"]')];
@@ -24,6 +25,9 @@ try {
   assert.ok(d.getElementById('dashboard-branches-title'));
   assert.ok(d.getElementById('dashboard-requests-title'));
   assert.ok(d.getElementById('dashboard-ads-title'));
+  assert.ok(d.getElementById('dashboard-operating-title'));
+  assert.equal(d.getElementById('dashboard-news-title'),null);
+  assert.equal(d.getElementById('dashboard-marketing-title'),null);
   const select=id=>d.querySelector('#kb-navigation [data-kb-category="'+id+'"]').click();
   select('all');assert.equal(dashboard.hidden,true);assert.equal(grid.hidden,false);assert.equal(w.location.search,'?category=all');
   d.querySelector('[data-kb-view="cards"]').click();assert.equal(grid.classList.contains('kb-list-view'),false);
@@ -45,7 +49,8 @@ try {
   w.HomeDashboard.fail('agency');
   assert.equal(d.activeElement.dataset.dashKey,'metric-news','focus survives refresh');
   assert.match(d.querySelector('[data-dash-key="metric-news"]').textContent,/—/);
-  assert.match(d.querySelector('[data-dash-slot="news"]').textContent,/연결 확인 필요/);
+  assert.match(d.querySelector('[data-dash-key="metric-news"]').textContent,/불러오지 못했습니다/);
+  assert.equal(new URL(anchor.href).searchParams.get('q'),'뉴스','news shortcut cannot target the removed panel');
   w.HomeDashboard.update('agency',{support:{active:1},sources:[{id:'bizinfo',last_success:'2026-09-22'}]});
   assert.match(d.querySelector('[data-dash-key="metric-news"]').textContent,/3건/);
   const claims={benefitMonth:'2026-08',deadline:'2026-09-10',branches:['anyang','incheon'].map((id,i)=>({id,name:id,status:'accepted',label:'접수 완료',message:'필수 청구 접수 완료',checkedAt:'2026-09-10T13:52:10+09:00',lastQueryFailureAt:'2026-09-10T20:04:28+09:00',laborCost:{status:'verified',annualRatio:i?'68.7':'63.7',assessment:'stable',year:2026,benefitMonth:'2026-07',benchmarkRatio:'62.5',checkedAt:'2026-09-20T23:41:00+09:00'}}))};
@@ -95,6 +100,19 @@ try {
   w.HomeDashboard.update('ads',ads);
   const adSlot=d.querySelector('[data-dash-slot="ads"]');
   assert.equal(adSlot.querySelectorAll('svg[role="img"]').length,2);
+  const report=JSON.parse(fs.readFileSync('data/operating_report.json','utf8'));
+  w.HomeDashboard.update('operating',report);
+  const operating=d.querySelector('[data-dash-slot="operating"]');
+  assert.equal(operating.querySelectorAll('.branch-card').length,2);
+  assert.deepEqual([...operating.querySelectorAll('.profit-line strong')].map(e=>e.textContent),['2,145.3만원','703.3만원']);
+  assert.match(operating.textContent,/2026년 8월.*실제 입출금 기준/);
+  const operatingLink=operating.querySelector('[data-dash-key="operating-detail"]');
+  assert.equal(new URL(operatingLink.href).searchParams.get('month'),'2026-08');
+  operatingLink.focus();w.HomeDashboard.fail('operating');
+  assert.match(operating.textContent,/이전에 불러온 자료/);
+  assert.equal(d.activeElement.dataset.dashKey,'operating-detail');
+  assert.equal(operating.querySelectorAll('.branch-card').length,2);
+  w.HomeDashboard.update('operating',report);assert.equal(operating.querySelector('.dash-warning'),null);
   assert.equal(adSlot.querySelectorAll('tbody tr').length,14);
   assert.match(adSlot.textContent,/200회/);assert.match(adSlot.textContent,/5회/);
   adSlot.querySelector('details').open=true;
@@ -113,3 +131,8 @@ for(const [query,isDashboard] of [['?category=all',false],['?category=operations
   current.window.close();
 }
 console.log('PASS: direct URLs and old category/search links');
+const news=boot('?category=all&q=%EB%89%B4%EC%8A%A4');
+try {
+  const shown=[...news.window.document.querySelectorAll('main > .grid article:not([hidden])')].map(e=>e.dataset.kbFeature);
+  assert.ok(shown.includes('competitor-news')&&shown.includes('agency-news'));
+} finally {news.window.close();}

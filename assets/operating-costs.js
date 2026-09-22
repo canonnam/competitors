@@ -23,12 +23,7 @@
     $('summary-title').textContent=total ? `${monthName(selectedMonth)}, 두 지점 합산 ${money(Math.abs(total.profit))} ${total.profit<0?'적자':total.profit>0?'흑자':'손익 균형'}` : `${monthName(selectedMonth)}, 제공된 지점의 실적을 살펴보세요`;
     $('summary-text').textContent=total ? months.map((m,i)=>`${report.branches[i].name} ${money(Math.abs(m.profit))} ${m.profit<0?'적자':'흑자'}`).join(' · ')+'. 운영 손익과 자금 증감을 함께 확인하세요.' : '두 지점의 자료가 모두 있는 달에만 합산 성과를 표시합니다.';
     $('kpis').innerHTML=[['운영수입','revenue','요양급여·이용료·보조금 등'],['운영비용','cost','인건비·식비·운영비·이자 등'],['운영 손익','profit','두 지점 합산 · 입출금 기준'],['실제 자금 증감','cashChange','대출·상환·시설 투자 등 포함']].map(([label,key,note])=>`<article class="kpi"><span class="kpi-label">${label}</span><strong class="${key==='profit'||key==='cashChange'?tone(total?.[key]):''}" ${total?`title="${exact(total[key])}"`:''}>${total?money(total[key]):'합산 불가'}</strong><small>${note}</small></article>`).join('');
-    $('branches').innerHTML=report.branches.map(b=>{
-      const m=record(b), p=previous(b); if(!m)return empty(b);
-      const labor=M.groups(m,'expense')['인건비']||0;
-      const cashNote=m.profit>=0&&m.cashChange<0?'운영에서는 남았지만, 상환·자금 이동으로 실제 자금은 줄었습니다.':m.profit<0&&m.cashChange>=0?'차입·자금 유입이 운영 적자를 보완하고 있습니다.':m.profit<0?`운영수입보다 비용이 ${money(-m.profit)} 많았습니다.`:`운영수입의 ${pct(m.profit,m.revenue)}가 남았습니다.`;
-      return `<article class="branch-card ${b.id}"><div class="card-heading">${location(b)}<span class="badge ${m.profit<0?'loss':''}">${m.profit<0?'운영 적자':m.profit>0?'운영 흑자':'손익 균형'}</span></div><div class="profit-line"><strong class="${tone(m.profit)}" title="${exact(m.profit)}">${money(m.profit)}</strong><span>운영 손익</span></div><p class="change">${p?`전월보다 <b class="${tone(m.profit-p.profit)}">${money(Math.abs(m.profit-p.profit))} ${m.profit>=p.profit?'개선':'감소'}</b> · 손익률 ${pct(m.profit,m.revenue)}`:'전월 자료 없음 · 전월 대비 비교 불가'}</p><div class="mini-stats"><div><span>운영수입</span><strong title="${exact(m.revenue)}">${money(m.revenue)}</strong></div><div><span>운영비용</span><strong title="${exact(m.cost)}">${money(m.cost)}</strong></div><div><span>수입 대비 인건비</span><strong>${pct(labor,m.revenue)}</strong></div></div><p class="card-note">${cashNote}</p></article>`;
-    }).join('');
+    $('branches').innerHTML=report.branches.map(b=>record(b)?window.OperatingCards.render(b,record(b),previous(b)):empty(b)).join('');
   }
 
   function recommendation(m, p, changes) {

@@ -87,7 +87,7 @@ class OperatingEndpointTests(unittest.TestCase):
         cls.server.shutdown();cls.server.server_close();cls.thread.join()
 
     def test_new_page_assets_api_and_head(self):
-        for path in ['/operating-costs.html','/assets/operating-costs.css','/assets/operating-costs.js','/assets/operating-model.js','/api/operating-report']:
+        for path in ['/operating-costs.html','/assets/operating-costs.css','/assets/operating-costs.js','/assets/operating-model.js','/assets/operating-cards.js','/assets/dashboard-operating.js','/api/operating-report']:
             with self.subTest(path=path),urllib.request.urlopen(self.base+path) as response:
                 self.assertEqual(response.status,200)
         for path in ['/operating-costs.html','/api/operating-report']:
