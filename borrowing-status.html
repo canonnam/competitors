@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>차입금 현황 | 더비다 지식 창고</title>
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="theme-color" content="#1f63dc">
+  <meta name="description" content="안양점과 인천점의 차입 관련 현금 유입과 원금상환 흐름을 월별로 모아 확인합니다.">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="stylesheet" href="/assets/operating-costs.css">
+  <link rel="stylesheet" href="/assets/borrowing-status.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/site.js" defer></script>
+  <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
+  <script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
+  <script src="/assets/navigation.js?v=20260925-borrowing" defer></script>
+  <script src="/assets/borrowing-status.js" defer></script>
+  <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
+</head>
+<body class="kb-detail" data-feedback-page="borrowing-status">
+  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
+  <main>
+    <section class="kb-page-heading">
+      <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span>운영·인사·회계</span><span aria-hidden="true">/</span><span aria-current="page">차입금 현황</span></nav>
+      <div class="kb-heading-row"><div><p class="kb-eyebrow">더비다요양원 · 안양점 & 인천점</p><h1>차입금 현황</h1><p class="kb-description">차입금 유입과 원금상환 거래를 지점·유형별로 모았습니다. 적요와 개인 이름은 제외하고 거래일과 금액만 표시합니다.</p></div></div>
+    </section>
+    <p id="status" role="status" class="notice">차입금 자료를 불러오고 있습니다.</p>
+    <button id="retry" type="button" hidden>다시 불러오기</button>
+    <noscript><p class="notice">차입금 현황을 보려면 JavaScript를 활성화해주세요.</p></noscript>
+    <div id="dashboard" hidden>
+      <div class="toolbar"><div class="filters"><label for="year">집계 기간</label><select id="year" aria-label="집계 기간"></select></div><div id="coverage" class="source-status"></div></div>
+      <p class="loan-basis">수입·지출은 현금출납부의 차입 관련 분류를 집계합니다. 순액은 제공 기간에 기록된 차입 관련 현금흐름이며, 현재 대출 원금 잔액과 다를 수 있습니다.</p>
+      <section id="kpis" class="kpis loan-kpi-grid" aria-label="집계 기간 차입 현황"></section>
+      <section class="section" aria-labelledby="branch-title">
+        <div class="section-heading"><div><p class="eyebrow">BRANCH SUMMARY</p><h2 id="branch-title">지점별 차입 흐름</h2></div></div>
+        <div id="branches" class="branch-grid" aria-live="polite"></div>
+      </section>
+      <section class="section" aria-labelledby="detail-title">
+        <div class="section-heading"><div><p class="eyebrow">FINANCING TRANSACTIONS</p><h2 id="detail-title">차입·상환 거래</h2></div><span id="detail-period" class="small muted"></span></div>
+        <div class="table-wrap" tabindex="0" aria-label="차입·상환 거래 표. 좁은 화면에서는 표 안에서 좌우로 이동할 수 있습니다.">
+          <table class="history loan-history"><caption class="sr-only">현금출납부의 차입 관련 거래별 날짜, 유형, 수입, 지출과 순액</caption>
+            <thead><tr><th scope="col">거래일</th><th scope="col">지점</th><th scope="col">차입 유형</th><th scope="col">수입</th><th scope="col">지출</th><th scope="col">순액</th></tr></thead>
+            <tbody id="history"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="methodology" aria-labelledby="method-title">
+        <details><summary id="method-title">집계 범위와 계산 방법</summary>
+          <div id="methodology"></div>
+          <p>현금출납부에서 제공된 월별 수입·지출을 유형별로 합산합니다. 금융기관차입금, 기타차입금, 원금상환금과 적요에 원금이 표시된 기타전출금은 각각 차입 또는 원금상환 유형으로 집계합니다. 대여 관련 및 그 밖의 금융 분류도 별도 행으로 표시합니다. 적요와 개인 이름은 공개 데이터에 포함하지 않습니다.</p>
+          <p>자료 시작 전 차입 원금과 대출별 잔액 자료가 제공되지 않아 이 화면은 현재 원금 잔액을 계산하지 않습니다. 표시한 순액은 선택 기간에 기록된 차입·상환 관련 수입에서 지출을 뺀 값입니다. 운영비 분석의 실제 자금 증감과 대조할 때는 기타 자금 이동과 오입금·반환을 함께 확인해 주세요.</p>
+        </details>
+      </section>
+      <footer>THE VIDA <span>매달의 숫자를, 더 선명하게.</span></footer>
+    </div>
+  </main>
+</body>
+</html>

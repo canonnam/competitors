@@ -63,6 +63,20 @@ def classify(account, memo, income, expense):
     raise ValueError(f'Unmapped account: {account}')
 
 
+def financing_type(account, memo):
+    """Classify a financing record without exporting its description."""
+    compact = re.sub(r'\s+', '', memo)
+    if account == '금융기관차입금':
+        return 'financial-institution-borrowing'
+    if account == '기타차입금':
+        return 'other-borrowing'
+    if account == '원금상환금' or (account == '기타전출금' and '원금' in compact):
+        return 'principal-repayment'
+    if '대여' in compact:
+        return 'loan-related'
+    return 'other-financing'
+
+
 def amount(value):
     if value is None:
         return 0
@@ -119,6 +133,8 @@ def build(source_root, source_date=None):
             sums = defaultdict(int)
             accounts = defaultdict(lambda: {'income': 0, 'expense': 0, 'count': 0})
             adjustments = defaultdict(lambda: {'income': 0, 'expense': 0, 'count': 0})
+            financing_breakdown = defaultdict(lambda: {'income': 0, 'expense': 0, 'count': 0})
+            financing_transactions = []
             flags = []
             balance = opening
             for row_number, row in transactions:
@@ -136,6 +152,15 @@ def build(source_root, source_date=None):
                 sums['sourceIncome'] += incoming
                 sums['sourceExpense'] += outgoing
                 sums[bucket] += incoming - outgoing
+                if bucket == 'financing':
+                    transaction_type = financing_type(account, memo or '')
+                    item = financing_breakdown[transaction_type]
+                    item['income'] += incoming
+                    item['expense'] += outgoing
+                    item['count'] += 1
+                    financing_transactions.append({
+                        'date': day, 'type': transaction_type, 'income': incoming, 'expense': outgoing,
+                    })
                 if bucket == 'operating':
                     # Interest entered as negative income is normalized to expense.
                     if group == '이자':
@@ -169,11 +194,18 @@ def build(source_root, source_date=None):
             profit = sums['revenue']-sums['cost']
             if cash_change != profit + sum(sums[k] for k in ['financing', 'investment', 'transfer', 'correction']):
                 raise ValueError('Cash bridge does not reconcile')
+            financing_control = adjustments.get('차입·원금 상환', {'income': 0, 'expense': 0, 'count': 0})
+            if (sum(item['income'] - item['expense'] for item in financing_breakdown.values()),
+                sum(item['count'] for item in financing_breakdown.values())) != (
+                sums['financing'], financing_control['count']):
+                raise ValueError('Financing breakdown does not reconcile')
             branch['months'].append({
                 'month': month, 'firstDate': min(r[1] for _,r in transactions), 'lastDate': max(r[1] for _,r in transactions),
                 'transactionCount': len(transactions), 'revenue': sums['revenue'], 'cost': sums['cost'], 'profit': profit,
                 'cashChange': cash_change, 'closingBalance': balance, 'openingBalance': opening + sums['carry'],
                 'financing': sums['financing'], 'investment': sums['investment'], 'transfer': sums['transfer'], 'correction': sums['correction'],
+                'financingBreakdown': [{'type': kind, **values} for kind, values in sorted(financing_breakdown.items())],
+                'financingTransactions': financing_transactions,
                 'carry': sums['carry'], 'sourceIncome': sums['sourceIncome'], 'sourceExpense': sums['sourceExpense'],
                 'accounts': [{'account': a, 'group': g, **v} for (a,g),v in sorted(accounts.items())],
                 'adjustments': [{'group': g, **v} for g,v in sorted(adjustments.items())], 'flags': flags,

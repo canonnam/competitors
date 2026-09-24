@@ -1,6 +1,6 @@
 # 더비다 운영비 분석
 
-`/operating-costs.html` compares Anyang and Incheon in one monthly view. The homepage links to it. `/api/operating-report` returns only anonymous monthly account aggregates; workbook files and transaction descriptions are never deployed.
+`/operating-costs.html` compares Anyang and Incheon in one monthly view. The homepage links to it. `/api/operating-report` returns anonymous monthly account aggregates and financing records containing only date, normalized type, income, and expense; workbook files, personal names, source rows, and transaction descriptions are never deployed. The borrowing status page uses the records to show transactions, monthly inflows, principal repayments, and net cash flow. The cash ledger does not include the opening loan principal, so this flow is not the current outstanding loan balance.
 
 ## Refresh the data
 

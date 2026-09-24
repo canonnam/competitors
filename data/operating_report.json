@@ -22,6 +22,8 @@
           "investment": -15556550,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 3244290,
           "sourceExpense": 29515940,
@@ -134,6 +136,46 @@
           "investment": -541500000,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "loan-related",
+              "income": 13000000,
+              "expense": 0,
+              "count": 2
+            },
+            {
+              "type": "other-borrowing",
+              "income": 540000000,
+              "expense": 0,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-09-08",
+              "type": "other-borrowing",
+              "income": 440000000,
+              "expense": 0
+            },
+            {
+              "date": "2025-09-09",
+              "type": "loan-related",
+              "income": 8000000,
+              "expense": 0
+            },
+            {
+              "date": "2025-09-15",
+              "type": "loan-related",
+              "income": 5000000,
+              "expense": 0
+            },
+            {
+              "date": "2025-09-26",
+              "type": "other-borrowing",
+              "income": 100000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 620537045,
           "sourceExpense": 596241696,
@@ -331,6 +373,22 @@
           "investment": -113925000,
           "transfer": 0,
           "correction": 8715762,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 110000000,
+              "expense": 0,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-10-30",
+              "type": "other-borrowing",
+              "income": 110000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 192519357,
           "sourceExpense": 189675031,
@@ -506,6 +564,8 @@
           "investment": -4275000,
           "transfer": 0,
           "correction": 8946900,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 79748406,
           "sourceExpense": 80384001,
@@ -703,6 +763,28 @@
           "investment": 0,
           "transfer": 0,
           "correction": 120000,
+          "financingBreakdown": [
+            {
+              "type": "loan-related",
+              "income": 0,
+              "expense": 0,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-12-11",
+              "type": "loan-related",
+              "income": 4284238,
+              "expense": 0
+            },
+            {
+              "date": "2025-12-11",
+              "type": "loan-related",
+              "income": -4284238,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 76385435,
           "sourceExpense": 76085252,
@@ -914,6 +996,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": -4000000,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 47387837,
           "sourceIncome": 127608096,
           "sourceExpense": 64391162,
@@ -1083,6 +1167,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 85733426,
           "sourceExpense": 79345405,
@@ -1253,6 +1339,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": -7300000,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 79889470,
           "sourceExpense": 83557863,
@@ -1423,6 +1511,22 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-04-23",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 87180234,
           "sourceExpense": 99581660,
@@ -1600,6 +1704,28 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 10000000,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-05-10",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000
+            },
+            {
+              "date": "2026-05-28",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 104666010,
           "sourceExpense": 75781102,
@@ -1770,6 +1896,22 @@
           "investment": 0,
           "transfer": -715762,
           "correction": -7375000,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-06-02",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 5000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 87773943,
           "sourceExpense": 100557780,
@@ -1966,6 +2108,28 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 14000000,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-07-10",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 7000000
+            },
+            {
+              "date": "2026-07-24",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 7000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 101252630,
           "sourceExpense": 118984385,
@@ -2162,6 +2326,8 @@
           "investment": 0,
           "transfer": -5000000,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 100770030,
           "sourceExpense": 84316828,
@@ -2342,6 +2508,22 @@
           "investment": -5390000,
           "transfer": -10117490,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 30000000,
+              "expense": 0,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-01-26",
+              "type": "other-borrowing",
+              "income": 30000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 44042160,
           "sourceExpense": 27640117,
@@ -2486,6 +2668,22 @@
           "investment": -1529038,
           "transfer": 0,
           "correction": 30632212,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 10000000,
+              "expense": 0,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-02-07",
+              "type": "other-borrowing",
+              "income": 10000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 153475624,
           "sourceExpense": 106419311,
@@ -2675,6 +2873,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": 4000000,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 102909818,
           "sourceExpense": 104094937,
@@ -2880,6 +3080,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": -2000000,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 107275996,
           "sourceExpense": 94785366,
@@ -3078,6 +3280,8 @@
           "investment": -33063720,
           "transfer": 0,
           "correction": -10700114,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 92391226,
           "sourceExpense": 120440346,
@@ -3233,6 +3437,22 @@
           "investment": -78000000,
           "transfer": 0,
           "correction": -1299886,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 100000000,
+              "expense": 0,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-06-05",
+              "type": "other-borrowing",
+              "income": 100000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 209467019,
           "sourceExpense": 167412934,
@@ -3422,6 +3642,8 @@
           "investment": -12164640,
           "transfer": 0,
           "correction": -5754046,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 96604808,
           "sourceExpense": 127964598,
@@ -3626,6 +3848,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 110869310,
           "sourceExpense": 96016478,
@@ -3796,6 +4020,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": -10000000,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 98620902,
           "sourceExpense": 97383358,
@@ -4008,6 +4234,8 @@
           "investment": -564000,
           "transfer": 0,
           "correction": -5172706,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 102646244,
           "sourceExpense": 94175002,
@@ -4184,6 +4412,28 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": -15000000,
+              "expense": 0,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2025-11-17",
+              "type": "other-borrowing",
+              "income": -8000000,
+              "expense": 0
+            },
+            {
+              "date": "2025-11-28",
+              "type": "other-borrowing",
+              "income": -7000000,
+              "expense": 0
+            }
+          ],
           "carry": 0,
           "sourceIncome": 98022105,
           "sourceExpense": 99273540,
@@ -4382,6 +4632,8 @@
           "investment": -847000,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 105049644,
           "sourceExpense": 108246303,
@@ -4594,6 +4846,22 @@
           "investment": 0,
           "transfer": -8000000,
           "correction": 19900000,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-01-29",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 77522566,
           "sourceIncome": 203011068,
           "sourceExpense": 129563447,
@@ -4817,6 +5085,8 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [],
+          "financingTransactions": [],
           "carry": 0,
           "sourceIncome": 114291890,
           "sourceExpense": 100524451,
@@ -5008,6 +5278,28 @@
           "investment": 0,
           "transfer": 0,
           "correction": 2694500,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 4000000,
+              "count": 2
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-03-03",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            },
+            {
+              "date": "2026-03-25",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 103105578,
           "sourceExpense": 129673548,
@@ -5205,6 +5497,40 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 14000000,
+              "expense": 0,
+              "count": 2
+            },
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-04-07",
+              "type": "other-borrowing",
+              "income": 9000000,
+              "expense": 0
+            },
+            {
+              "date": "2026-04-09",
+              "type": "other-borrowing",
+              "income": 5000000,
+              "expense": 0
+            },
+            {
+              "date": "2026-04-29",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 124068696,
           "sourceExpense": 127983378,
@@ -5403,6 +5729,40 @@
           "investment": 0,
           "transfer": 0,
           "correction": 0,
+          "financingBreakdown": [
+            {
+              "type": "other-borrowing",
+              "income": 9700000,
+              "expense": 0,
+              "count": 2
+            },
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-05-07",
+              "type": "other-borrowing",
+              "income": 8000000,
+              "expense": 0
+            },
+            {
+              "date": "2026-05-07",
+              "type": "other-borrowing",
+              "income": 1700000,
+              "expense": 0
+            },
+            {
+              "date": "2026-05-25",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 126530048,
           "sourceExpense": 95378556,
@@ -5599,6 +5959,22 @@
           "investment": 0,
           "transfer": -5000000,
           "correction": -5200000,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-06-25",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 121130539,
           "sourceExpense": 119167540,
@@ -5809,6 +6185,22 @@
           "investment": -3150000,
           "transfer": 0,
           "correction": 579150,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-07-25",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 118284760,
           "sourceExpense": 111947528,
@@ -6026,6 +6418,22 @@
           "investment": 0,
           "transfer": -3000000,
           "correction": -13714150,
+          "financingBreakdown": [
+            {
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000,
+              "count": 1
+            }
+          ],
+          "financingTransactions": [
+            {
+              "date": "2026-08-31",
+              "type": "principal-repayment",
+              "income": 0,
+              "expense": 2000000
+            }
+          ],
           "carry": 0,
           "sourceIncome": 110709790,
           "sourceExpense": 122390965,
