@@ -13,3 +13,4 @@ The package SHA-512 integrity was verified against the npm registry. SVG artwork
 - market.svg: chart-no-axes-combined
 - research.svg: book-open
 - website.svg: globe (GNB homepage link)
+- facility.svg: in-house line drawing of a care facility, using the same monochrome stroke contract

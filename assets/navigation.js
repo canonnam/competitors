@@ -7,6 +7,7 @@
   'use strict';
   const categories = [
     {id:'operations', title:'운영·인사·회계'},
+    {id:'facility', title:'시설 인수·개설'},
     {id:'marketing', title:'홍보·상담·영업'},
     {id:'support', title:'정책·지원사업'},
     {id:'market', title:'시장·경쟁'},
@@ -18,6 +19,7 @@
     {id:'website-requests', category:'marketing', title:'상담·무료체험 신청', description:'방문상담·무료체험 접수와 담당자 메모', keywords:'고객 문의 홈페이지 영업 리드'},
     {id:'payroll', category:'operations', title:'급여 계산·근로계약서', description:'근무조건별 급여 계산과 계약서 작성', keywords:'월급 인건비 직원 채용 인사 노무 PDF'},
     {id:'staff-eval', category:'operations', title:'종사자 평가', description:'요양보호사 지침 숙지·상황판단을 대화로 측정하고, 링크를 공유합니다. (테스트)', keywords:'요양보호사 지침 숙지 상황판단 평가 링크 대화 직원'},
+    {id:'facility-acquisition', category:'facility', title:'요양원 인수·개설', description:'인수 점검·허가 절차·지정심사 제출서류', keywords:'시설 매입 인수 개설 허가 설치신고 지정심사 건물도면 소방 전기 가스 체크리스트 컨설팅 HWP'},
     {id:'claim-check', category:'operations', title:'지점별 청구 점검', description:'급여 청구 여부와 처리상태 확인', keywords:'공단 장기근속장려금 접수 안양 인천'},
     {id:'competitors', category:'market', title:'경쟁사 분석', description:'ERP·AI·디지털 돌봄 서비스 비교', keywords:'시장 기능 가격 운영 모델'},
     {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 화면 비교와 실입력 사용성 테스트', keywords:'UIUX UX 사용성 화면비교 UXTEST 실입력 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},

@@ -6,7 +6,7 @@ import struct
 import threading
 import unittest
 from unittest.mock import patch
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 import app
 
@@ -121,6 +121,21 @@ class SiteIdentityTests(unittest.TestCase):
         robots = (ROOT / 'robots.txt').read_text(encoding='utf-8')
         rules = [line for line in robots.splitlines() if line and not line.startswith('#')]
         self.assertEqual(rules, ['User-agent: *', 'Allow: /'])
+
+    def test_facility_submission_files_are_downloadable_and_source_paths_stay_closed(self):
+        folder = ROOT / 'assets/documents/facility-acquisition'
+        files = sorted(folder.glob('*.hwp'))
+        self.assertEqual(len(files), 9)
+        page = (ROOT / 'facility-acquisition.html').read_text(encoding='utf-8')
+        for file in files:
+            with self.subTest(file=file.name):
+                url = '/assets/documents/facility-acquisition/' + quote(file.name)
+                self.assertIn('/assets/documents/facility-acquisition/' + file.name, page)
+                status, headers, body = self.request(url)
+                self.assertEqual(status, 200)
+                self.assertEqual(body, file.read_bytes())
+                self.assert_not_indexable(headers)
+        self.assertEqual(self.request('/raw/' + quote('시설 인수·개설/요양원 매입 및 허가 절차.docx'))[0], 404)
 
 
 if __name__ == '__main__':
