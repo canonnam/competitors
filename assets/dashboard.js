@@ -118,5 +118,5 @@
     win.addEventListener('pageshow',draw);
     return container;
   }
-  return {update,fail,mount,snapshot,laborStatus};
+  return {update,fail,mount,snapshot,laborStatus,redraw:()=>redraw()};
 });

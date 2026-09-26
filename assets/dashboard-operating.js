@@ -6,6 +6,7 @@
 })(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let selectedBranch='all';
   function prepare(data) {
     if(data?.schemaVersion!==1||!Array.isArray(data.branches))throw new Error('format');
     const branches=['anyang','incheon'].map(id=>{
@@ -49,23 +50,33 @@
     const grid=scale.ticks.map(value=>`<div class="dash-profit-gridline${value===0?' is-zero':''}" style="top:${100*(scale.max-value)/(scale.max-scale.min)}%"><span>${esc(value.toLocaleString('ko-KR',{maximumFractionDigits:6}))}</span></div>`).join('');
     const groups=view.rows.map(row=>`<div class="dash-profit-month"><div class="dash-profit-pair">${row.profits.map((profit,i)=>{
       const name=view.branches[i].name,label=monthName(row.month)+' '+name;
-      if(profit===null)return `<span class="dash-profit-missing" style="--branch:${i};top:${scale.zero}%" aria-label="${esc(label)} 자료 없음" title="${esc(label)} 자료 없음">—</span>`;
+      if(profit===null)return `<span class="dash-profit-missing${view.branches.length===1?' is-single':''}" style="--branch:${i};top:${scale.zero}%" aria-label="${esc(label)} 자료 없음" title="${esc(label)} 자료 없음">—</span>`;
       const value=profit/10000,{top,height}=barGeometry(value,scale);
       const description=label+' 운영 손익 '+num(value)+'만원 · 상세 분석';
       const origin=profit>0?`bottom:${100-scale.zero}%`:`top:${top}%`;
-      return `<a class="dash-profit-bar ${view.branches[i].id}${row.month===view.month?' is-latest':''}" href="${detailLink(row.month)}" data-dash-key="operating-${row.month}-${view.branches[i].id}" data-profit="${profit}" style="--branch:${i};${origin};height:${height}%" aria-label="${esc(description)}" title="${esc(description)}"><span class="dash-sr-only">${esc(description)}</span></a>`;
+      return `<a class="dash-profit-bar ${view.branches[i].id}${row.month===view.month?' is-latest':''}${view.branches.length===1?' is-single':''}" href="${detailLink(row.month)}" data-dash-key="operating-${row.month}-${view.branches[i].id}" data-profit="${profit}" style="--branch:${i};${origin};height:${height}%" aria-label="${esc(description)}" title="${esc(description)}"><span class="dash-sr-only">${esc(description)}</span></a>`;
     }).join('')}</div><span class="dash-profit-month-label">${row.month.slice(2,4)}.${row.month.slice(5)}</span></div>`).join('');
-    return `<div class="dash-operating-scroll" data-dash-scroll="operating-chart" role="group" aria-label="${view.year}년 안양점·인천점 월별 운영손익 막대그래프"><div class="dash-profit-chart" style="min-width:${Math.max(340,view.rows.length*76+60)}px"><div class="dash-profit-plot"><div class="dash-profit-grid" aria-hidden="true">${grid}</div><div class="dash-profit-months">${groups}</div></div></div></div>`;
+    return `<div class="dash-operating-scroll" data-dash-scroll="operating-chart" role="group" aria-label="${view.year}년 ${view.branches.map(branch=>esc(branch.name)).join('·')} 월별 운영손익 막대그래프"><div class="dash-profit-chart" style="min-width:${Math.max(340,view.rows.length*76+60)}px"><div class="dash-profit-plot"><div class="dash-profit-grid" aria-hidden="true">${grid}</div><div class="dash-profit-months">${groups}</div></div></div></div>`;
   }
   function render(record) {
     if(!record?.data)return `<p class="dash-empty">${record?.error?'운영비 자료를 불러오지 못했습니다. 상세 보기에서 다시 확인해주세요.':'운영비 자료를 불러오는 중입니다.'}</p>`;
-    const data=record.data,view=prepare(data),{month,branches,rows}=view;
+    const data=record.data,source=prepare(data),branches=selectedBranch==='all'?source.branches:source.branches.filter(branch=>branch.id===selectedBranch);
+    const indices=branches.map(branch=>source.branches.indexOf(branch));
+    const view={...source,branches,rows:source.rows.map(row=>({...row,profits:indices.map(index=>row.profits[index])}))};
+    const {month,rows}=view;
     if(!month)return '<p class="dash-empty">아직 등록된 운영비 자료가 없습니다.</p>';
-    return `<div class="dash-operating-meta"><p class="dash-meta">운영 손익 · 단위: 만원</p><div class="dash-profit-legend">${branches.map(b=>`<span><i class="${b.id}" aria-hidden="true"></i>${esc(b.name)}</span>`).join('')}</div><p class="dash-meta">막대를 누르면 해당 월 분석으로 이동합니다.</p></div>${record.error?'<p class="dash-warning">연결 확인 필요 · 이전에 불러온 자료입니다.</p>':''}${plot(view)}<p class="dash-profit-mobile-hint dash-meta">좌우로 밀어 전체 월을 확인하세요.</p>${rows.some(row=>row.profits.includes(null))?'<p class="dash-warning">자료가 없는 지점·월은 —로 표시하며 0원으로 간주하지 않습니다.</p>':''}`;
+    const options=[['all','전체 지점'],['anyang','안양점'],['incheon','인천점']];
+    return `<div class="dash-operating-meta"><p class="dash-meta">운영 손익 · 단위: 만원</p><div class="dash-operating-controls"><label class="dash-operating-filter" for="dash-operating-branch"><span>지점</span><select id="dash-operating-branch" data-operating-branch data-dash-key="operating-branch">${options.map(([value,label])=>`<option value="${value}"${selectedBranch===value?' selected':''}>${label}</option>`).join('')}</select></label><div class="dash-profit-legend">${branches.map(b=>`<span><i class="${b.id}" aria-hidden="true"></i>${esc(b.name)}</span>`).join('')}</div></div><p class="dash-meta">막대를 누르면 해당 월 분석으로 이동합니다.</p></div>${record.error?'<p class="dash-warning">연결 확인 필요 · 이전에 불러온 자료입니다.</p>':''}${plot(view)}<p class="dash-profit-mobile-hint dash-meta">좌우로 밀어 전체 월을 확인하세요.</p>${rows.some(row=>row.profits.includes(null))?'<p class="dash-warning">자료가 없는 지점·월은 —로 표시하며 0원으로 간주하지 않습니다.</p>':''}`;
   }
   function start(win,dashboard) {
     if(!dashboard)return;
     let loading=false;
+    win.document.addEventListener('change',event=>{
+      if(!event.target?.matches?.('[data-operating-branch]'))return;
+      const value=event.target.value;
+      if(!['all','anyang','incheon'].includes(value)||selectedBranch===value)return;
+      selectedBranch=value;dashboard.redraw();
+    });
     async function refresh() {
       if(loading||win.document.hidden)return;
       loading=true;
