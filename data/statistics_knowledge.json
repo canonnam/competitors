@@ -1,6 +1,6 @@
 {
-  "sourceHash": "c42dcc7a00b32507dab6d6c4675ea5aabe4db613d9880b57f04a3a58debb9db4",
-  "reviewedAt": "2026-09-18",
+  "sourceHash": "0ef828470474bdbd07abafbe00ecd31a72f64c5aaaeaaa562044496d6c1820ce",
+  "reviewedAt": "2026-09-28",
   "portalUrl": "https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html",
   "topics": [
     "기관평가",
@@ -165,9 +165,79 @@
       "scope": "전국 일반 가구의 65세 이상 노인 조사. 시설 거주자는 조사 대상에서 제외되며, 안양·인천의 입소 수요 추정치는 아닙니다.",
       "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/view?seq=65814&volume=65802",
       "downloadUrl": "https://repository.kihasa.re.kr/bitstream/201002/46105/1/2024.11.No.337.06.pdf"
+    },
+    {
+      "id": "restraint-report-2026",
+      "format": "article",
+      "title": "요양시설 신체 구속 학대 판정과 신체억제대 사용 현황",
+      "author": "이태호",
+      "publisher": "검경일보",
+      "publication": "보도 기사 · 보건복지부 국회 제출자료 인용",
+      "published": "2026.09",
+      "survey": "보건복지부 국회 제출자료(기사 인용)",
+      "year": 2025,
+      "periodLabel": "학대 판정 2023–2025년 / 억제대 사용 시설 2025년 5월",
+      "topics": [
+        "안전·사고"
+      ],
+      "summary": "소병훈 의원실이 보건복지부에서 받은 자료를 인용한 보도입니다. 신체 구속·감금 학대 판정 피해자 추이와 억제대 사용 시설 현황을 구분해 기록합니다.",
+      "scope": "전국 노인의료복지시설 관련 보도 수치입니다. 기사의 원자료는 공개 링크로 확인되지 않아 기사에 명시된 수치와 범위만 옮겼습니다.",
+      "sourceUrl": "https://www.ppnews.kr/news/articleView.html?idxno=89120"
     }
   ],
   "bookmarks": [
+    {
+      "id": "restraint-abuse-victims",
+      "documentId": "restraint-report-2026",
+      "topic": "안전·사고",
+      "title": "신체 구속·감금 학대 판정 피해자 수",
+      "metric": "184명",
+      "metricLabel": "2025년 해당 지표의 학대 판정 피해노인",
+      "periodLabel": "2023–2025년",
+      "rows": [
+        [
+          "2023년",
+          "72명"
+        ],
+        [
+          "2024년",
+          "161명"
+        ],
+        [
+          "2025년",
+          "184명"
+        ]
+      ],
+      "insight": "보건복지부 국회 제출자료를 인용한 기사에서, 노인의 신체를 구속하거나 제한된 공간에 가둔 학대 판정 지표의 피해노인은 2023년 72명, 2024년 161명, 2025년 184명입니다.",
+      "action": "두 지점의 신체 제한 및 인권 보호 기록에서 사용 사유·시간·관찰·해제와 사후 점검이 남는지 확인해 보세요.",
+      "caveat": "학대 판정 피해노인 수입니다. 전체 입소자 대비 발생률, 신체억제대 사용 중 사고 수 또는 더비다 지점의 발생 건수가 아닙니다. 수치는 기사 인용이며 원자료는 직접 검증하지 못했습니다."
+    },
+    {
+      "id": "restraint-use-facilities",
+      "documentId": "restraint-report-2026",
+      "topic": "안전·사고",
+      "title": "신체억제대를 한 번 이상 사용한 시설",
+      "metric": "3,940곳",
+      "metricLabel": "2025년 5월 기준 전국 사용 시설",
+      "periodLabel": "2025년 5월 기준",
+      "rows": [
+        [
+          "노인요양시설",
+          "3,175곳"
+        ],
+        [
+          "노인요양공동생활가정",
+          "765곳"
+        ],
+        [
+          "합계",
+          "3,940곳"
+        ]
+      ],
+      "insight": "기사에 따르면 전국 3,940곳이 신체억제대를 한 번 이상 사용했습니다. 지역별로는 경기 1,429곳, 인천 270곳, 서울 266곳, 경북 263곳입니다.",
+      "action": "억제대 사용 자체와 학대 판정을 구분하고, 사용 사유·시간·관찰 기록 및 대안 검토 여부를 점검해 보세요.",
+      "caveat": "사용 시설 수이며 학대 판정 시설 수나 사용 횟수·입소자 비율이 아닙니다. 기사에 따르면 사용 중 상해·욕창·질식·사망 등 사고 현황은 당시 별도로 파악되지 않았습니다. 원자료는 직접 검증하지 못했습니다."
+    },
     {
       "id": "facility-evaluation",
       "documentId": "ltc-evaluation",

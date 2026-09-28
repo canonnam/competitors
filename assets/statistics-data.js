@@ -1,7 +1,7 @@
 /* Curated from the original PDFs. Capture provenance: STATISTICS_LIBRARY.md. */
 (function (root) {
   const data = {
-    reviewedAt: '2026-09-18',
+    reviewedAt: '2026-09-28',
     portalUrl: 'https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html',
     topics: ['기관평가', '안전·사고', '입소·수요', '돌봄·품질', '인력·운영', '디지털 돌봄'],
     documents: [
@@ -12,9 +12,40 @@
       {id:'family', title:'장기요양급여 이용자 가족의 서비스 이용 경험 및 서비스 개선 욕구', author:'이선희', published:'2024.02', survey:'2022년 장기요양실태조사', year:2022, pages:'24–35', pdfPages:14, topics:['입소·수요','돌봄·품질'], summary:'가족이 바라는 돌봄인력, 의료·간호서비스, 교육·정보를 살펴봅니다.', scope:'전국 장기요양급여 이용자 가족 조사. 교육·정보 문항은 해당 교육을 희망한 응답자만 분석합니다.', sourceUrl:'https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60134&volume=60128', downloadUrl:'https://repository.kihasa.re.kr/bitstream/201002/44671/1/2024.02.No.328.03.pdf'},
       {id:'quality', title:'장기요양기관의 서비스 질 관리 현황과 과제', author:'김세진', published:'2024.02', survey:'2022년 장기요양실태조사', year:2022, pages:'36–53', pdfPages:20, topics:['인력·운영','디지털 돌봄','돌봄·품질'], summary:'기관 규모별 추가 채용과 전문 돌봄, 디지털 기술 활용 수준을 확인합니다.', scope:'전국 장기요양기관 조사. 문항별 분석 기관 수가 다르며 당시의 운영 현황입니다.', sourceUrl:'https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60136&volume=60128', downloadUrl:'https://www.kihasa.re.kr/api/kihasa/file/download?seq=26096'},
       {id:'workforce', title:'장기요양요원의 근로 현황과 정책적 시사점', author:'남궁은하', published:'2024.02', survey:'2022년 장기요양실태조사', year:2022, pages:'54–70', pdfPages:19, topics:['인력·운영'], summary:'휴가 사용의 어려움, 휴게 공간과 근무시간 밖 연락 대응을 살펴봅니다.', scope:'전국 장기요양요원 4,302명 조사. 휴가 사용이 어려운 사람과 시설·주야간 종사자 등 문항별 대상이 다릅니다.', sourceUrl:'https://www.kihasa.re.kr/publish/regular/hsw/view?seq=60138&volume=60128', downloadUrl:'https://www.kihasa.re.kr/api/kihasa/file/download?seq=26098'},
-      {id:'housing', title:'노인의 생활환경과 노후생활 인식', author:'주보혜', published:'2024.11', survey:'2023년도 노인실태조사', year:2023, pages:'65–80', pdfPages:17, topics:['입소·수요','디지털 돌봄'], summary:'건강 변화에 따른 주거 선호와 안전 설비의 설치·필요성을 비교합니다.', scope:'전국 일반 가구의 65세 이상 노인 조사. 시설 거주자는 조사 대상에서 제외되며, 안양·인천의 입소 수요 추정치는 아닙니다.', sourceUrl:'https://www.kihasa.re.kr/publish/regular/hsw/view?seq=65814&volume=65802', downloadUrl:'https://repository.kihasa.re.kr/bitstream/201002/46105/1/2024.11.No.337.06.pdf'}
+      {id:'housing', title:'노인의 생활환경과 노후생활 인식', author:'주보혜', published:'2024.11', survey:'2023년도 노인실태조사', year:2023, pages:'65–80', pdfPages:17, topics:['입소·수요','디지털 돌봄'], summary:'건강 변화에 따른 주거 선호와 안전 설비의 설치·필요성을 비교합니다.', scope:'전국 일반 가구의 65세 이상 노인 조사. 시설 거주자는 조사 대상에서 제외되며, 안양·인천의 입소 수요 추정치는 아닙니다.', sourceUrl:'https://www.kihasa.re.kr/publish/regular/hsw/view?seq=65814&volume=65802', downloadUrl:'https://repository.kihasa.re.kr/bitstream/201002/46105/1/2024.11.No.337.06.pdf'},
+      {
+        id:'restraint-report-2026', format:'article',
+        title:'요양시설 신체 구속 학대 판정과 신체억제대 사용 현황',
+        author:'이태호', publisher:'검경일보', publication:'보도 기사 · 보건복지부 국회 제출자료 인용',
+        published:'2026.09', survey:'보건복지부 국회 제출자료(기사 인용)', year:2025,
+        periodLabel:'학대 판정 2023–2025년 / 억제대 사용 시설 2025년 5월',
+        topics:['안전·사고'],
+        summary:'소병훈 의원실이 보건복지부에서 받은 자료를 인용한 보도입니다. 신체 구속·감금 학대 판정 피해자 추이와 억제대 사용 시설 현황을 구분해 기록합니다.',
+        scope:'전국 노인의료복지시설 관련 보도 수치입니다. 기사의 원자료는 공개 링크로 확인되지 않아 기사에 명시된 수치와 범위만 옮겼습니다.',
+        sourceUrl:'https://www.ppnews.kr/news/articleView.html?idxno=89120'
+      }
     ],
     bookmarks: [
+      {
+        id:'restraint-abuse-victims', documentId:'restraint-report-2026', topic:'안전·사고',
+        title:'신체 구속·감금 학대 판정 피해자 수', metric:'184명',
+        metricLabel:'2025년 해당 지표의 학대 판정 피해노인',
+        periodLabel:'2023–2025년',
+        rows:[['2023년','72명'],['2024년','161명'],['2025년','184명']],
+        insight:'보건복지부 국회 제출자료를 인용한 기사에서, 노인의 신체를 구속하거나 제한된 공간에 가둔 학대 판정 지표의 피해노인은 2023년 72명, 2024년 161명, 2025년 184명입니다.',
+        action:'두 지점의 신체 제한 및 인권 보호 기록에서 사용 사유·시간·관찰·해제와 사후 점검이 남는지 확인해 보세요.',
+        caveat:'학대 판정 피해노인 수입니다. 전체 입소자 대비 발생률, 신체억제대 사용 중 사고 수 또는 더비다 지점의 발생 건수가 아닙니다. 수치는 기사 인용이며 원자료는 직접 검증하지 못했습니다.'
+      },
+      {
+        id:'restraint-use-facilities', documentId:'restraint-report-2026', topic:'안전·사고',
+        title:'신체억제대를 한 번 이상 사용한 시설', metric:'3,940곳',
+        metricLabel:'2025년 5월 기준 전국 사용 시설',
+        periodLabel:'2025년 5월 기준',
+        rows:[['노인요양시설','3,175곳'],['노인요양공동생활가정','765곳'],['합계','3,940곳']],
+        insight:'기사에 따르면 전국 3,940곳이 신체억제대를 한 번 이상 사용했습니다. 지역별로는 경기 1,429곳, 인천 270곳, 서울 266곳, 경북 263곳입니다.',
+        action:'억제대 사용 자체와 학대 판정을 구분하고, 사용 사유·시간·관찰 기록 및 대안 검토 여부를 점검해 보세요.',
+        caveat:'사용 시설 수이며 학대 판정 시설 수나 사용 횟수·입소자 비율이 아닙니다. 기사에 따르면 사용 중 상해·욕창·질식·사망 등 사고 현황은 당시 별도로 파악되지 않았습니다. 원자료는 직접 검증하지 못했습니다.'
+      },
       {"id":"facility-evaluation","documentId":"ltc-evaluation","topic":"기관평가","title":"시설 평가등급은 어떤 분포였을까","metric":"18.3%","metricLabel":"2021–2022년 시설 평가의 A등급 비율","periodLabel":"시설 평가 2021–2022년","pdfPage":140,"printedPage":101,"figure":"최근 5년간 장기요양기관 평가 결과","image":"/assets/statistics/facility-evaluation.png","capture":[215,270,1060,800],"insight":"보고서에 수록된 시설급여 4,423곳은 A 18.3%, B 29.6%, C 26.4%, D 15.0%, E 10.7%로 분포했습니다. 재가급여와 설립주체별 결과도 같은 표에서 확인할 수 있습니다.","action":"안양점·인천점의 평가 결과를 검토할 때 같은 급여유형과 평가 연도를 먼저 맞추고, 총점과 영역별 보완 항목을 함께 정리해 보세요.","caveat":"시설은 2021–2022년, 재가는 2023–2024년 평가입니다. 원문의 ‘최신’은 발간 당시 표현으로 현재 최신 시설 결과가 아닙니다. 설립주체별 차이를 운영 주체의 인과적 효과로 해석하지 않습니다.","alt":"장기요양기관 평가 결과 표. 시설 4,423곳 중 A 811곳 18.3%, B 1,311곳 29.6%, C 1,166곳 26.4%, D 662곳 15.0%, E 473곳 10.7%. 시설 기준 연도 2021–2022년."},
       {"id":"facility-safety","documentId":"ltc-safety","topic":"안전·사고","title":"안전사고를 경험한 기관은 얼마나 될까","metric":"63.4%","metricLabel":"50명 이상 시설 중 지난 1년간 안전사고 경험","pdfPage":571,"printedPage":545,"figure":"표 5-55","image":"/assets/statistics/facility-safety.png","capture":[210,265,1145,1015],"insight":"50명 이상 요양시설 71곳 중 63.4%가 지난 1년간 수급자 안전사고가 있었다고 응답했습니다. 30–49명 시설은 46.8%, 10–29명 시설은 32.5%입니다.","action":"두 지점에서 사고가 있었는지만 집계하는 데 그치지 않고, 발생 장소·시간대·상황과 월별 입소자 수를 함께 기록해 반복되는 조건을 살펴보세요.","caveat":"사고를 경험한 기관의 비율이며 입소자 개인의 사고 확률이 아닙니다. 규모와 이용자 구성, 노출 기간을 보정하지 않아 시설의 안전 수준을 순위로 비교할 수 없습니다.","alt":"지난 1년간 수급자 안전사고 여부 표. 전체 기관 1,953곳 중 21.0%, 10–29명 시설 32.5%, 30–49명 시설 46.8%, 50명 이상 시설 63.4%가 사고 경험. 2022년 7월 1일 기준."},
       {"id":"fall-repeat","documentId":"ltc-safety","topic":"안전·사고","title":"낙상은 발생 이후의 반복 양상도 살펴보기","metric":"3.7건","metricLabel":"낙상 경험이 있는 50명 이상 시설의 평균 건수","pdfPage":577,"printedPage":551,"figure":"표 5-58","image":"/assets/statistics/fall-repeat.png","capture":[210,265,1145,1040],"insight":"낙상 경험이 있는 50명 이상 요양시설 43곳의 지난 1년간 평균 낙상은 3.7건이며, 6건 이상은 11.6%였습니다. 낙상 경험이 있는 전체 기관 362곳의 평균은 1.8건입니다.","action":"낙상 기록을 장소·시간·활동별로 묶어 재발 조건을 살펴보고, 환경이나 지원 방식을 바꾼 뒤에도 같은 상황이 반복되는지 확인해 보세요.","caveat":"낙상이 한 번 이상 있었던 기관만의 평균입니다. 전체 시설의 평균이나 입소자 1인당 발생률이 아니며, 같은 입소자의 반복 낙상 여부도 이 표로는 알 수 없습니다.","alt":"낙상 건수 분포 표. 낙상 경험 기관 362곳 평균 1.8건, 50명 이상 요양시설 43곳 평균 3.7건, 6건 이상 11.6%. 표 주석의 분석 대상은 기관 362개소."},

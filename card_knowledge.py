@@ -36,7 +36,7 @@ ALIASES = {
     'search_visibility': ('검색현황', '검색노출', '검색순위', '노출현황', 'seo', 'aeo', 'geo', '챗지피티', 'chatgpt', 'gemini', '제미나이', 'ai언급', '웹언급', '미션'),
     'reputation': ('평판', '부정적언급', '부정언급', '불만', '악성리뷰'),
     'nearby': ('영업처', '주변', '인근', '가까운', '연락처', '전화번호', '지도'),
-    'statistics': ('통계', '책갈피', '조사자료', '보건사회연구원', '실태조사'),
+    'statistics': ('통계', '책갈피', '조사자료', '보건사회연구원', '실태조사', '신체억제대', '학대판정'),
     'competitor_uiux': ('uiux', '화면비교', 'ux비교', 'ui비교', '사용성비교'),
     'staff_eval': ('종사자평가', '요양보호사평가', '지침숙지', '상황판단평가'),
     'facility_acquisition': ('요양원인수', '요양원매입', '시설인수', '시설개설', '지정심사', '컨설팅제출서류', '허가절차', '건물도면', '인수체크리스트'),
@@ -314,12 +314,13 @@ def statistics(question):
         raise ValueError('Statistics export is stale')
     docs = {d['id']: d for d in data['documents']}
     result = [evidence('statistics', '통계자료·책갈피 목록',
-        '원문 전체가 아닌 카드의 검토된 발췌입니다. 발행일·조사연도·대상·분모를 구분하며 전국 통계를 두 지점의 실적으로 해석하지 마세요.\n' +
+        '원문 전체가 아닌 카드의 검토된 발췌입니다. 발행일·조사연도·대상·분모를 구분하며 전국 통계를 두 지점의 실적으로 해석하지 마세요. 기사 인용 통계는 원자료를 직접 검증하지 못했습니다.\n' +
         dump([fields(d, 'title published survey publisher summary scope') for d in docs.values()]), data['reviewedAt'])]
     for row in ranked(question, data['bookmarks'], lambda r: dump(fields(r, 'title topic insight metricLabel')), 6):
         doc = docs[row['documentId']]
-        result.append(evidence('statistics', row['title'], dump({'문헌': fields(doc, 'title published survey publisher scope'),
-            '발췌': fields(row, 'metric metricLabel insight action caveat pdfPage printedPage figure')}),
+        result.append(evidence('statistics', row['title'], dump({'자료유형': '보도 기사 인용' if doc.get('format') == 'article' else '공식 발간물 원문 발췌',
+            '출처': fields(doc, 'title published survey publisher scope'),
+            '통계': fields(row, 'metric metricLabel rows insight action caveat pdfPage printedPage figure')}),
             data['reviewedAt'], url=safe_url(doc.get('sourceUrl'))))
     return result
 

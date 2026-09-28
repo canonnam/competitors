@@ -1,0 +1,21 @@
+{
+  "reviewedAt": "2026-09-28",
+  "articles": [
+    {
+      "id": "restraint-report-2026",
+      "url": "https://www.ppnews.kr/news/articleView.html?idxno=89120",
+      "title": "소병훈 국회의원, 요양시설 신체 구속 학대 판정 피해 3년 연속 증가",
+      "publisher": "검경일보",
+      "author": "이태호",
+      "publishedAt": "2026-09-27T21:41:57+09:00",
+      "attribution": "소병훈 의원실이 보건복지부에서 제출받은 자료를 기사에서 인용",
+      "primaryMaterialAvailable": false,
+      "figures": {
+        "abuseVictimsByYear": {"2023": 72, "2024": 161, "2025": 184},
+        "facilitiesEverUsingRestraintsAsOf2025May": {"nursingHomes": 3175, "groupHomes": 765, "total": 3940},
+        "facilityUseByRegionAsOf2025May": {"Gyeonggi": 1429, "Incheon": 270, "Seoul": 266, "Gyeongbuk": 263}
+      },
+      "interpretation": "학대 판정 피해노인과 신체억제대 사용 시설은 서로 다른 지표다. 기사에 따르면 사용 중 사고 통계는 당시 별도 집계되지 않았다."
+    }
+  ]
+}

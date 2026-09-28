@@ -14,7 +14,7 @@
       const doc = view === 'documents' ? item : docs.get(item.documentId);
       if (topic && !(view === 'documents' ? item.topics.includes(topic) : item.topic === topic)) return false;
       if (view === 'bookmarks' && ((savedOnly && !saved.has(item.id)) || (documentId && item.documentId !== documentId))) return false;
-      const haystack = normalize([doc.title, doc.author, doc.publisher, doc.survey, doc.published, doc.summary, ...(doc.topics || []), item.title, item.insight, item.action, item.figure, item.metric, item.metricLabel].join(' '));
+      const haystack = normalize([doc.title, doc.author, doc.publisher, doc.survey, doc.published, doc.summary, ...(doc.topics || []), item.title, item.insight, item.action, item.figure, item.metric, item.metricLabel, ...(item.rows || []).flat()].join(' '));
       return words.every(word => haystack.includes(word));
     });
   }
@@ -28,28 +28,32 @@
   const state = {view:'bookmarks',query:'',topic:'',savedOnly:false,documentId:''};
   let activeBookmark = null, toastTimer;
   const saveButton = item => `<button class="save-button" data-save="${item.id}" aria-pressed="${saved.has(item.id)}" aria-label="${escape(item.title)} ${saved.has(item.id) ? '저장 해제' : '책갈피 저장'}">${icon}<span>${saved.has(item.id) ? '저장됨' : '저장'}</span></button>`;
-  const pdfLink = item => docs.get(item.documentId).downloadUrl + '#page=' + item.pdfPage;
+  const sourceLink = item => {
+    const doc = docs.get(item.documentId);
+    return doc.format === 'article' ? doc.sourceUrl : doc.downloadUrl + '#page=' + item.pdfPage;
+  };
   const external = (url, label, cls='') => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${escape(label)}</a>`;
   const publisher = doc => doc.publisher || '한국보건사회연구원';
   const publication = doc => doc.publication || '보건복지포럼';
   const period = (doc, item) => (item && item.periodLabel) || doc.periodLabel || `조사 ${doc.year}년`;
   const relatedSource = doc => doc.relatedUrl ? `<div class="related-source">${external(doc.relatedUrl,doc.relatedLabel)}<p>${escape(doc.relatedNote)}</p></div>` : '';
+  const reportTable = item => `<div class="report-panel"><span class="report-kind">기사 인용 통계</span><strong>${escape(item.metric)}</strong><span>${escape(item.metricLabel)}</span><table><caption class="sr-only">${escape(item.title)}</caption><tbody>${item.rows.map(([label,value]) => `<tr><th scope="row">${escape(label)}</th><td>${escape(value)}</td></tr>`).join('')}</tbody></table></div>`;
   function bookmarkCard(item) {
     const doc = docs.get(item.documentId);
     return `<article class="bookmark-card" id="${item.id}">
-      <button class="capture-button" data-open="${item.id}" aria-label="${escape(item.title)} 원문 캡처 확대"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}" loading="lazy"><span>원문 캡처 확대 ↗</span></button>
+      ${item.rows ? reportTable(item) : `<button class="capture-button" data-open="${item.id}" aria-label="${escape(item.title)} 원문 캡처 확대"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}" loading="lazy"><span>원문 캡처 확대 ↗</span></button>`}
       <div class="bookmark-content"><div class="bookmark-top"><span class="topic-tag">${item.topic}</span>${saveButton(item)}</div>
       <h3><button data-open="${item.id}">${item.title}</button></h3><p class="insight">${item.insight}</p>
       <div class="application"><strong>현장에서 살펴볼 점</strong>${item.action}</div><p class="caveat">${item.caveat}</p>
-      <div class="bookmark-source"><span>${doc.survey} · ${doc.author} · 발행 ${doc.published}</span>${external(pdfLink(item), `원문 ${item.printedPage}쪽 · ${item.figure} 보기 ↗`)}<span>PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · ${publisher(doc)}</span></div>${relatedSource(doc)}</div></article>`;
+      <div class="bookmark-source"><span>${doc.survey} · ${doc.author} · 발행 ${doc.published}</span>${external(sourceLink(item), doc.format === 'article' ? '보도 기사 원문 보기 ↗' : `원문 ${item.printedPage}쪽 · ${item.figure} 보기 ↗`)}<span>${doc.format === 'article' ? '기사 인용 · 보건복지부 국회 제출자료' : `PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · ${publisher(doc)}`}</span></div>${relatedSource(doc)}</div></article>`;
   }
   function documentCard(doc) {
     const count = data.bookmarks.filter(item => item.documentId === doc.id).length;
     return `<article class="document-card"><div class="doc-number" aria-hidden="true">${String(data.documents.indexOf(doc)+1).padStart(2,'0')}</div><div>
       <div class="doc-meta">${publication(doc)} · ${publisher(doc)} · ${doc.author}</div><h3>${doc.title}</h3><p>${doc.summary}</p>
-      <div class="doc-meta">${period(doc)} · 발행 ${doc.published} · 본문 ${doc.pages}쪽 · PDF ${doc.pdfPages}페이지</div><p>${doc.scope}</p>${relatedSource(doc)}
+      <div class="doc-meta">${period(doc)} · 발행 ${doc.published}${doc.format === 'article' ? ' · 기사 인용' : ` · 본문 ${doc.pages}쪽 · PDF ${doc.pdfPages}페이지`}</div><p>${doc.scope}</p>${relatedSource(doc)}
       <div>${doc.topics.map(topic => `<span class="topic-tag">${topic}</span>`).join(' ')}</div></div><div class="doc-actions">
-      ${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link primary')}${external(doc.sourceUrl,'발행기관 자료 페이지 ↗','action-link')}<button data-document="${doc.id}">선정한 책갈피 ${count}개 보기 →</button></div></article>`;
+      ${doc.format === 'article' ? external(doc.sourceUrl,'보도 기사 원문 ↗','action-link primary') : `${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link primary')}${external(doc.sourceUrl,'발행기관 자료 페이지 ↗','action-link')}`}<button data-document="${doc.id}">선정한 책갈피 ${count}개 보기 →</button></div></article>`;
   }
   function updateSavedButtons() {
     document.querySelectorAll('[data-save]').forEach(button => {
@@ -70,8 +74,8 @@
     $('bookmarks-tab').setAttribute('aria-pressed',String(isBookmarks));
     $('documents-tab').setAttribute('aria-pressed',String(!isBookmarks));
     document.querySelectorAll('[data-topic]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.topic === state.topic)));
-    $('results-count').textContent = `${state.documentId ? docs.get(state.documentId).title + ' · ' : ''}${isBookmarks ? '책갈피' : '문서'} ${items.length}개`;
-    $('results-hint').textContent = isBookmarks ? '표·그래프를 누르면 크게 볼 수 있습니다.' : '원문은 공식 자료 제공 사이트에서 열립니다.';
+    $('results-count').textContent = `${state.documentId ? docs.get(state.documentId).title + ' · ' : ''}${isBookmarks ? '책갈피' : '자료'} ${items.length}개`;
+    $('results-hint').textContent = isBookmarks ? '제목을 누르면 출처와 해석을 자세히 볼 수 있습니다.' : 'PDF와 보도 기사 원문은 새 창에서 열립니다.';
     $(isBookmarks ? 'bookmarks-view' : 'documents-view').innerHTML = items.map(isBookmarks ? bookmarkCard : documentCard).join('');
     $('empty-state').hidden = items.length !== 0;
     $('empty-message').textContent = state.savedOnly && !saved.size ? '마음에 드는 자료에서 저장 버튼을 눌러보세요. 이 브라우저에 보관됩니다.' : '검색어를 줄이거나 다른 주제를 선택해 보세요.';
@@ -84,9 +88,9 @@
     const doc = docs.get(item.documentId);
     $('capture-title').textContent = item.title;
     $('capture-topic').textContent = `${item.topic} · ${period(doc,item)}`;
-    $('capture-content').innerHTML = `<figure class="dialog-figure"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}"><figcaption>${doc.author}, 「${doc.title}」, ${publication(doc)} ${doc.published}, ${publisher(doc)}.<br>본문 ${item.printedPage}쪽 ${item.figure} · PDF ${item.pdfPage}페이지 / ${doc.pdfPages}. 제목·단위·주석을 포함한 원문 발췌.</figcaption></figure>
+    $('capture-content').innerHTML = `${item.rows ? reportTable(item) : `<figure class="dialog-figure"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}"><figcaption>${doc.author}, 「${doc.title}」, ${publication(doc)} ${doc.published}, ${publisher(doc)}.<br>본문 ${item.printedPage}쪽 ${item.figure} · PDF ${item.pdfPage}페이지 / ${doc.pdfPages}. 제목·단위·주석을 포함한 원문 발췌.</figcaption></figure>`}
       <div class="dialog-copy"><p class="insight">${item.insight}</p><div class="application"><strong>현장에서 살펴볼 점 · 더비다의 활용 아이디어</strong>${item.action}</div><p class="caveat">${item.caveat}</p><p class="dialog-document">${doc.scope}</p>${relatedSource(doc)}</div>
-      <div class="dialog-actions">${external(pdfLink(item),'해당 페이지 원문 ↗','action-link primary')}${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link')}${external(item.image,'캡처 크게 열기 ↗','action-link')}${saveButton(item)}</div>`;
+      <div class="dialog-actions">${external(sourceLink(item),doc.format === 'article' ? '보도 기사 원문 ↗' : '해당 페이지 원문 ↗','action-link primary')}${doc.format === 'article' ? '' : `${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link')}${external(item.image,'캡처 크게 열기 ↗','action-link')}`}${saveButton(item)}</div>`;
     const dialog = $('capture-dialog');
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
@@ -105,8 +109,8 @@
     notify(persistent ? (saved.has(id) ? '이 브라우저에 책갈피를 저장했습니다.' : '저장한 책갈피를 해제했습니다.') : '브라우저 저장이 제한되어 이번 화면에서만 유지됩니다.');
   }
   $('topics').innerHTML = ['',...data.topics].map(topic => `<button class="topic-button" data-topic="${topic}" aria-pressed="${!topic}">${topic || '전체'}</button>`).join('');
-  $('document-total').textContent = `선정 문서 ${data.documents.length}편`;
-  $('bookmark-total').textContent = `원문 책갈피 ${data.bookmarks.length}개`;
+  $('document-total').textContent = `선정 자료 ${data.documents.length}편`;
+  $('bookmark-total').textContent = `통계 책갈피 ${data.bookmarks.length}개`;
   $('documents-tab').querySelector('.tab-count').textContent = data.documents.length;
   $('bookmarks-tab').querySelector('.tab-count').textContent = data.bookmarks.length;
   const highlights = {'choosing-a-home':'입소 상담','facility-evaluation':'기관평가의 분포','fall-repeat':'낙상 기록'};

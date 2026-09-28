@@ -14,3 +14,7 @@
 ## Existing application
 
 This repository is the existing Python/static application served at `app.aivida.tech`. Preserve its architecture and Railway deployment flow; do not initialize a replacement app or migrate hosting to perform a UI edit. Do not change secrets, storage, collectors, business calculations, or authentication as part of styling work.
+
+## Change history
+
+For every site change, update `docs/CHANGELOG.md` in the same commit with the user-visible change, source or reason, verification, and deployment result. If runtime, local setup, or deployment details change, also update `docs/DEVELOPMENT_ENVIRONMENT.md`. Git remains the exact file-level history; the Markdown log is the human-readable history. Never record secret values or personal data.

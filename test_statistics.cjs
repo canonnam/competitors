@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const data = require('./assets/statistics-data.js');
 const {readSaved, filterItems} = require('./assets/statistics.js');
 const manifest = JSON.parse(fs.readFileSync('data/statistics_sources.json', 'utf8'));
+const articleSources = JSON.parse(fs.readFileSync('data/statistics_article_sources.json', 'utf8'));
 
 // Corrupt/stale browser storage must not break the page or introduce unknown IDs.
 assert.deepEqual([...readSaved('not json')], []);
@@ -16,10 +17,12 @@ assert.deepEqual(filterItems({query:'ＩＣＴ'}).map(x=>x.id), ['digital-care']
 assert.equal(filterItems({query:'없는통계검색어'}).length, 0);
 assert.equal(filterItems({documentId:'housing'}).length, 2);
 assert.equal(filterItems({documentId:'ltc-2025'}).length, 12);
+assert.equal(filterItems({documentId:'restraint-report-2026'}).length, 2);
+assert.deepEqual(filterItems({query:'인천 270'}).map(x=>x.id), ['restraint-use-facilities']);
 assert.deepEqual(filterItems({view:'documents',query:'2023'}).map(x=>x.id), ['ltc-evaluation','housing']);
 assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 3);
 assert.deepEqual(filterItems({topic:'기관평가'}).map(x=>x.id), ['facility-evaluation']);
-assert.equal(filterItems({topic:'안전·사고'}).length, 6);
+assert.equal(filterItems({topic:'안전·사고'}).length, 8);
 assert.deepEqual(filterItems({topic:'안전·사고',query:'낙상 재발'}).map(x=>x.id), ['fall-repeat']);
 assert.deepEqual(filterItems({view:'documents',query:'국회예산정책처'}).map(x=>x.id), ['ltc-evaluation']);
 assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing-a-home','fall-repeat']);
@@ -28,6 +31,14 @@ assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing
 assert.equal(new Set(data.documents.map(x=>x.id)).size,data.documents.length);
 assert.equal(new Set(data.bookmarks.map(x=>x.id)).size,data.bookmarks.length);
 for (const doc of data.documents) {
+  if (doc.format === 'article') {
+    const source = articleSources.articles.find(x=>x.id===doc.id);
+    assert.ok(source);
+    assert.equal(source.url,doc.sourceUrl);
+    assert.equal(source.primaryMaterialAvailable,false);
+    assert.equal(new URL(doc.sourceUrl).hostname,'www.ppnews.kr');
+    continue;
+  }
   const source = manifest.documents.find(x=>x.id===doc.id);
   assert.ok(source);
   assert.equal(source.downloadUrl,doc.downloadUrl);
@@ -41,6 +52,13 @@ for (const doc of data.documents) {
   assert.ok(doc.year <= Number(doc.published.slice(0,4)));
 }
 for (const item of data.bookmarks) {
+  if (item.rows) {
+    assert.ok(data.topics.includes(item.topic));
+    assert.ok(item.rows.length >= 3);
+    assert.ok(item.rows.every(row => row.length === 2));
+    for (const field of ['insight','action','caveat']) assert.ok(item[field].length>20);
+    continue;
+  }
   const source = manifest.documents.find(x=>x.id===item.documentId);
   const capture = source.captures.find(x=>x.id===item.id);
   assert.ok(data.topics.includes(item.topic));
@@ -56,4 +74,6 @@ for (const item of data.bookmarks) {
   assert.equal(png.readUInt32BE(20),item.capture[3]-item.capture[1]);
   for (const field of ['insight','action','caveat','alt']) assert.ok(item[field].length>20);
 }
-console.log(`Statistics: filters, saved state and provenance verified (${data.documents.length} documents, ${data.bookmarks.length} captures).`);
+assert.deepEqual(articleSources.articles[0].figures.abuseVictimsByYear, {'2023':72,'2024':161,'2025':184});
+assert.equal(articleSources.articles[0].figures.facilitiesEverUsingRestraintsAsOf2025May.nursingHomes + articleSources.articles[0].figures.facilitiesEverUsingRestraintsAsOf2025May.groupHomes, 3940);
+console.log(`Statistics: filters, saved state and provenance verified (${data.documents.length} sources, ${data.bookmarks.length} bookmarks).`);
