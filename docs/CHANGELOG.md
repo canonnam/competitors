@@ -9,7 +9,8 @@
 - 보건복지부가 국회에 제출한 자료를 인용한 [검경일보 기사](https://www.ppnews.kr/news/articleView.html?idxno=89120)의 신체 구속·감금 학대 판정 피해노인 수(2023년 72명, 2024년 161명, 2025년 184명)와 2025년 5월 신체억제대 사용 시설 수(3,940곳)를 통계자료 책갈피에 추가했다.
 - 보도 기사 인용임을 화면에 표시하고 공식 PDF 원문 캡처와 다른 형식으로 보여준다. 사용 시설 수를 학대 판정 시설 수 또는 사고율로 해석하지 않도록 주의 문구를 넣었다. 공개 원자료는 직접 검증하지 못했다.
 - 기사 메타데이터와 수치의 계보를 `data/statistics_article_sources.json`에 저장하고 검색·책갈피·지식 창고 데이터 내보내기에 연결했다.
-- 검증: `node test_statistics.cjs`, `node scripts/build_service_catalogs.cjs --check`, `python -m unittest test_ui_consistency.py test_static_pages.py` 통과. 로컬 브라우저에서 검색·상세 보기·좁은 화면을 확인했다. `test_card_knowledge.py`의 홈페이지 카드 등록 검사 1건은 수정 전 `petdev`에서도 같은 3개 페이지 등록 누락으로 실패한다. 배포 결과는 본 항목의 후속 기록에 남긴다.
+- 검증: `node test_statistics.cjs`, `node scripts/build_service_catalogs.cjs --check`, `python -m unittest test_ui_consistency.py test_static_pages.py` 통과. 로컬 브라우저에서 검색·상세 보기·좁은 화면을 확인했다. `test_card_knowledge.py`의 홈페이지 카드 등록 검사 1건은 수정 전 `petdev`에서도 같은 3개 페이지 등록 누락으로 실패한다.
+- 배포: 커밋 `de17e88`을 `petdev`에 반영했다. Railway `competitors`/`dev`에서 배포 성공 및 활성 상태를 확인했고, [운영 통계자료](https://app.aivida.tech/statistics.html)에서 기사 인용 카드 2개, 9개 출처·29개 책갈피, `억제대` 검색 결과를 확인했다.
 
 ## 이전 변경
 
