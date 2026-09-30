@@ -14,13 +14,14 @@
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
-  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20260930-1">
+  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261001-auto1">
   <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
   <script src="/assets/site.js" defer></script><script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
-  <script src="/assets/navigation.js?v=20260930-3d" defer></script>
-  <script src="/assets/facility-3d-model.js?v=20260930-1" defer></script>
+  <script src="/assets/navigation.js?v=20261001-auto" defer></script>
+  <script src="/assets/facility-3d-model.js?v=20261001-auto1" defer></script>
+  <script src="/assets/facility-3d-detect.js?v=20261001-auto1" defer></script>
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="/assets/facility-3d.js?v=20260930-1"></script>
+  <script type="module" src="/assets/facility-3d.js?v=20261001-auto1"></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
 <body class="kb-detail" data-feedback-page="facility-3d">
@@ -33,7 +34,7 @@
     <section class="f3-project-bar" aria-label="건물 선택과 저장">
       <label class="f3-project-select">건물<select id="project-select" aria-label="건물 선택"></select></label>
       <span id="project-summary" class="f3-project-summary"></span>
-      <div class="f3-project-actions"><button class="ui-button" id="save-project" type="button">저장</button><button class="ui-button" id="export-project" type="button">파일로 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button></div>
+      <div class="f3-project-actions"><button class="ui-button" id="save-project" type="button">저장</button><button class="ui-button" id="export-project" type="button">파일로 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button><button class="ui-button f3-delete" id="delete-project" type="button">건물 삭제</button><button class="ui-button" id="undo-project" type="button" hidden>삭제 되돌리기</button></div>
     </section>
     <div class="f3-workspace">
       <section class="f3-viewer" aria-label="건물과 층별 공간">
@@ -55,10 +56,22 @@
       </aside>
     </div>
     <p class="f3-status ui-status" id="project-status" role="status" aria-live="polite">5층 예시 건물입니다. 실제 지점 도면은 ‘새 건물 구성’에서 시작하세요.</p>
-    <section class="f3-floor-tools" aria-labelledby="floor-tools-title"><div class="f3-section-title"><div><h2 id="floor-tools-title">층별 도면 구성</h2><p class="f3-small">도면 이미지를 기준으로 평면 편집에서 공간의 두 모서리를 지정하세요.</p></div></div><div class="f3-floor-tools-row"><label>선택 층 이름<input id="floor-name" maxlength="80"></label><button class="ui-button" id="apply-floor-name" type="button">이름 적용</button><button class="ui-button" id="upload-image" type="button">도면 이미지 등록</button><button class="ui-button" id="remove-image" type="button" hidden>이미지 제거</button><span id="image-status" class="f3-small">등록한 이미지 없음</span></div><p class="f3-small">JPG·PNG·WEBP 지원 · 도면 이미지는 자동으로 벽을 변환하지 않으며, 공간 위치를 직접 지정할 수 있습니다. 저장은 현재 브라우저에 보관됩니다.</p></section>
-    <input id="image-file" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="project-file" type="file" accept=".json,application/json" hidden>
+    <section class="f3-floor-tools" aria-labelledby="floor-tools-title"><div class="f3-section-title"><div><h2 id="floor-tools-title">층별 도면 구성</h2><p class="f3-small">이미지·PDF 도면에서 공간과 이름을 찾아 초안을 만들거나, 평면에서 직접 지정하세요.</p></div></div><div class="f3-floor-tools-row"><label>선택 층 이름<input id="floor-name" maxlength="80"></label><button class="ui-button" id="apply-floor-name" type="button">이름 적용</button><button class="ui-button" id="upload-image" type="button">도면 이미지·PDF 등록</button><button class="ui-button" id="auto-from-image" type="button" disabled>도면 자동 구성</button><button class="ui-button" id="demo-plan" type="button">자동 구성 예시</button><button class="ui-button" id="remove-image" type="button" hidden>이미지 제거</button><span id="image-status" class="f3-small">등록한 이미지 없음</span></div><p class="f3-small">JPG·PNG·WEBP 10MB · PDF 20MB 지원. 닫힌 사각형 공간을 찾고 도면 이름을 연결합니다. 흐린 선·열린 경계·복잡한 형태는 수동 보정이 필요합니다. 저장은 현재 브라우저에 보관됩니다.</p></section>
+    <input id="image-file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.pdf" hidden><input id="project-file" type="file" accept=".json,application/json" hidden>
     <noscript><p>3D 도면을 사용하려면 브라우저에서 JavaScript를 사용할 수 있어야 합니다.</p></noscript>
   </main>
   <dialog id="new-building-dialog" class="f3-dialog" aria-labelledby="new-building-title"><form id="new-building-form"><h2 id="new-building-title">새 건물 구성</h2><p>층 수를 정하고, 각 층에 공간을 추가하세요. 길이를 모르면 예시 크기로 시작할 수 있습니다.</p><label>건물 이름<input name="name" maxlength="80" placeholder="예: 인천점" required></label><label>층 수<input name="count" type="number" min="1" max="12" step="1" value="5" required></label><div class="f3-two-fields"><label>가로 (m, 선택)<input name="width" type="number" min="4" max="120" step="0.1" placeholder="미입력 시 24"></label><label>세로 (m, 선택)<input name="depth" type="number" min="4" max="120" step="0.1" placeholder="미입력 시 16"></label></div><p class="f3-small">미입력 치수와 층 높이 3.2m는 공간 구성용 예시입니다.</p><p id="new-building-error" role="status"></p><div class="f3-form-actions"><button class="ui-button" id="cancel-building" type="button">취소</button><button class="ui-button ui-button--primary" type="submit">구성 시작</button></div></form></dialog>
+
+  <dialog id="auto-dialog" class="f3-dialog f3-auto-dialog" aria-labelledby="auto-title">
+    <h2 id="auto-title">도면 자동 구성</h2><p>공간 후보를 확인하고 이름·용도를 고친 뒤 추가하세요. 기존 공간과 겹치는 후보는 교체를 선택해야 적용됩니다.</p>
+    <div class="f3-auto-controls"><label>문 틈 메우기<select id="auto-gap"><option value="0.012">작게</option><option value="0.035" selected>보통</option><option value="0.06">크게</option></select></label><label class="f3-check"><input type="checkbox" id="auto-names" checked>공간 이름 읽기</label><button class="ui-button" id="auto-analyze" type="button">다시 분석</button></div>
+    <p id="auto-status" class="ui-status" role="status" aria-live="polite"></p><canvas id="auto-preview" aria-label="도면 위 자동 공간 후보의 번호와 위치"></canvas>
+    <label id="auto-replace-field" class="f3-check" hidden><input id="auto-replace" type="checkbox">이 층의 기존 공간을 새 초안으로 교체</label>
+    <div id="auto-list" class="f3-auto-list" aria-label="공간 후보 선택과 수정"></div>
+    <div class="f3-form-actions"><button class="ui-button" id="auto-close" type="button">나중에 구성</button><button class="ui-button ui-button--primary" id="auto-apply" type="button" disabled>선택 공간 추가</button></div>
+  </dialog>
+  <dialog id="pdf-dialog" class="f3-dialog f3-pdf-dialog" aria-labelledby="pdf-title"><h2 id="pdf-title">PDF 페이지 선택</h2><p id="pdf-name"></p><label>선택 층에 등록할 페이지<select id="pdf-page"></select></label><p id="pdf-status" role="status" aria-live="polite"></p><img id="pdf-preview" alt="선택한 PDF 도면 페이지"><div class="f3-form-actions"><button class="ui-button" id="pdf-close" type="button">취소</button><button class="ui-button ui-button--primary" id="pdf-use" type="button" disabled>이 페이지로 자동 구성</button></div></dialog>
+  <dialog id="demo-dialog" class="f3-dialog" aria-labelledby="demo-title"><h2 id="demo-title">자동 구성 예시</h2><p>공간 이름이 있는 예시 도면으로 새 건물을 만들어 자동 구성을 체험합니다.</p><div class="f3-form-actions"><button class="ui-button" id="demo-close" type="button">취소</button><button class="ui-button" id="demo-image" type="button">이미지 도면</button><button class="ui-button" id="demo-pdf" type="button">PDF 도면</button></div></dialog>
+  <dialog id="delete-building-dialog" class="f3-dialog" aria-labelledby="delete-building-title"><h2 id="delete-building-title">건물을 삭제할까요?</h2><p id="delete-building-name"></p><p>현재 브라우저의 건물과 층별 도면을 삭제합니다. 새로고침 전에는 가장 최근 삭제한 건물을 되돌릴 수 있습니다.</p><div class="f3-form-actions"><button class="ui-button" id="cancel-delete-building" type="button">취소</button><button class="ui-button f3-delete" id="confirm-delete-building" type="button">건물 삭제</button></div></dialog>
 </body>
 </html>

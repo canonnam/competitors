@@ -5,8 +5,8 @@
   else root.FacilityModel = api;
 })(typeof window === 'undefined' ? globalThis : window, function() {
   'use strict';
-  const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기'};
-  const COLORS = {living:'#dbe8f1', office:'#e8e4f3', common:'#e0eddf', service:'#f1e8d7', core:'#e1e5eb'};
+  const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기', corridor:'복도', unknown:'용도 미지정'};
+  const COLORS = {living:'#dbe8f1', office:'#e8e4f3', common:'#e0eddf', service:'#f1e8d7', core:'#e1e5eb', corridor:'#edf0f3', unknown:'#e6eaf0'};
   const uid = () => 'space-' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
   const text = (value, fallback) => String(value ?? fallback).trim().slice(0,80) || fallback;
   function number(value, min, max, label) {
@@ -68,6 +68,10 @@
       if(floor.image) {
         if(typeof floor.image.src!=='string' || floor.image.src.length>1800000 || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(floor.image.src)) throw new Error('도면 이미지 형식을 확인해주세요.');
         image={src:floor.image.src,name:text(floor.image.name,'층 도면'),aspect:number(floor.image.aspect,0.05,20,'도면 비율')};
+        if(floor.image.labels) {
+          if(!Array.isArray(floor.image.labels)||floor.image.labels.length>500)throw new Error('도면 글자 정보를 확인해주세요.');
+          image.labels=floor.image.labels.map(label=>({text:text(label.text,''),x:number(label.x,0,1,'글자 위치'),y:number(label.y,0,1,'글자 위치'),confidence:number(label.confidence,0,100,'글자 인식값')}));
+        }
       }
       return {id,level:i+1,name:text(floor.name,(i+1)+'층'),rooms,image};
     });

@@ -1,6 +1,6 @@
 # 더비다 지식 창고 개발 환경
 
-확인일: 2026-09-30. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
+확인일: 2026-10-01. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
 ## 저장소와 실행 구조
 
@@ -45,9 +45,14 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - `assets/vendor/three/`: 공식 npm 배포의 Three.js 0.186.1과 OrbitControls를 보관한다. 출처·MIT 라이선스는 해당 폴더에 포함한다. 기존 정적 파일로 제공하며 추가 빌드나 외부 CDN 요청은 필요하지 않다.
 - WebGL2를 지원하는 브라우저에서 3D를 제공하고, 지원하지 않으면 선택 층의 2D 평면으로 표시한다.
 - 건물은 1~12층, 층별 공간은 최대 40개다. 치수를 생략하면 24×16m, 층 높이 3.2m를 예시로 사용하고 추정 크기로 표시한다.
-- 도면 이미지는 JPG·PNG·WEBP 10MB까지 받으며 긴 변 1,500px 이하로 줄여 JSON에 포함한다. 자동 벽 인식은 수행하지 않으며 평면 편집에서 공간의 두 모서리를 지정한다. JSON 가져오기는 25MB까지 허용하고 이미지 데이터와 공간 경계를 검증한다.
+- 도면 이미지는 JPG·PNG·WEBP 10MB까지 받으며 긴 변 1,500px 이하로 줄여 JSON에 포함한다. PDF는 20MB·200페이지까지 받아 선택한 한 페이지를 해당 층에 등록한다. JSON 가져오기는 25MB까지 허용하고 이미지 데이터와 공간 경계를 검증한다.
+- `assets/facility-3d-detect.js`는 긴 벽 선을 추출하고 문 틈을 메운 뒤 닫힌 사각형 영역을 공간 후보로 만든다. 인식되지 않는 경계·비정형 공간은 직접 구성한다. 후보는 최대 40개이며 사용자 확인 후 추가한다. 기존 공간 교체는 별도로 선택해야 한다.
+- `assets/facility-3d-import.js`는 PDF.js 6.3.289로 페이지를 그리고 글자 위치를 읽는다. 이미지와 스캔 PDF는 Tesseract.js 6.0.1, core 6.1.2와 공식 한국어·영어 tessdata_fast 자료로 OCR을 수행한다. 글자의 중심이 공간 안에 있는 경우 이름을 연결하고 용도를 추정한다. 고유한 OCR 오탈자 보정 제안은 원문을 함께 표시한다. 모든 작업은 브라우저에서 수행하며 원본 도면을 외부 API로 전송하지 않는다.
+- PDF/OCR 파일은 `assets/vendor/pdfjs`, `assets/vendor/tesseract`에 공식 배포 출처·라이선스와 함께 보관한다. `scripts/prepare_facility_vision.py`로 준비하며 Docker 빌드에서 내려받지 않는다. 이 폴더의 필요한 바이너리와 `example-floorplan.pdf`만 서버 공개 파일 목록에 추가한다.
+- `자동 구성 예시`는 실제 지점 자료를 포함하지 않는 합성 이미지와 두 페이지 PDF를 일반 파일 처리 경로로 분석한다. 재생성은 `scripts/generate_facility_example.py`를 사용한다.
+- 건물 삭제는 현재 브라우저 저장소의 선택 건물을 제거한다. 삭제 직전 화면 상태와 원래 저장본을 분리해 기억하고, 새로고침 전까지 가장 최근 삭제를 되돌릴 수 있다. 저장하지 않은 편집은 복구 시에도 미저장 상태로 유지한다.
 - 저장은 현재 사이트·브라우저의 `localStorage` 키 `vida-facility-3d-v1`에 최대 8개 건물까지 보관한다. 용량 부족·차단 시 안내하고 파일 내보내기를 제공한다. 서버나 ERP에 도면·입소자 정보는 전송하지 않는다.
-- 검증: `node --test test_facility_3d.cjs test_navigation.cjs test_dashboard.cjs`, `python -m unittest test_ui_consistency.py test_static_pages.py test_card_knowledge.CardKnowledgeTests.test_every_new_card_routes_without_operating_false_positive`.
+- 검증: `node --test test_facility_detection.cjs test_facility_3d.cjs test_navigation.cjs test_dashboard.cjs`, `python -m unittest test_facility_assets.py test_ui_consistency.py test_static_pages.py test_card_knowledge.CardKnowledgeTests.test_every_new_card_routes_without_operating_false_positive`.
 
 ## 배포와 확인
 

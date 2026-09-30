@@ -1,3 +1,4 @@
+import {initImport} from './facility-3d-import.js?v=20261001-auto1';
 /* Browser-local facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
@@ -14,7 +15,7 @@ let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedF
 let drawing = false, startPoint = null, downPoint = null, showNames = true, showWalls = true;
 let THREE, OrbitControls, renderer, scene, camera, controls, root, grid, raycaster, preview;
 let floorGroups = [], pickTargets = [], labelSprites = [], generation = 0, needsRender = true;
-let fallback = false, imageBusy = false, fallbackCanvas = null, fallbackRevision = 0;
+let fallback = false, fallbackCanvas = null, fallbackRevision = 0;
 const canvas = $('space-canvas'), viewport = $('viewport');
 const floor = () => project.floors[selectedFloor-1];
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
@@ -55,7 +56,7 @@ function renderUI() {
   }
   $('floor-name').value=floor().name;
   $('image-status').textContent=floor().image?floor().image.name:'등록한 이미지 없음';
-  $('remove-image').hidden=!floor().image;
+  $('remove-image').hidden=!floor().image;$('auto-from-image').disabled=!floor().image;
   document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
   const titles={building:'건물 전체',exploded:'층별 펼치기',floor:selectedFloor+'층 · '+floor().name,plan:selectedFloor+'층 평면 편집'};
   $('view-title').textContent=titles[mode];
@@ -155,27 +156,45 @@ $('project-file').onchange=async event=>{
     const next=M.validate(JSON.parse(await file.text()));next.id=M.uid();setProject(next);markDirty();status('도면 파일을 열었습니다. 저장을 눌러 현재 브라우저에 보관하세요.');
   } catch(error){status(error instanceof SyntaxError?'JSON 도면 파일 형식을 확인해주세요.':error.message,'error');}
 };
-$('upload-image').onclick=()=>$('image-file').click();
-$('image-file').onchange=async event=>{
-  const file=event.target.files[0],target=floor(),targetProject=project;event.target.value='';if(!file||imageBusy)return;
-  try {
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10000000)throw new Error('10MB 이하의 JPG·PNG·WEBP 이미지를 선택해주세요.');
-    imageBusy=true;$('upload-image').disabled=true;
-    const url=URL.createObjectURL(file);let img;
-    try {img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('도면 이미지를 읽지 못했습니다.'));image.src=url;});}
-    finally{URL.revokeObjectURL(url);}
-    const aspect=img.naturalWidth/img.naturalHeight;
-    if(aspect<0.05||aspect>20)throw new Error('도면 이미지의 가로·세로 비율을 확인해주세요.');
-    const scale=Math.min(1,1500/Math.max(img.naturalWidth,img.naturalHeight));
-    const buffer=document.createElement('canvas');buffer.width=Math.max(1,Math.round(img.naturalWidth*scale));buffer.height=Math.max(1,Math.round(img.naturalHeight*scale));
-    const ctx=buffer.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,buffer.width,buffer.height);ctx.drawImage(img,0,0,buffer.width,buffer.height);
-    const src=buffer.toDataURL('image/jpeg',0.85);
-    if(src.length>1800000)throw new Error('이미지를 조금 더 작게 저장한 뒤 등록해주세요.');
+initImport({model:M,getProject:()=>project,getFloor:floor,status,
+  onImage(image,targetProject,targetFloor) {
     if(project!==targetProject)throw new Error('건물이 변경되었습니다. 현재 건물에서 다시 등록해주세요.');
-    target.image={src,name:file.name.slice(0,80),aspect};project.example=false;markDirty();selectedFloor=target.level;selectedRoom=null;changeMode('plan');
-    status('도면 이미지를 등록했습니다. 공간 추가를 눌러 이미지 위에 공간을 지정하세요.');
-  } catch(error){status(error.message,'error');}
-  finally{imageBusy=false;$('upload-image').disabled=false;}
+    targetFloor.image=image;project.example=false;markDirty();selectedFloor=targetFloor.level;selectedRoom=null;changeMode('plan');status('도면을 등록했습니다. 자동 구성 초안을 확인하세요.');
+  },
+  onRooms(rooms,targetProject,targetFloor,replace) {
+    if(project!==targetProject)throw new Error('건물이 변경되었습니다. 현재 건물에서 다시 분석해주세요.');
+    if(!rooms.length)throw new Error('추가할 공간을 하나 이상 선택해주세요.');
+    const next=structuredClone(project);if(replace)next.floors[targetFloor.level-1].rooms=[];
+    rooms.forEach(room=>M.addRoom(next,targetFloor.level,room));M.validate(next);
+    project=next;selectedFloor=targetFloor.level;selectedRoom=rooms[0].id;markDirty();renderUI();rebuild();status(rooms.length+(replace?'개 공간으로 교체했습니다.':'개 공간을 추가했습니다.')+' 3D에서 배치를 확인하고 저장하세요.','success');
+  },
+  onExample(kind) {
+    if(!confirmLeave())return false;
+    setProject(M.blank({name:(kind==='pdf'?'PDF':'이미지')+' 자동 구성 예시',count:1}));markDirty();return true;
+  }
+});
+let deletedProject=null;
+$('delete-project').onclick=()=>{
+  $('delete-building-name').textContent=`${project.name} · ${project.floors.length}개 층 · ${project.floors.reduce((sum,f)=>sum+f.rooms.length,0)}개 공간`;
+  $('delete-building-dialog').showModal();
+};
+$('cancel-delete-building').onclick=()=>$('delete-building-dialog').close();
+$('confirm-delete-building').onclick=()=>{
+  try {
+    const saved=projects.some(p=>p.id===project.id),next=projects.filter(p=>p.id!==project.id);
+    if(saved)localStorage.setItem(STORAGE,JSON.stringify({version:1,projects:next}));
+    deletedProject={project:structuredClone(project),saved,dirty,savedSnapshot:saved?structuredClone(projects.find(p=>p.id===project.id)):null};const name=project.name;projects=next;
+    setProject(projects.length?structuredClone(projects[0]):M.blank());$('delete-building-dialog').close();$('undo-project').hidden=false;
+    status(name+' 건물을 삭제했습니다. 새로고침 전까지 삭제 되돌리기를 사용할 수 있습니다.');
+  } catch{status('저장소에 접근할 수 없어 삭제하지 못했습니다.','error');}
+};
+$('undo-project').onclick=()=>{
+  if(!deletedProject||!confirmLeave())return;
+  try {
+    const old=deletedProject,next=old.saved?[old.savedSnapshot,...projects.filter(p=>p.id!==old.project.id)]:projects;
+    if(old.saved){if(next.length>8)throw new Error('저장 건물 수 초과');localStorage.setItem(STORAGE,JSON.stringify({version:1,projects:next}));}
+    projects=next;setProject(structuredClone(old.project));dirty=old.dirty;deletedProject=null;$('undo-project').hidden=true;status('삭제한 건물을 복구했습니다.','success');
+  } catch{status('복구할 저장 공간이 부족합니다. 다른 건물을 파일로 내보낸 뒤 다시 시도해주세요.','error');}
 };
 $('remove-image').onclick=()=>{floor().image=null;project.example=false;markDirty();renderUI();rebuild();status('선택 층의 도면 이미지를 제거했습니다. 공간 구성은 유지됩니다.');};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
@@ -212,7 +231,7 @@ function roomWalls(group,room,height) {
   box(group,part,height,t,x-(gap+part)/2,height/2+0.08,entryZ,c);box(group,part,height,t,x+(gap+part)/2,height/2+0.08,entryZ,c);
 }
 function furnishings(group,room) {
-  if(mode==='plan')return;
+  if(mode==='plan'||room.type==='unknown'||room.type==='corridor')return;
   const furniture=new THREE.Group();group.add(furniture);group=furniture;
   const {w,d,type,beds,name}=room,x=0,z=0;
   if(type==='living') {

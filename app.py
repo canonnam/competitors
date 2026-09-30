@@ -297,6 +297,13 @@ class App(SimpleHTTPRequestHandler):
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
+        # Local PDF/OCR binary resources are public only inside their vendor folders.
+        pdf_vendor = ROOT / "assets" / "vendor" / "pdfjs"
+        allowed_asset = allowed_asset or (path.parent == pdf_vendor / "cmaps" and path.suffix.lower() == ".bcmap")
+        allowed_asset = allowed_asset or (path.parent == pdf_vendor / "standard_fonts" and path.suffix.lower() in {".pfb", ".ttf"})
+        allowed_asset = allowed_asset or (path.parent in {pdf_vendor / "wasm", ROOT / "assets" / "vendor" / "tesseract" / "core"} and path.suffix.lower() == ".wasm")
+        allowed_asset = allowed_asset or (path.parent == ROOT / "assets" / "vendor" / "tesseract" / "tessdata" and path.name in {"kor.traineddata.gz", "eng.traineddata.gz"})
+        allowed_asset = allowed_asset or (path.parent == ROOT / "assets" / "facility-3d" and path.name == "example-floorplan.pdf")
         allowed_asset = allowed_asset or (path.is_relative_to(ROOT / "assets" / "documents" / "facility-acquisition") and path.suffix.lower() == ".hwp")
         allowed_asset = allowed_asset or (path.parent == ROOT / "assets" / "contracts" and path.name in {
             "templates.json", "NanumGothic-Regular.ttf", "NanumGothic-Bold.ttf",
