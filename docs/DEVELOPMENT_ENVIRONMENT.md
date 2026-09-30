@@ -1,6 +1,6 @@
 # 더비다 지식 창고 개발 환경
 
-확인일: 2026-09-28. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
+확인일: 2026-09-30. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
 ## 저장소와 실행 구조
 
@@ -37,6 +37,17 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 ```
 
 앱은 `python app.py`로 실행하며 기본 포트는 8080이다. 로컬 실행에서 외부 API 기능을 사용하려면 해당 기능의 환경변수가 필요하다. 통계자료 정적 화면과 위 테스트에는 운영 비밀 값이 필요하지 않다.
+
+## 시설 3D 도면
+
+- `/facility-3d.html`: 기존 서버의 공개 정적 페이지 목록과 Docker 이미지에 포함한다. 시설 인수·개설 메뉴, 홈 기능 카드, 지식 질문의 기능 안내에 등록한다.
+- `assets/facility-3d-model.js`: 층·공간·치수와 JSON 도면 파일의 검증 및 공간 배치. `assets/facility-3d.js`는 화면 조작·렌더링을 담당한다.
+- `assets/vendor/three/`: 공식 npm 배포의 Three.js 0.186.1과 OrbitControls를 보관한다. 출처·MIT 라이선스는 해당 폴더에 포함한다. 기존 정적 파일로 제공하며 추가 빌드나 외부 CDN 요청은 필요하지 않다.
+- WebGL2를 지원하는 브라우저에서 3D를 제공하고, 지원하지 않으면 선택 층의 2D 평면으로 표시한다.
+- 건물은 1~12층, 층별 공간은 최대 40개다. 치수를 생략하면 24×16m, 층 높이 3.2m를 예시로 사용하고 추정 크기로 표시한다.
+- 도면 이미지는 JPG·PNG·WEBP 10MB까지 받으며 긴 변 1,500px 이하로 줄여 JSON에 포함한다. 자동 벽 인식은 수행하지 않으며 평면 편집에서 공간의 두 모서리를 지정한다. JSON 가져오기는 25MB까지 허용하고 이미지 데이터와 공간 경계를 검증한다.
+- 저장은 현재 사이트·브라우저의 `localStorage` 키 `vida-facility-3d-v1`에 최대 8개 건물까지 보관한다. 용량 부족·차단 시 안내하고 파일 내보내기를 제공한다. 서버나 ERP에 도면·입소자 정보는 전송하지 않는다.
+- 검증: `node --test test_facility_3d.cjs test_navigation.cjs test_dashboard.cjs`, `python -m unittest test_ui_consistency.py test_static_pages.py test_card_knowledge.CardKnowledgeTests.test_every_new_card_routes_without_operating_false_positive`.
 
 ## 배포와 확인
 

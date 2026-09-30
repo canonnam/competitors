@@ -25,6 +25,7 @@ CARDS = {
     'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
     'staff_eval': ('종사자 평가', '/staff-eval.html'),
     'facility_acquisition': ('요양원 인수·개설', '/facility-acquisition.html'),
+    'facility_3d': ('시설 3D 도면', '/facility-3d.html'),
 }
 ALIASES = {
     'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
@@ -40,6 +41,7 @@ ALIASES = {
     'competitor_uiux': ('uiux', '화면비교', 'ux비교', 'ui비교', '사용성비교'),
     'staff_eval': ('종사자평가', '요양보호사평가', '지침숙지', '상황판단평가'),
     'facility_acquisition': ('요양원인수', '요양원매입', '시설인수', '시설개설', '지정심사', '컨설팅제출서류', '허가절차', '건물도면', '인수체크리스트'),
+    'facility_3d': ('3d도면', '3차원도면', '입체공간', '층별도면', '공간구성', '5층건물'),
 }
 
 
@@ -291,7 +293,7 @@ def static_page(kind, question):
     parser.feed(path.read_text(encoding='utf-8'))
     content = re.sub(r'[ \t]+', ' ', ''.join(parser.parts)).strip()
     updated = '화면 자료 버전 ' + hashlib.sha256(path.read_bytes()).hexdigest()[:10]
-    if kind in ('ai_hub', 'competitor_uiux', 'facility_acquisition'):
+    if kind in ('ai_hub', 'competitor_uiux', 'facility_acquisition', 'facility_3d'):
         dates = re.findall(r'확인일\s*(\d{4}-\d{2}-\d{2})', content)
         if not dates:
             dates = re.findall(r'(\d{4}-\d{2}-\d{2})', content)
@@ -359,7 +361,7 @@ def retrieve(kind, question, now):
         return [evidence(kind, '종사자 평가 안내',
             '요양보호사 지침 숙지와 상황판단을 대화로 확인하는 테스트 화면입니다. 시설 담당자가 일회용 링크를 만들어 공유합니다. '
             '평가 관리 화면은 별도 접근 키 없이 열립니다. 대화 원문과 점수는 해당 화면에서 확인하며 공개 채팅에서는 개인 평가 결과를 읽거나 답하지 않습니다.')]
-    if kind in ('ai_hub', 'payroll', 'competitor_uiux', 'facility_acquisition'):
+    if kind in ('ai_hub', 'payroll', 'competitor_uiux', 'facility_acquisition', 'facility_3d'):
         return static_page(kind, question)
     if kind == 'statistics':
         return statistics(question)
@@ -382,6 +384,7 @@ def status():
              'statistics': [ROOT / 'data/statistics_knowledge.json'],
              'competitor_uiux': [ROOT / 'competitor-uiux.html'],
              'facility_acquisition': [ROOT / 'facility-acquisition.html'],
+             'facility_3d': [ROOT / 'facility-3d.html'],
              'staff_eval': [ROOT / 'staff-eval.html']}
     return [{'id': k, 'label': label, 'url': url, 'available': all(p.is_file() for p in paths[k]),
              'refresh': 'on_question'} for k, (label, url) in CARDS.items()]

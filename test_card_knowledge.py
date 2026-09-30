@@ -57,7 +57,8 @@ class CardKnowledgeTests(unittest.TestCase):
             'naver_ads': '더비다 인천점 이번달 광고비', 'search_visibility': '인천점 검색현황',
             'reputation': '안양점 평판 점검', 'nearby': '안양점 주변 주야간보호', 'statistics': '직원 휴게 공간 통계자료',
             'competitor_uiux': '장기요양 화면비교 UIUX',
-            'facility_acquisition': '요양원 인수 체크리스트와 지정심사 제출서류'}
+            'facility_acquisition': '요양원 인수 체크리스트와 지정심사 제출서류',
+            'facility_3d': '5층 건물 3D 도면 구성'}
         for kind, q in questions.items():
             with self.subTest(kind=kind):
                 result = service.retrieve(q, today=NOW.date())

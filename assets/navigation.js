@@ -20,6 +20,7 @@
     {id:'payroll', category:'operations', title:'급여 계산·근로계약서', description:'근무조건별 급여 계산과 계약서 작성', keywords:'월급 인건비 직원 채용 인사 노무 PDF'},
     {id:'staff-eval', category:'operations', title:'종사자 평가', description:'요양보호사 지침 숙지·상황판단을 대화로 측정하고, 링크를 공유합니다. (테스트)', keywords:'요양보호사 지침 숙지 상황판단 평가 링크 대화 직원'},
     {id:'facility-acquisition', category:'facility', title:'요양원 인수·개설', description:'인수 점검·허가 절차·지정심사 제출서류', keywords:'시설 매입 인수 개설 허가 설치신고 지정심사 건물도면 소방 전기 가스 체크리스트 컨설팅 HWP'},
+    {id:'facility-3d', category:'facility', title:'시설 3D 도면', description:'다층 건물 보기·층별 도면 등록·공간 구성', keywords:'3D 3차원 입체 공간 건물 도면 평면도 층 생활실 침대 5층 건축'},
     {id:'claim-check', category:'operations', title:'지점별 청구 점검', description:'급여 청구 여부와 처리상태 확인', keywords:'공단 장기근속장려금 접수 안양 인천'},
     {id:'competitors', category:'market', title:'경쟁사 분석', description:'ERP·AI·디지털 돌봄 서비스 비교', keywords:'시장 기능 가격 운영 모델'},
     {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 화면 비교와 실입력 사용성 테스트', keywords:'UIUX UX 사용성 화면비교 UXTEST 실입력 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},
