@@ -98,6 +98,9 @@ class IrisSupportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             iris_support.parse_page(broken, 1, SOURCE)
 
+    def test_iris_collector_is_packaged_in_deployment_image(self):
+        self.assertIn('iris_support.py', Path('Dockerfile').read_text(encoding='utf-8'))
+
 
 if __name__ == '__main__':
     unittest.main()
