@@ -228,6 +228,15 @@ def collect_case(case_id):
     with closing(connect()) as db:
         row = db.execute('SELECT * FROM support_cases WHERE id=?', (case_id,)).fetchone()
     announcement = json.loads(row['announcement'])
+    if announcement.get('source_id') == 'iris' and re.fullmatch(
+            r'https://www\.iris\.go\.kr/contents/retrieveBsnsAncmView\.do\?ancmId=\d{1,12}&ancmPrg=', announcement['url']):
+        # IRIS attachment links use site-specific download scripts. Keep the
+        # preparation case usable for manual upload without fabricating files.
+        with closing(connect()) as db, db:
+            db.execute('UPDATE support_cases SET status=?,error=?,updated=? WHERE id=?',
+                       ('needs_review', 'IRIS 원문의 과제별 RFP와 신청 양식을 확인해 직접 등록해주세요.', now(), case_id))
+            audit(db, 'case.collected', case_id)
+        return
     # The starting URL must come from the existing vetted announcement registry.
     if not re.fullmatch(r'https://www\.bizinfo\.go\.kr/sii/siia/selectSIIA200Detail\.do\?pblancId=PBLN_\d+', announcement['url']):
         raise ValueError('공식 공고 주소를 확인해주세요.')

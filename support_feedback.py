@@ -182,6 +182,9 @@ def analyze_reason(reason):
         for key, (_, words) in FEATURES.items():
             if key in required or not contains(value_clause, words):
                 continue
+            if key == 'senior' and re.search(r'(?:시니어|노인|어르신|요양|돌봄)(?:케어|돌봄)?(?:와|과|에|이|가)?(?:관련|관계)(?:이|가)?(?:없|무관)', value_clause):
+                # "시니어와 관련 없는 사업" is not a dislike of senior care.
+                continue
             if key in COUNTRIES and not country_matches(clause, key):
                 continue
             if key == 'radio' and contains(value_clause, FEATURES['kca'][1]) and not re.search(r'주파수|전파(?:관련|분야|산업)', value_clause):
@@ -202,7 +205,9 @@ def analyze_reason(reason):
 
 def required_subjects(value):
     required = set()
-    for key in ('research', 'senior', 'ai', 'pilot'):
+    # A lack of explicit senior wording must not hide broad AX/R&D calls. The
+    # user's current preference is to review those calls alongside AgeTech.
+    for key in ('research', 'ai', 'pilot'):
         for word in FEATURES[key][1]:
             token = re.escape(compact(word))
             if re.fullmatch(r'[a-z]+', compact(word)):

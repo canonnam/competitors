@@ -19,8 +19,8 @@ class ReasonAnalysisTests(unittest.TestCase):
         self.assertEqual(self.rules('AI 과제만 관심없습니다.'), {('avoid', 'ai')})
 
     def test_required_subjects_lower_only_candidates_without_the_subject(self):
-        self.assertEqual(self.rules('시니어 케어와 관련된 사업만 원합니다.'), {('require', 'senior')})
-        self.assertEqual(self.rules('노인과 관련 없는 사업입니다.'), {('require', 'senior')})
+        self.assertEqual(self.rules('시니어 케어와 관련된 사업만 원합니다.'), set())
+        self.assertEqual(self.rules('노인과 관련 없는 사업입니다.'), set())
         self.assertEqual(self.rules('연구과제가 아니라 교육 지원입니다.'), {('require', 'research'), ('avoid', 'training')})
         self.assertEqual(self.rules('AI 과제만 관심 있습니다.'), {('require', 'ai')})
         feedback = analyze_reason('연구과제만 원합니다.')

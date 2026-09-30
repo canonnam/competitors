@@ -11,7 +11,7 @@
   function safeUrl(value) {
     try {
       const url = new URL(value);
-      return url.protocol === 'https:' && ['www.longtermcare.or.kr','www.mohw.go.kr','www.bizinfo.go.kr'].includes(url.host) && !url.username && !url.password ? url.href : '';
+      return url.protocol === 'https:' && ['www.longtermcare.or.kr','www.mohw.go.kr','www.bizinfo.go.kr','www.iris.go.kr'].includes(url.host) && !url.username && !url.password ? url.href : '';
     } catch { return ''; }
   }
   function unreadSupport(data, readIds) {
@@ -24,7 +24,7 @@
     query=query.trim().toLocaleLowerCase();
     return items.filter(item=>{
       const support=item.kind==='support';
-      return (!source || item.source_id===source || (source==='public-news'&&!support))
+      return (!source || item.source_id===source || (source==='public-news'&&!support) || (source==='support-all'&&support))
         && (preference==='all' || (preference==='recommended' ? (!support||(item.preference!=='not_interested'&&!item.preference_excluded&&!item.recommendation_pending))
           : preference==='excluded' ? (support&&item.preference==='neutral'&&item.preference_excluded) : (support&&item.preference===preference)))
         && (!onlyUnread || (support&&isRecommended(item)&&!readIds.has(item.id)))
@@ -74,9 +74,9 @@
   function drawStatus(data) {
     const state=status(data), checked=data.sources.filter(source=>source.last_success&&!source.error&&!source.stale).length, target=data.sources.length;
     const unread=unreadSupport(data,readIds).length;
-    const supportSource=data.sources.find(source=>source.id==='bizinfo');
-    const supportPending=!supportSource?.last_success;
-    const supportDelayed=!!supportSource?.error;
+    const supportSources=data.sources.filter(source=>['bizinfo','iris'].includes(source.id));
+    const supportPending=!supportSources.some(source=>source.last_success);
+    const supportDelayed=supportSources.some(source=>source.error);
     const badge=$('home-agency-badge');
     if(badge) {
       badge.classList.toggle('is-warning',state.warning);
@@ -283,9 +283,9 @@
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape')hideInfoTooltip();});
   window.addEventListener('scroll',hideInfoTooltip,{capture:true,passive:true});window.addEventListener('resize',hideInfoTooltip);
-  ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested','excluded'].includes($(id).value))$('agency-filter').value='bizinfo';drawList();}));
-  $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();showSupportList();});
-  $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='bizinfo';$('support-preference-filter').value='all';$('agency-search').value='';drawList();showSupportList();});
+  ['agency-filter','agency-search','support-active-only','support-preference-filter'].forEach(id=>$(id)?.addEventListener(id==='agency-search'?'input':'change',()=>{visible=30;onlyUnread=false;if(id==='agency-filter')$('support-preference-filter').value='recommended';if(id==='support-preference-filter'&&['interested','not_interested','excluded'].includes($(id).value))$('agency-filter').value='support-all';drawList();}));
+  $('support-show-new')?.addEventListener('click',()=>{onlyUnread=true;visible=30;$('agency-filter').value='support-all';$('support-preference-filter').value='recommended';$('agency-search').value='';drawList();showSupportList();});
+  $('support-show-all')?.addEventListener('click',()=>{onlyUnread=false;visible=30;$('agency-filter').value='support-all';$('support-preference-filter').value='all';$('agency-search').value='';drawList();showSupportList();});
   $('support-mark-read')?.addEventListener('click',()=>{
     if(!current)return;
     const next=new Set([...readIds,...unreadSupport(current,readIds).map(item=>item.id)]);

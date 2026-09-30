@@ -1,4 +1,4 @@
-"""Read NHIS/MOHW boards and relevant Bizinfo announcements daily."""
+"""Read NHIS/MOHW boards and relevant Bizinfo/IRIS announcements daily."""
 from __future__ import annotations
 
 import argparse
@@ -24,7 +24,7 @@ BOOTSTRAP_PAGES = 2
 MAX_BYTES = 2_000_000
 LOG = logging.getLogger('agency_news')
 SYNC_LOCK = threading.Lock()
-ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr'}
+ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr', 'www.iris.go.kr'}
 
 
 class Node:
@@ -296,6 +296,9 @@ def policy_revision(source):
     if source and source['kind'] == 'bizinfo':
         import business_support
         return business_support.POLICY_REVISION
+    if source and source['kind'] == 'iris':
+        import iris_support
+        return iris_support.POLICY_REVISION
     return None
 
 
@@ -333,7 +336,10 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
                 continue
             state = {**state, 'last_attempt': now.isoformat(), 'error': '', 'last_added': 0}
             try:
-                if revision:
+                if source['kind'] == 'iris':
+                    import iris_support
+                    items, scanned = iris_support.collect(source, seen, now, stop=stop, review=review, archive=archive)
+                elif revision:
                     import business_support
                     items, scanned = business_support.collect(source, seen, now, fetcher, stop, review=review, archive=archive)
                 else:
@@ -387,7 +393,11 @@ def report(path, now=None, summary=False):
     supports = []
     for item in items:
         if item.get('kind') == 'support':
-            item['application_status'] = business_support.period_status(item['application_period'], now.date())
+            if item.get('source_id') == 'iris':
+                import iris_support
+                item['application_status'] = iris_support.period_status(item, now)
+            else:
+                item['application_status'] = business_support.period_status(item['application_period'], now.date())
             if item.get('withdrawn'):
                 item['application_status'].update(active=False, label='추천 제외')
             supports.append(item)

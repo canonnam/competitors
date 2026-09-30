@@ -152,7 +152,7 @@ class SupportPreferenceTests(unittest.TestCase):
 
     def test_reason_penalties_are_bounded_and_never_accumulate_on_read(self):
         items = deepcopy(self.supports())
-        preferences = {str(i): {'preference': 'not_interested', 'topics': '["돌봄"]', 'reason': '시니어 케어와 관련된 사업만 원합니다.'} for i in range(20)}
+        preferences = {str(i): {'preference': 'not_interested', 'topics': '["돌봄"]', 'reason': 'AI 과제만 원합니다.'} for i in range(20)}
         biz.apply_preferences(items, preferences)
         self.assertTrue(all(row['reason_preference_score']==-24 for row in items))
         first = deepcopy(items)
@@ -199,13 +199,13 @@ class SupportPreferenceTests(unittest.TestCase):
         self.assertFalse(any(i['preference_excluded'] for i in self.supports()))
         self.assertEqual(self.report()['support']['total'], 4)
 
-    def test_repeated_condition_survives_until_last_supporting_reason_is_removed(self):
+    def test_old_senior_only_reasons_no_longer_hide_other_research(self):
         self.choose('not_interested', 'bizinfo:PBLN_1', '시니어 케어와 관련된 사업만 원합니다.')
         self.choose('not_interested', 'bizinfo:PBLN_2', '시니어 케어와 관련된 사업만 원합니다.')
-        self.assertNotIn('bizinfo:PBLN_3', self.report()['article_ids'])
-        self.assertEqual(next(i for i in self.supports() if i['id']=='bizinfo:PBLN_3')['reason_preference_score'], -24)
+        self.assertIn('bizinfo:PBLN_3', self.report()['article_ids'])
+        self.assertEqual(next(i for i in self.supports() if i['id']=='bizinfo:PBLN_3')['reason_preference_score'], 0)
         self.choose('neutral', 'bizinfo:PBLN_1', '')
-        self.assertNotIn('bizinfo:PBLN_3', self.report()['article_ids'])
+        self.assertIn('bizinfo:PBLN_3', self.report()['article_ids'])
         self.choose('neutral', 'bizinfo:PBLN_2', '')
         self.assertIn('bizinfo:PBLN_3', self.report()['article_ids'])
 

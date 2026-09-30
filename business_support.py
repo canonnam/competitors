@@ -19,7 +19,7 @@ DETAIL_PATH = '/sii/siia/selectSIIA200Detail.do'
 ORIGIN = 'https://www.bizinfo.go.kr'
 BOOTSTRAP_PAGES = 10
 MAX_PAGES = 100
-POLICY_REVISION = '2026-09-10-senior-ai-research'
+POLICY_REVISION = '2026-09-30-iris-agetech'
 
 
 def list_url(page=1):
@@ -125,6 +125,7 @@ CARE = ('장기요양', '요양원', '돌봄', '시니어', '고령친화', '고
 AX = ('AX', 'AI전환', '인공지능전환', 'AI도입', 'AI활용', '인공지능도입', '인공지능활용', '지능화')
 AI = ('AI', '인공지능', '머신러닝', '딥러닝', 'LLM')
 PHYSICAL_AI = ('피지컬AI', 'Physical AI', '돌봄로봇', '케어로봇', '재활로봇', '서비스로봇')
+AGE_TECH = ('에이지테크', '에이징테크', 'AgeTech', 'Age-Tech', 'Age Tech')
 LOCATION = ('위치정보', '위치기반서비스', '위치기반사업', 'LBS', 'GPS')
 GYEONGGI_CITIES = ('수원', '용인', '고양', '성남', '화성', '부천', '남양주', '안산', '평택', '안양',
                   '시흥', '파주', '김포', '의정부', '광주', '하남', '광명', '군포', '양주', '오산',
@@ -264,6 +265,8 @@ def assess(item, detail, today, profile=PROFILE):
     if matches(focus, PHYSICAL_AI):
         topics.append('피지컬 AI·돌봄 로봇'); reasons.append('요양 현장의 피지컬 AI·돌봄 로봇 실증 또는 SaaS 연계 가능성을 검토할 사업입니다.')
         checks.append('돌봄 현장 적용 분야, 로봇·장비 개발 역량, 실증기관 또는 협력기업 참여 조건을 확인하세요.')
+    if matches(research_text, AGE_TECH):
+        topics.append('에이지테크'); reasons.append('고령자의 삶과 돌봄에 적용하는 에이지테크 사업으로 우선 검토합니다.')
     if matches(focus, SOFTWARE):
         topics.append('SaaS·디지털 기술'); reasons.append('개발 중인 장기요양기관 SaaS 플랫폼과 기술 분야가 연결됩니다.')
     if matches(focus, STARTUP):
@@ -315,7 +318,8 @@ def assess(item, detail, today, profile=PROFILE):
             'checks': list(dict.fromkeys(checks)), 'recommendation': '검토 후보 · 조건 확인',
             'target': target[:600], 'benefit': detail['benefit'][:600],
             'application_period': detail['application_period'], 'application_status': status,
-            'score': 20*len(topics) + (15 if any(topic in topics for topic in ('시니어·사회복지·장기요양','SaaS·디지털 기술','AI·AX 전환','피지컬 AI·돌봄 로봇')) else 0)}
+            'score': 20*len(topics) + (15 if any(topic in topics for topic in ('시니어·사회복지·장기요양','SaaS·디지털 기술','AI·AX 전환','피지컬 AI·돌봄 로봇')) else 0)
+            + (30 if '에이지테크' in topics else 0)}
 
 
 def fingerprint(item):
@@ -325,7 +329,7 @@ def fingerprint(item):
 def save_preference(path, article_id, preference, now, reason=None):
     """One shared company choice per announcement; repeated requests never add votes."""
     from agency_news import connect
-    if not isinstance(article_id, str) or not re.fullmatch(r'bizinfo:PBLN_\d{1,40}', article_id):
+    if not isinstance(article_id, str) or not re.fullmatch(r'(?:bizinfo:PBLN_\d{1,40}|iris:\d{1,12})', article_id):
         raise ValueError('지원사업 ID가 올바르지 않습니다.')
     if not isinstance(preference, str) or preference not in ('interested', 'not_interested', 'neutral'):
         raise ValueError('관심 선택이 올바르지 않습니다.')

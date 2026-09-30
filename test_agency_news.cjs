@@ -26,6 +26,7 @@ test('links can only open the requested official domains',()=>{
   for(const value of ['javascript:alert(1)','https://example.com','https://www.mohw.go.kr.evil.test/','https://user@www.mohw.go.kr/'])assert.equal(safeUrl(value),'');
   assert.equal(safeUrl('https://www.mohw.go.kr/board.es?bid=0027'),'https://www.mohw.go.kr/board.es?bid=0027');
   assert.ok(safeUrl('https://www.bizinfo.go.kr/sii/siia/selectSIIA200View.do'));
+  assert.ok(safeUrl('https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=023937&ancmPrg='));
 });
 
 test('support alerts ignore read and expired items and preserve public news filtering',()=>{
@@ -35,6 +36,7 @@ test('support alerts ignore read and expired items and preserve public news filt
   const items=[support,expired,news], read=new Set(['old']);
   assert.deepEqual(unreadSupport({support:{items:[{id:'new',active:true},{id:'old',active:true},{id:'expired',active:false}]}},read).map(x=>x.id),['new']);
   assert.deepEqual(filterItems(items,{source:'bizinfo'}).map(x=>x.id),['new']);
+  assert.deepEqual(filterItems([...items,{...support,id:'iris',source_id:'iris'}],{source:'support-all'}).map(x=>x.id),['new','iris']);
   assert.deepEqual(filterItems(items,{source:'public-news'}).map(x=>x.id),['news']);
   assert.equal(filterItems(items,{source:'bizinfo',activeOnly:false}).length,2);
   assert.equal(filterItems(items,{onlyUnread:true,readIds:new Set(['new'])}).length,0);
