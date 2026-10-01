@@ -7,6 +7,25 @@
 .f3-project-select select{width:220px}
 .f3-project-summary{font-size:13px;color:var(--ui-muted)}
 .f3-project-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.f3-observation-bar{padding:16px;margin-bottom:16px;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:var(--ui-card-radius)}
+.f3-observation-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.f3-observation-heading h2{font-size:14px;margin:0}.f3-observation-heading>strong{font-size:13px;font-weight:600}
+.f3-observation-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.f3-observation-bar>p{display:block;margin:12px 0 0;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.f3-observation-markers{position:absolute;inset:0;z-index:3;pointer-events:none}
+.f3-observation-lines{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:hidden}
+.f3-observation-lines line{stroke:var(--ui-error);stroke-width:1.5;stroke-opacity:.75}.f3-observation-lines line[data-tier=watch]{stroke:var(--ui-warning)}
+.f3-observation-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border:1px solid currentColor;border-radius:var(--ui-control-radius);padding:5px 8px;cursor:pointer;display:flex;flex-direction:column;gap:2px;max-width:148px;min-height:40px;font:12px/1.4 var(--ui-font);text-align:center;box-shadow:0 2px 8px #20344a15}
+.f3-observation-marker small{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:128px}
+.f3-risk-focus{background:var(--ui-error-bg);color:var(--ui-error)}.f3-risk-watch{background:var(--ui-warning-bg);color:var(--ui-warning)}
+.f3-risk{font-size:11px;padding:3px 6px;border-radius:var(--ui-status-radius);white-space:nowrap}
+.f3-observation-list{display:grid;gap:8px;margin-top:12px;max-height:280px;overflow:auto}
+.f3-observation-person{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid var(--ui-border);border-radius:var(--ui-control-radius);font-size:12px}
+.f3-observation-person>small{width:100%;font-size:11px;line-height:1.6;color:var(--ui-muted);overflow-wrap:anywhere}
+.f3-observation-person .ui-button{font-size:11px;padding:4px 8px;min-height:32px}
+.f3-floor-info .f3-floor-risk{color:var(--ui-warning)}
+#edit-project-error,#erp-login-status{color:var(--ui-error)}
+@media(max-width:500px){.f3-observation-actions{margin-left:0;width:100%}.f3-observation-actions .ui-button{font-size:12px;padding:8px}.f3-observation-heading>strong{width:100%}.f3-observation-marker{font-size:11px;max-width:130px}}
 .f3-workspace{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:16px;align-items:start}
 .f3-viewer{min-width:0;border:1px solid var(--ui-border);border-radius:var(--ui-card-radius);background:var(--ui-surface);overflow:hidden}
 .f3-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px;flex-wrap:wrap;border-bottom:1px solid var(--ui-border)}

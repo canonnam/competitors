@@ -1,4 +1,5 @@
 import {initImport} from './facility-3d-import.js?v=20261001-auto1';
+import {initObservation} from './facility-observation.js?v=20261002-1';
 /* Browser-local facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
@@ -16,6 +17,7 @@ let drawing = false, startPoint = null, downPoint = null, showNames = true, show
 let THREE, OrbitControls, renderer, scene, camera, controls, root, grid, raycaster, preview;
 let floorGroups = [], pickTargets = [], labelSprites = [], generation = 0, needsRender = true;
 let fallback = false, fallbackCanvas = null, fallbackRevision = 0;
+let observation=null,observationAnchors=[];
 const canvas = $('space-canvas'), viewport = $('viewport');
 const floor = () => project.floors[selectedFloor-1];
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
@@ -28,17 +30,19 @@ function make(tag,className,text) {
   const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;
 }
 function renderUI() {
-  const options=projects.some(p=>p.id===project.id)?projects:[project,...projects];
+  const options=projects.some(p=>p.id===project.id)?projects.map(p=>p.id===project.id?project:p):[project,...projects];
   $('project-select').replaceChildren(...options.map(p=>{const option=make('option','',p.name);option.value=p.id;return option;}));
   $('project-select').value=project.id;
   const rooms=project.floors.reduce((n,f)=>n+f.rooms.length,0);
-  $('project-summary').textContent=`${project.floors.length}개 층 · ${rooms}개 공간 · ${project.scale==='entered'?'입력 치수':'추정 크기'}`;
+  $('project-summary').textContent=`${project.floors.length}개 층 · ${rooms}개 공간 · ${project.scale==='entered'?'입력 치수':'추정 크기'}${project.nursingHomeId?' · ERP '+(project.nursingHomeId===2?'안양점':'인천점'):''}`;
   $('floor-count').textContent=project.floors.length+'개 층';
   $('floor-list').replaceChildren(...[...project.floors].reverse().map(f=>{
     const button=make('button','f3-floor-button');button.type='button';button.dataset.level=f.level;
     button.setAttribute('aria-pressed',String(f.level===selectedFloor));
     button.setAttribute('aria-label',`${f.level}층 ${f.name}, 공간 ${f.rooms.length}개`);
     const info=make('span','f3-floor-info');info.append(make('strong','',f.name),make('small','',`공간 ${f.rooms.length}개${f.image?' · 도면 등록':''}`));
+    const targets=observation?.mapped().items.filter(r=>r.level===f.level)||[];
+    if(targets.length){const counts=`집중 ${targets.filter(r=>r.risk_tier==='focus').length} · 주의 ${targets.filter(r=>r.risk_tier==='watch').length}`;info.append(make('small','f3-floor-risk',counts));button.setAttribute('aria-label',`${f.level}층 ${f.name}, 공간 ${f.rooms.length}개, ${counts}`);}
     button.append(make('span','f3-floor-number',f.level+'F'),info);return button;
   }));
   $('rooms-heading').textContent=selectedFloor+'층 공간';
@@ -65,6 +69,7 @@ function renderUI() {
   $('view-help').textContent=drawing?'공간의 첫 모서리와 반대 모서리를 차례로 클릭 · Esc로 취소':mode==='plan'?'드래그로 이동 · 휠로 확대 · 공간을 클릭해 선택':'드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동';
   canvas.setAttribute('aria-label',fallback?`${selectedFloor}층 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}층 건물 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
   viewport.classList.toggle('is-drawing',drawing);
+  observation?.sync();
 }
 Object.entries(M.TYPES).forEach(([value,label])=>{const option=make('option','',label);option.value=value;$('room-type').append(option);});
 function confirmLeave() {return !dirty || window.confirm('저장하지 않은 변경이 있습니다. 다른 건물로 이동할까요?');}
@@ -92,6 +97,15 @@ $('project-select').addEventListener('change',()=>{
   const next=projects.find(p=>p.id===$('project-select').value);if(next)setProject(structuredClone(next));
 });
 $('save-project').onclick=save;
+$('edit-project').onclick=()=>{
+  $('edit-project-name').value=project.name;$('edit-project-branch').value=project.nursingHomeId??'';$('edit-project-error').textContent='';$('edit-project-dialog').showModal();
+};
+$('edit-project-cancel').onclick=()=>$('edit-project-dialog').close();
+$('edit-project-form').onsubmit=event=>{
+  event.preventDefault();const name=$('edit-project-name').value.trim();
+  if(!name){$('edit-project-error').textContent='건물 이름을 입력해주세요.';return;}
+  project.name=name;project.nursingHomeId=$('edit-project-branch').value?Number($('edit-project-branch').value):null;project.example=false;markDirty();renderUI();rebuild();$('edit-project-dialog').close();status('건물 이름과 ERP 지점을 적용했습니다. 저장을 눌러 보관하세요.');
+};
 $('new-project').onclick=()=>{
   if(!confirmLeave())return;
   $('new-building-form').reset();$('new-building-error').textContent='';$('new-building-dialog').showModal();
@@ -102,6 +116,7 @@ $('new-building-form').onsubmit=event=>{
   try {
     const entered=data.get('width')!=='' && data.get('depth')!=='';
     const next=M.blank({name:data.get('name'),count:data.get('count'),width:data.get('width')||24,depth:data.get('depth')||16,scale:entered?'entered':'estimated'});
+    next.nursingHomeId=data.get('nursingHomeId')?Number(data.get('nursingHomeId')):null;
     setProject(next);markDirty();$('new-building-dialog').close();changeMode('exploded');
     status(`${next.floors.length}층 건물을 만들었습니다. 층을 선택해 도면 이미지를 등록하거나 공간을 추가하세요.`);
   } catch(error) {$('new-building-error').textContent=error.message;}
@@ -198,6 +213,7 @@ $('undo-project').onclick=()=>{
 };
 $('remove-image').onclick=()=>{floor().image=null;project.example=false;markDirty();renderUI();rebuild();status('선택 층의 도면 이미지를 제거했습니다. 공간 구성은 유지됩니다.');};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
+observation=initObservation({getProject:()=>project,getFloor:floor,changed:()=>{renderUI();rebuild();},select:(level,id)=>{if(!fallback)mode='floor';selectRoom(level,id);fitCamera();}});
 function selectRoom(level,id) {
   selectedFloor=level;selectedRoom=id;renderUI();rebuild();const room=currentRoom();if(room)status(`${level}층 ${room.name} · ${M.TYPES[room.type]}`);
 }
@@ -284,7 +300,7 @@ function rebuild() {
   if(!scene)return;
   generation++;const revision=generation;
   if(root){scene.remove(root);dispose(root);}if(preview){scene.remove(preview);dispose(preview);preview=null;}
-  root=new THREE.Group();scene.add(root);floorGroups=[];pickTargets=[];labelSprites=[];$('floor-labels').replaceChildren();
+  root=new THREE.Group();scene.add(root);floorGroups=[];pickTargets=[];labelSprites=[];$('floor-labels').replaceChildren();$('observation-markers').replaceChildren();$('observation-lines').replaceChildren();observationAnchors=[];
   const visible=(mode==='floor'||mode==='plan')?[floor()]:project.floors;
   visible.forEach(f=>{
     const group=new THREE.Group(),elevation=(mode==='floor'||mode==='plan')?0:(f.level-1)*(project.height+(mode==='exploded'?3.8:0));
@@ -315,6 +331,10 @@ function rebuild() {
     if(mode==='building')exterior(group,f.level);
     const marker=make('div','f3-floor-marker'+(f.level===selectedFloor?' is-selected':''));marker.append(make('b','',f.level+'F'),make('span','',f.name));$('floor-labels').append(marker);
     group.userData.marker=marker;
+    for(const targets of observation?.mapped().groups.filter(t=>t.level===f.level)||[]){
+      const badge=observationBadge(targets);$('observation-markers').append(badge);
+      observationAnchors.push({group,x:targets.x,z:targets.z,y:mode==='plan'?.3:1.8,badge,line:observationLine(targets)});
+    }
   });
   if(mode==='building'&&showWalls) {
     const y=project.floors.length*project.height;
@@ -342,6 +362,26 @@ function resize() {
   if(renderer&&camera){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);fitCamera();needsRender=true;}
   else if(fallback)drawFallback();
 }
+function observationBadge(targets){
+  const badge=make('button','f3-observation-marker f3-risk-'+(targets.focus?'focus':'watch'));badge.type='button';
+  const summary=targets.roomId?`집중 ${targets.focus} · 주의 ${targets.watch}`:`위치 확인 ${targets.rows.length}명`;
+  const names=targets.rows.slice(0,2).map(r=>r.elderly_name).join(', ')+(targets.rows.length>2?` 외 ${targets.rows.length-2}명`:'');
+  badge.append(make('strong','',summary));targets.rows.slice(0,2).forEach(r=>badge.append(make('small','',`${r.risk_tier==='focus'?'집중':'주의'} ${r.elderly_name}`)));
+  if(targets.rows.length>2)badge.append(make('small','',`외 ${targets.rows.length-2}명`));badge.title=targets.roomName+' · '+targets.rows.map(r=>r.elderly_name+' '+r.risk_tier_display).join(', ');
+  badge.setAttribute('aria-label',`${targets.level}층 ${targets.roomName} · ${summary} · ${names}`);
+  badge.onclick=()=>{if(!fallback)mode='floor';selectRoom(targets.level,targets.roomId);fitCamera();};return badge;
+}
+function observationLine(targets){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.dataset.tier=targets.focus?'focus':'watch';$('observation-lines').append(line);return line;}
+function placeObservation(a,x,y,w,h,used){
+  const bw=a.badge.offsetWidth||140,bh=a.badge.offsetHeight||60,pad=5,clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  let chosen=null;
+  const offsets=[[0,0],[0,-bh-10],[0,bh+10],[-bw-10,0],[bw+10,0],[0,-2*(bh+10)],[0,2*(bh+10)],[-bw-10,-bh-10],[bw+10,-bh-10],[-bw-10,bh+10],[bw+10,bh+10]];
+  for(const [dx,dy]of offsets){const cx=clamp(x+dx,bw/2+pad,w-bw/2-pad),cy=clamp(y+dy,bh/2+pad,h-bh/2-pad),r={left:cx-bw/2,right:cx+bw/2,top:cy-bh/2,bottom:cy+bh/2,cx,cy};
+    if(!chosen)chosen=r;if(!used.some(k=>r.left<k.right+6&&r.right>k.left-6&&r.top<k.bottom+6&&r.bottom>k.top-6)){chosen=r;break;}
+  }
+  used.push(chosen);a.badge.style.left=chosen.cx+'px';a.badge.style.top=chosen.cy+'px';
+  a.line.setAttribute('x1',x);a.line.setAttribute('y1',y);a.line.setAttribute('x2',chosen.cx);a.line.setAttribute('y2',chosen.cy);
+}
 function updateMarkers() {
   const w=viewport.clientWidth,h=viewport.clientHeight;
   for(const {group} of floorGroups) {
@@ -349,6 +389,12 @@ function updateMarkers() {
     const x=(p.x+1)*w/2,y=(1-p.y)*h/2;
     marker.hidden=p.z>1||p.z<-1||x<10||x>w-10||y<10||y>h-10;
     marker.style.left=x+'px';marker.style.top=y+'px';
+  }
+  const used=[];
+  for(const a of observationAnchors){
+    const p=a.group.localToWorld(new THREE.Vector3(a.x,a.y,a.z)).project(camera),x=(p.x+1)*w/2,y=(1-p.y)*h/2;
+    a.badge.hidden=drawing||p.z>1||p.z<-1||x<0||x>w||y<0||y>h;
+    a.line.style.display=a.badge.hidden?'none':'';if(!a.badge.hidden)placeObservation(a,x,y,w,h,used);
   }
 }
 function pointer(event) {
@@ -420,6 +466,8 @@ function drawFallback(end) {
   };
   if(floor().image){const image=floor().image,img=new Image();img.onload=()=>{if(revision!==fallbackRevision)return;let iw=project.width*scale,ih=iw/image.aspect;if(ih>project.depth*scale){ih=project.depth*scale;iw=ih*image.aspect;}ctx.drawImage(img,left+(project.width*scale-iw)/2,top+(project.depth*scale-ih)/2,iw,ih);paint();};img.src=image.src;}else paint();
   $('floor-labels').replaceChildren();
+  $('observation-markers').replaceChildren();$('observation-lines').replaceChildren();const used=[];
+  if(!drawing)for(const targets of observation?.mapped().groups.filter(t=>t.level===selectedFloor)||[]){const badge=observationBadge(targets);$('observation-markers').append(badge);placeObservation({badge,line:observationLine(targets)},left+(targets.x+project.width/2)*scale,top+(targets.z+project.depth/2)*scale,w,h,used);}
 }
 renderUI();if(loadError)status(loadError,'error');else if(projects.length)status('저장한 건물을 불러왔습니다. 층을 선택해 공간을 확인하거나 수정하세요.');
 try {
@@ -446,3 +494,4 @@ try {
   renderUI();drawFallback();
 }
 new ResizeObserver(resize).observe(viewport);
+observation.load();

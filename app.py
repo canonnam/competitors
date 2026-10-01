@@ -13,6 +13,7 @@ import search_visibility
 import reputation_watch
 import claim_check
 import payroll_insurance
+import facility_observation
 import aeo_missions
 import web_search_results
 import support_applications
@@ -52,7 +53,7 @@ def post_json(url, payload, headers=None):
 class App(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         path = urllib.parse.urlsplit(self.path).path
-        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/'):
+        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/') or path.startswith('/api/facility-observation/'):
             super().log_message('%s', 'Tokenized request (token redacted)')
         else:
             super().log_message(fmt, *args)
@@ -69,6 +70,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if facility_observation.handle(self, 'GET'):
+            return
         if support_projects.handle(self, "GET"):
             return
         if website_intake.handle(self, "GET"):
@@ -108,6 +111,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if facility_observation.handle(self, 'HEAD'):
+            return
         if support_projects.handle(self, "HEAD"):
             return
         if website_intake.handle(self, "HEAD"):
@@ -313,7 +318,13 @@ class App(SimpleHTTPRequestHandler):
             return None
         return super().send_head()
 
+    def do_DELETE(self):
+        if not facility_observation.handle(self, 'DELETE'):
+            self.send_error(405)
+
     def do_POST(self):
+        if facility_observation.handle(self, 'POST'):
+            return
         if support_projects.handle(self, "POST"):
             return
         if website_intake.handle(self, "POST"):

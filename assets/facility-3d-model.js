@@ -19,7 +19,7 @@
     if (!Number.isInteger(count)) throw new Error('층 수는 정수로 입력해주세요.');
     return {version:1,id:uid(),name:text(options.name,'새 건물'),width:number(options.width ?? 24,4,120,'건물 가로'),
       depth:number(options.depth ?? 16,4,120,'건물 세로'),height:number(options.height ?? 3.2,2,6,'층 높이'),
-      scale:options.scale === 'entered' ? 'entered' : 'estimated',example:false,
+      scale:options.scale === 'entered' ? 'entered' : 'estimated',example:false,nursingHomeId:null,
       floors:Array.from({length:count},(_,i)=>({id:uid(),level:i+1,name:(i+1)+'층',rooms:[],image:null}))};
   }
   function sample() {
@@ -49,6 +49,9 @@
     if (!raw || raw.version!==1 || !Array.isArray(raw.floors) || raw.floors.length<1 || raw.floors.length>12) throw new Error('시설 3D 도면 파일 형식을 확인해주세요.');
     const out = blank({name:raw.name,count:raw.floors.length,width:raw.width,depth:raw.depth,height:raw.height,scale:raw.scale});
     out.id = text(raw.id,uid()); out.example = raw.example === true;
+    const legacyName=out.name.replace(/\s+/g,'');
+    out.nursingHomeId=raw.nursingHomeId===undefined?(/^(더비다요양원)?안양(점)?$/.test(legacyName)?2:/^(더비다요양원)?인천(점)?$/.test(legacyName)?3:null):raw.nursingHomeId;
+    if(![null,2,3].includes(out.nursingHomeId))throw new Error('ERP 지점을 확인해주세요.');
     const roomIds = new Set(),floorIds = new Set();
     out.floors = raw.floors.map((floor,i)=>{
       if (!floor || !Array.isArray(floor.rooms) || floor.rooms.length>40) throw new Error('한 층에 공간은 최대 40개까지 구성할 수 있습니다.');
