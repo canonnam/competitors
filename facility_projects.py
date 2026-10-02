@@ -15,7 +15,8 @@ from facility_observation import ApiError, same_origin, send
 PREFIX = '/api/facility-projects/'
 MAX_BODY = 25_000_128
 ROLES = {'care', 'social', 'nurse', 'therapy', 'admin', 'director', 'kitchen', 'other'}
-TYPES = {'living', 'office', 'common', 'service', 'core', 'corridor', 'unknown'}
+TYPES = {'living', 'office', 'common', 'service', 'core', 'corridor', 'unknown',
+         'program', 'kitchen', 'lounge', 'changing', 'garden', 'therapy', 'nursing'}
 DB_PATH = None
 
 

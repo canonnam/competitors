@@ -38,6 +38,15 @@ test('project coordinates use the same image aspect fit as the 3D overlay',()=>{
   assert.equal(room.w,6);assert.equal(room.d,3);assert.equal(room.x,3);assert.equal(room.z,1.5);
   assert.ok(M.inside(room,project));M.addRoom(project,1,room);assert.deepEqual(M.validate(project),project);
 });
+test('specific facility labels map to specific uses without mistaking occupancy text for a garden',()=>{
+  for(const [name,type]of [['프로그램실','program'],['주방','kitchen'],['휴게실','lounge'],['탈의실','changing'],['정원','garden'],['물리치료실','therapy'],['간호사실','nursing']]){
+    const region={left:0,top:0,width:1,height:1};
+    assert.equal(D.mapLabels([region],[{text:name,x:.5,y:.5,confidence:100}])[0].type,type);
+  }
+  assert.equal(D.labelInfo('정원 4명'),null);
+  assert.equal(D.labelInfo('정원: 20'),null);
+  assert.equal(D.labelInfo('옥상 정원').type,'garden');
+});
 test('a unique OCR spelling suggestion is shown with its original; PDF text and custom names stay intact',()=>{
   const region={left:0,top:0,width:1,height:1};
   const proposed=D.mapLabels([region],[{text:'쌍담실',x:.5,y:.5,confidence:65}])[0];

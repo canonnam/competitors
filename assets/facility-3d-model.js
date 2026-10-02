@@ -5,8 +5,10 @@
   else root.FacilityModel = api;
 })(typeof window === 'undefined' ? globalThis : window, function() {
   'use strict';
-  const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기', corridor:'복도', unknown:'용도 미지정'};
+  const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기', corridor:'복도',
+    program:'프로그램실', kitchen:'주방', lounge:'휴게실', changing:'탈의실', garden:'정원', therapy:'물리치료실', nursing:'간호사실', unknown:'용도 미지정'};
   const COLORS = {living:'#dbe8f1', office:'#e8e4f3', common:'#e0eddf', service:'#f1e8d7', core:'#e1e5eb', corridor:'#edf0f3', unknown:'#e6eaf0'};
+  Object.assign(COLORS,{program:COLORS.common,kitchen:COLORS.service,lounge:COLORS.common,changing:COLORS.service,garden:COLORS.common,therapy:COLORS.common,nursing:COLORS.office});
   const STAFF_ROLES={care:'요양보호사',social:'사회복지사',nurse:'간호(조무)사',therapy:'물리(작업)치료사',admin:'사무원',director:'원장',kitchen:'조리원',other:'기타 종사자'};
   const FLOOR_LEVELS=Object.freeze([-1,...Array.from({length:12},(_,i)=>i+1)]);
   const floorName=level=>level<0?`지하 ${Math.abs(level)}층`:`${level}층`;
@@ -47,11 +49,11 @@
       floor.rooms.push(room('계단','core',-10.1,0,3.4,3.6),room('승강기','core',10.1,0,3.4,3.6));
       if (i===0) {
         floor.rooms.push(room('상담실','office',-7.8,-4.6,7.4,5.8),room('사무실','office',0,-4.6,7.4,5.8),
-          room('간호실','service',7.8,-4.6,7.4,5.8),room('로비·면회실','common',-5.4,4.6,11.8,5.8),
+          room('간호사실','nursing',7.8,-4.6,7.4,5.8),room('로비·면회실','common',-5.4,4.6,11.8,5.8),
           room('식당','common',6.6,4.6,9.8,5.8));
       } else if (i===4) {
-        floor.rooms.push(room('프로그램실','common',-5.6,-4.6,11.4,5.8),room('물리치료실','common',6.1,-4.6,10.4,5.8),
-          room('휴게실','common',-7.8,4.6,7.4,5.8),room('주방','service',0,4.6,7.4,5.8),room('세탁·물품실','service',7.8,4.6,7.4,5.8));
+        floor.rooms.push(room('프로그램실','program',-5.6,-4.6,11.4,5.8),room('물리치료실','therapy',6.1,-4.6,10.4,5.8),
+          room('휴게실','lounge',-7.8,4.6,7.4,5.8),room('주방','kitchen',0,4.6,7.4,5.8),room('세탁·물품실','service',7.8,4.6,7.4,5.8));
       } else {
         for (let side=0;side<2;side++) for(let col=0;col<3;col++) {
           floor.rooms.push(room(`${floor.level}0${side*3+col+1}호`,'living',-7.8+col*7.8,side===0?-4.6:4.6,7.4,5.8,2));

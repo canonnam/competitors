@@ -61,12 +61,15 @@
     const compact=name.replace(/\s/g,'');
     if(!compact||compact.length>25||/^[\d.,×xX+\-\s]+$/.test(compact)||/(축척|평면도|배치도|면적|설계|SCALE|㎡|\bmm\b)/i.test(name))return null;
     const rules=[['core',/계단|승강기|엘리베이터|ELEV|STAIR/i],['corridor',/복도|CORRIDOR/i],
-      ['service',/화장실|욕실|주방|조리실|세탁|창고|물품|간호|보건|기계실|전기실|TOILET/i],
+      ['program',/프로그램|PROGRAM/i],['kitchen',/주방|조리실|KITCHEN/i],['lounge',/휴게|LOUNGE/i],
+      ['changing',/탈의|LOCKER/i],['garden',/^(?:(?:옥상|실내|야외|외부)?정원|GARDEN)$/i],
+      ['therapy',/물리치료|작업치료|PHYSIOTHERAPY/i],['nursing',/간호|보건|NURSING/i],
+      ['service',/화장실|욕실|세탁|창고|물품|기계실|전기실|TOILET/i],
       ['office',/사무|상담|원장|회의|OFFICE/i],['living',/생활실|침실|병실|\d{1,4}호|BEDROOM/i],
-      ['common',/식당|프로그램|치료|휴게|면회|로비|강당|홀|DINING|LOBBY/i]];
+      ['common',/식당|치료|면회|로비|강당|홀|DINING|LOBBY/i]];
     for(const [type,pattern]of rules)if(pattern.test(compact))return {name,type,rank:3};
     if(correct&&/^[가-힣]{3,8}$/.test(compact)) {
-      const known=['상담실','사무실','원장실','회의실','간호실','생활실','프로그램실','물리치료실','휴게실','면회실','화장실','세탁실','조리실','기계실','전기실'];
+      const known=['상담실','사무실','원장실','회의실','간호실','간호사실','생활실','프로그램실','물리치료실','휴게실','탈의실','정원','주방','면회실','화장실','세탁실','조리실','기계실','전기실'];
       const distance=(a,b)=>{let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const next=[i];for(let j=1;j<=b.length;j++)next[j]=Math.min(next[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1));row=next;}return row[b.length];};
       const near=known.filter(word=>distance(compact,word)===1);
       if(near.length===1)return {...labelInfo(near[0]),original:name};

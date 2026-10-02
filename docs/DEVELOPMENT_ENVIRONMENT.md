@@ -58,6 +58,7 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 
 - `/facility-3d.html`: 기존 서버의 정적 페이지 목록과 Docker 이미지에 포함하되 비밀번호 인증 후 제공한다. 시설 인수·개설 메뉴, 홈 기능 카드, 지식 질문의 기능 안내에 등록한다.
 - `assets/facility-3d-model.js`: 층·공간·치수와 JSON 도면 파일의 검증 및 공간 배치. `assets/facility-3d.js`는 화면 조작·렌더링을 담당한다.
+- 공간 `type`은 기존 `living/office/common/service/core/corridor/unknown`과 `program/kitchen/lounge/changing/garden/therapy/nursing`을 허용한다. 새 값은 프로그램실·주방·휴게실·탈의실·정원·물리치료실·간호사실이며 클라이언트와 `facility_projects.py`의 허용 목록을 함께 유지한다. JSON 버전은 1로 유지하고 기존 저장 공간을 자동 분류하지 않는다. 도면 후보의 이름으로 새 용도를 제안하며 정원 인원 안내는 제외한다. 정원은 벽·실내 가구를 만들지 않는다.
 - 층의 `level`은 배열 위치와 별개인 실제 층 번호(지하 1층 -1, 지상 1~12층 1~12)다. 0층은 허용하지 않는다. 중간 층 삭제 후에도 번호·ID를 유지하며 클라이언트와 서버 검증은 중복 번호를 막고 오름차순으로 저장한다. 번호 없는 이전 JSON만 배열 순서로 보완한다. 층 추가·삭제는 저장 전 편집이며 가장 최근 삭제한 층을 새로고침 전 복구할 수 있다. 공간 가져오기·종사자 배치는 ID/층 번호로 찾고 ERP 연결도 실제 층 번호를 쓴다.
 - `assets/facility-3d-ui.js`는 공통 안내 툴팁과 저장 결과의 native dialog를 담당한다. 전체 화면 내부의 층 선택은 일반 층 선택과 같은 렌더링·현황 닫기 동작을 사용한다.
 - `assets/vendor/three/`: 공식 npm 배포의 Three.js 0.186.1과 OrbitControls를 보관한다. 출처·MIT 라이선스는 해당 폴더에 포함한다. 기존 정적 파일로 제공하며 추가 빌드나 외부 CDN 요청은 필요하지 않다.

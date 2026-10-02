@@ -377,7 +377,7 @@ function updateStaff(dt){
 }
 function drawStaffFallback(){const layer=$('staff-canvas');layer.hidden=false;const w=viewport.clientWidth,h=viewport.clientHeight;layer.width=w*devicePixelRatio;layer.height=h*devicePixelRatio;const ctx=layer.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);if(!fallbackBounds||drawing)return;const {left,top,scale}=fallbackBounds;for(const entry of staffFloors)for(const a of entry.motion.actors){const x=left+(a.x+project.width/2)*scale,y=top+(a.z+project.depth/2)*scale;ctx.fillStyle=window.FacilityStaff.COLORS[a.role];ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();}}
 function roomWalls(group,room,height) {
-  if(!showWalls||mode==='plan'||room.type==='corridor')return;
+  if(!showWalls||mode==='plan'||room.type==='corridor'||room.type==='garden')return;
   if(room.points){const v=M.vertices(room);v.forEach((a,i)=>{const b=v[(i+1)%v.length],wall=box(group,Math.hypot(b.x-a.x,b.z-a.z),height,.14,(a.x+b.x)/2,height/2+.08,(a.z+b.z)/2,'#f6f7f8');wall.rotation.y=-Math.atan2(b.z-a.z,b.x-a.x);});return;}
   const t=0.14,{x,z,w,d}=room,c='#f6f7f8';
   box(group,t,height,d,x-w/2,height/2+0.08,z,c);box(group,t,height,d,x+w/2,height/2+0.08,z,c);
@@ -386,7 +386,7 @@ function roomWalls(group,room,height) {
   box(group,part,height,t,x-(gap+part)/2,height/2+0.08,entryZ,c);box(group,part,height,t,x+(gap+part)/2,height/2+0.08,entryZ,c);
 }
 function furnishings(group,room) {
-  if(mode==='plan'||room.type==='unknown'||room.type==='corridor'||room.points)return;
+  if(mode==='plan'||room.type==='unknown'||room.type==='corridor'||room.type==='garden'||room.points)return;
   const furniture=new THREE.Group();group.add(furniture);group=furniture;
   const {w,d,type,beds,name}=room,x=0,z=0;
   if(type==='living') {
@@ -400,10 +400,10 @@ function furnishings(group,room) {
   } else if(type==='core') {
     if(name.includes('계단'))for(let i=0;i<7;i++)box(group,Math.min(Math.max(0.5,w-0.5),2.1),0.12+i*0.15,0.40,x,0.08+(0.12+i*0.15)/2,z-1.2+i*0.4,'#b2bdc9');
     else box(group,Math.min(Math.max(0.5,w-0.7),2.4),1.45,0.14,x,0.80,z-d/2+0.25,'#aab8c9');
-  } else if(type==='office') {
+  } else if(type==='office'||type==='nursing') {
     box(group,2,0.12,0.9,x,0.85,z,'#c8b8a2');box(group,0.16,0.75,0.75,x-0.80,0.43,z,'#bec8d0');box(group,0.16,0.75,0.75,x+0.80,0.43,z,'#bec8d0');
     box(group,0.55,0.40,0.06,x,1.10,z-0.15,'#53677d');box(group,0.6,0.45,0.6,x,0.31,z+1.1,'#b2bfce');
-  } else if(type==='common') {
+  } else if(['common','program','lounge','therapy'].includes(type)) {
     box(group,Math.min(Math.max(0.5,w-1),3.2),0.12,1.3,x,0.75,z,'#ccbca4');box(group,0.45,0.62,0.45,x-1,0.39,z,'#aebbc5');box(group,0.45,0.62,0.45,x+1,0.39,z,'#aebbc5');
     for(const sign of [-1,1]) box(group,2.4,0.40,0.62,x,0.33,z+sign*1.3,'#b7c5b4');
   } else {

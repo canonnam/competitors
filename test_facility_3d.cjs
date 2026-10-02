@@ -77,6 +77,14 @@ test('basement occupies the next storey below 1F and viewing bounds cover both g
   assert.deepEqual(M.verticalBounds(p),{bottom:-h,top:0,height:h});
   assert.deepEqual(M.validate(p),p);
 });
+test('specific room uses survive export and import alongside legacy generic uses',()=>{
+  const p=M.blank({count:1}),types=['program','kitchen','lounge','changing','garden','therapy','nursing'];
+  types.forEach((type,i)=>M.addRoom(p,1,{id:'use-'+type,name:M.TYPES[type],type,beds:0,x:-9+i*3,z:0,w:2,d:2}));
+  M.addRoom(p,1,{id:'legacy-use',name:'기존 공용공간',type:'common',beds:0,x:0,z:-5,w:4,d:4});
+  const restored=M.validate(JSON.parse(JSON.stringify(p)));
+  assert.deepEqual(restored,p);
+  assert.deepEqual(restored.floors[0].rooms.map(r=>r.type),[...types,'common']);
+});
 test('overlapping rooms are rejected while shared edges and separate floors are allowed',()=>{
   const p=M.blank(),first=M.rectangle({x:-4,z:-4},{x:0,z:0},p);
   M.addRoom(p,1,first);

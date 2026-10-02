@@ -76,6 +76,16 @@ class FacilityProjectTests(unittest.TestCase):
         self.assertEqual(self.request()[1]['projects'][0]['project'], winner)
         self.assertEqual(self.request()[1]['projects'][0]['revision'], 2)
 
+    def test_specific_room_uses_survive_shared_save_and_reinitialization(self):
+        project = sample()
+        project['floors'][0]['rooms'][0]['z'] = -5
+        types = ['program', 'kitchen', 'lounge', 'changing', 'garden', 'therapy', 'nursing']
+        for i, kind in enumerate(types):
+            project['floors'][0]['rooms'].append(dict(id='use-'+kind, name=kind, type=kind, beds=0, x=-9+i*3, z=0, w=2, d=2))
+        self.assertEqual(self.save(project)[0], 200)
+        P.init_db(self.db)
+        self.assertEqual(self.request()[1]['projects'][0]['project'], project)
+
     def test_delete_restore_and_stale_edit_cannot_resurrect_deleted_building(self):
         self.save()
         self.assertEqual(self.request('DELETE', 'building-test/', {'revision': 1})[0], 200)
