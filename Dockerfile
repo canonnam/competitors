@@ -17,6 +17,7 @@ COPY assets /app/assets
 COPY payroll.html /app/
 COPY payroll_insurance.py payroll-insurance.html /app/
 COPY facility_observation.py facility_collection.py facility_projects.py /app/
+COPY liability_insurance.py liability-insurance.html /app/
 COPY robots.txt favicon.ico /app/
 COPY data /app/data
 COPY service_knowledge.py /app/

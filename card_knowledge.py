@@ -12,6 +12,7 @@ import json
 import re
 
 CARDS = {
+    'liability_insurance': ('배상책임보험 관리', '/liability-insurance.html'),
     'payroll_insurance': ('월별 급여·4대보험', '/payroll-insurance.html'),
     'payroll': ('급여 계산·근로계약서', '/payroll.html'),
     'claim_check': ('지점별 청구 점검', '/claim-check.html'),
@@ -28,6 +29,7 @@ CARDS = {
     'facility_3d': ('시설 3D 도면', '/facility-3d.html'),
 }
 ALIASES = {
+    'liability_insurance': ('배상책임보험', '보험가입인원', '보험증서', '보험만료', '배상보험'),
     'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
     'payroll': ('급여계산', '급여계산기', '근로계약', '통상임금', '통상시급', '주휴시간', '주주야야', '연장수당', '야간수당'),
     'claim_check': ('청구점검', '청구현황', '청구상태', '청구여부', '청구마감', '접수완료', '청구처리'),
@@ -352,6 +354,13 @@ def nearby(question):
 
 
 def retrieve(kind, question, now):
+    if kind == 'liability_insurance':
+        from service_knowledge import evidence
+        return [evidence(kind, '배상책임보험 관리 안내',
+            '안양점·인천점의 전체 현원을 ERP에서 매일 한국시간 오전 9시에 조회해 보험 가입 인원과 비교합니다. '
+            '현원이 많으면 보험 가입 인원을 늘리고 적으면 줄이도록 안내합니다. 보험사에 변경을 요청한 뒤 수정된 인원과 증서를 등록해주세요. '
+            'PDF·이미지 증서의 보험 이름·가입 인원·가입기간은 브라우저에서 추출하고 사용자가 확인 후 저장합니다. '
+            '만료일 30일 전부터 갱신 준비를 안내합니다. 현재 상태와 증서는 보험 관리 화면에서 확인해주세요.')]
     if kind == 'payroll_insurance':
         from service_knowledge import evidence
         return [evidence(kind, '월별 급여·4대보험 접근 안내',
@@ -376,6 +385,7 @@ def status():
     from service_knowledge import ROOT
     import agency_news, naver_ads, search_visibility, reputation_watch, claim_check
     paths = {'payroll': [ROOT / 'payroll.html', ROOT / 'assets/contracts/templates.json'],
+             'liability_insurance': [ROOT / 'liability-insurance.html'],
              'payroll_insurance': [ROOT / 'payroll-insurance.html'],
              'ai_hub': [ROOT / 'ai-hub-data.html'], 'claim_check': [claim_check.data_path()],
              'agency_news': [agency_news.db_path()], 'naver_ads': [naver_ads.db_path()],

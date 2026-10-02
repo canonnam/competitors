@@ -16,6 +16,7 @@ import payroll_insurance
 import facility_observation
 import facility_collection
 import facility_projects
+import liability_insurance
 import aeo_missions
 import web_search_results
 import support_applications
@@ -72,6 +73,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if liability_insurance.handle(self, 'GET'):
+            return
         if facility_projects.handle(self, 'GET') or facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
             return
         if support_projects.handle(self, "GET"):
@@ -113,6 +116,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if liability_insurance.handle(self, 'HEAD'):
+            return
         if facility_projects.handle(self, 'HEAD') or facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
             return
         if support_projects.handle(self, "HEAD"):
@@ -300,6 +305,7 @@ class App(SimpleHTTPRequestHandler):
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
+        public_pages.add("liability-insurance.html")
         public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
@@ -325,6 +331,8 @@ class App(SimpleHTTPRequestHandler):
             self.send_error(405)
 
     def do_POST(self):
+        if liability_insurance.handle(self, 'POST'):
+            return
         if facility_projects.handle(self, 'POST') or facility_collection.handle(self, 'POST') or facility_observation.handle(self, 'POST'):
             return
         if support_projects.handle(self, "POST"):
@@ -487,6 +495,8 @@ if __name__ == "__main__":
     reputation_watch.init_db(reputation_watch.db_path())
     reputation_scheduler_stop = reputation_watch.start_scheduler(reputation_watch.db_path())
     facility_scheduler_stop = facility_collection.start_scheduler()
+    liability_insurance.init_db()
+    liability_scheduler_stop = liability_insurance.start_scheduler()
     port = int(os.getenv("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), App)
     print(f"Local: http://localhost:{port}", flush=True)
@@ -500,4 +510,5 @@ if __name__ == "__main__":
         visibility_scheduler_stop.set()
         reputation_scheduler_stop.set()
         facility_scheduler_stop.set()
+        liability_scheduler_stop.set()
         server.server_close()

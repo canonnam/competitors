@@ -38,7 +38,18 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 
 앱은 `python app.py`로 실행하며 기본 포트는 8080이다. 로컬 실행에서 외부 API 기능을 사용하려면 해당 기능의 환경변수가 필요하다. 통계자료 정적 화면과 위 테스트에는 운영 비밀 값이 필요하지 않다.
 
-## 시설 3D 도면
+## 배상책임보험 관리
+
+- `/liability-insurance.html`, `liability_insurance.py`, `assets/liability-*`: 운영·인사·회계의 보험 관리와 대시보드 운영 현황. Python 서버의 기존 정적 구조와 Railway 배포를 재사용한다.
+- `LIABILITY_INSURANCE_DB_PATH`의 기본값은 `/data/liability-insurance.db`다. 지점별 보험 정보·버전과 PDF/이미지 증서(최대 10MB), 마지막 전체 현원·조회 시각·오류만 SQLite에 보관한다. 서버 재시작에도 유지하며 실제 인원·증서는 소스에 넣지 않는다. 증서는 첨부 다운로드로 제공하고 캐시하지 않는다.
+- 서버 전용 ERP 계정은 선택적 `LIABILITY_ERP_USERNAME/PASSWORD` 또는 기존 `FACILITY_ERP_USERNAME/PASSWORD`를 읽는다. 로그인·토큰 갱신·재로그인은 기존 ERP 모듈을 공유한다. 지점 ID는 안양 2·인천 3이다.
+- 처음 자료가 없을 때 수집하고, 이후 한국시간 매일 09:00에 점검한다. 실패는 1시간 뒤 재시도한다. 브라우저는 캐시를 분 단위로 읽으며 ‘지금 현원 확인’만 수동 수집한다(1분 제한). 재시작으로 놓친 점검은 자동 재개한다.
+- `/api/elderly/statistics/?nursing_home=...`의 `total_elderly`를 우선 사용한다. ERP 서버 오류는 `/api/dashboard/stats/{id}/`의 같은 필드로 대체한다. 2026-10-02 실제 조회에서 입소자 통계는 HTTP 500, 대시보드 통계는 정상임을 확인했다. 생활실 현원 합계는 사용하지 않는다. 미조회 값은 null로 두고 실패는 이전 현원과 함께 별도 표시한다.
+- 정상 판정에는 오늘 확인한 전체 현원, 가입 인원 일치, 등록한 보험 이름, 시작된 가입기간과 30일을 초과한 만료 잔여일이 필요하다. 만료 30일 전·당일은 갱신 준비, 만료 후·가입 전·인원 부족은 조치 필요, 초과 가입은 감소 안내다. 모든 만료 계산은 한국시간 날짜 기준이다.
+- PDF.js·Tesseract의 기존 자체 제공 파일로 PDF(자동 추출 20페이지)·스캔·JPG·PNG·WEBP를 브라우저에서 읽는다. 보험 이름·가입 인원·가입기간의 명시적 문구를 추출하며 여러 값이 충돌하면 직접 확인을 요구한다. 자동 저장하지 않는다. 입력 및 선택한 새 증서는 ‘확인 후 저장’으로 원자적으로 저장하며 기존 증서는 새 증서 저장 때만 교체한다. 버전 충돌은 409로 막는다.
+- 검증: `python -m unittest test_liability_insurance.py test_ui_consistency.py test_static_pages.py test_card_knowledge.py test_claim_check.py test_facility_collection.py`; `node --test test_liability_certificate.cjs test_navigation.cjs test_dashboard.cjs`.
+
+## 시설 3D 도면 구성
 
 - `/facility-3d.html`: 기존 서버의 공개 정적 페이지 목록과 Docker 이미지에 포함한다. 시설 인수·개설 메뉴, 홈 기능 카드, 지식 질문의 기능 안내에 등록한다.
 - `assets/facility-3d-model.js`: 층·공간·치수와 JSON 도면 파일의 검증 및 공간 배치. `assets/facility-3d.js`는 화면 조작·렌더링을 담당한다.

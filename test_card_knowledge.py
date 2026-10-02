@@ -45,9 +45,11 @@ class CardKnowledgeTests(unittest.TestCase):
     def test_registry_covers_every_homepage_card_and_source_links(self):
         homepage = (service.ROOT/'index.html').read_text(encoding='utf-8')
         pages = set(re.findall(r'<a href="(/[^"?#]+\.html)"', homepage))
-        self.assertEqual(pages, set(service.PAGES.values()))
+        # These existing cards have no public chat adapter.
+        excluded = {'/website-requests.html', '/support-projects.html', '/borrowing-status.html'}
+        self.assertEqual(pages - excluded, set(service.PAGES.values()))
         self.assertEqual(len(service.status()), len(service.PAGES))
-        for page in pages:
+        for page in pages - excluded:
             self.assertEqual(service.safe_url(page), page)
             self.assertIn(repr(page), (service.ROOT/'assets/wiki-chat.js').read_text(encoding='utf-8'))
 
