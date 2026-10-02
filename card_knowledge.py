@@ -26,7 +26,7 @@ CARDS = {
     'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
     'staff_eval': ('종사자 평가', '/staff-eval.html'),
     'facility_acquisition': ('요양원 인수·개설', '/facility-acquisition.html'),
-    'facility_3d': ('시설 3D 도면', '/facility-3d.html'),
+    'facility_3d': ('시설 3D 지도', '/facility-3d.html'),
 }
 ALIASES = {
     'liability_insurance': ('배상책임보험', '보험가입인원', '보험증서', '보험만료', '배상보험'),

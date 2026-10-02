@@ -53,12 +53,15 @@
     const legacyName=out.name.replace(/\s+/g,'');
     out.nursingHomeId=raw.nursingHomeId===undefined?(/^(더비다요양원)?안양(점)?$/.test(legacyName)?2:/^(더비다요양원)?인천(점)?$/.test(legacyName)?3:null):raw.nursingHomeId;
     if(![null,2,3].includes(out.nursingHomeId))throw new Error('ERP 지점을 확인해주세요.');
-    const roomIds = new Set(),floorIds = new Set();
+    const roomIds = new Set(),floorIds = new Set(),floorLevels=new Set();
     out.floors = raw.floors.map((floor,i)=>{
       if (!floor || !Array.isArray(floor.rooms) || floor.rooms.length>40) throw new Error('한 층에 공간은 최대 40개까지 구성할 수 있습니다.');
       const id=text(floor.id,uid());
       if (floorIds.has(id)) throw new Error('중복된 층 정보가 있습니다.');
       floorIds.add(id);
+      const level=number(floor.level??i+1,1,12,'층 번호');
+      if(!Number.isInteger(level)||floorLevels.has(level))throw new Error('층 번호는 중복 없이 1~12로 입력해주세요.');
+      floorLevels.add(level);
       const rooms = floor.rooms.map(room=>{
         if (!room) throw new Error('공간 정보를 확인해주세요.');
         const shape=room.points?polygon(room.points,out):{x:number(room.x,-out.width/2,out.width/2,'공간 위치'),z:number(room.z,-out.depth/2,out.depth/2,'공간 위치'),w:number(room.w,0.5,out.width,'공간 가로'),d:number(room.d,0.5,out.depth,'공간 세로')};
@@ -77,13 +80,26 @@
         }
       }
       const staff=validateStaff(floor.staff??[]);
-      return {id,level:i+1,name:text(floor.name,(i+1)+'층'),rooms,image,staff};
-    });
+      return {id,level,name:text(floor.name,level+'층'),rooms,image,staff};
+    }).sort((a,b)=>a.level-b.level);
     if(out.floors.reduce((n,f)=>n+f.staff.reduce((s,r)=>s+r.count,0),0)>200)throw new Error('한 건물에 종사자는 최대 200명까지 배치할 수 있습니다.');
     return out;
   }
   function inside(room,project) {
     return Math.abs(room.x)+room.w/2 <= project.width/2+0.001 && Math.abs(room.z)+room.d/2 <= project.depth/2+0.001;
+  }
+  function addFloor(project,options={}){
+    if(project.floors.length>=12)throw new Error('층은 최대 12개까지 구성할 수 있습니다.');
+    const level=number(options.level,1,12,'층 번호');
+    if(!Number.isInteger(level)||project.floors.some(f=>f.level===level))throw new Error('사용하지 않은 층 번호를 선택해주세요.');
+    const floor={id:uid(),level,name:text(options.name,level+'층'),rooms:[],image:null,staff:[]};
+    project.floors.push(floor);project.floors.sort((a,b)=>a.level-b.level);project.example=false;return floor;
+  }
+  function removeFloor(project,level){
+    if(project.floors.length<=1)throw new Error('건물에는 최소 한 층이 필요합니다.');
+    const index=project.floors.findIndex(f=>f.level===level);
+    if(index<0)throw new Error('삭제할 층을 확인해주세요.');
+    project.example=false;return project.floors.splice(index,1)[0];
   }
   const cross=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
   function vertices(room){return room.points||[{x:room.x-room.w/2,z:room.z-room.d/2},{x:room.x+room.w/2,z:room.z-room.d/2},{x:room.x+room.w/2,z:room.z+room.d/2},{x:room.x-room.w/2,z:room.z+room.d/2}];}
@@ -127,5 +143,5 @@
     return room;
   }
   function segmentHits(room,a,b){const v=vertices(room);return contains(room,a)||contains(room,b)||v.some((p,i)=>segmentsMeet(a,b,p,v[(i+1)%v.length]));}
-  return {TYPES,COLORS,STAFF_ROLES,uid,blank,sample,validate,inside,intersects,rectangle,polygon,vertices,area,contains,anchor,triangulate,segmentHits,validateStaff,addRoom};
+  return {TYPES,COLORS,STAFF_ROLES,uid,blank,sample,validate,inside,intersects,rectangle,polygon,vertices,area,contains,anchor,triangulate,segmentHits,validateStaff,addRoom,addFloor,removeFloor};
 });

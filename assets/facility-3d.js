@@ -1,6 +1,7 @@
 import {initImport} from './facility-3d-import.js?v=20261001-auto1';
-import {initObservation} from './facility-observation.js?v=20261002-share1';
-import {initStaff} from './facility-staff.js?v=20261002-mvp2';
+import {initObservation} from './facility-observation.js?v=20261002-map2';
+import {initStaff} from './facility-staff.js?v=20261002-map2';
+import {initFacilityUI} from './facility-3d-ui.js?v=20261002-map2';
 /* Shared facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
@@ -13,7 +14,9 @@ try {
     projects=saved.projects.map(M.validate);
   }
 } catch { loadError='저장된 도면을 불러오지 못했습니다. 예시 건물로 시작합니다. 기존 저장 파일은 그대로 보관됩니다.'; }
-let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedFloor = 1, selectedRoom = null, mode = 'building', dirty = false;
+let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedFloor = project.floors[0].level, selectedRoom = null, mode = 'building', dirty = false;
+let removedFloor=null;
+const ui=initFacilityUI();
 const revisions=new Map();let sharedReady=false,saving=false,editVersion=0;
 async function sharedRequest(path='',method='GET',body){
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
@@ -26,11 +29,11 @@ async function sharedRequest(path='',method='GET',body){
 function cacheBackup(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,projects}));}catch{/* A failed browser backup does not invalidate the committed server save. */}}
 function saveControls(){for(const id of ['save-project','project-select','new-project','delete-project','undo-project'])$(id).disabled=!sharedReady||saving;}
 async function loadShared(initial=false){
-  if(saving||(!initial&&(dirty||document.activeElement?.matches('input,select,textarea'))))return;
+  if(saving||(!initial&&(dirty||document.querySelector('dialog[open]')||document.activeElement?.matches('input,select,textarea'))))return;
   try {
     const result=await sharedRequest(),entries=result.projects.map(row=>({...row,project:M.validate(row.project)}));
     sharedReady=true;saveControls();
-    if(dirty&&!initial)return;
+    if(!initial&&(dirty||document.querySelector('dialog[open]')))return;
     if(initial&&!entries.length){status(projects.length?'기존 도면을 불러왔습니다. 저장을 누르면 다른 사람과 공유됩니다.':'새 건물을 저장하면 다른 사람도 같은 도면과 종사자 배치를 볼 수 있습니다.');return;}
     if(!entries.length&&!revisions.size&&projects.length)return;
     const next=entries.find(row=>row.project.id===project.id)||entries[0];
@@ -38,7 +41,7 @@ async function loadShared(initial=false){
     projects=entries.map(row=>row.project);revisions.clear();entries.forEach(row=>revisions.set(row.project.id,row.revision));
     if(initial){if(next)setProject(structuredClone(next.project));status('공유 도면을 불러왔습니다.');}
     else if(changed&&!dirty){
-      if(next){const same=next.project.id===project.id;if(same){project=structuredClone(next.project);selectedFloor=Math.min(selectedFloor,project.floors.length);if(!currentRoom())selectedRoom=null;cancelDrawing();renderUI();rebuild();}else setProject(structuredClone(next.project));}
+      if(next){const same=next.project.id===project.id;if(same){project=structuredClone(next.project);if(!project.floors.some(f=>f.level===selectedFloor))selectedFloor=project.floors[0].level;if(!currentRoom())selectedRoom=null;cancelDrawing();renderUI();rebuild();}else setProject(structuredClone(next.project));}
       else setProject(M.blank());
       status('최신 공유 도면과 종사자 배치를 반영했습니다.');
     }
@@ -53,10 +56,11 @@ let fallback = false, fallbackCanvas = null, fallbackRevision = 0;
 let observation=null,observationAnchors=[];
 let staff=null,staffFloors=[],drawingPoints=[],drawingShape='polygon',previewEnd=null;
 const canvas = $('space-canvas'), viewport = $('viewport');
-const floor = () => project.floors[selectedFloor-1];
+const floor = () => project.floors.find(f=>f.level===selectedFloor);
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
 function status(message,kind='') {
   $('project-status').textContent=message;
+  $('project-status').hidden=!message;
   if(kind) $('project-status').dataset.status=kind; else delete $('project-status').dataset.status;
 }
 function markDirty() {dirty=true;editVersion++;$('save-project').textContent='저장';}
@@ -70,10 +74,14 @@ function renderProjectSelect(){
 }
 function renderUI() {
   renderProjectSelect();
-  const rooms=project.floors.reduce((n,f)=>n+f.rooms.length,0);
-  $('project-summary').textContent=`${project.floors.length}개 층 · ${rooms}개 공간 · ${project.scale==='entered'?'입력 치수':'추정 크기'}${revisions.has(project.id)?' · 공유 저장':''}`;
-  $('project-summary').title=project.scale==='entered'?'입력 치수 기준':'추정 크기 기준';
+  $('project-summary').textContent='';
+  $('project-scale-note').textContent=project.scale==='entered'?'입력한 치수 기준으로 공간을 구성합니다.':'크기는 추정값입니다. 정확한 면적이 필요하면 실제 치수를 입력하세요.';
   $('floor-count').textContent=project.floors.length+'개 층';
+  $('add-floor').disabled=project.floors.length>=12;
+  $('delete-floor').disabled=project.floors.length<=1;
+  $('undo-floor').hidden=!removedFloor||removedFloor.projectId!==project.id;
+  $('view-floor-select').replaceChildren(...project.floors.map(f=>{const option=make('option','',f.name===f.level+'층'?f.name:`${f.level}층 · ${f.name}`);option.value=f.level;return option;}));
+  $('view-floor-select').value=selectedFloor;
   $('floor-list').replaceChildren(...[...project.floors].reverse().map(f=>{
     const button=make('button','f3-floor-button');button.type='button';button.dataset.level=f.level;
     button.setAttribute('aria-pressed',String(f.level===selectedFloor));
@@ -107,7 +115,7 @@ function renderUI() {
   $('add-room').textContent=drawing?'추가 취소':'공간 추가';
   $('view-help').textContent=drawing?(drawingShape==='polygon'?'모서리를 차례로 클릭 · 첫 점 클릭/Enter로 완성 · Backspace로 한 점 취소 · Esc로 종료':'첫 모서리와 반대 모서리를 클릭 · Esc로 취소'):mode==='plan'?'드래그로 이동 · 휠로 확대 · 공간을 클릭해 선택':'드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동';
   $('drawing-controls').hidden=!drawing;$('drawing-count').textContent='점 '+drawingPoints.length+'개';$('drawing-finish').disabled=drawingShape!=='polygon'||drawingPoints.length<3;$('drawing-undo').disabled=!drawingPoints.length;$('drawing-finish').hidden=drawingShape!=='polygon';$('drawing-undo').hidden=drawingShape!=='polygon';
-  canvas.setAttribute('aria-label',fallback?`${selectedFloor}층 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}층 건물 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
+  canvas.setAttribute('aria-label',fallback?`${selectedFloor}층 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}개 층의 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
   viewport.classList.toggle('is-drawing',drawing);
   observation?.sync();
   staff?.render();
@@ -115,17 +123,17 @@ function renderUI() {
 Object.entries(M.TYPES).forEach(([value,label])=>{const option=make('option','',label);option.value=value;$('room-type').append(option);});
 function confirmLeave() {return !dirty || window.confirm('저장하지 않은 변경이 있습니다. 다른 건물로 이동할까요?');}
 function setProject(next) {
-  project=next;selectedFloor=1;selectedRoom=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
+  project=next;selectedFloor=next.floors[0].level;selectedRoom=null;removedFloor=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
 }
 async function save() {
   if(saving||!sharedReady)return;
-  saving=true;saveControls();const version=editVersion;
+  saving=true;saveControls();status('');const version=editVersion;
   try {
     const clean=M.validate(project),row=await sharedRequest('','POST',{project:clean,revision:revisions.get(clean.id)||0});
     revisions.set(clean.id,row.revision);projects=[M.validate(row.project),...projects.filter(p=>p.id!==clean.id)];
     if(editVersion===version)dirty=false;cacheBackup();renderUI();
-    status(dirty?'공유 저장했습니다. 추가로 편집한 내용은 다시 저장해주세요.':'도면과 종사자 배치를 공유 저장했습니다. 다른 사람도 같은 구성을 볼 수 있습니다.','success');
-  } catch(error) {status(error.message,'error');}
+    ui.notify(dirty?'공유 저장했습니다. 추가로 편집한 내용은 다시 저장해주세요.':'도면과 종사자 배치를 저장했습니다. 다른 사람도 같은 구성을 볼 수 있습니다.');
+  } catch(error) {ui.notify(error.message,true);}
   finally {saving=false;saveControls();}
 }
 function closeMore(focus=false){$('project-menu').hidden=true;$('project-more').setAttribute('aria-expanded','false');if(focus)$('project-more').focus();}
@@ -172,9 +180,49 @@ $('new-building-form').onsubmit=event=>{
 };
 $('floor-list').onclick=event=>{
   const button=event.target.closest('[data-level]');if(!button)return;
-  cancelDrawing();selectedFloor=Number(button.dataset.level);selectedRoom=null;
+  chooseFloor(Number(button.dataset.level));
+};
+function chooseFloor(level){
+  if(!project.floors.some(f=>f.level===level))return;
+  cancelDrawing();selectedFloor=level;selectedRoom=null;
   if(mode==='building'||mode==='exploded')mode='floor';
   renderUI();rebuild();fitCamera();
+}
+$('view-floor-select').onchange=()=>chooseFloor(Number($('view-floor-select').value));
+$('add-floor').onclick=()=>{
+  const used=new Set(project.floors.map(f=>f.level)),available=Array.from({length:12},(_,i)=>i+1).filter(level=>!used.has(level));
+  if(!available.length)return;
+  $('new-floor-form').reset();$('new-floor-error').textContent='';
+  $('new-floor-level').replaceChildren(...available.map(level=>{const option=make('option','',level+'층');option.value=level;return option;}));
+  const next=Math.max(...used)+1;$('new-floor-level').value=available.includes(next)?next:available[0];
+  $('new-floor-dialog').showModal();
+};
+$('cancel-new-floor').onclick=()=>$('new-floor-dialog').close();
+$('new-floor-form').onsubmit=event=>{
+  event.preventDefault();
+  try{const added=M.addFloor(project,{level:Number($('new-floor-level').value),name:$('new-floor-name').value});markDirty();$('new-floor-dialog').close();chooseFloor(added.level);status('층을 추가했습니다. 저장하면 다른 사람에게도 반영됩니다.');}
+  catch(error){$('new-floor-error').textContent=error.message;}
+};
+$('delete-floor').onclick=()=>{
+  if(project.floors.length<=1)return;
+  const f=floor(),count=(f.staff||[]).reduce((n,row)=>n+row.count,0);
+  $('delete-floor-summary').textContent=`${f.level}층 · ${f.name} — 공간 ${f.rooms.length}개, 도면 ${f.image?'1개':'없음'}, 종사자 ${count}명`;
+  $('delete-floor-dialog').showModal();
+};
+$('cancel-delete-floor').onclick=()=>$('delete-floor-dialog').close();
+$('confirm-delete-floor').onclick=()=>{
+  try{
+    const f=M.removeFloor(project,selectedFloor);removedFloor={projectId:project.id,floor:structuredClone(f)};
+    $('delete-floor-dialog').close();markDirty();chooseFloor((project.floors.filter(row=>row.level<f.level).at(-1)||project.floors[0]).level);
+    status(`${f.level}층을 삭제했습니다. 저장하면 공유됩니다. 삭제 되돌리기로 복구할 수 있습니다.`);
+  }catch(error){$('delete-floor-dialog').close();status(error.message,'error');}
+};
+$('undo-floor').onclick=()=>{
+  if(!removedFloor||removedFloor.projectId!==project.id)return;
+  try{
+    const next=structuredClone(project);next.floors.push(structuredClone(removedFloor.floor));project=M.validate(next);
+    const level=removedFloor.floor.level;removedFloor=null;markDirty();chooseFloor(level);status('층과 도면·공간·종사자 배치를 복구했습니다. 저장하면 공유됩니다.');
+  }catch(error){status(error.message,'error');}
 };
 $('room-list').onclick=event=>{const button=event.target.closest('[data-room]');if(button)selectRoom(selectedFloor,button.dataset.room);};
 document.querySelectorAll('[data-mode]').forEach(button=>button.onclick=()=>changeMode(button.dataset.mode));
@@ -204,14 +252,23 @@ $('drawing-finish').onclick=finishPolygon;
 $('drawing-undo').onclick=()=>{drawingPoints.pop();previewEnd=null;drawPreview(null);renderUI();};
 function finishPolygon(){if(!drawing||drawingShape!=='polygon')return;try{finishRoom(M.polygon(drawingPoints,project));}catch(error){status(error.message+' 마지막 점 취소로 수정할 수 있습니다.','error');}}
 function finishRoom(shape){const room=M.addRoom(project,selectedFloor,shape);cancelDrawing();selectedRoom=room.id;markDirty();renderUI();rebuild();status('공간을 추가했습니다. 오른쪽에서 이름과 용도를 지정한 뒤 저장하세요.','success');}
-$('show-labels').onchange=()=>{showNames=$('show-labels').checked;labelSprites.forEach(s=>s.visible=showNames);needsRender=true;if(fallback)drawFallback();};
-$('show-walls').onchange=()=>{showWalls=$('show-walls').checked;rebuild();};
+$('show-labels').onclick=()=>{showNames=!showNames;$('show-labels').setAttribute('aria-pressed',String(showNames));labelSprites.forEach(s=>s.visible=showNames);needsRender=true;if(fallback)drawFallback();};
+$('show-walls').onclick=()=>{showWalls=!showWalls;$('show-walls').setAttribute('aria-pressed',String(showWalls));rebuild();};
 $('reset-view').onclick=fitCamera;
+let expandedInert=[];
+function expandViewer(open){
+  const viewer=document.querySelector('.f3-viewer');viewer.classList.toggle('is-expanded',open);document.body.classList.toggle('f3-expanded-body',open);
+  if(open){for(let node=viewer;node.parentElement&&node!==document.body;node=node.parentElement){for(const sibling of node.parentElement.children){if(sibling!==node&&!sibling.inert){sibling.inert=true;expandedInert.push(sibling);}}}}
+  else{expandedInert.forEach(node=>node.inert=false);expandedInert=[];}
+  $('fullscreen').textContent=open?'전체 화면 닫기':'전체 화면';$('fullscreen').focus();resize();
+}
 $('fullscreen').onclick=async()=>{
+  if(document.querySelector('.f3-viewer').classList.contains('is-expanded')){expandViewer(false);return;}
   try {if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('.f3-viewer').requestFullscreen();}
-  catch {status('이 브라우저에서는 전체 화면을 열 수 없습니다.','error');}
+  catch {expandViewer(true);}
 };
 document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'전체 화면 닫기':'전체 화면';resize();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.querySelector('.f3-viewer').classList.contains('is-expanded'))expandViewer(false);});
 $('export-project').onclick=()=>{
   const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=(project.name.replace(/[<>:"/\\|?*]/g,'_')||'시설')+'-3D도면.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
@@ -233,7 +290,7 @@ initImport({model:M,getProject:()=>project,getFloor:floor,status,
   onRooms(rooms,targetProject,targetFloor,replace) {
     if(project!==targetProject)throw new Error('건물이 변경되었습니다. 현재 건물에서 다시 분석해주세요.');
     if(!rooms.length)throw new Error('추가할 공간을 하나 이상 선택해주세요.');
-    const next=structuredClone(project);if(replace)next.floors[targetFloor.level-1].rooms=[];
+    const next=structuredClone(project);if(replace)next.floors.find(f=>f.id===targetFloor.id).rooms=[];
     rooms.forEach(room=>M.addRoom(next,targetFloor.level,room));M.validate(next);
     project=next;selectedFloor=targetFloor.level;selectedRoom=rooms[0].id;markDirty();renderUI();rebuild();status(rooms.length+(replace?'개 공간으로 교체했습니다.':'개 공간을 추가했습니다.')+' 3D에서 배치를 확인하고 저장하세요.','success');
   },
@@ -415,7 +472,7 @@ function rebuild() {
     }
   });
   if(mode==='building'&&showWalls) {
-    const y=project.floors.length*project.height;
+    const y=Math.max(...project.floors.map(f=>f.level))*project.height;
     box(root,project.width+0.6,0.28,project.depth+0.6,0,y-0.1,0,'#d7e0e7');
     box(root,project.width+0.6,0.5,0.16,0,y+0.15,-project.depth/2,'#e7ecf0');
     box(root,0.16,0.5,project.depth+0.6,-project.width/2,y+0.15,0,'#e7ecf0');
@@ -429,7 +486,8 @@ function rebuild() {
 }
 function fitCamera() {
   if(!camera){if(fallback)drawFallback();return;}
-  const height=mode==='building'?project.floors.length*project.height:mode==='exploded'?(project.floors.length-1)*(project.height+3.8)+project.height:1;
+  const topFloor=Math.max(...project.floors.map(f=>f.level));
+  const height=mode==='building'?topFloor*project.height:mode==='exploded'?(topFloor-1)*(project.height+3.8)+project.height:1;
   const targetY=(mode==='floor'||mode==='plan')?0:height*0.48,aspect=viewport.clientWidth/viewport.clientHeight;
   const size=mode==='plan'?Math.max(project.depth+7,(project.width+7)/aspect):Math.max(project.depth+12,height+12,(project.width+18)/aspect);
   camera.left=-size*aspect/2;camera.right=size*aspect/2;camera.top=size/2;camera.bottom=-size/2;camera.zoom=1;
@@ -529,7 +587,7 @@ canvas.addEventListener('pointermove',event=>{
   if(fallback||!raycaster)return;
   raycaster.setFromCamera(pointer(event),camera);const hit=raycaster.intersectObjects(pickTargets)[0],label=$('hover-label');
   if(!hit){label.hidden=true;return;}
-  const data=hit.object.userData,room=project.floors[data.level-1].rooms.find(r=>r.id===data.id);const bounds=canvas.getBoundingClientRect();
+  const data=hit.object.userData,room=project.floors.find(f=>f.level===data.level)?.rooms.find(r=>r.id===data.id);const bounds=canvas.getBoundingClientRect();
   label.textContent=data.level+'층 · '+room.name;label.hidden=false;label.style.left=Math.max(8,Math.min(bounds.width-150,event.clientX-bounds.left+12))+'px';label.style.top=Math.max(8,event.clientY-bounds.top-35)+'px';
 });
 canvas.addEventListener('pointerleave',()=>{$('hover-label').hidden=true;});

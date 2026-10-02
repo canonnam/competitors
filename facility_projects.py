@@ -67,14 +67,16 @@ def validate(raw):
     p = dict(version=1, id=identifier(raw.get('id')), name=text(raw.get('name'), '새 건물'), width=num(raw.get('width'), 4, 120), depth=num(raw.get('depth'), 4, 120), height=num(raw.get('height'), 2, 6), scale='entered' if raw.get('scale') == 'entered' else 'estimated', example=raw.get('example') is True, nursingHomeId=raw.get('nursingHomeId'), floors=[])
     if isinstance(p['nursingHomeId'], bool) or p['nursingHomeId'] not in (None, 2, 3):
         raise ApiError(400, 'ERP 지점을 확인해주세요.')
-    floor_ids, room_ids, total_staff = set(), set(), 0
+    floor_ids, floor_levels, room_ids, total_staff = set(), set(), set(), 0
     for i, raw_floor in enumerate(raw['floors']):
         if not isinstance(raw_floor, dict) or not isinstance(raw_floor.get('rooms'), list) or len(raw_floor['rooms']) > 40:
             raise ApiError(400, '층과 공간 개수를 확인해주세요.')
-        f = dict(id=identifier(raw_floor.get('id')), level=i+1, name=text(raw_floor.get('name'), f'{i+1}층'), rooms=[], image=None, staff=[])
-        if f['id'] in floor_ids:
+        level = num(raw_floor.get('level', i+1), 1, 12, True)
+        f = dict(id=identifier(raw_floor.get('id')), level=level, name=text(raw_floor.get('name'), f'{level}층'), rooms=[], image=None, staff=[])
+        if f['id'] in floor_ids or level in floor_levels:
             raise ApiError(400, '중복된 층 정보가 있습니다.')
         floor_ids.add(f['id'])
+        floor_levels.add(level)
         for raw_room in raw_floor['rooms']:
             if not isinstance(raw_room, dict):
                 raise ApiError(400, '공간 정보를 확인해주세요.')
@@ -132,6 +134,7 @@ def validate(raw):
         if count > 80 or total_staff > 200:
             raise ApiError(400, '층당 80명·건물당 200명까지 배치할 수 있습니다.')
         p['floors'].append(f)
+    p['floors'].sort(key=lambda f: f['level'])
     return p
 
 

@@ -3,6 +3,13 @@ const M=require('./assets/facility-3d-model.js'),O=require('./assets/facility-ob
 function project(){const p=M.blank({name:'안양점',count:5});p.nursingHomeId=2;p.floors[0].rooms=[{id:'a',name:'201',type:'living',x:1,z:1,w:3,d:3,beds:0}];p.floors[1].rooms=[{id:'b',name:'201호 생활실',type:'living',x:-3,z:1,w:3,d:3,beds:0}];return p;}
 const row=(floor,room,tier='focus')=>({elderly_name:'가상 대상',living_room_floor:floor,living_room_name:room,risk_tier:tier,risk_tier_display:tier==='focus'?'집중관찰':'주의관찰'});
 test('same room names on separate floors map to their exact registered floor',()=>{const result=O.map(project(),{nursingHomeId:2,rows:[row('1층','201호 생활실'),row(2,'201','watch')]});assert.deepEqual(result.groups.map(g=>[g.level,g.roomId]),[[1,'a'],[2,'b']]);assert.equal(result.focus,1);assert.equal(result.watch,1);});
+
+test('removing a lower floor keeps ERP observations on their declared physical floor',()=>{
+  const p=project();p.floors[3].rooms=[{...p.floors[0].rooms[0],id:'four',name:'401'}];
+  M.removeFloor(p,3);const restored=M.validate(JSON.parse(JSON.stringify(p)));
+  const result=O.map(restored,{nursingHomeId:2,rows:[row(4,'401')]});
+  assert.deepEqual(result.groups.map(g=>[g.level,g.roomId]),[[4,'four']]);assert.equal(result.items[0].reason,'');
+});
 test('missing floors or rooms never infer an elderly location from room digits',()=>{const r=O.map(project(),{nursingHomeId:2,rows:[row(null,'201'),row('5','501'),row('1',null),row('1','999')]});assert.deepEqual(r.items.map(x=>x.reason),['생활실 정보 없음','생활실 미연결','도면 미등록','층 정보 없음']);assert.equal(r.groups.length,1);assert.equal(r.groups[0].roomId,null);assert.equal(r.groups[0].rows.length,2);});
 test('ambiguous room names require review instead of silently choosing a room',()=>{const p=project();p.floors[0].rooms.push({...p.floors[0].rooms[0],id:'duplicate',name:'201호'});const r=O.map(p,{nursingHomeId:2,rows:[row(1,'201')]});assert.equal(r.items[0].reason,'생활실 이름 중복');assert.equal(r.groups[0].roomId,null);});
 test('data from another ERP branch and ordinary observations cannot appear',()=>{assert.equal(O.map(project(),{nursingHomeId:3,rows:[row(1,'201')]}).items.length,0);assert.equal(O.map(project(),{nursingHomeId:2,rows:[row(1,'201','routine')]}).items.length,0);});

@@ -50,10 +50,12 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - PDF.js·Tesseract의 기존 자체 제공 파일로 PDF(자동 추출 20페이지)·스캔·JPG·PNG·WEBP를 브라우저에서 읽는다. 보험 이름·가입 인원·가입기간의 명시적 문구를 추출하며 여러 값이 충돌하면 직접 확인을 요구한다. 자동 저장하지 않는다. 입력 및 선택한 새 증서는 ‘확인 후 저장’으로 원자적으로 저장하며 기존 증서는 새 증서 저장 때만 교체한다. 버전 충돌은 409로 막는다.
 - 검증: `python -m unittest test_liability_insurance.py test_ui_consistency.py test_static_pages.py test_card_knowledge.py test_claim_check.py test_facility_collection.py`; `node --test test_liability_certificate.cjs test_liability_ui.cjs test_navigation.cjs test_dashboard.cjs`.
 
-## 시설 3D 도면 구성
+## 시설 3D 지도 구성
 
 - `/facility-3d.html`: 기존 서버의 공개 정적 페이지 목록과 Docker 이미지에 포함한다. 시설 인수·개설 메뉴, 홈 기능 카드, 지식 질문의 기능 안내에 등록한다.
 - `assets/facility-3d-model.js`: 층·공간·치수와 JSON 도면 파일의 검증 및 공간 배치. `assets/facility-3d.js`는 화면 조작·렌더링을 담당한다.
+- 층의 `level`은 배열 위치와 별개인 실제 층 번호(1~12)다. 중간 층 삭제 후에도 번호·ID를 유지하며 클라이언트와 서버 검증은 중복 번호를 막고 오름차순으로 저장한다. 번호 없는 이전 JSON만 배열 순서로 보완한다. 층 추가·삭제는 저장 전 편집이며 가장 최근 삭제한 층을 새로고침 전 복구할 수 있다. 공간 가져오기·종사자 배치는 ID/층 번호로 찾고 ERP 연결도 실제 층 번호를 쓴다.
+- `assets/facility-3d-ui.js`는 공통 안내 툴팁과 저장 결과의 native dialog를 담당한다. 전체 화면 내부의 층 선택은 일반 층 선택과 같은 렌더링·현황 닫기 동작을 사용한다.
 - `assets/vendor/three/`: 공식 npm 배포의 Three.js 0.186.1과 OrbitControls를 보관한다. 출처·MIT 라이선스는 해당 폴더에 포함한다. 기존 정적 파일로 제공하며 추가 빌드나 외부 CDN 요청은 필요하지 않다.
 - WebGL2를 지원하는 브라우저에서 3D를 제공하고, 지원하지 않으면 선택 층의 2D 평면으로 표시한다.
 - 건물은 1~12층, 층별 공간은 최대 40개다. 치수를 생략하면 24×16m, 층 높이 3.2m를 예시로 사용하고 추정 크기로 표시한다.

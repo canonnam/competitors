@@ -122,6 +122,21 @@ class FacilityProjectTests(unittest.TestCase):
         self.assertEqual(self.save(sample('building-new'))[0], 200)
         self.assertEqual(self.request('POST', 'building-0/restore/', {'revision':2})[0], 400)
 
+    def test_shared_floors_keep_physical_numbers_and_reject_duplicate_or_invalid_levels(self):
+        p = sample()
+        upper = copy.deepcopy(p['floors'][0])
+        upper.update(id='floor-4', level=4, name='4층')
+        upper['rooms'][0].update(id='room-4', name='401호')
+        p['floors'].append(upper)
+        self.assertEqual(self.save(p)[0], 200)
+        P.init_db(self.db)
+        self.assertEqual(self.request()[1]['projects'][0]['project'], p)
+        for level in (1, 0, 13, 4.5, True):
+            invalid = copy.deepcopy(p)
+            invalid['floors'][1]['level'] = level
+            self.assertEqual(self.save(invalid, 1)[0], 400)
+            self.assertEqual(self.request()[1]['projects'][0]['project'], p)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,6 +27,30 @@ test('drawing in either direction creates the same room bounds',()=>{
   assert.deepEqual(r,reverse);
   assert.ok(M.inside(r,p));
 });
+
+test('deleting a middle floor preserves physical levels and restoring keeps its complete contents',()=>{
+  const p=M.sample();p.floors[2].image={name:'합성 도면',src:'data:image/png;base64,aGVsbG8=',aspect:1};p.floors[2].staff=[{role:'care',count:2}];
+  const original=structuredClone(p.floors),removed=M.removeFloor(p,3);
+  assert.deepEqual(p.floors.map(f=>f.level),[1,2,4,5]);
+  assert.deepEqual(p.floors,original.filter(f=>f.level!==3));
+  assert.deepEqual(M.validate(JSON.parse(JSON.stringify(p))).floors,p.floors);
+  p.floors.push(removed);
+  assert.deepEqual(M.validate(p).floors,original);
+});
+
+test('new floors fill unused levels without renumbering and bounds prevent invalid floor mutations',()=>{
+  const p=M.blank({count:5});M.removeFloor(p,3);
+  const added=M.addFloor(p,{level:3,name:'생활층'});
+  assert.equal(added.name,'생활층');assert.deepEqual(added.rooms,[]);assert.deepEqual(added.staff,[]);assert.equal(added.image,null);
+  assert.deepEqual(p.floors.map(f=>f.level),[1,2,3,4,5]);
+  const before=structuredClone(p);
+  for(const level of [3,0,13,1.5])assert.throws(()=>M.addFloor(p,{level}));
+  assert.deepEqual(p,before);
+  assert.throws(()=>M.removeFloor(M.blank({count:1}),1),/최소/);
+  assert.throws(()=>M.addFloor(M.blank({count:12}),{level:12}),/최대/);
+  const invalid=structuredClone(p);invalid.floors[1].level=1;assert.throws(()=>M.validate(invalid),/중복/);
+  const legacy=structuredClone(p);legacy.floors.forEach(f=>delete f.level);assert.deepEqual(M.validate(legacy).floors.map(f=>f.level),[1,2,3,4,5]);
+});
 test('overlapping rooms are rejected while shared edges and separate floors are allowed',()=>{
   const p=M.blank(),first=M.rectangle({x:-4,z:-4},{x:0,z:0},p);
   M.addRoom(p,1,first);

@@ -5,7 +5,7 @@ export function initObservation(ctx){
   const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
   const aggregate=()=>['building','exploded'].includes(ctx.getMode());
   const floorLabel=f=>`${f.level}층${f.name!==f.level+'층'?' · '+f.name:''}`;
-  function status(text,kind=''){$('observation-status').textContent=text;$('observation-status').dataset.status=kind;}
+  function status(text,kind=''){$('observation-status').textContent=text;$('observation-status').dataset.status=kind;const button=$('collection-help-button');button.dataset.status=kind;button.setAttribute('aria-label',kind==='error'?'자동 수집 안내 · 조회 오류':kind==='warning'?'자동 수집 안내 · 이전 자료':'자동 수집 안내');}
   function mapped(){return O.operating(ctx.getProject(),data);}
   function metrics(parent,focus,watch){
     parent.append(make('span','집중 '+focus+'명','f3-risk '+(focus?'f3-risk-focus':'f3-risk-normal')),
