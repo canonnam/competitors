@@ -45,9 +45,10 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - 서버 전용 ERP 계정은 선택적 `LIABILITY_ERP_USERNAME/PASSWORD` 또는 기존 `FACILITY_ERP_USERNAME/PASSWORD`를 읽는다. 로그인·토큰 갱신·재로그인은 기존 ERP 모듈을 공유한다. 지점 ID는 안양 2·인천 3이다.
 - 처음 자료가 없을 때 수집하고, 이후 한국시간 매일 09:00에 점검한다. 실패는 1시간 뒤 재시도한다. 브라우저는 캐시를 분 단위로 읽으며 ‘지금 현원 확인’만 수동 수집한다(1분 제한). 재시작으로 놓친 점검은 자동 재개한다.
 - `/api/elderly/statistics/?nursing_home=...`의 `total_elderly`를 우선 사용한다. ERP 서버 오류는 `/api/dashboard/stats/{id}/`의 같은 필드로 대체한다. 2026-10-02 실제 조회에서 입소자 통계는 HTTP 500, 대시보드 통계는 정상임을 확인했다. 생활실 현원 합계는 사용하지 않는다. 미조회 값은 null로 두고 실패는 이전 현원과 함께 별도 표시한다.
-- 정상 판정에는 오늘 확인한 전체 현원, 가입 인원 일치, 등록한 보험 이름, 시작된 가입기간과 30일을 초과한 만료 잔여일이 필요하다. 만료 30일 전·당일은 갱신 준비, 만료 후·가입 전·인원 부족은 조치 필요, 초과 가입은 감소 안내다. 모든 만료 계산은 한국시간 날짜 기준이다.
+- 양호 판정에는 오늘 확인한 전체 현원, 현원 이상의 가입 인원, 등록한 보험 이름, 시작된 가입기간과 30일을 초과한 만료 잔여일이 필요하다. 만료 30일 전·당일은 갱신 준비, 만료 후·가입 전·인원 부족은 조치 필요다. 초과 가입에는 감소 안내를 표시하지 않는다. API의 인원 차이는 기존 부호를 유지한다. 모든 만료 계산은 한국시간 날짜 기준이다.
+- `assets/liability-ui.js`가 상세·대시보드의 지점별 요약, 다운로드/수정 아이콘과 접근 가능한 툴팁을 공유한다. 등록·수정은 같은 네이티브 dialog 폼을 사용하고 버전별 초안과 증서 선택을 유지한다. 자동 점검 안내·다음 점검은 툴팁에서 확인한다. 수집 시각은 API에 보존하며 카드 본문에서만 숨긴다.
 - PDF.js·Tesseract의 기존 자체 제공 파일로 PDF(자동 추출 20페이지)·스캔·JPG·PNG·WEBP를 브라우저에서 읽는다. 보험 이름·가입 인원·가입기간의 명시적 문구를 추출하며 여러 값이 충돌하면 직접 확인을 요구한다. 자동 저장하지 않는다. 입력 및 선택한 새 증서는 ‘확인 후 저장’으로 원자적으로 저장하며 기존 증서는 새 증서 저장 때만 교체한다. 버전 충돌은 409로 막는다.
-- 검증: `python -m unittest test_liability_insurance.py test_ui_consistency.py test_static_pages.py test_card_knowledge.py test_claim_check.py test_facility_collection.py`; `node --test test_liability_certificate.cjs test_navigation.cjs test_dashboard.cjs`.
+- 검증: `python -m unittest test_liability_insurance.py test_ui_consistency.py test_static_pages.py test_card_knowledge.py test_claim_check.py test_facility_collection.py`; `node --test test_liability_certificate.cjs test_liability_ui.cjs test_navigation.cjs test_dashboard.cjs`.
 
 ## 시설 3D 도면 구성
 

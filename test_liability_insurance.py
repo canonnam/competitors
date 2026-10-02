@@ -38,8 +38,10 @@ class LiabilityTests(unittest.TestCase):
         self.assertEqual(increase['status'], 'error'); self.assertEqual(increase['difference'], 4)
         self.assertIn('늘려주세요', increase['issues'][0]['message'])
         decrease = self.result(occupancy={**self.occupancy, 'total': 30})
-        self.assertEqual(decrease['status'], 'warning'); self.assertEqual(decrease['difference'], -4)
-        self.assertIn('줄여주세요', decrease['issues'][0]['message'])
+        self.assertEqual(decrease['status'], 'success'); self.assertEqual(decrease['difference'], -4)
+        self.assertEqual(decrease['label'], '양호'); self.assertEqual(decrease['issues'], [])
+        expired_excess = self.result(policy={**self.policy, 'insured_count': 35, 'end_date': '2026-10-01'})
+        self.assertEqual(expired_excess['status'], 'error')
         self.assertEqual(self.result(policy={**self.policy, 'insured_count': 0}, occupancy={**self.occupancy, 'total': 0})['status'], 'success')
 
     def test_expiry_and_future_period_boundaries(self):

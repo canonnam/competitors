@@ -128,9 +128,9 @@ def assessment(policy, occupancy, at=None):
         issues.append({'code': 'collection', 'tone': 'warning', 'message': '오늘 현원 확인 필요 · ' +
                        ((occupancy or {}).get('error') or ('이전 수집 결과입니다.' if checked else 'ERP 첫 수집 대기 중입니다.'))})
     difference = total - policy['insured_count'] if policy and total is not None else None
-    if difference:
-        issues.append({'code': 'increase' if difference > 0 else 'decrease', 'tone': 'error' if difference > 0 else 'warning',
-                       'message': f"보험 가입 인원을 {abs(difference)}명 {'늘려주세요' if difference > 0 else '줄여주세요'} · {policy['insured_count']}명 → {total}명" + (' (이전 현원 기준)' if stale else '')})
+    if difference is not None and difference > 0:
+        issues.append({'code': 'increase', 'tone': 'error',
+                       'message': f"보험 가입 인원을 {difference}명 늘려주세요 · {policy['insured_count']}명 → {total}명" + (' (이전 현원 기준)' if stale else '')})
     remaining = None
     if policy:
         if not policy['insurance_name']:
@@ -146,7 +146,7 @@ def assessment(policy, occupancy, at=None):
             elif remaining <= 30:
                 issues.append({'code': 'expiring', 'tone': 'warning', 'message': '오늘 만료됩니다. 갱신해주세요.' if remaining == 0 else f'만료 {remaining}일 전입니다. 갱신을 준비해주세요.'})
     status = 'error' if any(i['tone'] == 'error' for i in issues) else 'warning' if issues else 'success'
-    return {'status': status, 'label': '정상' if status == 'success' else '조치 필요' if status == 'error' else '확인 필요',
+    return {'status': status, 'label': '양호' if status == 'success' else '조치 필요' if status == 'error' else '확인 필요',
             'issues': issues, 'difference': difference, 'daysRemaining': remaining, 'stale': stale}
 
 
