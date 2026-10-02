@@ -20,7 +20,7 @@ export function initObservation(ctx){
   function render(){
     const result=mapped(),floor=ctx.getFloor(),room=ctx.getRoom(),list=$('observation-list');
     const view=ctx.getProject().id+'|'+ctx.getMode()+'|'+(aggregate()?'all':floor.level);
-    if(view!==lastView){detailFloor=null;$('observation-details').hidden=false;lastView=view;}
+    if(view!==lastView){detailFloor=null;$('observation-details').hidden=true;lastView=view;}
     $('observation-open').hidden=!$('observation-details').hidden;
     list.replaceChildren();$('observation-back').hidden=!aggregate()||detailFloor===null;
     $('observation-detail-title').textContent=aggregate()&&detailFloor===null?'층별 현황':room?`${floor.level}층 · ${room.name}`:floorLabel(floor)+' 현황';
@@ -52,8 +52,9 @@ export function initObservation(ctx){
     list.append(make('p','생활실 배정 재원 기준 · 실명 미표시','f3-small'));
   }
   function open(target){
+    ctx.select(target.level,target.roomId??null);
     detailFloor=aggregate()?target.level:null;$('observation-details').hidden=false;
-    ctx.select(target.level,target.roomId??null);render();$('observation-details').focus({preventScroll:true});
+    render();$('observation-details').focus({preventScroll:true});
   }
   function close(){$('observation-details').hidden=true;$('observation-open').hidden=false;$('space-canvas').focus({preventScroll:true});}
   $('observation-close').onclick=close;
@@ -62,8 +63,8 @@ export function initObservation(ctx){
   $('observation-details').addEventListener('keydown',event=>{if(event.key==='Escape'){close();event.stopPropagation();}});
   async function load(){
     const branch=ctx.getProject().nursingHomeId,id=++sequence;controller?.abort();controller=new AbortController();const previous=data;currentBranch=branch;if(previous?.nursingHomeId!==branch){data=null;ctx.changed();}
-    if(!branch){status('이름·지점 변경에서 ERP 지점을 선택하면 생활실 현황을 표시합니다.');return;}status('최근 자동 수집한 생활실 자료를 불러오고 있습니다.');const active=controller,timeout=setTimeout(()=>active.abort(),15000);
-    try{const response=await fetch('/api/facility-observation/data?nursing_home_id='+branch,{cache:'no-store',credentials:'same-origin',signal:active.signal});const body=await response.json();if(!response.ok)throw new Error(body.error||'생활실 자료를 불러오지 못했습니다.');if(id!==sequence||ctx.getProject().nursingHomeId!==branch)return;data=body;if(JSON.stringify(previous)!==JSON.stringify(body))ctx.changed();else render();const date=new Date(body.checkedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false});status(`${body.nursingHomeName} · 1시간마다 자동 수집 · ${date} 수집${body.stale?' · 이전 자료: '+(body.collectionError||'갱신 대기'):''}`,body.stale?'warning':'success');}
+    if(!branch){status('ERP 지점 미연결');$('observation-status').title='더보기 → 이름·지점 변경에서 ERP 지점을 선택하세요.';return;}status('자동 수집 확인 중');const active=controller,timeout=setTimeout(()=>active.abort(),15000);
+    try{const response=await fetch('/api/facility-observation/data?nursing_home_id='+branch,{cache:'no-store',credentials:'same-origin',signal:active.signal});const body=await response.json();if(!response.ok)throw new Error(body.error||'생활실 자료를 불러오지 못했습니다.');if(id!==sequence||ctx.getProject().nursingHomeId!==branch)return;data=body;if(JSON.stringify(previous)!==JSON.stringify(body))ctx.changed();else render();const checked=new Date(body.checkedAt),date=checked.toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false}),time=checked.toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour12:false,hour:'2-digit',minute:'2-digit'});status(`자동 수집 ${time} · 1시간 간격${body.stale?' · 이전 자료':''}`,body.stale?'warning':'success');$('observation-status').title=`${body.nursingHomeName} · ${date} 수집${body.stale?' · '+(body.collectionError||'갱신 대기'):''}`;}
     catch(error){if(id!==sequence)return;data=null;ctx.changed();status(error.name==='AbortError'?'자료 조회가 지연되고 있습니다.':error.message,'error');}finally{clearTimeout(timeout);}
   }
   window.addEventListener('pageshow',event=>{if(event.persisted)load();});window.addEventListener('pagehide',()=>{sequence++;controller?.abort();data=null;ctx.changed();});setInterval(()=>{if(!document.hidden)load();},60000);

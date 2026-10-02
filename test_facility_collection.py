@@ -101,6 +101,10 @@ if __name__ == '__main__':
         os.environ['FACILITY_ERP_USERNAME']='facility-demo'; os.environ['FACILITY_ERP_PASSWORD']='local-demo'
         F.request=synthetic_rooms; C.collect_once()
         print('Synthetic facility MVP QA: http://localhost:8097/facility-3d.html', flush=True)
-        ThreadingHTTPServer(('127.0.0.1', 8097), QuietApp).serve_forever()
+        from tempfile import TemporaryDirectory
+        import facility_projects
+        with TemporaryDirectory(prefix='facility-projects-qa-') as folder:
+            facility_projects.init_db(os.path.join(folder, 'projects.db'))
+            ThreadingHTTPServer(('127.0.0.1', 8097), QuietApp).serve_forever()
     else:
         unittest.main()

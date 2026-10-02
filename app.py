@@ -15,6 +15,7 @@ import claim_check
 import payroll_insurance
 import facility_observation
 import facility_collection
+import facility_projects
 import aeo_missions
 import web_search_results
 import support_applications
@@ -71,7 +72,7 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
+        if facility_projects.handle(self, 'GET') or facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
             return
         if support_projects.handle(self, "GET"):
             return
@@ -112,7 +113,7 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
-        if facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
+        if facility_projects.handle(self, 'HEAD') or facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
             return
         if support_projects.handle(self, "HEAD"):
             return
@@ -320,11 +321,11 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_DELETE(self):
-        if not (facility_collection.handle(self, 'DELETE') or facility_observation.handle(self, 'DELETE')):
+        if not (facility_projects.handle(self, 'DELETE') or facility_collection.handle(self, 'DELETE') or facility_observation.handle(self, 'DELETE')):
             self.send_error(405)
 
     def do_POST(self):
-        if facility_collection.handle(self, 'POST') or facility_observation.handle(self, 'POST'):
+        if facility_projects.handle(self, 'POST') or facility_collection.handle(self, 'POST') or facility_observation.handle(self, 'POST'):
             return
         if support_projects.handle(self, "POST"):
             return
@@ -472,6 +473,7 @@ if __name__ == "__main__":
     support_projects.init_db()
     website_intake.init_db()
     staff_eval.init_db()
+    facility_projects.init_db()
     wiki_chat.init_db()
     naver_ads.init_db(naver_ads.db_path())
     scheduler_stop = naver_ads.start_scheduler(naver_ads.db_path())

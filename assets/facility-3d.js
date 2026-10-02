@@ -1,7 +1,7 @@
 import {initImport} from './facility-3d-import.js?v=20261001-auto1';
-import {initObservation} from './facility-observation.js?v=20261002-view3';
+import {initObservation} from './facility-observation.js?v=20261002-share1';
 import {initStaff} from './facility-staff.js?v=20261002-mvp2';
-/* Browser-local facility composition and Three.js building viewer. */
+/* Shared facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
 const STORAGE = 'vida-facility-3d-v1';
@@ -14,6 +14,38 @@ try {
   }
 } catch { loadError='저장된 도면을 불러오지 못했습니다. 예시 건물로 시작합니다. 기존 저장 파일은 그대로 보관됩니다.'; }
 let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedFloor = 1, selectedRoom = null, mode = 'building', dirty = false;
+const revisions=new Map();let sharedReady=false,saving=false,editVersion=0;
+async function sharedRequest(path='',method='GET',body){
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
+  try {
+    const response=await fetch('/api/facility-projects/'+path,{method,cache:'no-store',credentials:'same-origin',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
+    const data=await response.json();if(!response.ok)throw new Error(data.error||'공유 도면을 불러오지 못했습니다.');return data;
+  } catch(error){if(error.name==='AbortError')throw new Error('서버 응답이 지연되고 있습니다. 다시 저장해주세요.');throw error;}
+  finally {clearTimeout(timeout);}
+}
+function cacheBackup(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,projects}));}catch{/* A failed browser backup does not invalidate the committed server save. */}}
+function saveControls(){for(const id of ['save-project','project-select','new-project','delete-project','undo-project'])$(id).disabled=!sharedReady||saving;}
+async function loadShared(initial=false){
+  if(saving||(!initial&&(dirty||document.activeElement?.matches('input,select,textarea'))))return;
+  try {
+    const result=await sharedRequest(),entries=result.projects.map(row=>({...row,project:M.validate(row.project)}));
+    sharedReady=true;saveControls();
+    if(dirty&&!initial)return;
+    if(initial&&!entries.length){status(projects.length?'기존 도면을 불러왔습니다. 저장을 누르면 다른 사람과 공유됩니다.':'새 건물을 저장하면 다른 사람도 같은 도면과 종사자 배치를 볼 수 있습니다.');return;}
+    if(!entries.length&&!revisions.size&&projects.length)return;
+    const next=entries.find(row=>row.project.id===project.id)||entries[0];
+    const changed=next?revisions.get(next.project.id)!==next.revision:projects.length>0;
+    projects=entries.map(row=>row.project);revisions.clear();entries.forEach(row=>revisions.set(row.project.id,row.revision));
+    if(initial){if(next)setProject(structuredClone(next.project));status('공유 도면을 불러왔습니다.');}
+    else if(changed&&!dirty){
+      if(next){const same=next.project.id===project.id;if(same){project=structuredClone(next.project);selectedFloor=Math.min(selectedFloor,project.floors.length);if(!currentRoom())selectedRoom=null;cancelDrawing();renderUI();rebuild();}else setProject(structuredClone(next.project));}
+      else setProject(M.blank());
+      status('최신 공유 도면과 종사자 배치를 반영했습니다.');
+    }
+    else renderProjectSelect();
+    cacheBackup();
+  } catch(error){if(initial){sharedReady=false;saveControls();status('공유 도면을 불러오지 못했습니다. 새로고침 후 다시 연결해주세요. 브라우저 보관본은 파일로 내보낼 수 있습니다.','error');}}
+}
 let drawing = false, startPoint = null, downPoint = null, showNames = true, showWalls = true;
 let THREE, OrbitControls, renderer, scene, camera, controls, root, grid, raycaster, preview;
 let floorGroups = [], pickTargets = [], labelSprites = [], generation = 0, needsRender = true;
@@ -27,16 +59,20 @@ function status(message,kind='') {
   $('project-status').textContent=message;
   if(kind) $('project-status').dataset.status=kind; else delete $('project-status').dataset.status;
 }
-function markDirty() {dirty=true;$('save-project').textContent='저장';}
+function markDirty() {dirty=true;editVersion++;$('save-project').textContent='저장';}
 function make(tag,className,text) {
   const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;
 }
-function renderUI() {
+function renderProjectSelect(){
   const options=projects.some(p=>p.id===project.id)?projects.map(p=>p.id===project.id?project:p):[project,...projects];
   $('project-select').replaceChildren(...options.map(p=>{const option=make('option','',p.name);option.value=p.id;return option;}));
   $('project-select').value=project.id;
+}
+function renderUI() {
+  renderProjectSelect();
   const rooms=project.floors.reduce((n,f)=>n+f.rooms.length,0);
-  $('project-summary').textContent=`${project.floors.length}개 층 · ${rooms}개 공간 · ${project.scale==='entered'?'입력 치수':'추정 크기'}${project.nursingHomeId?' · ERP '+(project.nursingHomeId===2?'안양점':'인천점'):''}`;
+  $('project-summary').textContent=`${project.floors.length}개 층 · ${rooms}개 공간 · ${project.scale==='entered'?'입력 치수':'추정 크기'}${revisions.has(project.id)?' · 공유 저장':''}`;
+  $('project-summary').title=project.scale==='entered'?'입력 치수 기준':'추정 크기 기준';
   $('floor-count').textContent=project.floors.length+'개 층';
   $('floor-list').replaceChildren(...[...project.floors].reverse().map(f=>{
     const button=make('button','f3-floor-button');button.type='button';button.dataset.level=f.level;
@@ -81,15 +117,22 @@ function confirmLeave() {return !dirty || window.confirm('저장하지 않은 �
 function setProject(next) {
   project=next;selectedFloor=1;selectedRoom=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
 }
-function save() {
+async function save() {
+  if(saving||!sharedReady)return;
+  saving=true;saveControls();const version=editVersion;
   try {
-    const clean=M.validate(project),next=[clean,...projects.filter(p=>p.id!==project.id)];
-    if(next.length>8) throw new Error('브라우저에는 최대 8개 건물을 저장할 수 있습니다. 파일로 내보내기를 이용해주세요.');
-    localStorage.setItem(STORAGE,JSON.stringify({version:1,projects:next}));
-    projects=next;dirty=false;renderUI();
-    status('현재 브라우저에 저장했습니다. 다른 기기에서는 내보낸 파일을 열어 사용할 수 있습니다.','success');
-  } catch(error) {status(error.message.startsWith('브라우저')?error.message:'브라우저에 저장할 공간이 부족하거나 저장이 차단되어 있습니다. 파일로 내보내기를 이용해주세요.','error');}
+    const clean=M.validate(project),row=await sharedRequest('','POST',{project:clean,revision:revisions.get(clean.id)||0});
+    revisions.set(clean.id,row.revision);projects=[M.validate(row.project),...projects.filter(p=>p.id!==clean.id)];
+    if(editVersion===version)dirty=false;cacheBackup();renderUI();
+    status(dirty?'공유 저장했습니다. 추가로 편집한 내용은 다시 저장해주세요.':'도면과 종사자 배치를 공유 저장했습니다. 다른 사람도 같은 구성을 볼 수 있습니다.','success');
+  } catch(error) {status(error.message,'error');}
+  finally {saving=false;saveControls();}
 }
+function closeMore(focus=false){$('project-menu').hidden=true;$('project-more').setAttribute('aria-expanded','false');if(focus)$('project-more').focus();}
+$('project-more').onclick=()=>{const opening=$('project-menu').hidden;$('project-menu').hidden=!opening;$('project-more').setAttribute('aria-expanded',String(opening));if(opening)$('edit-project').focus();};
+$('project-menu').addEventListener('click',event=>{if(event.target.closest('button'))closeMore();});
+document.addEventListener('click',event=>{if(!event.target.closest('.f3-more'))closeMore();});
+$('project-menu').addEventListener('keydown',event=>{if(event.key==='Escape'){closeMore(true);event.preventDefault();}});
 function cancelDrawing() {
   drawing=false;startPoint=null;drawingPoints=[];previewEnd=null;
   if(preview){scene?.remove(preview);dispose(preview);preview=null;}
@@ -179,7 +222,7 @@ $('project-file').onchange=async event=>{
   const file=event.target.files[0];event.target.value='';if(!file||!confirmLeave())return;
   try {
     if(file.size>25000000)throw new Error('25MB 이하의 도면 파일을 선택해주세요.');
-    const next=M.validate(JSON.parse(await file.text()));next.id=M.uid();setProject(next);markDirty();status('도면 파일을 열었습니다. 저장을 눌러 현재 브라우저에 보관하세요.');
+    const next=M.validate(JSON.parse(await file.text()));next.id=M.uid();setProject(next);markDirty();status('도면 파일을 열었습니다. 저장을 눌러 다른 사람과 공유하세요.');
   } catch(error){status(error instanceof SyntaxError?'JSON 도면 파일 형식을 확인해주세요.':error.message,'error');}
 };
 initImport({model:M,getProject:()=>project,getFloor:floor,status,
@@ -205,22 +248,26 @@ $('delete-project').onclick=()=>{
   $('delete-building-dialog').showModal();
 };
 $('cancel-delete-building').onclick=()=>$('delete-building-dialog').close();
-$('confirm-delete-building').onclick=()=>{
+$('confirm-delete-building').onclick=async()=>{
+  if(saving)return;saving=true;saveControls();$('confirm-delete-building').disabled=true;
   try {
-    const saved=projects.some(p=>p.id===project.id),next=projects.filter(p=>p.id!==project.id);
-    if(saved)localStorage.setItem(STORAGE,JSON.stringify({version:1,projects:next}));
-    deletedProject={project:structuredClone(project),saved,dirty,savedSnapshot:saved?structuredClone(projects.find(p=>p.id===project.id)):null};const name=project.name;projects=next;
+    const snapshot={project:structuredClone(project),saved:revisions.has(project.id),dirty};
+    if(snapshot.saved){const result=await sharedRequest(encodeURIComponent(project.id)+'/','DELETE',{revision:revisions.get(project.id)});snapshot.revision=result.revision;revisions.delete(project.id);}
+    deletedProject=snapshot;const name=project.name;projects=projects.filter(p=>p.id!==project.id);cacheBackup();
     setProject(projects.length?structuredClone(projects[0]):M.blank());$('delete-building-dialog').close();$('undo-project').hidden=false;
     status(name+' 건물을 삭제했습니다. 새로고침 전까지 삭제 되돌리기를 사용할 수 있습니다.');
-  } catch{status('저장소에 접근할 수 없어 삭제하지 못했습니다.','error');}
+  } catch(error){$('delete-building-dialog').close();status(error.message,'error');}
+  finally{saving=false;saveControls();$('confirm-delete-building').disabled=false;}
 };
-$('undo-project').onclick=()=>{
+$('undo-project').onclick=async()=>{
   if(!deletedProject||!confirmLeave())return;
+  saving=true;saveControls();
   try {
-    const old=deletedProject,next=old.saved?[old.savedSnapshot,...projects.filter(p=>p.id!==old.project.id)]:projects;
-    if(old.saved){if(next.length>8)throw new Error('저장 건물 수 초과');localStorage.setItem(STORAGE,JSON.stringify({version:1,projects:next}));}
-    projects=next;setProject(structuredClone(old.project));dirty=old.dirty;deletedProject=null;$('undo-project').hidden=true;status('삭제한 건물을 복구했습니다.','success');
-  } catch{status('복구할 저장 공간이 부족합니다. 다른 건물을 파일로 내보낸 뒤 다시 시도해주세요.','error');}
+    const old=deletedProject;
+    if(old.saved){const row=await sharedRequest(encodeURIComponent(old.project.id)+'/restore/','POST',{revision:old.revision});revisions.set(old.project.id,row.revision);projects=[M.validate(row.project),...projects.filter(p=>p.id!==old.project.id)];}
+    if(old.saved)cacheBackup();setProject(structuredClone(old.project));dirty=old.dirty;deletedProject=null;$('undo-project').hidden=true;status('삭제한 건물을 복구했습니다.','success');
+  } catch(error){status(error.message,'error');}
+  finally{saving=false;saveControls();}
 };
 $('remove-image').onclick=()=>{floor().image=null;project.example=false;markDirty();renderUI();rebuild();status('선택 층의 도면 이미지를 제거했습니다. 공간 구성은 유지됩니다.');};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
@@ -522,7 +569,7 @@ function drawFallback(end) {
   $('observation-markers').replaceChildren();$('observation-lines').replaceChildren();const used=observationReserved();
   if(!drawing)for(const targets of window.FacilityObservation.markers(project,observation.mapped(),mode,selectedFloor)){const badge=observationBadge(targets);$('observation-markers').append(badge);placeObservation({badge,line:observationLine(targets)},left+(targets.x+project.width/2)*scale,top+(targets.z+project.depth/2)*scale,w,h,used);}
 }
-renderUI();if(loadError)status(loadError,'error');else if(projects.length)status('저장한 건물을 불러왔습니다. 층을 선택해 공간을 확인하거나 수정하세요.');
+document.querySelector('.facility3d-main').inert=true;saveControls();renderUI();await loadShared(true);document.querySelector('.facility3d-main').inert=false;if(loadError&&!projects.length)status(loadError,'error');
 try {
   [THREE,{OrbitControls}]=await Promise.all([import('three'),import('/assets/vendor/three/OrbitControls.js')]);
   const context=canvas.getContext('webgl2',{antialias:true,alpha:false});if(!context)throw new Error('WebGL2 unavailable');
@@ -549,3 +596,5 @@ try {
 new ResizeObserver(resize).observe(viewport);
 new ResizeObserver(()=>{needsRender=true;if(fallback)drawFallback();}).observe($('observation-details'));
 observation.load();
+setInterval(()=>{if(!document.hidden&&!drawing)loadShared();},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!drawing)loadShared();});
