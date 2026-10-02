@@ -1,7 +1,7 @@
 /* Map authenticated snapshot locations without guessing missing rooms or floors. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.FacilityObservation=api;})(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
-  function floorNumber(value){const m=String(value??'').trim().match(/^(?:지상\s*)?(\d{1,2})\s*(?:층|F)?$/i);return m&&Number(m[1])>0?Number(m[1]):null;}
+  function floorNumber(value){const text=String(value??'').trim(),basement=text.match(/^(?:지하\s*|B\s*|-)(\d{1,2})\s*(?:층|F)?$/i);if(basement)return Number(basement[1])>0?-Number(basement[1]):null;const m=text.match(/^(?:지상\s*)?(\d{1,2})\s*(?:층|F)?$/i);return m&&Number(m[1])>0?Number(m[1]):null;}
   function roomKey(value){return String(value??'').normalize('NFKC').replace(/\s+/g,'').replace(/생활실|침실/g,'').replace(/^제(?=\d)/,'').replace(/호실?$/,'');}
   function registered(floor){return !!floor.image||floor.rooms.length>0;}
   function map(project,payload){

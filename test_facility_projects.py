@@ -131,11 +131,35 @@ class FacilityProjectTests(unittest.TestCase):
         self.assertEqual(self.save(p)[0], 200)
         P.init_db(self.db)
         self.assertEqual(self.request()[1]['projects'][0]['project'], p)
-        for level in (1, 0, 13, 4.5, True):
+        for level in (1, 0, -2, 13, 4.5, True):
             invalid = copy.deepcopy(p)
             invalid['floors'][1]['level'] = level
             self.assertEqual(self.save(invalid, 1)[0], 400)
             self.assertEqual(self.request()[1]['projects'][0]['project'], p)
+
+    def test_basement_and_twelve_ground_floors_share_full_contents_after_restart(self):
+        p = sample()
+        ground = copy.deepcopy(p['floors'][0])
+        p['floors'] = []
+        for level in range(1, 13):
+            f = copy.deepcopy(ground)
+            f.update(id=f'floor-{level}', level=level, name=f'{level}층')
+            f['rooms'][0].update(id=f'room-{level}', name=f'{level}01호')
+            p['floors'].append(f)
+        basement = copy.deepcopy(ground)
+        basement.update(id='floor-b1', level=-1, name='지하 1층',
+                        image=dict(name='합성 지하 도면', src='data:image/png;base64,aGVsbG8=', aspect=1))
+        basement['rooms'][0].update(id='room-b1', name='지하 생활실')
+        p['floors'].insert(0, basement)
+        self.assertEqual(self.save(p)[0], 200)
+        P.init_db(self.db)
+        self.assertEqual(self.request()[1]['projects'][0]['project'], p)
+        deleted = copy.deepcopy(p)
+        deleted['floors'].pop(0)
+        self.assertEqual(self.save(deleted, 1)[0], 200)
+        self.assertEqual(self.request()[1]['projects'][0]['project'], deleted)
+        self.assertEqual(self.save(p, 2)[0], 200)
+        self.assertEqual(self.request()[1]['projects'][0]['project'], p)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
 /* The browser reads only the server's hourly anonymous room cache. */
 export function initObservation(ctx){
-  const $=id=>document.getElementById(id),O=window.FacilityObservation;
+  const $=id=>document.getElementById(id),O=window.FacilityObservation,M=window.FacilityModel;
   let data=null,sequence=0,controller=null,currentBranch=null,detailFloor=null,lastView='';
   const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
   const aggregate=()=>['building','exploded'].includes(ctx.getMode());
-  const floorLabel=f=>`${f.level}층${f.name!==f.level+'층'?' · '+f.name:''}`;
+  const floorLabel=f=>`${M.floorName(f.level)}${f.name!==M.floorName(f.level)?' · '+f.name:''}`;
   function status(text,kind=''){$('observation-status').textContent=text;$('observation-status').dataset.status=kind;const button=$('collection-help-button');button.dataset.status=kind;button.setAttribute('aria-label',kind==='error'?'자동 수집 안내 · 조회 오류':kind==='warning'?'자동 수집 안내 · 이전 자료':'자동 수집 안내');}
   function mapped(){return O.operating(ctx.getProject(),data);}
   function metrics(parent,focus,watch){
@@ -23,7 +23,7 @@ export function initObservation(ctx){
     if(view!==lastView){detailFloor=null;$('observation-details').hidden=true;lastView=view;}
     $('observation-open').hidden=!$('observation-details').hidden;
     list.replaceChildren();$('observation-back').hidden=!aggregate()||detailFloor===null;
-    $('observation-detail-title').textContent=aggregate()&&detailFloor===null?'층별 현황':room?`${floor.level}층 · ${room.name}`:floorLabel(floor)+' 현황';
+    $('observation-detail-title').textContent=aggregate()&&detailFloor===null?'층별 현황':room?`${M.floorName(floor.level)} · ${room.name}`:floorLabel(floor)+' 현황';
     if(!data){$('observation-summary').textContent='';list.append(make('p','생활실 자료를 불러오면 현원과 관찰 인원을 표시합니다.','f3-small'));return;}
     const pending=result.items.filter(r=>r.reason).reduce((n,r)=>n+r.focus+r.watch,0);
     $('observation-summary').textContent=`시설 전체 · 배정 ${result.assignedOccupancy}명 · 집중 ${result.focus} · 주의 ${result.watch}${data.stale?' · 이전 자료':''}`;
@@ -45,8 +45,8 @@ export function initObservation(ctx){
       groups.forEach(g=>list.append(roomCard(g,!chosenRoom&&!aggregate())));
       if(chosenRoom&&!groups.length)list.append(make('p','ERP 생활실과 일치하지 않습니다. 층과 생활실 이름을 확인해주세요.','f3-small'));
       if(!chosenRoom){
-        for(const r of result.unmatchedRooms.filter(r=>r.level===floor.level||r.level===null))list.append(make('p',`${r.reportedLevel?r.reportedLevel+'층 · ':''}${r.name} · 현원 ${r.occupancy}명 · ${r.reason}`,'f3-small'));
-        for(const r of result.items.filter(r=>r.reason&&(r.level===floor.level||r.level===null)))list.append(make('p',`${r.reportedLevel?r.reportedLevel+'층':'층 정보 없음'} · ${r.living_room_name||'생활실 정보 없음'} · 집중 ${r.focus} · 주의 ${r.watch} · ${r.reason}`,'f3-small'));
+        for(const r of result.unmatchedRooms.filter(r=>r.level===floor.level||r.level===null))list.append(make('p',`${r.reportedLevel?M.floorName(r.reportedLevel)+' · ':''}${r.name} · 현원 ${r.occupancy}명 · ${r.reason}`,'f3-small'));
+        for(const r of result.items.filter(r=>r.reason&&(r.level===floor.level||r.level===null)))list.append(make('p',`${r.reportedLevel?M.floorName(r.reportedLevel):'층 정보 없음'} · ${r.living_room_name||'생활실 정보 없음'} · 집중 ${r.focus} · 주의 ${r.watch} · ${r.reason}`,'f3-small'));
       }
     }
     list.append(make('p','생활실 배정 재원 기준 · 실명 미표시','f3-small'));

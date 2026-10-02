@@ -15,4 +15,16 @@ test('ambiguous room names require review instead of silently choosing a room',(
 test('data from another ERP branch and ordinary observations cannot appear',()=>{assert.equal(O.map(project(),{nursingHomeId:3,rows:[row(1,'201')]}).items.length,0);assert.equal(O.map(project(),{nursingHomeId:2,rows:[row(1,'201','routine')]}).items.length,0);});
 test('building rename and explicit ERP mapping survive save/export with health data excluded',()=>{const p=project();p.name='안양점 새 이름';p.healthRows=[row(1,'201')];const clean=M.validate(p);assert.equal(clean.name,'안양점 새 이름');assert.equal(clean.nursingHomeId,2);assert.equal('healthRows' in clean,false);assert.deepEqual(M.validate(JSON.parse(JSON.stringify(clean))),clean);});
 test('existing named branches migrate, explicit disconnection remains and invalid ERP IDs fail',()=>{const p=project();delete p.nursingHomeId;p.name='인천점';assert.equal(M.validate(p).nursingHomeId,3);p.nursingHomeId=null;assert.equal(M.validate(p).nursingHomeId,null);p.nursingHomeId=1;assert.throws(()=>M.validate(p),/ERP/);});
-test('floor parsing accepts declared floors only and room formatting preserves distinct numbers',()=>{assert.equal(O.floorNumber('지상 2층'),2);assert.equal(O.floorNumber('2F'),2);assert.equal(O.floorNumber('지하 1층'),null);assert.equal(O.floorNumber(null),null);assert.equal(O.roomKey('201호 생활실'),'201');assert.notEqual(O.roomKey('201'),O.roomKey('202'));});
+test('floor parsing accepts explicit basement and ground floors and room formatting preserves distinct numbers',()=>{assert.equal(O.floorNumber('지상 2층'),2);assert.equal(O.floorNumber('2F'),2);for(const floor of ['지하 1층','B1','B1F','b1','-1층',-1])assert.equal(O.floorNumber(floor),-1);for(const floor of [null,0,'B0','지하','지상'])assert.equal(O.floorNumber(floor),null);assert.equal(O.floorNumber('B2'),-2);assert.equal(O.roomKey('201호 생활실'),'201');assert.notEqual(O.roomKey('201'),O.roomKey('202'));});
+test('basement occupants and observations stay separate from identically named rooms on 1F',()=>{
+  const p=project(),b=M.addFloor(p,{level:-1});b.rooms=[{...p.floors.find(f=>f.level===1).rooms[0],id:'basement'}];
+  const personal=O.map(p,{nursingHomeId:2,rows:[row('지하 1층','201'),row('1층','201','watch'),row('B2','201')]});
+  assert.deepEqual(personal.groups.map(g=>[g.level,g.roomId]),[[-1,'basement'],[1,'a']]);
+  assert.equal(personal.items.find(r=>r.reportedLevel===-2).reason,'건물에 없는 층');
+  const payload={nursingHomeId:2,rooms:[{floor:'B1',name:'201',current_occupancy:3,capacity:4,remaining_capacity:1},{floor:1,name:'201',current_occupancy:2,capacity:4,remaining_capacity:2}],observations:[{living_room_floor:-1,living_room_name:'201',focus:1,watch:2},{living_room_floor:'1층',living_room_name:'201',focus:0,watch:1}]};
+  const result=O.operating(p,payload);
+  assert.deepEqual(result.groups.map(g=>[g.level,g.roomId,g.occupancy,g.focus,g.watch]),[[-1,'basement',3,1,2],[1,'a',2,0,1]]);
+  const marker=O.markers(p,result,'exploded',1).find(g=>g.level===-1);
+  assert.deepEqual([marker.occupancy,marker.focus,marker.watch],[3,1,2]);
+  assert.deepEqual(O.markers(p,result,'floor',-1).map(g=>g.roomId),['basement']);
+});

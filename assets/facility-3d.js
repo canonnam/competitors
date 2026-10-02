@@ -1,6 +1,6 @@
-import {initImport} from './facility-3d-import.js?v=20261001-auto1';
-import {initObservation} from './facility-observation.js?v=20261002-map2';
-import {initStaff} from './facility-staff.js?v=20261002-map2';
+import {initImport} from './facility-3d-import.js?v=20261002-b1';
+import {initObservation} from './facility-observation.js?v=20261002-b1';
+import {initStaff} from './facility-staff.js?v=20261002-b1';
 import {initFacilityUI} from './facility-3d-ui.js?v=20261002-map2';
 /* Shared facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
@@ -14,7 +14,7 @@ try {
     projects=saved.projects.map(M.validate);
   }
 } catch { loadError='저장된 도면을 불러오지 못했습니다. 예시 건물로 시작합니다. 기존 저장 파일은 그대로 보관됩니다.'; }
-let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedFloor = project.floors[0].level, selectedRoom = null, mode = 'building', dirty = false;
+let project = projects[0] ? structuredClone(projects[0]) : M.sample(), selectedFloor = project.floors.some(f=>f.level===1)?1:project.floors[0].level, selectedRoom = null, mode = 'building', dirty = false;
 let removedFloor=null;
 const ui=initFacilityUI();
 const revisions=new Map();let sharedReady=false,saving=false,editVersion=0;
@@ -77,22 +77,22 @@ function renderUI() {
   $('project-summary').textContent='';
   $('project-scale-note').textContent=project.scale==='entered'?'입력한 치수 기준으로 공간을 구성합니다.':'크기는 추정값입니다. 정확한 면적이 필요하면 실제 치수를 입력하세요.';
   $('floor-count').textContent=project.floors.length+'개 층';
-  $('add-floor').disabled=project.floors.length>=12;
+  $('add-floor').disabled=project.floors.length>=M.FLOOR_LEVELS.length;
   $('delete-floor').disabled=project.floors.length<=1;
   $('undo-floor').hidden=!removedFloor||removedFloor.projectId!==project.id;
-  $('view-floor-select').replaceChildren(...project.floors.map(f=>{const option=make('option','',f.name===f.level+'층'?f.name:`${f.level}층 · ${f.name}`);option.value=f.level;return option;}));
+  $('view-floor-select').replaceChildren(...project.floors.map(f=>{const option=make('option','',f.name===M.floorName(f.level)?f.name:`${M.floorName(f.level)} · ${f.name}`);option.value=f.level;return option;}));
   $('view-floor-select').value=selectedFloor;
   $('floor-list').replaceChildren(...[...project.floors].reverse().map(f=>{
     const button=make('button','f3-floor-button');button.type='button';button.dataset.level=f.level;
     button.setAttribute('aria-pressed',String(f.level===selectedFloor));
-    button.setAttribute('aria-label',`${f.level}층 ${f.name}, 공간 ${f.rooms.length}개`);
+    button.setAttribute('aria-label',`${M.floorName(f.level)} ${f.name}, 공간 ${f.rooms.length}개`);
     const info=make('span','f3-floor-info');info.append(make('strong','',f.name),make('small','',`공간 ${f.rooms.length}개${f.image?' · 도면 등록':''}`));
     const total=observation?.mapped().floorTotals.find(r=>r.level===f.level);
     if(total)info.append(make('small','',`생활실 현원 ${total.occupancy}명`));
     const employees=(f.staff||[]).reduce((n,r)=>n+r.count,0);if(employees)info.append(make('small','',`종사자 ${employees}명`));
-    button.append(make('span','f3-floor-number',f.level+'F'),info);return button;
+    button.append(make('span','f3-floor-number',M.floorCode(f.level)),info);return button;
   }));
-  $('rooms-heading').textContent=selectedFloor+'층 공간';
+  $('rooms-heading').textContent=M.floorName(selectedFloor)+' 공간';
   $('room-list').replaceChildren(...floor().rooms.map(r=>{
     const button=make('button','f3-room-button');button.type='button';button.dataset.room=r.id;button.setAttribute('aria-pressed',String(r.id===selectedRoom));
     const dot=make('span','f3-room-dot');dot.style.setProperty('--room-color',M.COLORS[r.type]);dot.setAttribute('aria-hidden','true');
@@ -109,13 +109,13 @@ function renderUI() {
   $('image-status').textContent=floor().image?floor().image.name:'등록한 이미지 없음';
   $('remove-image').hidden=!floor().image;$('auto-from-image').disabled=!floor().image;
   document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
-  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:selectedFloor+'층 · '+floor().name,plan:selectedFloor+'층 평면 편집'};
+  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:M.floorName(selectedFloor)+' · '+floor().name,plan:M.floorName(selectedFloor)+' 평면 편집'};
   $('view-title').textContent=titles[mode];
   $('view-description').textContent=mode==='building'?`${project.floors.length}개 층을 함께 살펴보세요.`:mode==='exploded'?'층 사이를 띄워 내부 공간을 비교하세요.':mode==='plan'?'도면을 기준으로 공간을 지정하고 수정하세요.':'공간을 클릭해 이름과 용도를 확인하세요.';
   $('add-room').textContent=drawing?'추가 취소':'공간 추가';
   $('view-help').textContent=drawing?(drawingShape==='polygon'?'모서리를 차례로 클릭 · 첫 점 클릭/Enter로 완성 · Backspace로 한 점 취소 · Esc로 종료':'첫 모서리와 반대 모서리를 클릭 · Esc로 취소'):mode==='plan'?'드래그로 이동 · 휠로 확대 · 공간을 클릭해 선택':'드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동';
   $('drawing-controls').hidden=!drawing;$('drawing-count').textContent='점 '+drawingPoints.length+'개';$('drawing-finish').disabled=drawingShape!=='polygon'||drawingPoints.length<3;$('drawing-undo').disabled=!drawingPoints.length;$('drawing-finish').hidden=drawingShape!=='polygon';$('drawing-undo').hidden=drawingShape!=='polygon';
-  canvas.setAttribute('aria-label',fallback?`${selectedFloor}층 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}개 층의 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
+  canvas.setAttribute('aria-label',fallback?`${M.floorName(selectedFloor)} 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}개 층의 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
   viewport.classList.toggle('is-drawing',drawing);
   observation?.sync();
   staff?.render();
@@ -123,7 +123,7 @@ function renderUI() {
 Object.entries(M.TYPES).forEach(([value,label])=>{const option=make('option','',label);option.value=value;$('room-type').append(option);});
 function confirmLeave() {return !dirty || window.confirm('저장하지 않은 변경이 있습니다. 다른 건물로 이동할까요?');}
 function setProject(next) {
-  project=next;selectedFloor=next.floors[0].level;selectedRoom=null;removedFloor=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
+  project=next;selectedFloor=next.floors.some(f=>f.level===1)?1:next.floors[0].level;selectedRoom=null;removedFloor=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
 }
 async function save() {
   if(saving||!sharedReady)return;
@@ -190,10 +190,10 @@ function chooseFloor(level){
 }
 $('view-floor-select').onchange=()=>chooseFloor(Number($('view-floor-select').value));
 $('add-floor').onclick=()=>{
-  const used=new Set(project.floors.map(f=>f.level)),available=Array.from({length:12},(_,i)=>i+1).filter(level=>!used.has(level));
+  const used=new Set(project.floors.map(f=>f.level)),available=M.FLOOR_LEVELS.filter(level=>!used.has(level));
   if(!available.length)return;
   $('new-floor-form').reset();$('new-floor-error').textContent='';
-  $('new-floor-level').replaceChildren(...available.map(level=>{const option=make('option','',level+'층');option.value=level;return option;}));
+  $('new-floor-level').replaceChildren(...available.map(level=>{const option=make('option','',M.floorName(level));option.value=level;return option;}));
   const next=Math.max(...used)+1;$('new-floor-level').value=available.includes(next)?next:available[0];
   $('new-floor-dialog').showModal();
 };
@@ -206,7 +206,7 @@ $('new-floor-form').onsubmit=event=>{
 $('delete-floor').onclick=()=>{
   if(project.floors.length<=1)return;
   const f=floor(),count=(f.staff||[]).reduce((n,row)=>n+row.count,0);
-  $('delete-floor-summary').textContent=`${f.level}층 · ${f.name} — 공간 ${f.rooms.length}개, 도면 ${f.image?'1개':'없음'}, 종사자 ${count}명`;
+  $('delete-floor-summary').textContent=`${M.floorName(f.level)} · ${f.name} — 공간 ${f.rooms.length}개, 도면 ${f.image?'1개':'없음'}, 종사자 ${count}명`;
   $('delete-floor-dialog').showModal();
 };
 $('cancel-delete-floor').onclick=()=>$('delete-floor-dialog').close();
@@ -214,7 +214,7 @@ $('confirm-delete-floor').onclick=()=>{
   try{
     const f=M.removeFloor(project,selectedFloor);removedFloor={projectId:project.id,floor:structuredClone(f)};
     $('delete-floor-dialog').close();markDirty();chooseFloor((project.floors.filter(row=>row.level<f.level).at(-1)||project.floors[0]).level);
-    status(`${f.level}층을 삭제했습니다. 저장하면 공유됩니다. 삭제 되돌리기로 복구할 수 있습니다.`);
+    status(`${M.floorName(f.level)}을 삭제했습니다. 저장하면 공유됩니다. 삭제 되돌리기로 복구할 수 있습니다.`);
   }catch(error){$('delete-floor-dialog').close();status(error.message,'error');}
 };
 $('undo-floor').onclick=()=>{
@@ -239,7 +239,7 @@ $('delete-room').onclick=()=>{
   floor().rooms=floor().rooms.filter(r=>r.id!==room.id);selectedRoom=null;project.example=false;markDirty();renderUI();rebuild();status('공간을 삭제했습니다.');
 };
 $('apply-floor-name').onclick=()=>{
-  floor().name=$('floor-name').value.trim()||selectedFloor+'층';project.example=false;markDirty();renderUI();rebuild();status('층 이름을 적용했습니다.');
+  floor().name=$('floor-name').value.trim()||M.floorName(selectedFloor);project.example=false;markDirty();renderUI();rebuild();status('층 이름을 적용했습니다.');
 };
 $('add-room').onclick=()=>{
   if(drawing){cancelDrawing();renderUI();return;}
@@ -331,7 +331,7 @@ window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();
 observation=initObservation({getProject:()=>project,getFloor:floor,getRoom:currentRoom,getMode:()=>mode,changed:()=>{renderUI();rebuild();},select:(level,id)=>selectRoom(level,id)});
 staff=initStaff({getProject:()=>project,getFloor:floor,updated:()=>{needsRender=true;},applied:()=>{project.example=false;markDirty();renderUI();rebuild();status('선택 층에 종사자를 배치했습니다. 저장을 눌러 보관하세요.','success');}});
 function selectRoom(level,id) {
-  selectedFloor=level;selectedRoom=id;renderUI();rebuild();const room=currentRoom();if(room)status(`${level}층 ${room.name} · ${M.TYPES[room.type]}`);
+  selectedFloor=level;selectedRoom=id;renderUI();rebuild();const room=currentRoom();if(room)status(`${M.floorName(level)} ${room.name} · ${M.TYPES[room.type]}`);
 }
 function dispose(object) {
   const disposed=new Set();
@@ -437,7 +437,7 @@ function rebuild() {
   const visible=(mode==='floor'||mode==='plan')?[floor()]:project.floors;
   const observationMarkers=window.FacilityObservation.markers(project,observation.mapped(),mode,selectedFloor);
   visible.forEach(f=>{
-    const group=new THREE.Group(),elevation=(mode==='floor'||mode==='plan')?0:(f.level-1)*(project.height+(mode==='exploded'?3.8:0));
+    const group=new THREE.Group(),elevation=(mode==='floor'||mode==='plan')?0:M.floorIndex(f.level)*(project.height+(mode==='exploded'?3.8:0));
     group.position.y=elevation;root.add(group);floorGroups.push({floor:f,group});
     box(group,project.width+0.45,0.24,project.depth+0.45,0,-0.12,0,f.level===selectedFloor?'#c6d0e0':'#d4dce6');
     const surface=new THREE.Mesh(new THREE.PlaneGeometry(project.width,project.depth),new THREE.MeshStandardMaterial({color:'#f9f9f5',roughness:0.95}));
@@ -464,7 +464,7 @@ function rebuild() {
     });
     prepareStaff(f,group);
     if(mode==='building')exterior(group,f.level);
-    const marker=make('div','f3-floor-marker'+(f.level===selectedFloor?' is-selected':''));marker.append(make('b','',f.level+'F'),make('span','',f.name));$('floor-labels').append(marker);
+    const marker=make('div','f3-floor-marker'+(f.level===selectedFloor?' is-selected':''));marker.append(make('b','',M.floorCode(f.level)),make('span','',f.name));$('floor-labels').append(marker);
     group.userData.marker=marker;
     for(const targets of observationMarkers.filter(t=>t.level===f.level)){
       const badge=observationBadge(targets);$('observation-markers').append(badge);
@@ -472,23 +472,24 @@ function rebuild() {
     }
   });
   if(mode==='building'&&showWalls) {
-    const y=Math.max(...project.floors.map(f=>f.level))*project.height;
+    const y=M.verticalBounds(project).top;
     box(root,project.width+0.6,0.28,project.depth+0.6,0,y-0.1,0,'#d7e0e7');
     box(root,project.width+0.6,0.5,0.16,0,y+0.15,-project.depth/2,'#e7ecf0');
     box(root,0.16,0.5,project.depth+0.6,-project.width/2,y+0.15,0,'#e7ecf0');
     box(root,3.2,1.1,3.2,project.width/2-3,y+0.6,0,'#e6ebef');
   }
-  if(mode!=='plan')box(root,project.width+4,0.3,project.depth+4,0,-0.45,0,'#e2e8e6');updateStaff(0);
+  const baseElevation=(mode==='building'||mode==='exploded')?M.verticalBounds(project,mode==='exploded').bottom:0;
+  if(mode!=='plan')box(root,project.width+4,0.3,project.depth+4,0,baseElevation-0.45,0,'#e2e8e6');updateStaff(0);
   if(grid){scene.remove(grid);grid.geometry.dispose();grid.material.dispose();}
   const gridSize=Math.max(project.width,project.depth)*2;
-  grid=new THREE.GridHelper(gridSize,Math.round(gridSize/2),'#d3dce6','#dce4eb');grid.position.y=-0.62;grid.material.transparent=true;grid.material.opacity=0.6;scene.add(grid);
+  grid=new THREE.GridHelper(gridSize,Math.round(gridSize/2),'#d3dce6','#dce4eb');grid.position.y=baseElevation-0.62;grid.material.transparent=true;grid.material.opacity=0.6;scene.add(grid);
   if(drawing)drawPreview(previewEnd);
 }
 function fitCamera() {
   if(!camera){if(fallback)drawFallback();return;}
-  const topFloor=Math.max(...project.floors.map(f=>f.level));
-  const height=mode==='building'?topFloor*project.height:mode==='exploded'?(topFloor-1)*(project.height+3.8)+project.height:1;
-  const targetY=(mode==='floor'||mode==='plan')?0:height*0.48,aspect=viewport.clientWidth/viewport.clientHeight;
+  const aggregate=mode==='building'||mode==='exploded',bounds=M.verticalBounds(project,mode==='exploded');
+  const height=aggregate?bounds.height:1;
+  const targetY=aggregate?bounds.bottom+height*0.48:0,aspect=viewport.clientWidth/viewport.clientHeight;
   const size=mode==='plan'?Math.max(project.depth+7,(project.width+7)/aspect):Math.max(project.depth+12,height+12,(project.width+18)/aspect);
   camera.left=-size*aspect/2;camera.right=size*aspect/2;camera.top=size/2;camera.bottom=-size/2;camera.zoom=1;
   if(mode==='plan'){camera.up.set(0,0,-1);camera.position.set(0,100,0.001);controls.enableRotate=false;controls.mouseButtons.LEFT=THREE.MOUSE.PAN;}
@@ -502,14 +503,14 @@ function resize() {
 function observationBadge(targets){
   if(targets.kind==='floor'){
     const badge=make('button','f3-observation-marker f3-floor-summary-marker f3-risk-normal');badge.type='button';
-    badge.append(make('strong','',`${targets.level}F · ${targets.roomName}`));
+    badge.append(make('strong','',`${M.floorCode(targets.level)} · ${targets.roomName}`));
     const row=make('span','f3-floor-summary-counts');row.append(occupancyIcon(),make('b','',targets.occupancy==null?'—':String(targets.occupancy)),make('span',targets.focus?'f3-risk-focus':'',`집중 ${targets.focus}`),make('span',targets.watch?'f3-risk-watch':'',`주의 ${targets.watch}`));badge.append(row);
-    badge.setAttribute('aria-label',`${targets.level}층 ${targets.roomName} · ${targets.occupancy==null?'현원 미연결':'현원 '+targets.occupancy+'명'} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 3D 층 요약 보기`);
+    badge.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · ${targets.occupancy==null?'현원 미연결':'현원 '+targets.occupancy+'명'} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 3D 층 요약 보기`);
     badge.onclick=()=>observation.open(targets);return badge;
   }
   const risk=targets.focus?'focus':targets.watch?'watch':'normal',badge=make('div','f3-observation-marker f3-risk-'+risk);
-  const count=make('button','f3-occupancy-button');if(targets.roomId){count.append(occupancyIcon(),make('b','',targets.occupancy==null?'—':String(targets.occupancy)));}else count.textContent='위치 확인';count.type='button';const countLabel=targets.occupancy!=null?`현원 ${targets.occupancy}명`:(targets.roomId?'현원 미연결':'위치 확인');count.setAttribute('aria-label',`${targets.level}층 ${targets.roomName} · ${countLabel}`);count.title=`${targets.roomName} · ${countLabel}`;count.onclick=()=>observation.open(targets);badge.append(count);
-  if(targets.focus||targets.watch){const alert=make('button','f3-alert-button');alert.type='button';alert.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v5m0 3v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';alert.append(make('span','',String(targets.focus+targets.watch)));const label=`${targets.level}층 ${targets.roomName} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 생활실 정보 보기`;alert.title=label;alert.setAttribute('aria-label',label);alert.onclick=()=>observation.open(targets);badge.append(alert);}
+  const count=make('button','f3-occupancy-button');if(targets.roomId){count.append(occupancyIcon(),make('b','',targets.occupancy==null?'—':String(targets.occupancy)));}else count.textContent='위치 확인';count.type='button';const countLabel=targets.occupancy!=null?`현원 ${targets.occupancy}명`:(targets.roomId?'현원 미연결':'위치 확인');count.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · ${countLabel}`);count.title=`${targets.roomName} · ${countLabel}`;count.onclick=()=>observation.open(targets);badge.append(count);
+  if(targets.focus||targets.watch){const alert=make('button','f3-alert-button');alert.type='button';alert.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v5m0 3v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';alert.append(make('span','',String(targets.focus+targets.watch)));const label=`${M.floorName(targets.level)} ${targets.roomName} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 생활실 정보 보기`;alert.title=label;alert.setAttribute('aria-label',label);alert.onclick=()=>observation.open(targets);badge.append(alert);}
   return badge;
 }
 function occupancyIcon(){const icon=make('span','f3-occupancy-icon');icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 21v-3a7 7 0 0 1 14 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';return icon;}
@@ -588,7 +589,7 @@ canvas.addEventListener('pointermove',event=>{
   raycaster.setFromCamera(pointer(event),camera);const hit=raycaster.intersectObjects(pickTargets)[0],label=$('hover-label');
   if(!hit){label.hidden=true;return;}
   const data=hit.object.userData,room=project.floors.find(f=>f.level===data.level)?.rooms.find(r=>r.id===data.id);const bounds=canvas.getBoundingClientRect();
-  label.textContent=data.level+'층 · '+room.name;label.hidden=false;label.style.left=Math.max(8,Math.min(bounds.width-150,event.clientX-bounds.left+12))+'px';label.style.top=Math.max(8,event.clientY-bounds.top-35)+'px';
+  label.textContent=M.floorName(data.level)+' · '+room.name;label.hidden=false;label.style.left=Math.max(8,Math.min(bounds.width-150,event.clientX-bounds.left+12))+'px';label.style.top=Math.max(8,event.clientY-bounds.top-35)+'px';
 });
 canvas.addEventListener('pointerleave',()=>{$('hover-label').hidden=true;});
 canvas.addEventListener('dblclick',event=>{if(drawing&&drawingShape==='polygon'){event.preventDefault();finishPolygon();}});

@@ -8,6 +8,20 @@
   const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기', corridor:'복도', unknown:'용도 미지정'};
   const COLORS = {living:'#dbe8f1', office:'#e8e4f3', common:'#e0eddf', service:'#f1e8d7', core:'#e1e5eb', corridor:'#edf0f3', unknown:'#e6eaf0'};
   const STAFF_ROLES={care:'요양보호사',social:'사회복지사',nurse:'간호(조무)사',therapy:'물리(작업)치료사',admin:'사무원',director:'원장',kitchen:'조리원',other:'기타 종사자'};
+  const FLOOR_LEVELS=Object.freeze([-1,...Array.from({length:12},(_,i)=>i+1)]);
+  const floorName=level=>level<0?`지하 ${Math.abs(level)}층`:`${level}층`;
+  const floorCode=level=>level<0?`B${Math.abs(level)}`:`${level}F`;
+  const floorIndex=level=>level>0?level-1:level;
+  function floorLevel(value){
+    const level=number(value,-1,12,'층 번호');
+    if(typeof value==='boolean'||!FLOOR_LEVELS.includes(level))throw new Error('지하 1층 또는 지상 1~12층을 선택해주세요.');
+    return level;
+  }
+  function verticalBounds(project,expanded=false){
+    const indices=project.floors.map(f=>floorIndex(f.level)),step=project.height+(expanded?3.8:0);
+    const bottom=Math.min(...indices)*step,top=Math.max(...indices)*step+project.height;
+    return {bottom,top,height:top-bottom};
+  }
   const uid = () => 'space-' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
   const text = (value, fallback) => String(value ?? fallback).trim().slice(0,80) || fallback;
   function number(value, min, max, label) {
@@ -47,8 +61,8 @@
     return project;
   }
   function validate(raw) {
-    if (!raw || raw.version!==1 || !Array.isArray(raw.floors) || raw.floors.length<1 || raw.floors.length>12) throw new Error('시설 3D 도면 파일 형식을 확인해주세요.');
-    const out = blank({name:raw.name,count:raw.floors.length,width:raw.width,depth:raw.depth,height:raw.height,scale:raw.scale});
+    if (!raw || raw.version!==1 || !Array.isArray(raw.floors) || raw.floors.length<1 || raw.floors.length>FLOOR_LEVELS.length) throw new Error('시설 3D 도면 파일 형식을 확인해주세요.');
+    const out = blank({name:raw.name,count:Math.min(raw.floors.length,12),width:raw.width,depth:raw.depth,height:raw.height,scale:raw.scale});
     out.id = text(raw.id,uid()); out.example = raw.example === true;
     const legacyName=out.name.replace(/\s+/g,'');
     out.nursingHomeId=raw.nursingHomeId===undefined?(/^(더비다요양원)?안양(점)?$/.test(legacyName)?2:/^(더비다요양원)?인천(점)?$/.test(legacyName)?3:null):raw.nursingHomeId;
@@ -59,8 +73,8 @@
       const id=text(floor.id,uid());
       if (floorIds.has(id)) throw new Error('중복된 층 정보가 있습니다.');
       floorIds.add(id);
-      const level=number(floor.level??i+1,1,12,'층 번호');
-      if(!Number.isInteger(level)||floorLevels.has(level))throw new Error('층 번호는 중복 없이 1~12로 입력해주세요.');
+      const level=floorLevel(floor.level??i+1);
+      if(floorLevels.has(level))throw new Error('중복된 층 번호가 있습니다.');
       floorLevels.add(level);
       const rooms = floor.rooms.map(room=>{
         if (!room) throw new Error('공간 정보를 확인해주세요.');
@@ -80,7 +94,7 @@
         }
       }
       const staff=validateStaff(floor.staff??[]);
-      return {id,level,name:text(floor.name,level+'층'),rooms,image,staff};
+      return {id,level,name:text(floor.name,floorName(level)),rooms,image,staff};
     }).sort((a,b)=>a.level-b.level);
     if(out.floors.reduce((n,f)=>n+f.staff.reduce((s,r)=>s+r.count,0),0)>200)throw new Error('한 건물에 종사자는 최대 200명까지 배치할 수 있습니다.');
     return out;
@@ -89,10 +103,10 @@
     return Math.abs(room.x)+room.w/2 <= project.width/2+0.001 && Math.abs(room.z)+room.d/2 <= project.depth/2+0.001;
   }
   function addFloor(project,options={}){
-    if(project.floors.length>=12)throw new Error('층은 최대 12개까지 구성할 수 있습니다.');
-    const level=number(options.level,1,12,'층 번호');
-    if(!Number.isInteger(level)||project.floors.some(f=>f.level===level))throw new Error('사용하지 않은 층 번호를 선택해주세요.');
-    const floor={id:uid(),level,name:text(options.name,level+'층'),rooms:[],image:null,staff:[]};
+    if(project.floors.length>=FLOOR_LEVELS.length)throw new Error('지하 1층과 지상 12층까지 구성할 수 있습니다.');
+    const level=floorLevel(options.level);
+    if(project.floors.some(f=>f.level===level))throw new Error('사용하지 않은 층 번호를 선택해주세요.');
+    const floor={id:uid(),level,name:text(options.name,floorName(level)),rooms:[],image:null,staff:[]};
     project.floors.push(floor);project.floors.sort((a,b)=>a.level-b.level);project.example=false;return floor;
   }
   function removeFloor(project,level){
@@ -143,5 +157,5 @@
     return room;
   }
   function segmentHits(room,a,b){const v=vertices(room);return contains(room,a)||contains(room,b)||v.some((p,i)=>segmentsMeet(a,b,p,v[(i+1)%v.length]));}
-  return {TYPES,COLORS,STAFF_ROLES,uid,blank,sample,validate,inside,intersects,rectangle,polygon,vertices,area,contains,anchor,triangulate,segmentHits,validateStaff,addRoom,addFloor,removeFloor};
+  return {TYPES,COLORS,STAFF_ROLES,FLOOR_LEVELS,floorName,floorCode,floorIndex,verticalBounds,uid,blank,sample,validate,inside,intersects,rectangle,polygon,vertices,area,contains,anchor,triangulate,segmentHits,validateStaff,addRoom,addFloor,removeFloor};
 });

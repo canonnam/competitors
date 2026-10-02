@@ -113,7 +113,7 @@ export function initImport(ctx) {
         if(x>=0&&x<=1&&y>=0&&y<=1&&D.labelInfo(item.str))labels.push({text:item.str.slice(0,80),x,y,confidence:100});
       }
       if(revision!==pdfRevision)return;
-      pdfCanvas=c;pdfLabels=labels.slice(0,500);$('pdf-preview').src=c.toDataURL('image/jpeg',0.8);$('pdf-status').textContent=`${pdf.numPages}페이지 중 ${$('pdf-page').value}페이지 · ${targetFloor.level}층에 등록`;$('pdf-use').disabled=false;
+      pdfCanvas=c;pdfLabels=labels.slice(0,500);$('pdf-preview').src=c.toDataURL('image/jpeg',0.8);$('pdf-status').textContent=`${pdf.numPages}페이지 중 ${$('pdf-page').value}페이지 · ${M.floorName(targetFloor.level)}에 등록`;$('pdf-use').disabled=false;
     } catch(error){if(revision===pdfRevision)$('pdf-status').textContent='페이지를 표시하지 못했습니다. 다른 페이지나 이미지 파일을 선택해주세요.';}
     finally{if(revision===pdfRevision)$('pdf-page').disabled=false;}
   }

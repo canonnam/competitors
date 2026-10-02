@@ -62,7 +62,7 @@ def segments_meet(a, b, c, d):
 
 def validate(raw):
     # Construct an allowlisted document; ERP credentials and resident records are never persisted.
-    if not isinstance(raw, dict) or raw.get('version') != 1 or not isinstance(raw.get('floors'), list) or not 1 <= len(raw['floors']) <= 12:
+    if not isinstance(raw, dict) or raw.get('version') != 1 or not isinstance(raw.get('floors'), list) or not 1 <= len(raw['floors']) <= 13:
         raise ApiError(400, '시설 3D 도면 파일 형식을 확인해주세요.')
     p = dict(version=1, id=identifier(raw.get('id')), name=text(raw.get('name'), '새 건물'), width=num(raw.get('width'), 4, 120), depth=num(raw.get('depth'), 4, 120), height=num(raw.get('height'), 2, 6), scale='entered' if raw.get('scale') == 'entered' else 'estimated', example=raw.get('example') is True, nursingHomeId=raw.get('nursingHomeId'), floors=[])
     if isinstance(p['nursingHomeId'], bool) or p['nursingHomeId'] not in (None, 2, 3):
@@ -71,8 +71,10 @@ def validate(raw):
     for i, raw_floor in enumerate(raw['floors']):
         if not isinstance(raw_floor, dict) or not isinstance(raw_floor.get('rooms'), list) or len(raw_floor['rooms']) > 40:
             raise ApiError(400, '층과 공간 개수를 확인해주세요.')
-        level = num(raw_floor.get('level', i+1), 1, 12, True)
-        f = dict(id=identifier(raw_floor.get('id')), level=level, name=text(raw_floor.get('name'), f'{level}층'), rooms=[], image=None, staff=[])
+        level = num(raw_floor.get('level', i+1), -1, 12, True)
+        if level == 0:
+            raise ApiError(400, '지하 1층 또는 지상 1~12층을 선택해주세요.')
+        f = dict(id=identifier(raw_floor.get('id')), level=level, name=text(raw_floor.get('name'), '지하 1층' if level == -1 else f'{level}층'), rooms=[], image=None, staff=[])
         if f['id'] in floor_ids or level in floor_levels:
             raise ApiError(400, '중복된 층 정보가 있습니다.')
         floor_ids.add(f['id'])
