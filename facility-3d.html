@@ -14,15 +14,16 @@
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
-  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-1">
+  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-mvp2">
   <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
   <script src="/assets/site.js" defer></script><script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
   <script src="/assets/navigation.js?v=20261001-auto" defer></script>
-  <script src="/assets/facility-3d-model.js?v=20261002-1" defer></script>
-  <script src="/assets/facility-3d-detect.js?v=20261002-1" defer></script>
-  <script src="/assets/facility-observation-model.js?v=20261002-1" defer></script>
+  <script src="/assets/facility-3d-model.js?v=20261002-mvp2" defer></script>
+  <script src="/assets/facility-3d-detect.js?v=20261002-mvp2" defer></script>
+  <script src="/assets/facility-observation-model.js?v=20261002-mvp2" defer></script>
+  <script src="/assets/facility-staff-model.js?v=20261002-mvp2" defer></script>
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="/assets/facility-3d.js?v=20261002-1"></script>
+  <script type="module" src="/assets/facility-3d.js?v=20261002-mvp2"></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
 <body class="kb-detail" data-feedback-page="facility-3d">
@@ -38,27 +39,31 @@
       <div class="f3-project-actions"><button class="ui-button" id="edit-project" type="button">이름·지점 변경</button><button class="ui-button" id="save-project" type="button">저장</button><button class="ui-button" id="export-project" type="button">파일로 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button><button class="ui-button f3-delete" id="delete-project" type="button">건물 삭제</button><button class="ui-button" id="undo-project" type="button" hidden>삭제 되돌리기</button></div>
     </section>
     <section class="f3-observation-bar" aria-labelledby="observation-title">
-      <div class="f3-observation-heading"><h2 id="observation-title">집중·주의관찰</h2><strong id="observation-summary"></strong><div class="f3-observation-actions"><button id="observation-refresh" class="ui-button" type="button">다시 조회</button><button id="observation-connect" class="ui-button" type="button">ERP 로그인</button><button id="observation-disconnect" class="ui-button" type="button" hidden>연결 해제</button></div></div>
-      <p id="observation-status" class="ui-status" role="status" aria-live="polite">ERP 지점을 연결하면 오늘의 관찰 대상자를 표시합니다.</p>
+      <div class="f3-observation-heading"><h2 id="observation-title">생활실 현원·관찰 현황</h2><strong id="observation-summary"></strong></div>
+      <p id="observation-status" class="ui-status" role="status" aria-live="polite">최근 자동 수집한 생활실 현황을 준비하고 있습니다.</p>
     </section>
     <div class="f3-workspace">
       <section class="f3-viewer" aria-label="건물과 층별 공간">
         <div class="f3-toolbar"><div class="f3-modes" role="group" aria-label="공간 보기"><button type="button" data-mode="building" aria-pressed="true">건물 전체</button><button type="button" data-mode="exploded" aria-pressed="false">층별 펼치기</button><button type="button" data-mode="floor" aria-pressed="false">선택 층</button><button type="button" data-mode="plan" aria-pressed="false">평면 편집</button></div><div class="f3-view-actions"><button class="ui-button" id="reset-view" type="button" aria-label="시점 초기화">시점 초기화</button><button class="ui-button" id="fullscreen" type="button">전체 화면</button></div></div>
         <div id="viewport" class="f3-viewport">
           <canvas id="space-canvas" tabindex="0" aria-label="5층 건물 3D 화면. 방향키로 회전하고 더하기와 빼기로 확대·축소할 수 있습니다. 공간 선택은 오른쪽 목록에서도 가능합니다."></canvas>
+          <canvas id="staff-canvas" class="f3-staff-canvas" aria-hidden="true" hidden></canvas>
           <div class="f3-view-caption"><strong id="view-title">건물 전체</strong><span id="view-description">5개 층을 함께 살펴보세요.</span></div>
           <svg id="observation-lines" class="f3-observation-lines" aria-hidden="true"></svg><div id="observation-markers" class="f3-observation-markers" aria-label="도면의 집중·주의관찰 대상자"></div><div id="floor-labels" class="f3-floor-labels" aria-hidden="true"></div>
           <div id="viewer-loading" class="f3-loading" role="status">3D 공간을 준비하고 있습니다…</div>
           <div id="hover-label" class="f3-hover-label" hidden></div>
           <div class="f3-compass" aria-hidden="true">N<span>↑</span></div>
         </div>
+        <div id="drawing-controls" class="f3-drawing-controls" hidden><label>그리기 방식<select id="drawing-shape"><option value="polygon">다각형</option><option value="rectangle">사각형</option></select></label><span id="drawing-count">점 0개</span><button id="drawing-undo" class="ui-button" type="button">마지막 점 취소</button><button id="drawing-finish" class="ui-button ui-button--primary" type="button">공간 완성</button></div>
         <div class="f3-view-footer"><p id="view-help">드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동</p><label class="f3-check"><input id="show-labels" type="checkbox" checked>공간 이름</label><label class="f3-check"><input id="show-walls" type="checkbox" checked>벽 표시</label></div>
+        <div class="f3-staff-playback"><button id="staff-toggle" class="ui-button" type="button" aria-pressed="true">직원 이동 일시정지</button><label>이동 속도<select id="staff-speed"><option value="1">1배</option><option value="2">2배</option><option value="4">4배</option></select></label><span id="staff-status" role="status"></span></div>
       </section>
       <aside class="f3-panel" aria-label="층과 공간 정보">
+        <section id="observation-details" class="f3-panel-section" tabindex="-1"><h2 id="observation-detail-title">생활실 현황</h2><div id="observation-list" class="f3-observation-list" aria-live="polite"></div></section>
         <section class="f3-panel-section"><div class="f3-section-title"><h2>층 선택</h2><span id="floor-count"></span></div><div id="floor-list" class="f3-floor-list"></div></section>
         <section class="f3-panel-section"><div class="f3-section-title"><h2 id="rooms-heading">1층 공간</h2><button class="ui-button" id="add-room" type="button">공간 추가</button></div><div id="room-list" class="f3-room-list"></div></section>
         <section id="room-details" class="f3-panel-section" hidden><h2>선택 공간</h2><form id="room-form" class="f3-form"><label>공간 이름<input id="room-name" maxlength="80" required></label><label>공간 용도<select id="room-type"></select></label><label id="beds-field">침대 수<input id="room-beds" type="number" min="0" max="8" step="1" value="0"></label><p id="room-size" class="f3-small"></p><div class="f3-form-actions"><button class="ui-button" type="submit">적용</button><button class="ui-button f3-delete" id="delete-room" type="button">공간 삭제</button></div></form></section>
-        <section class="f3-panel-section"><h2>선택 층 관찰 대상자</h2><div id="observation-list" class="f3-observation-list" aria-live="polite"></div></section>
+        <section class="f3-panel-section"><details id="staff-details" open><summary><strong id="staff-heading">선택 층 종사자 배치</strong></summary><form id="staff-form" class="f3-form"><div id="staff-fields" class="f3-staff-fields"></div><button class="ui-button" type="submit">이 층에 배치 적용</button><p id="staff-error" class="f3-small" role="status"></p></form><div id="staff-legend" class="f3-staff-legend"></div><p class="f3-small">설정한 직종·인원으로 빈 공간과 복도를 이동하는 예시입니다. 실제 근무표·위치나 운영 성과를 나타내지 않습니다. 배치 후 저장을 눌러 보관하세요.</p></details></section>
       </aside>
     </div>
     <p class="f3-status ui-status" id="project-status" role="status" aria-live="polite">5층 예시 건물입니다. 실제 지점 도면은 ‘새 건물 구성’에서 시작하세요.</p>
@@ -69,7 +74,6 @@
   <dialog id="new-building-dialog" class="f3-dialog" aria-labelledby="new-building-title"><form id="new-building-form"><h2 id="new-building-title">새 건물 구성</h2><p>층 수를 정하고, 각 층에 공간을 추가하세요. 길이를 모르면 예시 크기로 시작할 수 있습니다.</p><label>건물 이름<input name="name" maxlength="80" placeholder="예: 인천점" required></label><label>ERP 지점<select name="nursingHomeId"><option value="">연결 안 함</option><option value="2">안양점</option><option value="3">인천점</option></select></label><label>층 수<input name="count" type="number" min="1" max="12" step="1" value="5" required></label><div class="f3-two-fields"><label>가로 (m, 선택)<input name="width" type="number" min="4" max="120" step="0.1" placeholder="미입력 시 24"></label><label>세로 (m, 선택)<input name="depth" type="number" min="4" max="120" step="0.1" placeholder="미입력 시 16"></label></div><p class="f3-small">미입력 치수와 층 높이 3.2m는 공간 구성용 예시입니다.</p><p id="new-building-error" role="status"></p><div class="f3-form-actions"><button class="ui-button" id="cancel-building" type="button">취소</button><button class="ui-button ui-button--primary" type="submit">구성 시작</button></div></form></dialog>
 
   <dialog id="edit-project-dialog" class="f3-dialog" aria-labelledby="edit-project-title"><form id="edit-project-form"><h2 id="edit-project-title">이름·지점 변경</h2><label>건물 이름<input id="edit-project-name" maxlength="80" required></label><label>ERP 지점<select id="edit-project-branch"><option value="">연결 안 함</option><option value="2">안양점</option><option value="3">인천점</option></select></label><p>선택한 지점의 관찰 대상자를 층·생활실 이름으로 도면에 연결합니다. 변경 후 저장을 눌러 보관하세요.</p><p id="edit-project-error" role="status"></p><div class="f3-form-actions"><button id="edit-project-cancel" class="ui-button" type="button">취소</button><button class="ui-button ui-button--primary" type="submit">변경 적용</button></div></form></dialog>
-  <dialog id="erp-login-dialog" class="f3-dialog" aria-labelledby="erp-login-title"><form id="erp-login-form"><h2 id="erp-login-title">더비다 ERP 연결</h2><p>대상자를 조회할 수 있는 더비다 ERP 계정으로 로그인하세요. 연결 후 페이지를 열 때마다 오늘의 명단을 갱신합니다.</p><label>ERP 아이디<input id="erp-username" autocomplete="username" maxlength="150" required></label><label>ERP 비밀번호<input id="erp-password" type="password" autocomplete="current-password" maxlength="1024" required></label><p class="f3-small">연결은 최대 8시간 유지됩니다. 서버가 다시 시작되거나 ERP 로그인이 만료되면 다시 연결해주세요.</p><p id="erp-login-status" role="status" aria-live="polite"></p><div class="f3-form-actions"><button id="erp-login-cancel" class="ui-button" type="button">취소</button><button id="erp-login-submit" class="ui-button ui-button--primary" type="submit">ERP 연결</button></div></form></dialog>
   <dialog id="auto-dialog" class="f3-dialog f3-auto-dialog" aria-labelledby="auto-title">
     <h2 id="auto-title">도면 자동 구성</h2><p>공간 후보를 확인하고 이름·용도를 고친 뒤 추가하세요. 기존 공간과 겹치는 후보는 교체를 선택해야 적용됩니다.</p>
     <div class="f3-auto-controls"><label>문 틈 메우기<select id="auto-gap"><option value="0.012">작게</option><option value="0.035" selected>보통</option><option value="0.06">크게</option></select></label><label class="f3-check"><input type="checkbox" id="auto-names" checked>공간 이름 읽기</label><button class="ui-button" id="auto-analyze" type="button">다시 분석</button></div>

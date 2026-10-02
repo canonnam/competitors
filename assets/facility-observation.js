@@ -1,72 +1,26 @@
+/* The browser reads only the server's hourly anonymous room cache. */
 export function initObservation(ctx){
   const $=id=>document.getElementById(id),O=window.FacilityObservation;
-  let data=null,connected=false,sequence=0,controller=null,currentBranch=null;
+  let data=null,sequence=0,controller=null,currentBranch=null;
   const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
   function status(text,kind=''){$('observation-status').textContent=text;$('observation-status').dataset.status=kind;}
-  function clear(){data=null;ctx.changed();$('observation-list').replaceChildren();$('observation-summary').textContent='';}
-  async function api(path,options={}){
-    const response=await fetch('/api/facility-observation/'+path,{cache:'no-store',credentials:'same-origin',...options});
-    const body=await response.json();if(!response.ok){const error=new Error(body.error||'ERP 조회에 실패했습니다.');error.status=response.status;throw error;}return body;
-  }
-  function connection(value){connected=value;$('observation-connect').textContent=value?'ERP 다시 연결':'ERP 로그인';$('observation-disconnect').hidden=!value;}
-  function mapped(){return O.map(ctx.getProject(),data);}
+  function mapped(){return O.operating(ctx.getProject(),data);}
   function render(){
-    const project=ctx.getProject(),result=mapped(),floor=ctx.getFloor();
-    $('observation-list').replaceChildren();
-    if(!data)return;
-    const pending=result.items.filter(r=>r.reason).length;
-    $('observation-summary').textContent=`집중 ${result.focus}명 · 주의 ${result.watch}명${pending?' · 위치 확인 '+pending+'명':''}`;
-    const relevant=result.items.filter(r=>r.level===floor.level||r.level===null);
-    for(const row of relevant){
-      const item=make('div',null,'f3-observation-person'),name=make('strong',row.elderly_name),tier=make('span',row.risk_tier_display,'f3-risk f3-risk-'+row.risk_tier);
-      const location=row.reportedLevel?`${row.reportedLevel}층 · ${row.living_room_name||'생활실 정보 없음'}`:'층 정보 없음';
-      const info=make('small',location+(row.reason?' · '+row.reason:''));item.append(name,tier,info);
-      if(row.roomId){const button=make('button','도면에서 보기','ui-button');button.type='button';button.onclick=()=>ctx.select(row.level,row.roomId);item.append(button);}
-      $('observation-list').append(item);
-    }
-    if(!relevant.length)$('observation-list').append(make('p',`${floor.level}층의 집중·주의관찰 대상자가 없습니다.`,'f3-small'));
-    if(!O.registered(floor)&&relevant.length)$('observation-list').prepend(make('p','이 층에 도면을 등록하면 위치를 표시합니다.','f3-small'));
+    const result=mapped(),floor=ctx.getFloor(),room=ctx.getRoom();$('observation-list').replaceChildren();$('observation-detail-title').textContent=room?`${floor.level}층 · ${room.name}`:`${floor.level}층 생활실 현황`;
+    if(!data){$('observation-summary').textContent='';$('observation-list').append(make('p','생활실 자료를 불러오면 현원과 관찰 인원을 표시합니다.','f3-small'));return;}
+    const pending=result.items.filter(r=>r.reason).reduce((n,r)=>n+r.focus+r.watch,0);$('observation-summary').textContent=`생활실 배정 ${result.assignedOccupancy}명 · 집중 ${result.focus}명 · 주의 ${result.watch}명${pending?' · 위치 확인 '+pending+'명':''}`;
+    const groups=room?result.groups.filter(g=>g.level===floor.level&&g.roomId===room.id):result.groups.filter(g=>g.level===floor.level);
+    for(const g of groups){const item=make('div',null,'f3-observation-person');item.append(make('strong',g.roomName));item.append(make('small',g.occupancy===null?'현원 미연결':`현재 ${g.occupancy}명 / 정원 ${g.capacity}명 · 잔여 ${g.remaining}명`));if(g.focus)item.append(make('span','집중관찰 '+g.focus+'명','f3-risk f3-risk-focus'));if(g.watch)item.append(make('span','주의관찰 '+g.watch+'명','f3-risk f3-risk-watch'));if(!g.focus&&!g.watch)item.append(make('small','집중·주의관찰 대상자 없음'));if(g.roomId&&!room){const b=make('button','공간 선택','ui-button');b.type='button';b.onclick=()=>ctx.select(g.level,g.roomId);item.append(b);}$('observation-list').append(item);}
+    if(room&&!groups.length)$('observation-list').append(make('p','이 공간과 일치하는 ERP 생활실 자료가 없습니다. 층과 공간 이름을 확인해주세요.','f3-small'));
+    if(!room){for(const r of result.unmatchedRooms.filter(r=>r.level===floor.level||r.level===null))$('observation-list').append(make('p',`${r.reportedLevel?r.reportedLevel+'층 · ':''}${r.name} · 현재 ${r.occupancy}명 · ${r.reason}`,'f3-small'));for(const r of result.items.filter(r=>r.reason&&(r.level===floor.level||r.level===null)))$('observation-list').append(make('p',`${r.reportedLevel?r.reportedLevel+'층':'층 정보 없음'} · ${r.living_room_name||'생활실 정보 없음'} · 집중 ${r.focus} · 주의 ${r.watch} · ${r.reason}`,'f3-small'));if(!$('observation-list').childElementCount)$('observation-list').append(make('p','이 층에 연결된 생활실 자료가 없습니다.','f3-small'));}
+    $('observation-list').append(make('p','현원은 생활실에 배정된 재원 인원입니다. 공개 화면에는 실명과 개인별 건강정보를 표시하지 않습니다.','f3-small'));
   }
   async function load(){
-    const branch=ctx.getProject().nursingHomeId,id=++sequence;controller?.abort();controller=new AbortController();currentBranch=branch;clear();
-    $('observation-refresh').disabled=true;
-    if(!branch){status('이름·지점 변경에서 ERP 지점을 선택하면 관찰 대상자를 연결합니다.');$('observation-refresh').disabled=false;return;}
-    status('ERP에서 오늘의 집중·주의관찰 대상자를 조회하고 있습니다.');
-    const active=controller,timeout=setTimeout(()=>active.abort(),60000);
-    try{
-      const session=await api('session',{signal:controller.signal});if(id!==sequence)return;connection(session.connected);
-      if(!session.connected){status('ERP 로그인으로 연결하면 페이지를 열 때 관찰 대상자를 갱신합니다.');return;}
-      const result=await api('targets?nursing_home_id='+branch,{signal:controller.signal});
-      if(id!==sequence||ctx.getProject().nursingHomeId!==branch)return;
-      data=result;render();ctx.changed();
-      const date=new Date(result.checkedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false});
-      status(`${result.nursingHomeName} · ${result.snapshotDate} 관찰 자료 · ${date} 조회 완료`,'success');
-    }catch(error){
-      if(id!==sequence)return;clear();if(error.status===401)connection(false);
-      status(error.name==='AbortError'?'조회 시간이 길어졌습니다. 다시 조회해주세요.':error.message,'error');
-    }finally{clearTimeout(timeout);if(id===sequence)$('observation-refresh').disabled=false;}
+    const branch=ctx.getProject().nursingHomeId,id=++sequence;controller?.abort();controller=new AbortController();const previous=data;currentBranch=branch;if(previous?.nursingHomeId!==branch){data=null;ctx.changed();}
+    if(!branch){status('이름·지점 변경에서 ERP 지점을 선택하면 생활실 현황을 표시합니다.');return;}status('최근 자동 수집한 생활실 자료를 불러오고 있습니다.');const active=controller,timeout=setTimeout(()=>active.abort(),15000);
+    try{const response=await fetch('/api/facility-observation/data?nursing_home_id='+branch,{cache:'no-store',credentials:'same-origin',signal:active.signal});const body=await response.json();if(!response.ok)throw new Error(body.error||'생활실 자료를 불러오지 못했습니다.');if(id!==sequence||ctx.getProject().nursingHomeId!==branch)return;data=body;if(JSON.stringify(previous)!==JSON.stringify(body))ctx.changed();else render();const date=new Date(body.checkedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false});status(`${body.nursingHomeName} · 1시간마다 자동 수집 · ${date} 수집${body.stale?' · 이전 자료: '+(body.collectionError||'갱신 대기'):''}`,body.stale?'warning':'success');}
+    catch(error){if(id!==sequence)return;data=null;ctx.changed();status(error.name==='AbortError'?'자료 조회가 지연되고 있습니다.':error.message,'error');}finally{clearTimeout(timeout);}
   }
-  $('observation-refresh').onclick=load;
-  $('observation-connect').onclick=()=>{$('erp-login-form').reset();$('erp-login-status').textContent='';$('erp-login-dialog').showModal();};
-  $('erp-login-cancel').onclick=()=>$('erp-login-dialog').close();
-  $('erp-login-dialog').addEventListener('close',()=>{$('erp-password').value='';});
-  $('erp-login-dialog').addEventListener('cancel',event=>{if($('erp-login-submit').disabled)event.preventDefault();});
-  $('erp-login-form').onsubmit=async event=>{
-    event.preventDefault();$('erp-login-submit').disabled=true;$('erp-login-cancel').disabled=true;$('erp-login-status').textContent='ERP에 연결하고 있습니다.';
-    const credentials={username:$('erp-username').value.trim(),password:$('erp-password').value};$('erp-password').value='';
-    try{
-      await api('session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(credentials)});
-      connection(true);$('erp-login-dialog').close();await load();
-    }catch(error){$('erp-login-status').textContent=error.message;}
-    finally{$('erp-login-submit').disabled=false;$('erp-login-cancel').disabled=false;credentials.password='';}
-  };
-  $('observation-disconnect').onclick=async()=>{
-    sequence++;controller?.abort();clear();
-    try{await api('session',{method:'DELETE'});connection(false);status('ERP 연결을 해제했습니다.');}
-    catch(error){status(error.message,'error');}
-    $('observation-refresh').disabled=false;
-  };
-  window.addEventListener('pageshow',event=>{if(event.persisted)load();});
-  window.addEventListener('pagehide',()=>{sequence++;controller?.abort();clear();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)load();});window.addEventListener('pagehide',()=>{sequence++;controller?.abort();data=null;ctx.changed();});setInterval(()=>{if(!document.hidden)load();},60000);
   return {load,mapped,render,sync(){if(currentBranch!==ctx.getProject().nursingHomeId)load();else render();}};
 }

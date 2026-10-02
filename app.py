@@ -14,6 +14,7 @@ import reputation_watch
 import claim_check
 import payroll_insurance
 import facility_observation
+import facility_collection
 import aeo_missions
 import web_search_results
 import support_applications
@@ -70,7 +71,7 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if facility_observation.handle(self, 'GET'):
+        if facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
             return
         if support_projects.handle(self, "GET"):
             return
@@ -111,7 +112,7 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
-        if facility_observation.handle(self, 'HEAD'):
+        if facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
             return
         if support_projects.handle(self, "HEAD"):
             return
@@ -319,11 +320,11 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_DELETE(self):
-        if not facility_observation.handle(self, 'DELETE'):
+        if not (facility_collection.handle(self, 'DELETE') or facility_observation.handle(self, 'DELETE')):
             self.send_error(405)
 
     def do_POST(self):
-        if facility_observation.handle(self, 'POST'):
+        if facility_collection.handle(self, 'POST') or facility_observation.handle(self, 'POST'):
             return
         if support_projects.handle(self, "POST"):
             return
@@ -483,6 +484,7 @@ if __name__ == "__main__":
     visibility_scheduler_stop = search_visibility.start_scheduler(search_visibility.db_path())
     reputation_watch.init_db(reputation_watch.db_path())
     reputation_scheduler_stop = reputation_watch.start_scheduler(reputation_watch.db_path())
+    facility_scheduler_stop = facility_collection.start_scheduler()
     port = int(os.getenv("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), App)
     print(f"Local: http://localhost:{port}", flush=True)
@@ -495,4 +497,5 @@ if __name__ == "__main__":
         support_worker_stop.set()
         visibility_scheduler_stop.set()
         reputation_scheduler_stop.set()
+        facility_scheduler_stop.set()
         server.server_close()

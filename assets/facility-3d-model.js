@@ -7,6 +7,7 @@
   'use strict';
   const TYPES = {living:'생활실', office:'사무·상담', common:'공용공간', service:'지원공간', core:'계단·승강기', corridor:'복도', unknown:'용도 미지정'};
   const COLORS = {living:'#dbe8f1', office:'#e8e4f3', common:'#e0eddf', service:'#f1e8d7', core:'#e1e5eb', corridor:'#edf0f3', unknown:'#e6eaf0'};
+  const STAFF_ROLES={care:'요양보호사',social:'사회복지사',nurse:'간호(조무)사',therapy:'물리(작업)치료사',admin:'사무원',director:'원장',kitchen:'조리원',other:'기타 종사자'};
   const uid = () => 'space-' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
   const text = (value, fallback) => String(value ?? fallback).trim().slice(0,80) || fallback;
   function number(value, min, max, label) {
@@ -20,7 +21,7 @@
     return {version:1,id:uid(),name:text(options.name,'새 건물'),width:number(options.width ?? 24,4,120,'건물 가로'),
       depth:number(options.depth ?? 16,4,120,'건물 세로'),height:number(options.height ?? 3.2,2,6,'층 높이'),
       scale:options.scale === 'entered' ? 'entered' : 'estimated',example:false,nursingHomeId:null,
-      floors:Array.from({length:count},(_,i)=>({id:uid(),level:i+1,name:(i+1)+'층',rooms:[],image:null}))};
+      floors:Array.from({length:count},(_,i)=>({id:uid(),level:i+1,name:(i+1)+'층',rooms:[],image:null,staff:[]}))};
   }
   function sample() {
     const project = blank({name:'5층 요양원 예시',count:5});
@@ -60,9 +61,8 @@
       floorIds.add(id);
       const rooms = floor.rooms.map(room=>{
         if (!room) throw new Error('공간 정보를 확인해주세요.');
-        const r={id:text(room.id,uid()),name:text(room.name,'새 공간'),type:Object.hasOwn(TYPES,room.type)?room.type:'common',
-          x:number(room.x,-out.width/2,out.width/2,'공간 위치'),z:number(room.z,-out.depth/2,out.depth/2,'공간 위치'),
-          w:number(room.w,0.5,out.width,'공간 가로'),d:number(room.d,0.5,out.depth,'공간 세로'),beds:number(room.beds ?? 0,0,8,'침대 수')};
+        const shape=room.points?polygon(room.points,out):{x:number(room.x,-out.width/2,out.width/2,'공간 위치'),z:number(room.z,-out.depth/2,out.depth/2,'공간 위치'),w:number(room.w,0.5,out.width,'공간 가로'),d:number(room.d,0.5,out.depth,'공간 세로')};
+        const r={...shape,id:text(room.id,uid()),name:text(room.name,'새 공간'),type:Object.hasOwn(TYPES,room.type)?room.type:'common',beds:number(room.beds ?? 0,0,8,'침대 수')};
         if (!Number.isInteger(r.beds) || roomIds.has(r.id)) throw new Error('공간 ID 또는 침대 수를 확인해주세요.');
         if (!inside(r,out)) throw new Error('건물 밖에 있는 공간이 있습니다.');
         roomIds.add(r.id); return r;
@@ -76,16 +76,40 @@
           image.labels=floor.image.labels.map(label=>({text:text(label.text,''),x:number(label.x,0,1,'글자 위치'),y:number(label.y,0,1,'글자 위치'),confidence:number(label.confidence,0,100,'글자 인식값')}));
         }
       }
-      return {id,level:i+1,name:text(floor.name,(i+1)+'층'),rooms,image};
+      const staff=validateStaff(floor.staff??[]);
+      return {id,level:i+1,name:text(floor.name,(i+1)+'층'),rooms,image,staff};
     });
+    if(out.floors.reduce((n,f)=>n+f.staff.reduce((s,r)=>s+r.count,0),0)>200)throw new Error('한 건물에 종사자는 최대 200명까지 배치할 수 있습니다.');
     return out;
   }
   function inside(room,project) {
     return Math.abs(room.x)+room.w/2 <= project.width/2+0.001 && Math.abs(room.z)+room.d/2 <= project.depth/2+0.001;
   }
-  function intersects(a,b) {
-    return Math.abs(a.x-b.x)<(a.w+b.w)/2-0.01 && Math.abs(a.z-b.z)<(a.d+b.d)/2-0.01;
+  const cross=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
+  function vertices(room){return room.points||[{x:room.x-room.w/2,z:room.z-room.d/2},{x:room.x+room.w/2,z:room.z-room.d/2},{x:room.x+room.w/2,z:room.z+room.d/2},{x:room.x-room.w/2,z:room.z+room.d/2}];}
+  function signedArea(points){return points.reduce((s,p,i)=>{const q=points[(i+1)%points.length];return s+p.x*q.z-q.x*p.z;},0)/2;}
+  function area(room){return Math.abs(signedArea(vertices(room)));}
+  function onSegment(p,a,b){return Math.abs(cross(a,b,p))<1e-7&&p.x>=Math.min(a.x,b.x)-1e-7&&p.x<=Math.max(a.x,b.x)+1e-7&&p.z>=Math.min(a.z,b.z)-1e-7&&p.z<=Math.max(a.z,b.z)+1e-7;}
+  function contains(room,p){const v=vertices(room);let inside=false;for(let i=0,j=v.length-1;i<v.length;j=i++){const a=v[i],b=v[j];if(onSegment(p,a,b))return true;if((a.z>p.z)!==(b.z>p.z)&&p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x)inside=!inside;}return inside;}
+  function segmentsMeet(a,b,c,d){const x=cross(a,b,c),y=cross(a,b,d),z=cross(c,d,a),w=cross(c,d,b);return (x*y<0&&z*w<0)||onSegment(a,c,d)||onSegment(b,c,d)||onSegment(c,a,b)||onSegment(d,a,b);}
+  function triangulate(points){
+    const v=points.map(p=>({...p}));if(signedArea(v)<0)v.reverse();const out=[];let guard=0;
+    while(v.length>3&&guard++<1024){let found=false;for(let i=0;i<v.length;i++){const a=v[(i+v.length-1)%v.length],b=v[i],c=v[(i+1)%v.length];if(Math.abs(cross(a,b,c))<1e-8){v.splice(i,1);found=true;break;}if(cross(a,b,c)<0)continue;
+      if(v.some(p=>p!==a&&p!==b&&p!==c&&cross(a,b,p)>=-1e-8&&cross(b,c,p)>=-1e-8&&cross(c,a,p)>=-1e-8))continue;out.push([a,b,c]);v.splice(i,1);found=true;break;}if(!found)throw new Error('다각형 모서리를 확인해주세요.');}
+    if(v.length===3&&Math.abs(cross(...v))>1e-8)out.push(v);return out;
   }
+  function anchor(room){if(!room.points)return {x:room.x,z:room.z};const ts=triangulate(vertices(room));const t=ts.sort((a,b)=>Math.abs(cross(...b))-Math.abs(cross(...a)))[0];return t?{x:(t[0].x+t[1].x+t[2].x)/3,z:(t[0].z+t[1].z+t[2].z)/3}:{x:room.x,z:room.z};}
+  function polygon(raw,project){
+    if(!Array.isArray(raw)||raw.length<3||raw.length>32)throw new Error('다각형은 3~32개 점으로 그려주세요.');
+    const points=raw.map(p=>({x:number(p?.x,-project.width/2,project.width/2,'다각형 위치'),z:number(p?.z,-project.depth/2,project.depth/2,'다각형 위치')}));
+    for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];if(Math.hypot(a.x-b.x,a.z-b.z)<0.1)throw new Error('다각형 점 사이를 조금 더 넓혀주세요.');for(let j=i+1;j<points.length;j++){if(j===i+1||(i===0&&j===points.length-1))continue;if(segmentsMeet(a,b,points[j],points[(j+1)%points.length]))throw new Error('다각형 선이 교차하거나 같은 점에 닿습니다.');}}
+    if(Math.abs(signedArea(points))<0.25)throw new Error('다각형 공간을 조금 더 넓게 그려주세요.');triangulate(points);
+    const xs=points.map(p=>p.x),zs=points.map(p=>p.z),w=Math.max(...xs)-Math.min(...xs),d=Math.max(...zs)-Math.min(...zs);
+    return {id:uid(),name:'새 공간',type:'common',beds:0,x:(Math.min(...xs)+Math.max(...xs))/2,z:(Math.min(...zs)+Math.max(...zs))/2,w,d,points};
+  }
+  function convexOverlap(a,b){for(const v of [a,b])for(let i=0;i<v.length;i++){const p=v[i],q=v[(i+1)%v.length],nx=q.z-p.z,nz=p.x-q.x;const pa=a.map(k=>k.x*nx+k.z*nz),pb=b.map(k=>k.x*nx+k.z*nz);if(Math.min(Math.max(...pa),Math.max(...pb))-Math.max(Math.min(...pa),Math.min(...pb))<=1e-7)return false;}return true;}
+  function intersects(a,b){if(Math.abs(a.x-b.x)>(a.w+b.w)/2||Math.abs(a.z-b.z)>(a.d+b.d)/2)return false;return triangulate(vertices(a)).some(t=>triangulate(vertices(b)).some(u=>convexOverlap(t,u)));}
+  function validateStaff(raw){if(!Array.isArray(raw)||raw.length>Object.keys(STAFF_ROLES).length)throw new Error('종사자 배치 형식을 확인해주세요.');const seen=new Set();const out=raw.map(row=>{if(!row||!Object.hasOwn(STAFF_ROLES,row.role)||seen.has(row.role)||!Number.isInteger(row.count)||row.count<0||row.count>20)throw new Error('직종별 인원은 0~20명으로 입력해주세요.');seen.add(row.role);return {role:row.role,count:row.count};});if(out.reduce((n,r)=>n+r.count,0)>80)throw new Error('한 층에 종사자는 최대 80명까지 배치할 수 있습니다.');return out;}
   function rectangle(a,b,project) {
     const snap=n=>Math.round(n*4)/4;
     const clamp=(v,limit)=>Math.max(-limit/2+0.1,Math.min(limit/2-0.1,v));
@@ -102,5 +126,6 @@
     floor.rooms.push(room); project.example=false;
     return room;
   }
-  return {TYPES,COLORS,uid,blank,sample,validate,inside,intersects,rectangle,addRoom};
+  function segmentHits(room,a,b){const v=vertices(room);return contains(room,a)||contains(room,b)||v.some((p,i)=>segmentsMeet(a,b,p,v[(i+1)%v.length]));}
+  return {TYPES,COLORS,STAFF_ROLES,uid,blank,sample,validate,inside,intersects,rectangle,polygon,vertices,area,contains,anchor,triangulate,segmentHits,validateStaff,addRoom};
 });
