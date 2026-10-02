@@ -258,7 +258,7 @@ $('drawing-finish').onclick=finishPolygon;
 $('drawing-undo').onclick=()=>{drawingPoints.pop();previewEnd=null;drawPreview(null);renderUI();};
 function finishPolygon(){if(!drawing||drawingShape!=='polygon')return;try{finishRoom(M.polygon(drawingPoints,project));}catch(error){status(error.message+' 마지막 점 취소로 수정할 수 있습니다.','error');}}
 function finishRoom(shape){const room=M.addRoom(project,selectedFloor,shape);cancelDrawing();selectedRoom=room.id;markDirty();renderUI();rebuild();status('공간을 추가했습니다. 오른쪽에서 이름과 용도를 지정한 뒤 저장하세요.','success');}
-$('show-labels').onclick=()=>{showNames=!showNames;$('show-labels').setAttribute('aria-pressed',String(showNames));labelSprites.forEach(s=>s.visible=showNames);needsRender=true;if(fallback)drawFallback();};
+$('show-labels').onclick=()=>{showNames=!showNames;$('show-labels').setAttribute('aria-pressed',String(showNames));labelSprites.forEach(s=>s.visible=showNames);document.querySelectorAll('.f3-space-name').forEach(name=>name.hidden=!showNames);needsRender=true;if(fallback)drawFallback();};
 $('show-walls').onclick=()=>{showWalls=!showWalls;$('show-walls').setAttribute('aria-pressed',String(showWalls));rebuild();};
 $('reset-view').onclick=fitCamera;
 let expandedInert=[];
@@ -355,7 +355,7 @@ function box(parent,w,h,d,x,y,z,color,opacity=1) {
 function nameSprite(parent,name,x,y,z) {
   const buffer=document.createElement('canvas');buffer.width=512;buffer.height=100;
   const ctx=buffer.getContext('2d');ctx.font='600 32px system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='rgba(255,255,255,0.90)';ctx.roundRect(6,8,500,84,16);ctx.fill();ctx.fillStyle='#35445b';ctx.fillText(name.length>14?name.slice(0,13)+'…':name,256,50,480);
+  const style=getComputedStyle(document.body);ctx.fillStyle=style.getPropertyValue('--ui-surface').trim()||'#fff';ctx.roundRect(6,8,500,84,16);ctx.fill();ctx.strokeStyle=style.getPropertyValue('--ui-border').trim()||'#dce3ed';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle=style.getPropertyValue('--ui-text').trim()||'#35445b';ctx.fillText(name.length>14?name.slice(0,13)+'…':name,256,50,480);
   const texture=new THREE.CanvasTexture(buffer);texture.colorSpace=THREE.SRGBColorSpace;
   const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:true,transparent:true}));
   sprite.position.set(x,y,z);sprite.scale.set(4.3,0.84,1);sprite.visible=showNames;parent.add(sprite);labelSprites.push(sprite);
@@ -441,7 +441,7 @@ function rebuild() {
   if(root){scene.remove(root);dispose(root);}if(preview){scene.remove(preview);dispose(preview);preview=null;}
   root=new THREE.Group();scene.add(root);floorGroups=[];pickTargets=[];labelSprites=[];staffFloors=[];$('floor-labels').replaceChildren();$('observation-markers').replaceChildren();$('observation-lines').replaceChildren();observationAnchors=[];
   const visible=(mode==='floor'||mode==='plan')?[floor()]:project.floors;
-  const observationMarkers=window.FacilityObservation.markers(project,observation.mapped(),mode,selectedFloor);
+  const observationMarkers=window.FacilityObservation.spaceMarkers(project,observation.mapped(),mode,selectedFloor);
   visible.forEach(f=>{
     const group=new THREE.Group(),elevation=(mode==='floor'||mode==='plan')?0:M.floorIndex(f.level)*(project.height+(mode==='exploded'?3.8:0));
     group.position.y=elevation;root.add(group);floorGroups.push({floor:f,group});
@@ -462,7 +462,7 @@ function rebuild() {
       const tile=polygonSurface(r,chosen?'#aebce4':M.COLORS[r.type],(mode==='plan'&&f.image)?0.42:1);
       tile.position.y=.065;tile.receiveShadow=true;tile.userData={level:f.level,id:r.id};group.add(tile);pickTargets.push(tile);
       roomWalls(group,r,mode==='building'?1.5:1.0);furnishings(group,r);
-      const anchor=M.anchor(r);nameSprite(group,r.name,anchor.x,mode==='plan'?0.25:1.22,anchor.z);
+      if(mode==='building'||mode==='exploded'){const anchor=M.anchor(r);nameSprite(group,r.name,anchor.x,1.22,anchor.z);}
       if(chosen) {
         const points=M.vertices(r).map(p=>new THREE.Vector3(p.x,0.11,p.z));
         group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:'#4356ad'})));
@@ -472,9 +472,9 @@ function rebuild() {
     if(mode==='building')exterior(group,f.level);
     const marker=make('div','f3-floor-marker'+(f.level===selectedFloor?' is-selected':''));marker.append(make('b','',M.floorCode(f.level)),make('span','',f.name));$('floor-labels').append(marker);
     group.userData.marker=marker;
-    for(const targets of observationMarkers.filter(t=>t.level===f.level)){
+    for(const targets of observationMarkers.filter(t=>t.level===f.level).sort((a,b)=>Number(b.hasSummary??true)-Number(a.hasSummary??true))){
       const badge=observationBadge(targets);$('observation-markers').append(badge);
-      observationAnchors.push({group,x:targets.x,z:targets.z,y:targets.kind==='floor'?.55:mode==='plan'?.3:1.8,badge,line:observationLine(targets),kind:targets.kind});
+      observationAnchors.push({group,x:targets.x,z:targets.z,y:targets.kind==='floor'?.55:mode==='plan'?.3:1.8,badge,line:observationLine(targets),kind:targets.kind,hasSummary:targets.hasSummary});
     }
   });
   if(mode==='building'&&showWalls) {
@@ -514,20 +514,21 @@ function observationBadge(targets){
     badge.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · ${targets.occupancy==null?'현원 미연결':'현원 '+targets.occupancy+'명'} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 3D 층 요약 보기`);
     badge.onclick=()=>observation.open(targets);return badge;
   }
-  const risk=targets.focus?'focus':targets.watch?'watch':'normal',badge=make('div','f3-observation-marker f3-risk-'+risk);
-  const count=make('button','f3-occupancy-button');if(targets.roomId){count.append(occupancyIcon(),make('b','',targets.occupancy==null?'—':String(targets.occupancy)));}else count.textContent='위치 확인';count.type='button';const countLabel=targets.occupancy!=null?`현원 ${targets.occupancy}명`:(targets.roomId?'현원 미연결':'위치 확인');count.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · ${countLabel}`);count.title=`${targets.roomName} · ${countLabel}`;count.onclick=()=>observation.open(targets);badge.append(count);
-  if(targets.focus||targets.watch){const alert=make('button','f3-alert-button');alert.type='button';alert.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v5m0 3v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';alert.append(make('span','',String(targets.focus+targets.watch)));const label=`${M.floorName(targets.level)} ${targets.roomName} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 생활실 정보 보기`;alert.title=label;alert.setAttribute('aria-label',label);alert.onclick=()=>observation.open(targets);badge.append(alert);}
+  const risk=targets.focus?'focus':targets.watch?'watch':'normal',badge=make('div','f3-observation-marker'+(targets.kind==='space'?' f3-space-marker':'')+' f3-risk-'+risk);
+  badge.dataset.roomId=targets.roomId||'';
+  if(targets.kind==='space'){
+    const name=make('button','f3-space-name',targets.roomName);name.type='button';name.title=targets.roomName;name.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · 공간 선택`);name.hidden=!showNames;name.onclick=()=>selectRoom(targets.level,targets.roomId);badge.append(name);
+    if(!targets.hasSummary)return badge;
+  }
+  const counts=make('div','f3-space-counts');badge.append(counts);
+  const count=make('button','f3-occupancy-button');if(targets.roomId){count.append(occupancyIcon(),make('b','',targets.occupancy==null?'—':String(targets.occupancy)));}else count.textContent='위치 확인';count.type='button';const countLabel=targets.occupancy!=null?`현원 ${targets.occupancy}명`:(targets.roomId?'현원 미연결':'위치 확인');count.setAttribute('aria-label',`${M.floorName(targets.level)} ${targets.roomName} · ${countLabel}`);count.title=`${targets.roomName} · ${countLabel}`;count.onclick=()=>observation.open(targets);counts.append(count);
+  if(targets.focus||targets.watch){const alert=make('button','f3-alert-button');alert.type='button';alert.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v5m0 3v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';alert.append(make('span','',String(targets.focus+targets.watch)));const label=`${M.floorName(targets.level)} ${targets.roomName} · 집중 ${targets.focus}명 · 주의 ${targets.watch}명 · 생활실 정보 보기`;alert.title=label;alert.setAttribute('aria-label',label);alert.onclick=()=>observation.open(targets);counts.append(alert);}
   return badge;
 }
 function occupancyIcon(){const icon=make('span','f3-occupancy-icon');icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 21v-3a7 7 0 0 1 14 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';return icon;}
 function observationLine(targets){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.dataset.tier=targets.focus?'focus':targets.watch?'watch':'normal';$('observation-lines').append(line);return line;}
 function placeObservation(a,x,y,w,h,used){
-  const bw=a.badge.offsetWidth||140,bh=a.badge.offsetHeight||60,pad=5,clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-  let chosen=null;
-  const offsets=[[0,0],[0,-bh-10],[0,bh+10],[-bw-10,0],[bw+10,0],[0,-2*(bh+10)],[0,2*(bh+10)],[-bw-10,-bh-10],[bw+10,-bh-10],[-bw-10,bh+10],[bw+10,bh+10]];
-  for(const [dx,dy]of offsets){const cx=clamp(x+dx,bw/2+pad,w-bw/2-pad),cy=clamp(y+dy,bh/2+pad,h-bh/2-pad),r={left:cx-bw/2,right:cx+bw/2,top:cy-bh/2,bottom:cy+bh/2,cx,cy};
-    if(!chosen)chosen=r;if(!used.some(k=>r.left<k.right+6&&r.right>k.left-6&&r.top<k.bottom+6&&r.bottom>k.top-6)){chosen=r;break;}
-  }
+  const chosen=window.FacilityObservation.markerPosition(x,y,a.badge.offsetWidth||140,a.badge.offsetHeight||60,w,h,used);
   used.push(chosen);a.badge.style.left=chosen.cx+'px';a.badge.style.top=chosen.cy+'px';
   a.line.setAttribute('x1',x);a.line.setAttribute('y1',y);a.line.setAttribute('x2',chosen.cx);a.line.setAttribute('y2',chosen.cy);
 }
@@ -542,11 +543,11 @@ function updateMarkers() {
   const used=observationReserved();
   for(const a of observationAnchors){
     const p=a.group.localToWorld(new THREE.Vector3(a.x,a.y,a.z)).project(camera),x=(p.x+1)*w/2,y=(1-p.y)*h/2;
-    a.badge.hidden=drawing||(a.kind==='floor'&&matchMedia('(max-width:500px)').matches)||p.z>1||p.z<-1||x<0||x>w||y<0||y>h;
+    a.badge.hidden=drawing||(a.kind==='space'&&!showNames&&!a.hasSummary)||(a.kind==='floor'&&matchMedia('(max-width:500px)').matches)||p.z>1||p.z<-1||x<0||x>w||y<0||y>h;
     a.line.style.display=a.badge.hidden?'none':'';if(!a.badge.hidden)placeObservation(a,x,y,w,h,used);
   }
 }
-function observationReserved(){if(drawing)return [];const panel=$('observation-details').hidden?$('observation-open'):$('observation-details');const a=panel.getBoundingClientRect(),b=viewport.getBoundingClientRect();return [{left:a.left-b.left,right:a.right-b.left,top:a.top-b.top,bottom:a.bottom-b.top}];}
+function observationReserved(){if(drawing)return [];const panel=$('observation-details').hidden?$('observation-open'):$('observation-details'),b=viewport.getBoundingClientRect();return [panel,document.querySelector('.f3-view-caption'),...$('floor-labels').children].filter(el=>!el.hidden).map(el=>{const a=el.getBoundingClientRect();return {left:a.left-b.left,right:a.right-b.left,top:a.top-b.top,bottom:a.bottom-b.top};});}
 function pointer(event) {
   const bounds=canvas.getBoundingClientRect();return {x:((event.clientX-bounds.left)/bounds.width)*2-1,y:1-((event.clientY-bounds.top)/bounds.height)*2};
 }
@@ -624,7 +625,7 @@ function drawFallback(end) {
   const paint=()=>{
     rooms.forEach(r=>{
       ctx.beginPath();M.vertices(r).forEach((p,i)=>{const x=left+(p.x+project.width/2)*scale,y=top+(p.z+project.depth/2)*scale;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.closePath();ctx.globalAlpha=floor().image?0.55:1;ctx.fillStyle=r.id===selectedRoom?'#aebce4':M.COLORS[r.type];ctx.fill();ctx.globalAlpha=1;
-      if(showWalls){ctx.strokeStyle='#8293a8';ctx.stroke();}if(showNames){const a=M.anchor(r);ctx.fillStyle='#35445b';ctx.font='11px system-ui';ctx.textAlign='center';ctx.fillText(r.name,left+(a.x+project.width/2)*scale,top+(a.z+project.depth/2)*scale,Math.max(5,r.w*scale-4));}
+      if(showWalls){ctx.strokeStyle='#8293a8';ctx.stroke();}if(showNames&&drawing){const a=M.anchor(r);ctx.fillStyle='#35445b';ctx.font='11px system-ui';ctx.textAlign='center';ctx.fillText(r.name,left+(a.x+project.width/2)*scale,top+(a.z+project.depth/2)*scale,Math.max(5,r.w*scale-4));}
     });
     if(startPoint&&end){const r=M.rectangle(startPoint,end,project);ctx.strokeStyle='#4356ad';ctx.lineWidth=2;ctx.strokeRect(left+(r.x+project.width/2-r.w/2)*scale,top+(r.z+project.depth/2-r.d/2)*scale,r.w*scale,r.d*scale);}
     if(drawingPoints.length){const points=drawingPoints.slice();if(end)points.push(end);ctx.beginPath();points.forEach((p,i)=>{const x=left+(p.x+project.width/2)*scale,y=top+(p.z+project.depth/2)*scale;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});if(points.length>=3){ctx.closePath();ctx.fillStyle='#4356ad33';ctx.fill();}ctx.strokeStyle='#4356ad';ctx.lineWidth=2;ctx.stroke();for(const p of drawingPoints){ctx.beginPath();ctx.arc(left+(p.x+project.width/2)*scale,top+(p.z+project.depth/2)*scale,4,0,Math.PI*2);ctx.fillStyle='#4356ad';ctx.fill();}}
@@ -632,7 +633,7 @@ function drawFallback(end) {
   if(floor().image){const image=floor().image,img=new Image();img.onload=()=>{if(revision!==fallbackRevision)return;let iw=project.width*scale,ih=iw/image.aspect;if(ih>project.depth*scale){ih=project.depth*scale;iw=ih*image.aspect;}ctx.drawImage(img,left+(project.width*scale-iw)/2,top+(project.depth*scale-ih)/2,iw,ih);paint();};img.src=image.src;}else paint();
   $('floor-labels').replaceChildren();
   $('observation-markers').replaceChildren();$('observation-lines').replaceChildren();const used=observationReserved();
-  if(!drawing)for(const targets of window.FacilityObservation.markers(project,observation.mapped(),mode,selectedFloor)){const badge=observationBadge(targets);$('observation-markers').append(badge);placeObservation({badge,line:observationLine(targets)},left+(targets.x+project.width/2)*scale,top+(targets.z+project.depth/2)*scale,w,h,used);}
+  if(!drawing)for(const targets of window.FacilityObservation.spaceMarkers(project,observation.mapped(),mode,selectedFloor).sort((a,b)=>Number(b.hasSummary??true)-Number(a.hasSummary??true))){const badge=observationBadge(targets);badge.hidden=targets.kind==='space'&&!showNames&&!targets.hasSummary;$('observation-markers').append(badge);const line=observationLine(targets);line.style.display=badge.hidden?'none':'';if(!badge.hidden)placeObservation({badge,line},left+(targets.x+project.width/2)*scale,top+(targets.z+project.depth/2)*scale,w,h,used);}
 }
 document.querySelector('.facility3d-main').inert=true;saveControls();renderUI();await loadShared(true);document.querySelector('.facility3d-main').inert=false;if(loadError&&!projects.length)status(loadError,'error');
 try {

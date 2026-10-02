@@ -3,6 +3,34 @@ const M=require('./assets/facility-3d-model.js'),O=require('./assets/facility-ob
 function project(){const p=M.blank({name:'안양점',count:5});p.nursingHomeId=2;p.floors[0].rooms=[{id:'a',name:'201',type:'living',x:1,z:1,w:3,d:3,beds:0}];p.floors[1].rooms=[{id:'b',name:'201호 생활실',type:'living',x:-3,z:1,w:3,d:3,beds:0}];return p;}
 const row=(floor,room,tier='focus')=>({elderly_name:'가상 대상',living_room_floor:floor,living_room_name:room,risk_tier:tier,risk_tier_display:tier==='focus'?'집중관찰':'주의관찰'});
 
+test('space labels join their exact floor summary once and keep unmapped spaces named',()=>{
+  const p=project();p.floors[0].rooms.push({id:'office',name:'간호사실',type:'nursing',x:-5,z:0,w:3,d:3,beds:0});
+  const result=O.operating(p,{nursingHomeId:2,rooms:[{floor:1,name:'201호',current_occupancy:0,capacity:4}],observations:[{living_room_floor:1,living_room_name:'999',focus:1,watch:0}]});
+  for(const mode of ['floor','plan']){
+    const labels=O.spaceMarkers(p,result,mode,1),living=labels.find(t=>t.roomId==='a'),office=labels.find(t=>t.roomId==='office');
+    assert.equal(labels.filter(t=>t.roomId==='a').length,1);assert.equal(living.roomName,'201');assert.equal(living.hasSummary,true);assert.equal(living.occupancy,0);
+    assert.equal(office.roomName,'간호사실');assert.equal(office.hasSummary,false);assert.equal(office.occupancy,undefined);assert.deepEqual([office.x,office.z],[-5,0]);
+    assert.equal(labels.some(t=>t.roomId==='b'),false);assert.equal(labels.filter(t=>!t.roomId).length,1);
+  }
+  for(const mode of ['building','exploded'])assert.deepEqual(O.spaceMarkers(p,result,mode,1),O.markers(p,result,mode,1));
+  const offline=O.spaceMarkers(p,O.operating(p,null),'floor',1);assert.equal(offline.length,2);assert.ok(offline.every(t=>!t.hasSummary&&t.occupancy===undefined));
+});
+
+test('label placement stays inside the viewport and avoids summaries and information panels',()=>{
+  const used=[{left:180,right:300,top:0,bottom:150}],positions=[];
+  for(const [x,y] of [[260,70],[260,70],[0,0],[320,420],[120,200]]){
+    const r=O.markerPosition(x,y,100,60,320,420,used);
+    assert.ok(r.left>=5&&r.right<=315&&r.top>=5&&r.bottom<=415);
+    assert.ok(used.every(k=>r.right<=k.left-6||r.left>=k.right+6||r.bottom<=k.top-6||r.top>=k.bottom+6));
+    used.push(r);positions.push(r);
+  }
+  assert.equal(positions.length,5);
+  const crowded=O.markerPosition(10,10,100,60,80,40,[{left:0,right:80,top:0,bottom:40}]);
+  assert.ok(Number.isFinite(crowded.cx)&&Number.isFinite(crowded.cy));
+  const narrowGap=O.markerPosition(20,20,160,36,320,420,[{left:0,right:320,top:0,bottom:265},{left:5,right:85,top:271,bottom:420},{left:260,right:320,top:271,bottom:420}]);
+  assert.ok(narrowGap.left>=91&&narrowGap.right<=254&&narrowGap.top>=271);
+});
+
 test('authenticated room roster includes all occupants and links individual tiers by ID on the exact floor',()=>{
   const p=project(),room={floor:1,name:'201호',capacity:4,current_occupancy:3,remaining_capacity:1,elderly_residents:[{id:'10',name:'합성 A'},{id:'11',name:'합성 B'},{id:'12',name:'합성 C'}]};
   const payload={nursingHomeId:2,rooms:[room],observations:[{living_room_floor:1,living_room_name:'201',focus:1,watch:1}],residentObservations:[{elderly_id:10,elderly_name:'합성 A',living_room_floor:1,living_room_name:'201',risk_tier:'focus'},{elderly_id:11,elderly_name:'합성 B',living_room_floor:1,living_room_name:'201',risk_tier:'watch'},{elderly_id:12,elderly_name:'합성 C',living_room_floor:2,living_room_name:'201',risk_tier:'focus'}]};

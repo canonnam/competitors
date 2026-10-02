@@ -64,5 +64,21 @@
       ...f,kind:'floor',roomId:null,roomName:f.name,x:project.width/2+.5,z:0}));
     return result.groups.filter(g=>g.level===selectedFloor).map(g=>({...g,kind:'room'}));
   }
-  return {floorNumber,roomKey,registered,residentsFor,map,operating,markers};
+  function spaceMarkers(project,result,mode,selectedFloor){
+    const summaries=markers(project,result,mode,selectedFloor);
+    if(mode==='building'||mode==='exploded')return summaries;
+    const M=typeof require==='function'?require('./facility-3d-model.js'):window.FacilityModel,floor=project.floors.find(f=>f.level===selectedFloor);
+    return [...(floor?.rooms||[]).map(room=>{const summary=summaries.find(g=>g.roomId===room.id);return {...summary,...M.anchor(room),level:selectedFloor,roomId:room.id,roomName:room.name,kind:'space',hasSummary:!!summary};}),...summaries.filter(g=>!g.roomId)];
+  }
+  function markerPosition(x,y,bw,bh,w,h,used){
+    const pad=5,clamp=(v,min,max)=>max<min?(min+max)/2:Math.max(min,Math.min(max,v));
+    const rect=(cx,cy)=>{cx=clamp(cx,bw/2+pad,w-bw/2-pad);cy=clamp(cy,bh/2+pad,h-bh/2-pad);return {left:cx-bw/2,right:cx+bw/2,top:cy-bh/2,bottom:cy+bh/2,cx,cy};};
+    const free=r=>!used.some(k=>r.left<k.right+6&&r.right>k.left-6&&r.top<k.bottom+6&&r.bottom>k.top-6);
+    const near=[[0,0],[0,-bh-10],[0,bh+10],[-bw-10,0],[bw+10,0],[0,-2*(bh+10)],[0,2*(bh+10)],[-bw-10,-bh-10],[bw+10,-bh-10],[-bw-10,bh+10],[bw+10,bh+10]].map(([dx,dy])=>rect(x+dx,y+dy));
+    const nearby=near.find(free);if(nearby)return nearby;
+    const xs=[x,bw/2+pad,w-bw/2-pad,...used.flatMap(k=>[k.left-bw/2-6,k.right+bw/2+6])],ys=[y,bh/2+pad,h-bh/2-pad,...used.flatMap(k=>[k.top-bh/2-6,k.bottom+bh/2+6])];
+    const candidates=xs.flatMap(cx=>ys.map(cy=>rect(cx,cy))).filter(free);
+    candidates.sort((a,b)=>Math.hypot(a.cx-x,a.cy-y)-Math.hypot(b.cx-x,b.cy-y));return candidates[0]||near[0];
+  }
+  return {floorNumber,roomKey,registered,residentsFor,map,operating,markers,spaceMarkers,markerPosition};
 });
