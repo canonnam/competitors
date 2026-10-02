@@ -14,16 +14,16 @@
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
-  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-mvp2">
+  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-view3">
   <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
   <script src="/assets/site.js" defer></script><script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
   <script src="/assets/navigation.js?v=20261001-auto" defer></script>
   <script src="/assets/facility-3d-model.js?v=20261002-mvp2" defer></script>
   <script src="/assets/facility-3d-detect.js?v=20261002-mvp2" defer></script>
-  <script src="/assets/facility-observation-model.js?v=20261002-mvp2" defer></script>
+  <script src="/assets/facility-observation-model.js?v=20261002-view3" defer></script>
   <script src="/assets/facility-staff-model.js?v=20261002-mvp2" defer></script>
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="/assets/facility-3d.js?v=20261002-mvp2"></script>
+  <script type="module" src="/assets/facility-3d.js?v=20261002-view3"></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
 <body class="kb-detail" data-feedback-page="facility-3d">
@@ -39,7 +39,7 @@
       <div class="f3-project-actions"><button class="ui-button" id="edit-project" type="button">이름·지점 변경</button><button class="ui-button" id="save-project" type="button">저장</button><button class="ui-button" id="export-project" type="button">파일로 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button><button class="ui-button f3-delete" id="delete-project" type="button">건물 삭제</button><button class="ui-button" id="undo-project" type="button" hidden>삭제 되돌리기</button></div>
     </section>
     <section class="f3-observation-bar" aria-labelledby="observation-title">
-      <div class="f3-observation-heading"><h2 id="observation-title">생활실 현원·관찰 현황</h2><strong id="observation-summary"></strong></div>
+      <div class="f3-observation-heading"><h2 id="observation-title">생활실 자료 자동 수집</h2></div>
       <p id="observation-status" class="ui-status" role="status" aria-live="polite">최근 자동 수집한 생활실 현황을 준비하고 있습니다.</p>
     </section>
     <div class="f3-workspace">
@@ -50,6 +50,7 @@
           <canvas id="staff-canvas" class="f3-staff-canvas" aria-hidden="true" hidden></canvas>
           <div class="f3-view-caption"><strong id="view-title">건물 전체</strong><span id="view-description">5개 층을 함께 살펴보세요.</span></div>
           <svg id="observation-lines" class="f3-observation-lines" aria-hidden="true"></svg><div id="observation-markers" class="f3-observation-markers" aria-label="도면의 집중·주의관찰 대상자"></div><div id="floor-labels" class="f3-floor-labels" aria-hidden="true"></div>
+          <button id="observation-open" class="ui-button f3-view-info-open" type="button" hidden>현황 보기</button><section id="observation-details" class="f3-view-info" tabindex="-1" aria-labelledby="observation-detail-title"><div class="f3-view-info-heading"><h2 id="observation-detail-title">층별 현황</h2><button id="observation-back" class="ui-button" type="button" hidden>층별 요약</button><button id="observation-close" class="ui-button" type="button" aria-label="관찰 정보 닫기">×</button></div><strong id="observation-summary" class="f3-view-totals"></strong><div id="observation-list" class="f3-observation-list" aria-live="polite"></div></section>
           <div id="viewer-loading" class="f3-loading" role="status">3D 공간을 준비하고 있습니다…</div>
           <div id="hover-label" class="f3-hover-label" hidden></div>
           <div class="f3-compass" aria-hidden="true">N<span>↑</span></div>
@@ -59,7 +60,6 @@
         <div class="f3-staff-playback"><button id="staff-toggle" class="ui-button" type="button" aria-pressed="true">직원 이동 일시정지</button><label>이동 속도<select id="staff-speed"><option value="1">1배</option><option value="2">2배</option><option value="4">4배</option></select></label><span id="staff-status" role="status"></span></div>
       </section>
       <aside class="f3-panel" aria-label="층과 공간 정보">
-        <section id="observation-details" class="f3-panel-section" tabindex="-1"><h2 id="observation-detail-title">생활실 현황</h2><div id="observation-list" class="f3-observation-list" aria-live="polite"></div></section>
         <section class="f3-panel-section"><div class="f3-section-title"><h2>층 선택</h2><span id="floor-count"></span></div><div id="floor-list" class="f3-floor-list"></div></section>
         <section class="f3-panel-section"><div class="f3-section-title"><h2 id="rooms-heading">1층 공간</h2><button class="ui-button" id="add-room" type="button">공간 추가</button></div><div id="room-list" class="f3-room-list"></div></section>
         <section id="room-details" class="f3-panel-section" hidden><h2>선택 공간</h2><form id="room-form" class="f3-form"><label>공간 이름<input id="room-name" maxlength="80" required></label><label>공간 용도<select id="room-type"></select></label><label id="beds-field">침대 수<input id="room-beds" type="number" min="0" max="8" step="1" value="0"></label><p id="room-size" class="f3-small"></p><div class="f3-form-actions"><button class="ui-button" type="submit">적용</button><button class="ui-button f3-delete" id="delete-room" type="button">공간 삭제</button></div></form></section>

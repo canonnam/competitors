@@ -10,3 +10,18 @@ test('walking paths and actor positions never pass through rectangle or polygon 
 test('empty staff and completely occupied floors remain stationary without inventing a path',()=>{const p=M.blank({count:1,width:4,depth:4}),f=p.floors[0];assert.equal(S.create(p,f).actors.length,0);f.staff=[{role:'nurse',count:1}];f.rooms=[{id:'all',type:'living',x:0,z:0,w:4,d:4,beds:0}];assert.equal(S.create(p,f).actors.length,0);});
 test('occupancy and risk counts map to the exact floor, with true zero distinct from missing',()=>{const p=M.blank({count:2});p.nursingHomeId=2;for(const f of p.floors)f.rooms=[{id:'r'+f.level,name:'201',type:'living',x:0,z:0,w:4,d:4,beds:0}];const data={nursingHomeId:2,rooms:[{name:'201호',floor:'1',current_occupancy:0,capacity:4,remaining_capacity:4},{name:'201',floor:2,current_occupancy:3,capacity:4,remaining_capacity:1}],observations:[{living_room_floor:2,living_room_name:'201호',focus:2,watch:1}]};const result=O.operating(p,data);assert.equal(result.assignedOccupancy,3);assert.deepEqual(result.groups.map(g=>[g.level,g.occupancy,g.focus,g.watch]),[[1,0,0,0],[2,3,2,1]]);assert.equal(O.operating(p,{...data,nursingHomeId:3}).groups.length,0);});
 test('duplicate ERP room names and unmatched snapshots require location review',()=>{const p=M.blank({count:1});p.nursingHomeId=2;p.floors[0].rooms=[{id:'r',name:'201',x:0,z:0,w:3,d:3,beds:0}];const result=O.operating(p,{nursingHomeId:2,rooms:[{name:'201',floor:1,current_occupancy:1},{name:'201호',floor:1,current_occupancy:2}],observations:[{living_room_name:'999',living_room_floor:1,focus:1,watch:0}]});assert.equal(result.unmatchedRooms.length,2);assert.equal(result.groups[0].roomId,null);assert.equal(result.groups[0].occupancy,null);assert.equal(result.items[0].reason,'생활실 미연결');});
+
+test('floor summaries include ERP rooms and observations even when their space is not drawn',()=>{
+  const p=M.blank({count:3});p.nursingHomeId=2;p.floors[0].rooms=[{id:'r',name:'101',x:0,z:0,w:3,d:3,beds:0}];
+  const data={nursingHomeId:2,rooms:[{name:'101',floor:1,current_occupancy:4,capacity:4},{name:'102',floor:1,current_occupancy:2,capacity:4},{name:'201',floor:2,current_occupancy:0,capacity:4}],observations:[{living_room_floor:1,living_room_name:'101',focus:1,watch:2},{living_room_floor:2,living_room_name:'201',focus:2,watch:0},{living_room_floor:null,living_room_name:null,focus:1,watch:0}]};
+  const result=O.operating(p,data);
+  assert.deepEqual(result.floorSummaries.map(f=>[f.level,f.occupancy,f.focus,f.watch,f.pending]),[[1,6,1,2,0],[2,0,2,0,2],[3,null,0,0,0]]);
+  assert.equal(result.focus,4);assert.equal(result.floorSummaries.reduce((n,f)=>n+f.focus,0),3);
+  for(const mode of ['building','exploded']){const markers=O.markers(p,result,mode,1);assert.equal(markers.length,3);assert.ok(markers.every(m=>m.kind==='floor'&&m.roomId===null));assert.deepEqual(markers.map(m=>m.occupancy),[6,0,null]);}
+  const selected=O.markers(p,result,'floor',1);assert.equal(selected.length,1);assert.equal(selected[0].kind,'room');assert.equal(selected[0].roomId,'r');assert.equal(selected[0].occupancy,4);
+  assert.deepEqual(O.markers(p,result,'plan',1),selected);
+});
+test('unavailable or different branch data cannot produce floor summary markers',()=>{
+  const p=M.blank({count:5});p.nursingHomeId=2;
+  for(const payload of [null,{nursingHomeId:3,rooms:[],observations:[]}])assert.deepEqual(O.markers(p,O.operating(p,payload),'building',1),[]);
+});

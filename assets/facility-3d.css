@@ -21,6 +21,7 @@
 .f3-risk-normal{background:var(--ui-surface);color:var(--ui-text)}
 .f3-observation-marker{flex-direction:row;align-items:center;gap:4px;padding:2px;max-width:none;min-height:40px;white-space:nowrap}
 .f3-occupancy-button,.f3-alert-button{border:0;background:transparent;color:inherit;cursor:pointer;font:600 12px/1.4 var(--ui-font);min-height:36px;padding:5px 6px;border-radius:6px}
+.f3-occupancy-button{display:flex;align-items:center;gap:4px}.f3-occupancy-button>b{font-size:14px}.f3-occupancy-icon{display:inline-flex;align-items:center}
 .f3-alert-button{display:flex;align-items:center;gap:3px;border-left:1px solid currentColor;border-radius:0 6px 6px 0}
 .f3-occupancy-button:hover,.f3-alert-button:hover{background:var(--ui-hover)}
 .f3-observation-lines line[data-tier=normal]{stroke:var(--ui-muted);stroke-opacity:.4}
@@ -35,11 +36,24 @@
 .f3-staff-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #staff-details summary{cursor:pointer;font-size:14px}#staff-error{color:var(--ui-error)}
 .f3-risk{font-size:11px;padding:3px 6px;border-radius:var(--ui-status-radius);white-space:nowrap}
-.f3-observation-list{display:grid;gap:8px;margin-top:12px;max-height:280px;overflow:auto}
+.f3-observation-list{display:grid;grid-auto-rows:max-content;gap:8px;margin-top:12px;max-height:280px;overflow:auto}
 .f3-observation-person{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid var(--ui-border);border-radius:var(--ui-control-radius);font-size:12px}
 .f3-observation-person>small{width:100%;font-size:11px;line-height:1.6;color:var(--ui-muted);overflow-wrap:anywhere}
 .f3-observation-person .ui-button{font-size:11px;padding:4px 8px;min-height:32px}
-.f3-floor-info .f3-floor-risk{color:var(--ui-warning)}
+.f3-floor-summary-marker{flex-direction:column;gap:4px;padding:6px 8px;font-weight:400;text-align:left;min-width:148px}
+.f3-floor-summary-marker>strong{font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f3-floor-summary-counts{display:flex;gap:5px;align-items:center;font-size:10px}.f3-floor-summary-counts>b{font-size:13px}.f3-floor-summary-counts>span:not(.f3-occupancy-icon){padding:2px 4px;border-radius:var(--ui-status-radius)}
+.f3-view-info{position:absolute;top:16px;right:16px;width:min(252px,calc(100% - 32px));max-height:calc(100% - 32px);display:flex;flex-direction:column;padding:12px;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:var(--ui-card-radius);box-shadow:0 4px 16px #20344a18;z-index:4;font-size:12px}
+.f3-view-info[hidden],.f3-view-info-open[hidden],.is-drawing .f3-view-info,.is-drawing .f3-view-info-open{display:none}
+.f3-view-info-open{position:absolute;top:16px;right:16px;z-index:4;font-size:12px}
+.f3-view-info-heading{display:flex;gap:6px;align-items:center;flex-shrink:0}.f3-view-info-heading h2{font-size:14px;margin:0;min-width:0;overflow-wrap:anywhere;flex:1}
+.f3-view-info-heading .ui-button{padding:2px 6px;min-height:28px;font-size:11px}.f3-view-info-heading #observation-close{font-size:20px;width:28px;flex-shrink:0}.f3-view-info-heading #observation-back[hidden]{display:none}
+.f3-view-totals{font-size:10px;line-height:1.6;color:var(--ui-muted);font-weight:500;margin-top:8px;flex-shrink:0}
+.f3-view-info .f3-observation-list{margin-top:8px;max-height:330px;min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:2px}
+.f3-view-info .f3-observation-person{padding:8px;gap:6px}.f3-view-info .f3-small{font-size:10px;margin-top:0}
+.f3-view-floor.ui-button{display:flex;flex-wrap:wrap;gap:5px;text-align:left;width:100%;padding:8px;font-weight:400;white-space:normal}.f3-view-floor>strong{width:100%;font-size:12px}.f3-view-floor>small{width:100%;font-size:11px;color:var(--ui-muted)}
+.f3-view-caption{width:calc(100% - 300px)}
+@media(max-width:500px){.f3-view-info{top:68px;right:12px;width:calc(100% - 24px);max-height:196px;padding:8px}.f3-view-info .f3-observation-list{max-height:none}.f3-view-info-open{top:12px;right:12px}.f3-view-caption{width:calc(100% - 110px)}.f3-view-caption span{display:none}.f3-floor-summary-marker{display:none}}
 #edit-project-error,#erp-login-status{color:var(--ui-error)}
 @media(max-width:500px){.f3-observation-actions{margin-left:0;width:100%}.f3-observation-actions .ui-button{font-size:12px;padding:8px}.f3-observation-heading>strong{width:100%}.f3-observation-marker{font-size:11px;max-width:130px}}
 .f3-workspace{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:16px;align-items:start}
