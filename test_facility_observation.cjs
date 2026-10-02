@@ -2,6 +2,32 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const M=require('./assets/facility-3d-model.js'),O=require('./assets/facility-observation-model.js');
 function project(){const p=M.blank({name:'안양점',count:5});p.nursingHomeId=2;p.floors[0].rooms=[{id:'a',name:'201',type:'living',x:1,z:1,w:3,d:3,beds:0}];p.floors[1].rooms=[{id:'b',name:'201호 생활실',type:'living',x:-3,z:1,w:3,d:3,beds:0}];return p;}
 const row=(floor,room,tier='focus')=>({elderly_name:'가상 대상',living_room_floor:floor,living_room_name:room,risk_tier:tier,risk_tier_display:tier==='focus'?'집중관찰':'주의관찰'});
+
+test('authenticated room roster includes all occupants and links individual tiers by ID on the exact floor',()=>{
+  const p=project(),room={floor:1,name:'201호',capacity:4,current_occupancy:3,remaining_capacity:1,elderly_residents:[{id:'10',name:'합성 A'},{id:'11',name:'합성 B'},{id:'12',name:'합성 C'}]};
+  const payload={nursingHomeId:2,rooms:[room],observations:[{living_room_floor:1,living_room_name:'201',focus:1,watch:1}],residentObservations:[{elderly_id:10,elderly_name:'합성 A',living_room_floor:1,living_room_name:'201',risk_tier:'focus'},{elderly_id:11,elderly_name:'합성 B',living_room_floor:1,living_room_name:'201',risk_tier:'watch'},{elderly_id:12,elderly_name:'합성 C',living_room_floor:2,living_room_name:'201',risk_tier:'focus'}]};
+  const g=O.operating(p,payload).groups[0];
+  assert.deepEqual(g.residents,[{name:'합성 A',tier:'focus',uncertain:false},{name:'합성 B',tier:'watch',uncertain:false},{name:'합성 C',tier:null,uncertain:false}]);
+  assert.equal(g.occupancy,3);assert.equal(g.capacity,4);assert.equal(g.residents.length,3);
+  p.residentObservations=payload.residentObservations;assert.equal('residentObservations' in M.validate(p),false);
+});
+test('duplicate names, mismatched IDs and conflicting observations require review',()=>{
+  const room={floor:1,name:'201',elderly_residents:[{id:'1',name:'동명이인'},{id:'2',name:'동명이인'},{id:'3',name:'합성 C'}]};
+  const base={living_room_floor:1,living_room_name:'201',risk_tier:'watch'};
+  let residents=O.residentsFor(room,{residentObservations:[{...base,elderly_name:'동명이인',elderly_id:null},{...base,elderly_name:'합성 C',elderly_id:'9'}]});
+  assert.ok(residents.every(r=>r.tier===null&&r.uncertain));
+  residents=O.residentsFor(room,{residentObservations:[{...base,elderly_name:'동명이인',elderly_id:'2'}]});
+  assert.equal(residents[1].tier,'watch');assert.equal(residents[0].tier,null);assert.equal(residents[0].uncertain,true);
+  residents=O.residentsFor(room,{residentObservations:[{...base,elderly_name:'合成',elderly_id:'3'},{...base,elderly_name:'合成',elderly_id:'3',risk_tier:'focus'}]});
+  assert.equal(residents[2].uncertain,true);assert.equal(residents[2].tier,null);
+  assert.equal(O.residentsFor({...room,elderly_residents:null},{residentObservations:[]}),null);
+});
+test('missing snapshot IDs match only a unique exact roster name, and absent snapshots do not imply routine',()=>{
+  const room={floor:'B1',name:'101',elderly_residents:[{id:'1',name:'합성 A'}]};
+  const observation={elderly_name:'합성 A',living_room_floor:-1,living_room_name:'101호',risk_tier:'focus'};
+  assert.equal(O.residentsFor(room,{residentObservations:[observation]})[0].tier,'focus');
+  assert.equal(O.residentsFor(room,{})[0].uncertain,true);
+});
 test('same room names on separate floors map to their exact registered floor',()=>{const result=O.map(project(),{nursingHomeId:2,rows:[row('1층','201호 생활실'),row(2,'201','watch')]});assert.deepEqual(result.groups.map(g=>[g.level,g.roomId]),[[1,'a'],[2,'b']]);assert.equal(result.focus,1);assert.equal(result.watch,1);});
 
 test('removing a lower floor keeps ERP observations on their declared physical floor',()=>{

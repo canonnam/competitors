@@ -4,6 +4,18 @@
   function floorNumber(value){const text=String(value??'').trim(),basement=text.match(/^(?:지하\s*|B\s*|-)(\d{1,2})\s*(?:층|F)?$/i);if(basement)return Number(basement[1])>0?-Number(basement[1]):null;const m=text.match(/^(?:지상\s*)?(\d{1,2})\s*(?:층|F)?$/i);return m&&Number(m[1])>0?Number(m[1]):null;}
   function roomKey(value){return String(value??'').normalize('NFKC').replace(/\s+/g,'').replace(/생활실|침실/g,'').replace(/^제(?=\d)/,'').replace(/호실?$/,'');}
   function registered(floor){return !!floor.image||floor.rooms.length>0;}
+  function residentsFor(room,payload){
+    if(!Array.isArray(room.elderly_residents))return null;
+    const nameKey=n=>String(n??'').normalize('NFKC').replace(/\s+/g,''),hasObservations=Array.isArray(payload.residentObservations);
+    const targets=(payload.residentObservations||[]).filter(t=>floorNumber(t.living_room_floor)===floorNumber(room.floor)&&roomKey(t.living_room_name)===roomKey(room.name));
+    return room.elderly_residents.map(person=>{
+      const unique=room.elderly_residents.filter(p=>nameKey(p.name)===nameKey(person.name)).length===1;
+      const matches=targets.filter(t=>t.elderly_id!=null&&person.id!=null?String(t.elderly_id)===String(person.id):unique&&nameKey(t.elderly_name)===nameKey(person.name)&&person.name!=='이름 미확인');
+      const tiers=[...new Set(matches.map(t=>t.risk_tier).filter(t=>['focus','watch'].includes(t)))];
+      const uncertain=!hasObservations||tiers.length>1||(!matches.length&&targets.some(t=>nameKey(t.elderly_name)===nameKey(person.name)));
+      return {name:person.name,tier:uncertain?null:tiers[0]??null,uncertain};
+    });
+  }
   function map(project,payload){
     const groups=[],items=[];
     if(!payload||payload.nursingHomeId!==project.nursingHomeId||!Array.isArray(payload.rows))return {groups,items,focus:0,watch:0};
@@ -37,7 +49,7 @@
     result.assignedOccupancy=payload.rooms.reduce((n,r)=>n+r.current_occupancy,0);
     const duplicates=new Set();for(const r of payload.rooms){const key=floorNumber(r.floor)+'|'+roomKey(r.name);if(payload.rooms.filter(k=>floorNumber(k.floor)+'|'+roomKey(k.name)===key).length>1)duplicates.add(key);}
     for(const row of payload.rooms){const loc=locate(row.floor,row.name);if(duplicates.has(loc.reportedLevel+'|'+roomKey(row.name))){loc.room=null;loc.reason='ERP 생활실 이름 중복';}let total=result.floorTotals.find(k=>k.level===loc.reportedLevel);if(!total){total={level:loc.reportedLevel,occupancy:0};result.floorTotals.push(total);}total.occupancy+=row.current_occupancy;
-      if(loc.room){const g=group(loc);g.occupancy=row.current_occupancy;g.capacity=row.capacity;g.remaining=row.remaining_capacity;g.occupancyStatus=row.occupancy_status;}else result.unmatchedRooms.push({name:row.name,occupancy:row.current_occupancy,...loc,room:undefined,floor:undefined});}
+      if(loc.room){const g=group(loc);g.occupancy=row.current_occupancy;g.capacity=row.capacity;g.remaining=row.remaining_capacity;g.occupancyStatus=row.occupancy_status;g.residents=residentsFor(row,payload);}else result.unmatchedRooms.push({name:row.name,occupancy:row.current_occupancy,...loc,room:undefined,floor:undefined});}
     for(const row of payload.observations){if(!Number.isInteger(row.focus)||!Number.isInteger(row.watch)||row.focus<0||row.watch<0)continue;const loc=locate(row.living_room_floor,row.living_room_name);result.focus+=row.focus;result.watch+=row.watch;result.items.push({...loc,room:undefined,floor:undefined,living_room_name:row.living_room_name,focus:row.focus,watch:row.watch});if(loc.floor&&registered(loc.floor)){const g=group(loc);g.focus+=row.focus;g.watch+=row.watch;}}
     result.floorSummaries=project.floors.map(f=>({level:f.level,name:f.name,
       occupancy:result.floorTotals.find(t=>t.level===f.level)?.occupancy??null,
@@ -52,5 +64,5 @@
       ...f,kind:'floor',roomId:null,roomName:f.name,x:project.width/2+.5,z:0}));
     return result.groups.filter(g=>g.level===selectedFloor).map(g=>({...g,kind:'room'}));
   }
-  return {floorNumber,roomKey,registered,map,operating,markers};
+  return {floorNumber,roomKey,registered,residentsFor,map,operating,markers};
 });

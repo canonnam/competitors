@@ -1,5 +1,9 @@
 """Exercise shared persistence, simultaneous editors and validated geometry over HTTP."""
 import copy
+import os
+from unittest.mock import patch
+import facility_access as A
+from test_facility_access import TEST_HASH
 from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor
 from http.server import ThreadingHTTPServer
@@ -21,6 +25,8 @@ def sample(identifier='building-test'):
 
 class FacilityProjectTests(unittest.TestCase):
     def setUp(self):
+        self.env = patch.dict(os.environ, {A.HASH_ENV: TEST_HASH}); self.env.start()
+        self.map_cookie = A.COOKIE + "=" + A.issue_cookie()
         self.folder = TemporaryDirectory()
         self.previous = P.DB_PATH
         self.db = Path(self.folder.name)/'projects.db'
@@ -33,10 +39,10 @@ class FacilityProjectTests(unittest.TestCase):
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
         P.DB_PATH = self.previous
-        self.folder.cleanup()
+        self.folder.cleanup(); self.env.stop()
 
     def request(self, method='GET', path='', data=None, origin=None):
-        headers = {'Origin': self.base if origin is None else origin, 'Content-Type': 'application/json'}
+        headers = {'Origin': self.base if origin is None else origin, 'Content-Type': 'application/json', 'Cookie': self.map_cookie}
         req = Request(self.base+P.PREFIX+path, data=json.dumps(data).encode() if data is not None else None, headers=headers, method=method)
         try:
             with urlopen(req) as response:

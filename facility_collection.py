@@ -1,11 +1,13 @@
-"""Hourly ERP collection. The public cache contains room counts only."""
+"""Hourly ERP collection with an authenticated, memory-only resident cache."""
 from datetime import datetime
 import copy
 import os
+import re
 import threading
 import time
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 import facility_observation as erp
+import facility_access
 
 INTERVAL = 3600
 ROOM_PATH = '/api/nursing-homes/living-rooms/'
@@ -33,9 +35,9 @@ def integer(value, label):
     return value
 
 
-def living_rooms(ident):
+def living_rooms(ident, include_residents=False):
     path = ROOM_PATH + '?' + urlencode({'nursing_home': ident})
-    rows, visited, ids = [], set(), set()
+    rows, visited, ids, resident_ids = [], set(), set(), set()
     deadline = time.monotonic() + 35
     while path:
         url = urlsplit(urljoin(erp.BACKEND, path))
@@ -60,10 +62,24 @@ def living_rooms(ident):
                 raise erp.ApiError(502, 'ERP 생활실 이름과 층을 확인해주세요.')
             occupancy = integer(raw.get('current_occupancy'), '현원')
             capacity = integer(raw.get('capacity'), '정원')
-            # Resident names/IDs and other ERP fields are deliberately never cached or returned.
             rows.append({'name': name, 'floor': str(floor)[:20], 'current_occupancy': occupancy,
                          'capacity': capacity, 'remaining_capacity': max(0, capacity - occupancy),
                          'occupancy_status': 'over_capacity' if occupancy > capacity else 'full' if occupancy == capacity else 'available'})
+            if include_residents:
+                residents = raw.get('elderly_residents')
+                if residents is not None and (not isinstance(residents, list) or len(residents) > 1000):
+                    raise erp.ApiError(502, 'ERP 생활실 입소자 목록 형식을 확인해주세요.')
+                clean, seen = [], set()
+                for resident in residents or []:
+                    if not isinstance(resident, dict) or isinstance(resident.get('id'), bool) or not re.fullmatch(r'[1-9]\d{0,18}', str(resident.get('id', ''))):
+                        raise erp.ApiError(502, 'ERP 입소자 식별 정보를 확인해주세요.')
+                    resident_id = str(resident['id'])
+                    if resident_id in seen or resident_id in resident_ids:
+                        raise erp.ApiError(502, 'ERP 생활실에 중복된 입소자가 있습니다.')
+                    seen.add(resident_id)
+                    resident_ids.add(resident_id)
+                    clean.append({'id': resident_id, 'name': erp.text(resident.get('name')) or '이름 미확인'})
+                rows[-1]['elderly_residents'] = clean if residents is not None else None
         path = None if isinstance(data, list) else data.get('next')
         if path is not None and not isinstance(path, str):
             raise erp.ApiError(502, 'ERP 생활실 페이지 연결을 확인해주세요.')
@@ -71,8 +87,9 @@ def living_rooms(ident):
 
 
 def bundle(ident):
-    observations = erp.targets(SERVICE, ident)
-    rooms = living_rooms(ident)
+    observations = erp.targets(SERVICE, ident, include_ids=True)
+    private_rooms = living_rooms(ident, include_residents=True)
+    rooms = [{k:v for k,v in r.items() if k != 'elderly_residents'} for r in private_rooms]
     grouped = {}
     for row in observations['rows']:
         key = (row['living_room_floor'], row['living_room_name'])
@@ -80,7 +97,8 @@ def bundle(ident):
         group[row['risk_tier']] += 1
     return {'nursingHomeId': ident, 'nursingHomeName': erp.BRANCHES[ident],
             'snapshotDate': observations['snapshotDate'], 'checkedAt': datetime.now(erp.KST).isoformat(timespec='seconds'),
-            'rooms': rooms, 'observations': list(grouped.values()), 'assignedOccupancy': sum(r['current_occupancy'] for r in rooms)}
+            'rooms': rooms, 'observations': list(grouped.values()), 'assignedOccupancy': sum(r['current_occupancy'] for r in rooms),
+            'privateRooms': private_rooms, 'privateObservations': observations['rows']}
 
 
 def collect_once():
@@ -113,12 +131,16 @@ def collect_once():
         COLLECT_LOCK.release()
 
 
-def cached(ident):
+def cached(ident, private=False):
     with STATE_LOCK:
         state = copy.deepcopy(STATE.get(ident, {}))
     if not state.get('result'):
         raise erp.ApiError(503, state.get('error') or ('ERP 첫 자동 수집을 진행하고 있습니다.' if configured() else 'ERP 자동 수집 계정이 아직 설정되지 않았습니다.'))
     result = state['result']
+    rooms, observations = result.pop('privateRooms'), result.pop('privateObservations')
+    if private:
+        result['rooms'] = rooms
+        result['residentObservations'] = observations
     result.update(attemptedAt=state['attemptedAt'], collectionError=state.get('error'), intervalSeconds=INTERVAL,
                   stale=bool(state.get('error')) or time.time() - state['successAt'] > INTERVAL + 120
                         or result['snapshotDate'] != datetime.now(erp.KST).date().isoformat())
@@ -127,16 +149,18 @@ def cached(ident):
 
 def handle(handler, method):
     parts = urlsplit(handler.path)
-    if parts.path != erp.PREFIX + 'data':
+    if parts.path not in (erp.PREFIX + 'data', erp.PREFIX + 'residents'):
         return False
     head = method == 'HEAD'
+    if not facility_access.require(handler, head):
+        return True
     try:
         if method not in ('GET', 'HEAD'):
             raise erp.ApiError(405, '조회 전용 화면입니다.')
         query = parse_qs(parts.query)
         if query.get('nursing_home_id') not in (['2'], ['3']):
             raise erp.ApiError(400, '건물의 ERP 지점을 선택해주세요.')
-        erp.send(handler, 200, cached(int(query['nursing_home_id'][0])), head)
+        erp.send(handler, 200, cached(int(query['nursing_home_id'][0]), private=parts.path.endswith('/residents')), head)
     except erp.ApiError as error:
         erp.send(handler, error.status, {'error': error.message}, head)
     return True

@@ -9,24 +9,31 @@ from urllib.parse import urlsplit
 import test_facility_observation as legacy
 import facility_collection as C
 import facility_observation as F
+import facility_access as A
+from test_facility_access import TEST_HASH
 
 
 def synthetic_rooms(path, access=None, body=None, timeout=15):
     if urlsplit(path).path == C.ROOM_PATH:
         return {'results': [{'id': 1, 'name': '201호', 'floor': 1, 'capacity': 4, 'current_occupancy': 3,
-                             'elderly_residents': [{'id': 765, 'name': 'PRIVATE-RESIDENT-SENTINEL'}],
+                             'elderly_residents': [{'id':991,'name':'가상 대상 A'},{'id':992,'name':'가상 대상 B'},{'id':765,'name':'PRIVATE-RESIDENT-SENTINEL'}],
                              'diagnosis': 'PRIVATE-DIAGNOSIS-SENTINEL'}], 'next': None}
-    return legacy.synthetic(path, access, body, timeout)
+    out = legacy.synthetic(path, access, body, timeout)
+    for row in out.get('results', []):
+        row['elderly_id'] = {'가상 대상 A':991,'가상 대상 B':992,'가상 대상 C':994,'가상 대상 D':995}.get(row.get('elderly_name'))
+    return out
 
 
 class CollectionTests(unittest.TestCase):
-    call = legacy.ObservationTests.call
+    def call(self, path='session', method='GET', data=None, cookie=None, origin=None):
+        if cookie is None and path.startswith(('data','residents')): cookie=self.map_cookie
+        return legacy.ObservationTests.call(self,path,method,data,cookie,origin)
 
     def setUp(self):
         legacy.ObservationTests.setUp(self)
         C.STATE.clear(); C.SERVICE.update(access='', refresh='')
-        self.env = patch.dict(os.environ, {'FACILITY_ERP_USERNAME': 'facility-demo', 'FACILITY_ERP_PASSWORD': 'local-demo'})
-        self.env.start(); self.upstream.side_effect = synthetic_rooms
+        self.env = patch.dict(os.environ, {'FACILITY_ERP_USERNAME': 'facility-demo', 'FACILITY_ERP_PASSWORD': 'local-demo', A.HASH_ENV: TEST_HASH})
+        self.env.start(); self.map_cookie=A.COOKIE+"="+A.issue_cookie(); self.upstream.side_effect = synthetic_rooms
 
     def tearDown(self):
         self.env.stop(); C.STATE.clear(); C.SERVICE.update(access='', refresh=''); legacy.ObservationTests.tearDown(self)
@@ -51,6 +58,24 @@ class CollectionTests(unittest.TestCase):
         C.collect_once(); saved = C.cached(2)
         self.assertTrue(saved['stale']); self.assertEqual(saved['checkedAt'], initial['checkedAt'])
         self.assertEqual(saved['rooms'], initial['rooms']); self.assertEqual(saved['collectionError'], '합성 수집 실패')
+
+    def test_resident_cache_is_authenticated_minimal_and_does_not_trigger_new_collection(self):
+        C.collect_once(); before = self.upstream.call_count
+        self.assertEqual(self.call('residents?nursing_home_id=2',cookie='')[0],401)
+        self.assertEqual(self.call('data?nursing_home_id=2',cookie='')[0],401)
+        code, headers, data = self.call('residents?nursing_home_id=2')
+        self.assertEqual(code,200); self.assertEqual(len(data['rooms'][0]['elderly_residents']),3)
+        self.assertEqual([r['id'] for r in data['rooms'][0]['elderly_residents']],['991','992','765'])
+        self.assertEqual(data['residentObservations'][0]['elderly_id'],'991')
+        self.assertNotIn('PRIVATE-DIAGNOSIS',json.dumps(data)); self.assertNotIn('birth_date',json.dumps(data))
+        self.assertIn('no-store',headers['Cache-Control']); self.assertEqual(self.upstream.call_count,before)
+        self.assertNotIn('elderly_residents',json.dumps(C.cached(2)))
+        self.assertNotIn('residentObservations',C.cached(2))
+        previous = data
+        self.upstream.side_effect = F.ApiError(502,'합성 수집 실패'); C.collect_once()
+        code, _, data = self.call('residents?nursing_home_id=2')
+        self.assertEqual(code,200); self.assertTrue(data['stale'])
+        self.assertEqual(data['rooms'],previous['rooms']); self.assertEqual(data['checkedAt'],previous['checkedAt'])
 
     def test_failed_refresh_automatically_logs_into_the_service_account_again(self):
         C.collect_once(); C.SERVICE['access'] = 'expired'
@@ -99,6 +124,7 @@ if __name__ == '__main__':
         from http.server import ThreadingHTTPServer
         from test_facility_observation import QuietApp
         os.environ['FACILITY_ERP_USERNAME']='facility-demo'; os.environ['FACILITY_ERP_PASSWORD']='local-demo'
+        os.environ[A.HASH_ENV]=A.make_password_hash('facility-map-demo')
         F.request=synthetic_rooms; C.collect_once()
         print('Synthetic facility MVP QA: http://localhost:8097/facility-3d.html', flush=True)
         from tempfile import TemporaryDirectory

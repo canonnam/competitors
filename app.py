@@ -16,6 +16,7 @@ import payroll_insurance
 import facility_observation
 import facility_collection
 import facility_projects
+import facility_access
 import liability_insurance
 import aeo_missions
 import web_search_results
@@ -56,7 +57,7 @@ def post_json(url, payload, headers=None):
 class App(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         path = urllib.parse.urlsplit(self.path).path
-        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/') or path.startswith('/api/facility-observation/'):
+        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/') or path.startswith('/api/facility-observation/') or path.startswith('/api/facility-map-access/'):
             super().log_message('%s', 'Tokenized request (token redacted)')
         else:
             super().log_message(fmt, *args)
@@ -73,6 +74,8 @@ class App(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if facility_access.handle(self, 'GET'):
+            return
         if liability_insurance.handle(self, 'GET'):
             return
         if facility_projects.handle(self, 'GET') or facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
@@ -116,6 +119,8 @@ class App(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_HEAD(self):
+        if facility_access.handle(self, 'HEAD'):
+            return
         if liability_insurance.handle(self, 'HEAD'):
             return
         if facility_projects.handle(self, 'HEAD') or facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
@@ -301,6 +306,16 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
+        if path == ROOT / 'facility-3d.html':
+            if not facility_access.authorized(self):
+                return facility_access.gate_page(self)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store, private')
+            self.send_header('Vary', 'Cookie')
+            self.send_header('Content-Length', str(path.stat().st_size))
+            self.end_headers()
+            return path.open('rb')
         public_pages = {"website-requests.html", "support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-uiux.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "borrowing-status.html", "nearby-facilities.html", "statistics.html", "knowledge.html", "facility-acquisition.html", "facility-3d.html"}
         if path == ROOT:
             self.path = "/index.html"
@@ -327,10 +342,14 @@ class App(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_DELETE(self):
+        if facility_access.handle(self, 'DELETE'):
+            return
         if not (facility_projects.handle(self, 'DELETE') or facility_collection.handle(self, 'DELETE') or facility_observation.handle(self, 'DELETE')):
             self.send_error(405)
 
     def do_POST(self):
+        if facility_access.handle(self, 'POST'):
+            return
         if liability_insurance.handle(self, 'POST'):
             return
         if facility_projects.handle(self, 'POST') or facility_collection.handle(self, 'POST') or facility_observation.handle(self, 'POST'):

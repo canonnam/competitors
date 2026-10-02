@@ -1,5 +1,6 @@
+import {checkAccess} from './facility-access.js?v=20261002-access1';
 import {initImport} from './facility-3d-import.js?v=20261002-b1';
-import {initObservation} from './facility-observation.js?v=20261002-b1';
+import {initObservation} from './facility-observation.js?v=20261002-access1';
 import {initStaff} from './facility-staff.js?v=20261002-b1';
 import {initFacilityUI} from './facility-3d-ui.js?v=20261002-map2';
 /* Shared facility composition and Three.js building viewer. */
@@ -22,7 +23,7 @@ async function sharedRequest(path='',method='GET',body){
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
   try {
     const response=await fetch('/api/facility-projects/'+path,{method,cache:'no-store',credentials:'same-origin',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
-    const data=await response.json();if(!response.ok)throw new Error(data.error||'공유 도면을 불러오지 못했습니다.');return data;
+    checkAccess(response);const data=await response.json();if(!response.ok)throw new Error(data.error||'공유 도면을 불러오지 못했습니다.');return data;
   } catch(error){if(error.name==='AbortError')throw new Error('서버 응답이 지연되고 있습니다. 다시 저장해주세요.');throw error;}
   finally {clearTimeout(timeout);}
 }
@@ -162,6 +163,11 @@ $('edit-project-form').onsubmit=event=>{
   event.preventDefault();const name=$('edit-project-name').value.trim();
   if(!name){$('edit-project-error').textContent='건물 이름을 입력해주세요.';return;}
   project.name=name;project.nursingHomeId=$('edit-project-branch').value?Number($('edit-project-branch').value):null;project.example=false;markDirty();renderUI();rebuild();$('edit-project-dialog').close();status('건물 이름과 ERP 지점을 적용했습니다. 저장을 눌러 보관하세요.');
+};
+$('lock-map').onclick=async()=>{
+  if(dirty&&!window.confirm('저장하지 않은 변경이 있습니다. 저장하지 않고 지도를 잠글까요?'))return;
+  try{const response=await fetch('/api/facility-map-access/session',{method:'DELETE',credentials:'same-origin'});if(!response.ok)throw new Error('지도를 잠그지 못했습니다.');dirty=false;location.replace('/facility-3d.html');}
+  catch(error){ui.notify(error.message,true);}
 };
 $('new-project').onclick=()=>{
   if(!confirmLeave())return;

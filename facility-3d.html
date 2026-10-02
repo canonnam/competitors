@@ -14,16 +14,16 @@
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
-  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-map2">
+  <link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/facility-3d.css?v=20261002-access1">
   <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
   <script src="/assets/site.js" defer></script><script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
   <script src="/assets/navigation.js?v=20261002-map2" defer></script>
   <script src="/assets/facility-3d-model.js?v=20261002-b1" defer></script>
   <script src="/assets/facility-3d-detect.js?v=20261002-mvp2" defer></script>
-  <script src="/assets/facility-observation-model.js?v=20261002-b1" defer></script>
+  <script src="/assets/facility-observation-model.js?v=20261002-access1" defer></script>
   <script src="/assets/facility-staff-model.js?v=20261002-mvp2" defer></script>
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="/assets/facility-3d.js?v=20261002-b1"></script>
+  <script type="module" src="/assets/facility-3d.js?v=20261002-access1"></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
 <body class="kb-detail" data-feedback-page="facility-3d">
@@ -34,7 +34,7 @@
       <div class="kb-heading-row"><div><h1>시설 3D 지도</h1><div class="f3-description-line"><p class="kb-description">건물을 입체로 살펴보고, 층별 도면과 공간을 구성하세요.</p><button id="collection-help-button" class="ui-button ui-info-button" type="button" aria-label="자동 수집 안내" aria-controls="collection-help-tooltip" aria-expanded="false" aria-describedby="collection-help-tooltip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button><aside id="collection-help-tooltip" class="ui-tooltip" role="tooltip" hidden><strong id="observation-title">생활실 자료 자동 수집</strong><p id="observation-status" role="status" aria-live="polite">자동 수집 확인 중</p><p>생활실 현원과 집중·주의관찰 인원을 1시간마다 갱신합니다. 페이지를 열면 최근 수집 자료를 불러옵니다.</p></aside></div></div><button class="ui-button ui-button--primary" id="new-project" type="button">새 건물 구성</button></div>
     </section>
     <section class="f3-project-bar" aria-label="건물 선택과 저장">
-      <div class="f3-project-row"><label class="f3-project-select"><span>건물</span><select id="project-select" aria-label="건물 선택"></select></label><button class="ui-button" id="save-project" type="button">저장</button><div class="f3-more"><button class="ui-button f3-icon-button" id="project-more" type="button" aria-label="건물 더보기" aria-expanded="false" aria-controls="project-menu" title="더보기"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg></button><div id="project-menu" class="f3-more-menu" hidden><button class="ui-button" id="edit-project" type="button">이름·지점 변경</button><button class="ui-button" id="export-project" type="button">파일 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button><button class="ui-button f3-delete" id="delete-project" type="button">건물 삭제</button></div></div><button class="ui-button" id="undo-project" type="button" hidden>삭제 되돌리기</button></div>
+      <div class="f3-project-row"><label class="f3-project-select"><span>건물</span><select id="project-select" aria-label="건물 선택"></select></label><button class="ui-button" id="save-project" type="button">저장</button><div class="f3-more"><button class="ui-button f3-icon-button" id="project-more" type="button" aria-label="건물 더보기" aria-expanded="false" aria-controls="project-menu" title="더보기"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg></button><div id="project-menu" class="f3-more-menu" hidden><button class="ui-button" id="edit-project" type="button">이름·지점 변경</button><button class="ui-button" id="export-project" type="button">파일 내보내기</button><button class="ui-button" id="import-project" type="button">파일 열기</button><button class="ui-button f3-delete" id="delete-project" type="button">건물 삭제</button><button class="ui-button" id="lock-map" type="button">지도 잠그기</button></div></div><button class="ui-button" id="undo-project" type="button" hidden>삭제 되돌리기</button></div>
       <span id="project-summary" hidden></span>
     </section>
     <div class="f3-workspace">

@@ -16,7 +16,7 @@ COPY claim_check.py claim-check.html app.py naver_ads.py competitor_news.py wiki
 COPY assets /app/assets
 COPY payroll.html /app/
 COPY payroll_insurance.py payroll-insurance.html /app/
-COPY facility_observation.py facility_collection.py facility_projects.py /app/
+COPY facility_observation.py facility_collection.py facility_projects.py facility_access.py facility-map-login.html /app/
 COPY liability_insurance.py liability-insurance.html /app/
 COPY robots.txt favicon.ico /app/
 COPY data /app/data

@@ -177,7 +177,7 @@ def text(value, maximum=80):
     return value.strip()[:maximum] if isinstance(value, str) else ''
 
 
-def targets(session, ident):
+def targets(session, ident, include_ids=False):
     day = datetime.now(KST).date().isoformat()
     rows, deadline = [], time.monotonic() + 35
     with session['lock']:
@@ -212,6 +212,9 @@ def targets(session, ident):
                                  'living_room_name': text(raw.get('living_room_name')) or None,
                                  'living_room_floor': floor, 'risk_tier': tier,
                                  'risk_tier_display': '집중관찰' if tier == 'focus' else '주의관찰'})
+                    if include_ids:
+                        resident_id = raw.get('elderly_id', raw.get('elderly'))
+                        rows[-1]['elderly_id'] = str(resident_id) if not isinstance(resident_id, bool) and isinstance(resident_id, (str, int)) and re.fullmatch(r'[1-9]\d{0,18}', str(resident_id)) else None
                 path = None if isinstance(data, list) else data.get('next')
                 if path is not None and not isinstance(path, str):
                     raise ApiError(502, 'ERP 목록 페이지 연결을 확인해주세요.')
