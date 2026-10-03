@@ -1,8 +1,9 @@
 import {checkAccess} from './facility-access.js?v=20261002-access1';
 import {initImport} from './facility-3d-import.js?v=20261002-b1';
 import {initObservation} from './facility-observation.js?v=20261002-access1';
-import {initStaff} from './facility-staff.js?v=20261002-b1';
-import {initFacilityUI} from './facility-3d-ui.js?v=20261002-map2';
+import {initStaff} from './facility-staff.js?v=20261003-residents1';
+import {initResidents} from './facility-residents.js?v=20261003-residents1';
+import {initFacilityUI} from './facility-3d-ui.js?v=20261003-residents1';
 /* Shared facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
@@ -55,7 +56,7 @@ let THREE, OrbitControls, renderer, scene, camera, controls, root, grid, raycast
 let floorGroups = [], pickTargets = [], labelSprites = [], generation = 0, needsRender = true;
 let fallback = false, fallbackCanvas = null, fallbackRevision = 0;
 let observation=null,observationAnchors=[];
-let staff=null,staffFloors=[],drawingPoints=[],drawingShape='polygon',previewEnd=null;
+let staff=null,residents=null,staffFloors=[],drawingPoints=[],drawingShape='polygon',previewEnd=null;
 const canvas = $('space-canvas'), viewport = $('viewport');
 const floor = () => project.floors.find(f=>f.level===selectedFloor);
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
@@ -336,6 +337,7 @@ $('remove-image').onclick=()=>{floor().image=null;project.example=false;markDirt
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 observation=initObservation({getProject:()=>project,getFloor:floor,getRoom:currentRoom,getMode:()=>mode,changed:()=>{renderUI();rebuild();},select:(level,id)=>selectRoom(level,id)});
 staff=initStaff({getProject:()=>project,getFloor:floor,updated:()=>{needsRender=true;},applied:()=>{project.example=false;markDirty();renderUI();rebuild();status('선택 층에 종사자를 배치했습니다. 저장을 눌러 보관하세요.','success');}});
+residents=initResidents({project:()=>project,observations:()=>observation.mapped(),three:()=>THREE,playing:()=>staff.active(),speed:()=>staff.speed(),drawing:()=>drawing,updated:()=>{needsRender=true;updateStaff(0);}});
 function selectRoom(level,id) {
   selectedFloor=level;selectedRoom=id;renderUI();rebuild();const room=currentRoom();if(room)status(`${M.floorName(level)} ${room.name} · ${M.TYPES[room.type]}`);
 }
@@ -372,12 +374,14 @@ function prepareStaff(f,group){const motion=window.FacilityStaff.create(project,
 function updateStaff(dt){
   const active=staff?.active()&&!drawing&&!document.hidden;let moved=false;
   for(const entry of staffFloors){if(active&&entry.motion.actors.length){entry.motion.tick?.(dt,staff.speed());moved=true;}for(const a of entry.motion.actors){if(!a.mesh)continue;a.mesh.position.set(a.x,.08+(a.walking&&active?Math.sin(a.phase*2)*.025:0),a.z);a.mesh.rotation.y=a.heading;a.mesh.userData.legs.forEach((leg,i)=>leg.rotation.x=a.walking&&active?Math.sin(a.phase+i*Math.PI)*.45:0);}}
-  const total=staffFloors.reduce((n,f)=>n+f.motion.actors.length,0),configured=staffFloors.reduce((n,{floor:f})=>n+(f.staff||[]).reduce((s,r)=>s+r.count,0),0);$('staff-status').textContent=configured?`예시 이동 ${total}명${total<configured?' · 이동 공간 없음 '+(configured-total)+'명':''}`:'층별 종사자를 배치하면 이동을 표시합니다.';
-  if(fallback)drawStaffFallback();return moved;
+  const residentMoved=residents?.update(dt),total=staffFloors.reduce((n,f)=>n+f.motion.actors.length,0),configured=staffFloors.reduce((n,{floor:f})=>n+(f.staff||[]).reduce((s,r)=>s+r.count,0),0),text=`예시 · 직원 ${total}명${total<configured?' · 이동 공간 없음 '+(configured-total)+'명':''} · ${residents?.summary()||'어르신 자료 미연결'}`;
+  if($('staff-status').textContent!==text)$('staff-status').textContent=text;
+  if(fallback)drawStaffFallback();return moved||residentMoved;
 }
-function drawStaffFallback(){const layer=$('staff-canvas');layer.hidden=false;const w=viewport.clientWidth,h=viewport.clientHeight;layer.width=w*devicePixelRatio;layer.height=h*devicePixelRatio;const ctx=layer.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);if(!fallbackBounds||drawing)return;const {left,top,scale}=fallbackBounds;for(const entry of staffFloors)for(const a of entry.motion.actors){const x=left+(a.x+project.width/2)*scale,y=top+(a.z+project.depth/2)*scale;ctx.fillStyle=window.FacilityStaff.COLORS[a.role];ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();}}
-function roomWalls(group,room,height) {
+function drawStaffFallback(){const layer=$('staff-canvas');layer.hidden=false;const w=viewport.clientWidth,h=viewport.clientHeight;layer.width=w*devicePixelRatio;layer.height=h*devicePixelRatio;const ctx=layer.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);if(!fallbackBounds||drawing)return;const {left,top,scale}=fallbackBounds;for(const entry of staffFloors)for(const a of entry.motion.actors){const x=left+(a.x+project.width/2)*scale,y=top+(a.z+project.depth/2)*scale;ctx.fillStyle=window.FacilityStaff.COLORS[a.role];ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();}residents?.fallback(ctx,fallbackBounds);}
+function roomWalls(group,room,height,door) {
   if(!showWalls||mode==='plan'||room.type==='corridor'||room.type==='garden')return;
+  if(room.type==='living'||window.FacilityResidents.bathroom(room)){for(const [a,b]of window.FacilityResidents.walls(room,door)){const wall=box(group,Math.hypot(b.x-a.x,b.z-a.z),height,.14,(a.x+b.x)/2,height/2+.08,(a.z+b.z)/2,'#f6f7f8');wall.rotation.y=-Math.atan2(b.z-a.z,b.x-a.x);}return;}
   if(room.points){const v=M.vertices(room);v.forEach((a,i)=>{const b=v[(i+1)%v.length],wall=box(group,Math.hypot(b.x-a.x,b.z-a.z),height,.14,(a.x+b.x)/2,height/2+.08,(a.z+b.z)/2,'#f6f7f8');wall.rotation.y=-Math.atan2(b.z-a.z,b.x-a.x);});return;}
   const t=0.14,{x,z,w,d}=room,c='#f6f7f8';
   box(group,t,height,d,x-w/2,height/2+0.08,z,c);box(group,t,height,d,x+w/2,height/2+0.08,z,c);
@@ -385,19 +389,19 @@ function roomWalls(group,room,height) {
   box(group,w,height,t,x,height/2+0.08,backZ,c);
   box(group,part,height,t,x-(gap+part)/2,height/2+0.08,entryZ,c);box(group,part,height,t,x+(gap+part)/2,height/2+0.08,entryZ,c);
 }
-function furnishings(group,room) {
+function furnishings(group,room,beds) {
+  if(window.FacilityResidents.bathroom(room))return;
+  if(room.type==='living'){
+    if(mode==='plan')return;
+    for(const bed of beds||[]){const furniture=new THREE.Group();group.add(furniture);furniture.position.set(bed.x,0,bed.z);furniture.scale.setScalar(bed.scale);
+      box(furniture,1.08,.25,2.05,0,.37,0,'#a6b6c6');box(furniture,1.03,.2,1.98,0,.60,0,'#fffefd');
+      box(furniture,.98,.05,1.15,0,.73,.28,'#bfd1df');box(furniture,.74,.1,.38,0,.76,-.67,'#ffffff');box(furniture,1.1,.8,.12,0,.47,-1,'#96a9b9');}
+    return;
+  }
   if(mode==='plan'||room.type==='unknown'||room.type==='corridor'||room.type==='garden'||room.points)return;
   const furniture=new THREE.Group();group.add(furniture);group=furniture;
-  const {w,d,type,beds,name}=room,x=0,z=0;
-  if(type==='living') {
-    const columns=Math.min(4,Math.max(1,beds)),rows=Math.ceil(beds/columns);
-    for(let i=0;i<beds;i++) {
-      const bx=x+(i%columns-(columns-1)/2)*Math.min(1.7,(w-0.8)/columns),bz=z+(Math.floor(i/columns)-(rows-1)/2)*2.15;
-      box(group,1.08,0.25,2.05,bx,0.37,bz,'#a6b6c6');box(group,1.03,0.2,1.98,bx,0.60,bz,'#fffefd');
-      box(group,0.98,0.05,1.15,bx,0.73,bz+0.28,'#bfd1df');box(group,0.74,0.1,0.38,bx,0.76,bz-0.67,'#ffffff');
-      box(group,1.1,0.8,0.12,bx,0.47,bz-1,'#96a9b9');
-    }
-  } else if(type==='core') {
+  const {w,d,type,name}=room,x=0,z=0;
+  if(type==='core') {
     if(name.includes('계단'))for(let i=0;i<7;i++)box(group,Math.min(Math.max(0.5,w-0.5),2.1),0.12+i*0.15,0.40,x,0.08+(0.12+i*0.15)/2,z-1.2+i*0.4,'#b2bdc9');
     else box(group,Math.min(Math.max(0.5,w-0.7),2.4),1.45,0.14,x,0.80,z-d/2+0.25,'#aab8c9');
   } else if(type==='office'||type==='nursing') {
@@ -435,7 +439,8 @@ function exterior(group,level) {
 }
 function rebuild() {
   needsRender=true;
-  if(fallback){staffFloors=[];prepareStaff(floor(),null);drawFallback();updateStaff(0);return;}
+  residents?.begin();
+  if(fallback){staffFloors=[];prepareStaff(floor(),null);residents?.prepare(floor(),null);drawFallback();updateStaff(0);return;}
   if(!scene)return;
   generation++;const revision=generation;
   if(root){scene.remove(root);dispose(root);}if(preview){scene.remove(preview);dispose(preview);preview=null;}
@@ -445,6 +450,7 @@ function rebuild() {
   visible.forEach(f=>{
     const group=new THREE.Group(),elevation=(mode==='floor'||mode==='plan')?0:M.floorIndex(f.level)*(project.height+(mode==='exploded'?3.8:0));
     group.position.y=elevation;root.add(group);floorGroups.push({floor:f,group});
+    const activity=residents.motion(f);
     box(group,project.width+0.45,0.24,project.depth+0.45,0,-0.12,0,f.level===selectedFloor?'#c6d0e0':'#d4dce6');
     const surface=new THREE.Mesh(new THREE.PlaneGeometry(project.width,project.depth),new THREE.MeshStandardMaterial({color:'#f9f9f5',roughness:0.95}));
     surface.rotation.x=-Math.PI/2;surface.position.y=0.018;surface.receiveShadow=true;group.add(surface);
@@ -461,7 +467,7 @@ function rebuild() {
       const chosen=r.id===selectedRoom && f.level===selectedFloor;
       const tile=polygonSurface(r,chosen?'#aebce4':M.COLORS[r.type],(mode==='plan'&&f.image)?0.42:1);
       tile.position.y=.065;tile.receiveShadow=true;tile.userData={level:f.level,id:r.id};group.add(tile);pickTargets.push(tile);
-      roomWalls(group,r,mode==='building'?1.5:1.0);furnishings(group,r);
+      roomWalls(group,r,mode==='building'?1.5:1.0,activity.doors.get(r.id));furnishings(group,r,activity.beds.get(r.id));
       if(mode==='building'||mode==='exploded'){const anchor=M.anchor(r);nameSprite(group,r.name,anchor.x,1.22,anchor.z);}
       if(chosen) {
         const points=M.vertices(r).map(p=>new THREE.Vector3(p.x,0.11,p.z));
@@ -469,6 +475,7 @@ function rebuild() {
       }
     });
     prepareStaff(f,group);
+    residents.prepare(f,group);
     if(mode==='building')exterior(group,f.level);
     const marker=make('div','f3-floor-marker'+(f.level===selectedFloor?' is-selected':''));marker.append(make('b','',M.floorCode(f.level)),make('span','',f.name));$('floor-labels').append(marker);
     group.userData.marker=marker;

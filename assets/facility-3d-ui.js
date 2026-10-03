@@ -1,7 +1,7 @@
 /* Dialog feedback and the site's shared, keyboard-accessible information tooltip. */
 export function initFacilityUI(){
   const $=id=>document.getElementById(id),tips=[];
-  for(const key of ['collection','floor']){
+  for(const key of ['collection','floor','activity']){
     const button=$(key+'-help-button'),panel=$(key+'-help-tooltip');
     let pinned=false,timer;
     function hide(){clearTimeout(timer);pinned=false;panel.hidden=true;button.setAttribute('aria-expanded','false');}

@@ -22,8 +22,9 @@
   <script src="/assets/facility-3d-detect.js?v=20261002-types1" defer></script>
   <script src="/assets/facility-observation-model.js?v=20261003-labels1" defer></script>
   <script src="/assets/facility-staff-model.js?v=20261002-mvp2" defer></script>
+  <script src="/assets/facility-resident-model.js?v=20261003-residents1" defer></script>
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="/assets/facility-3d.js?v=20261003-labels1"></script>
+  <script type="module" src="/assets/facility-3d.js?v=20261003-residents1"></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
 <body class="kb-detail" data-feedback-page="facility-3d">
@@ -51,7 +52,7 @@
           <div class="f3-compass" aria-hidden="true">N<span>↑</span></div>
         </div>
         <div id="drawing-controls" class="f3-drawing-controls" hidden><label>그리기 방식<select id="drawing-shape"><option value="polygon">다각형</option><option value="rectangle">사각형</option></select></label><span id="drawing-count">점 0개</span><button id="drawing-undo" class="ui-button" type="button">마지막 점 취소</button><button id="drawing-finish" class="ui-button ui-button--primary" type="button">공간 완성</button></div>
-        <div class="f3-view-footer"><div class="f3-view-controls" role="group" aria-label="공간 표시와 직원 이동"><button id="show-labels" class="ui-button kb-control" type="button" aria-pressed="true">공간 이름</button><button id="show-walls" class="ui-button kb-control" type="button" aria-pressed="true">벽 표시</button><button id="staff-toggle" class="ui-button kb-control" type="button" aria-pressed="true">직원 이동 일시정지</button><label>이동 속도<select id="staff-speed"><option value="1">1배</option><option value="2">2배</option><option value="4">4배</option></select></label></div><div class="f3-view-notes"><p id="view-help">드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동</p><span id="staff-status" role="status"></span></div></div>
+        <div class="f3-view-footer"><div class="f3-view-controls" role="group" aria-label="공간 표시와 사람 이동"><button id="show-labels" class="ui-button kb-control" type="button" aria-pressed="true">공간 이름</button><button id="show-walls" class="ui-button kb-control" type="button" aria-pressed="true">벽 표시</button><button id="resident-toggle" class="ui-button kb-control" type="button" aria-pressed="true">어르신 표시</button><button id="staff-toggle" class="ui-button kb-control" type="button" aria-pressed="true">이동 일시정지</button><label>이동 속도<select id="staff-speed"><option value="1">1배</option><option value="2">2배</option><option value="4">4배</option></select></label><button id="activity-help-button" class="ui-button ui-info-button" type="button" aria-label="예시 활동 안내" aria-controls="activity-help-tooltip" aria-expanded="false" aria-describedby="activity-help-tooltip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button><aside id="activity-help-tooltip" class="ui-tooltip" role="tooltip" hidden><strong>어르신 예시 활동</strong><p>연결된 생활실 현원만큼 어르신을 표시합니다. 집중·주의 대상자는 침대에 누운 모습으로, 다른 어르신은 생활실 이동·복도 휴식·화장실 방문·생활실 복귀를 반복합니다.</p><p>자세와 이동은 실제 위치·거동·침상안정 상태를 뜻하지 않는 예시입니다. 출입구는 공간 경계에서 자동 구성하며 연결된 화장실이 없으면 생활실·복도에서만 활동합니다. 등급 연결이 불명확하면 회색으로 정지해 표시합니다.</p><p id="resident-activity-summary"></p></aside></div><div class="f3-view-notes"><p id="view-help">드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동</p><span id="staff-status" role="status"></span></div></div>
       </section>
       <aside class="f3-panel" aria-label="층과 공간 정보">
         <section class="f3-panel-section"><div class="f3-section-title"><h2>층 선택</h2><div class="f3-floor-actions"><span id="floor-count"></span><button class="ui-button" id="add-floor" type="button">층 추가</button></div></div><div id="floor-list" class="f3-floor-list"></div></section>
