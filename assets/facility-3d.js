@@ -59,6 +59,7 @@ let observation=null,observationAnchors=[];
 let staff=null,residents=null,staffFloors=[],drawingPoints=[],drawingShape='polygon',previewEnd=null;
 const canvas = $('space-canvas'), viewport = $('viewport');
 const floor = () => project.floors.find(f=>f.level===selectedFloor);
+const floorLabel = f => f.name===M.floorName(f.level)?f.name:`${M.floorName(f.level)} · ${f.name}`;
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
 function status(message,kind='') {
   $('project-status').textContent=message;
@@ -82,12 +83,12 @@ function renderUI() {
   $('add-floor').disabled=project.floors.length>=M.FLOOR_LEVELS.length;
   $('delete-floor').disabled=project.floors.length<=1;
   $('undo-floor').hidden=!removedFloor||removedFloor.projectId!==project.id;
-  $('view-floor-select').replaceChildren(...project.floors.map(f=>{const option=make('option','',f.name===M.floorName(f.level)?f.name:`${M.floorName(f.level)} · ${f.name}`);option.value=f.level;return option;}));
+  $('view-floor-select').replaceChildren(...project.floors.map(f=>{const option=make('option','',floorLabel(f));option.value=f.level;return option;}));
   $('view-floor-select').value=selectedFloor;
   $('floor-list').replaceChildren(...[...project.floors].reverse().map(f=>{
     const button=make('button','f3-floor-button');button.type='button';button.dataset.level=f.level;
     button.setAttribute('aria-pressed',String(f.level===selectedFloor));
-    button.setAttribute('aria-label',`${M.floorName(f.level)} ${f.name}, 공간 ${f.rooms.length}개`);
+    button.setAttribute('aria-label',`${floorLabel(f)}, 공간 ${f.rooms.length}개`);
     const info=make('span','f3-floor-info');info.append(make('strong','',f.name),make('small','',`공간 ${f.rooms.length}개${f.image?' · 도면 등록':''}`));
     const total=observation?.mapped().floorTotals.find(r=>r.level===f.level);
     if(total)info.append(make('small','',`생활실 현원 ${total.occupancy}명`));
@@ -111,7 +112,7 @@ function renderUI() {
   $('image-status').textContent=floor().image?floor().image.name:'등록한 이미지 없음';
   $('remove-image').hidden=!floor().image;$('auto-from-image').disabled=!floor().image;
   document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
-  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:M.floorName(selectedFloor)+' · '+floor().name,plan:M.floorName(selectedFloor)+' 평면 편집'};
+  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:floorLabel(floor()),plan:M.floorName(selectedFloor)+' 평면 편집'};
   $('view-title').textContent=titles[mode];
   $('view-description').textContent=mode==='building'?`${project.floors.length}개 층을 함께 살펴보세요.`:mode==='exploded'?'층 사이를 띄워 내부 공간을 비교하세요.':mode==='plan'?'도면을 기준으로 공간을 지정하고 수정하세요.':'공간을 클릭해 이름과 용도를 확인하세요.';
   $('add-room').textContent=drawing?'추가 취소':'공간 추가';
@@ -213,7 +214,7 @@ $('new-floor-form').onsubmit=event=>{
 $('delete-floor').onclick=()=>{
   if(project.floors.length<=1)return;
   const f=floor(),count=(f.staff||[]).reduce((n,row)=>n+row.count,0);
-  $('delete-floor-summary').textContent=`${M.floorName(f.level)} · ${f.name} — 공간 ${f.rooms.length}개, 도면 ${f.image?'1개':'없음'}, 종사자 ${count}명`;
+  $('delete-floor-summary').textContent=`${floorLabel(f)} — 공간 ${f.rooms.length}개, 도면 ${f.image?'1개':'없음'}, 종사자 ${count}명`;
   $('delete-floor-dialog').showModal();
 };
 $('cancel-delete-floor').onclick=()=>$('delete-floor-dialog').close();
