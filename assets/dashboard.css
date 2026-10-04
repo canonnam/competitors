@@ -21,12 +21,25 @@
 .dash-ads-panel { grid-column:1 / -1; }
 .dash-operating { grid-column:1 / -1; min-width:0; }
 .dash-operating-meta { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-.dash-operating-controls { display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:16px; margin-left:auto; }
-.dash-operating-filter { display:flex; align-items:center; gap:8px; color:var(--ui-muted); font-size:13px; white-space:nowrap; }
-.dash-operating-filter select { min-width:132px; min-height:var(--ui-control-height); }
-.dash-profit-legend { display:flex; align-items:center; gap:16px; font-size:13px; color:var(--ui-muted); }
-.dash-profit-legend span { display:flex; align-items:center; gap:8px; }
-.dash-profit-legend i { width:10px; height:10px; border-radius:2px; }
+.dash-operating-controls { position:relative; display:flex; align-items:center; justify-content:center; margin-left:auto; }
+.dash-branch-picker { position:relative; }
+.dash-branch-picker>summary { display:flex; align-items:center; gap:10px; min-height:var(--ui-control-height); padding:7px 10px; border:1px solid transparent; border-radius:var(--ui-control-radius); color:var(--ui-text); font-size:14px; font-weight:600; cursor:pointer; list-style:none; }
+.dash-branch-picker>summary::-webkit-details-marker { display:none; }
+.dash-branch-picker>summary:hover,.dash-branch-picker[open]>summary { border-color:var(--ui-border); background:var(--ui-hover); }
+.dash-branch-current,.dash-branch-choice { display:flex; align-items:center; gap:7px; white-space:nowrap; }
+.dash-branch-current { gap:10px; }
+.dash-branch-choice i { flex:0 0 auto; width:10px; height:10px; border-radius:2px; }
+.dash-branch-divider { color:var(--ui-muted); font-weight:400; }
+.dash-branch-chevron { width:8px; height:8px; margin:-4px 2px 0 3px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); transition:transform .15s ease,margin .15s ease; }
+.dash-branch-picker[open] .dash-branch-chevron { margin:4px 2px 0 3px; transform:rotate(225deg); }
+.dash-branch-options { position:absolute; top:calc(100% + 6px); right:0; z-index:5; width:208px; padding:6px; border:1px solid var(--ui-border); border-radius:var(--ui-control-radius); background:var(--ui-surface); box-shadow:0 10px 28px rgb(17 34 59 / 14%); }
+.dash-branch-options button { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; width:100%; min-height:44px; padding:8px 10px; border:0; border-radius:6px; background:transparent; color:var(--ui-text); font-size:14px; text-align:left; cursor:pointer; }
+.dash-branch-options button:hover,.dash-branch-options button:focus-visible { background:var(--ui-hover); }
+.dash-branch-options button[aria-pressed="true"] { background:var(--ui-selected); color:var(--ui-primary); font-weight:700; }
+.dash-branch-options button>small { display:flex; grid-column:1; gap:12px; margin-top:2px; color:var(--ui-muted); font-size:11px; font-weight:400; }
+.dash-branch-options button>.dash-branch-choice { grid-column:1; margin-top:2px; color:var(--ui-muted); font-size:12px; font-weight:400; }
+.dash-branch-check { grid-column:2; grid-row:1 / span 2; visibility:hidden; }
+.dash-branch-options button[aria-pressed="true"] .dash-branch-check { visibility:visible; }
 .dash-operating .anyang { background:var(--ui-success); }
 .dash-operating .incheon { background:var(--ui-primary); }
 .dash-operating-scroll { overflow-x:auto; padding:16px 4px 4px; }
@@ -48,7 +61,8 @@
 .dash-profit-month-label { position:absolute; top:calc(100% + 12px); left:0; right:0; color:var(--ui-muted); font-size:13px; text-align:center; font-variant-numeric:tabular-nums; }
 .dash-profit-mobile-hint { display:none; }
 @media(max-width:760px) { .dash-profit-mobile-hint { display:block; } .dash-profit-plot { height:240px; } }
-@media(max-width:520px) { .dash-operating-controls { width:100%; justify-content:space-between; margin-left:0; } }
+@media(max-width:520px) { .dash-operating-controls { margin-left:0; } .dash-branch-picker>summary { padding-inline:8px; } .dash-branch-options { right:auto; left:0; } }
+@media(prefers-reduced-motion:reduce) { .dash-branch-chevron { transition:none; } }
 @media print { .dash-operating-scroll { overflow:visible; } .dash-profit-chart { min-width:0!important; } }
 .dash-ad-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:16px; }
 .dash-ad-chart { min-width:0; margin:0; color:var(--ui-primary); }

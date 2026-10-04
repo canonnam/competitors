@@ -11,6 +11,10 @@ test('latest registered year shows chronological branch profit bars from the act
   const html=render({data:report});
   for(const expected of ['2,145.3만원','703.3만원','-2,526.2만원'])assert.ok(html.includes(expected),expected);
   for(const removed of ['실제 입출금 기준','자료 기준','월별 수치 보기','자동 수집하지 않습니다'])assert.ok(!html.includes(removed),removed);
+  assert.match(html,/class="dash-branch-picker"/);assert.doesNotMatch(html,/<select/);
+  assert.equal((html.match(/data-operating-option=/g)||[]).length,3);
+  assert.match(html,/data-operating-option="all" aria-pressed="true"/);
+  assert.match(html,/aria-label="지점 선택, 현재 안양점과 인천점"/);
   assert.doesNotMatch(html,/branch-card|profit-line|수입 대비 인건비/);
   for(const row of view.rows)for(const [i,branch] of view.branches.entries()) {
     assert.equal(row.profits[i],branch.months.find(m=>m.month===row.month).profit);
@@ -79,15 +83,26 @@ test('loading, failure, retained data and malformed reports remain distinct',()=
   assert.doesNotMatch(render({data:unsafe}),/<img|<script/);
 });
 test('collector reads the existing endpoint without duplicate requests and signals failures',async()=>{
-  let resolve,called=0;const updates=[];
-  const win={document:{hidden:false,addEventListener(){}},addEventListener(){},setInterval(){},AbortSignal:{timeout(){}},fetch:async(url,options)=>{
+  let resolve,called=0,redraws=0;const updates=[],listeners={};
+  const trigger={focused:false,focus(){this.focused=true;}};
+  const picker={open:true,contains:()=>false,querySelector:()=>trigger};
+  const document={hidden:false,addEventListener(type,handler){listeners[type]=handler;},querySelector(selector){if(selector==='[data-operating-trigger]')return trigger;if(selector==='.dash-branch-picker[open]'&&picker.open)return picker;return null;}};
+  const win={document,addEventListener(){},setInterval(){},AbortSignal:{timeout(){}},fetch:async(url,options)=>{
     assert.equal(url,'/api/operating-report');assert.equal(options.cache,'no-store');called++;
     return new Promise(done=>resolve=done);
   }};
-  const collector=start(win,{update:(id,data)=>updates.push({id,data}),fail:id=>updates.push({id,error:true})});
+  const dashboard={update:(id,data)=>updates.push({id,data}),fail:id=>updates.push({id,error:true}),redraw:()=>redraws++};
+  const collector=start(win,dashboard);
   await collector.refresh();assert.equal(called,1);
   resolve({ok:true,json:async()=>report});await new Promise(setImmediate);
   assert.equal(updates[0].id,'operating');assert.deepEqual(updates[0].data,report);
   const pending=collector.refresh();resolve({ok:false});await pending;assert.equal(updates.at(-1).error,true);
   win.document.hidden=true;await collector.refresh();assert.equal(called,2);
+  const anyang={dataset:{operatingOption:'anyang'},closest:selector=>selector==='[data-operating-option]'?anyang:picker};
+  listeners.click({target:anyang});assert.equal(redraws,1);assert.equal(picker.open,false);assert.equal(trigger.focused,true);
+  const filtered=render({data:report});assert.equal((filtered.match(/class="dash-profit-bar /g)||[]).length,8);assert.doesNotMatch(filtered,/dash-profit-bar incheon/);
+  picker.open=true;listeners.click({target:{closest:()=>null}});assert.equal(picker.open,false,'outside click closes the picker');
+  picker.open=true;trigger.focused=false;listeners.keydown({key:'Escape'});assert.equal(picker.open,false);assert.equal(trigger.focused,true,'Escape closes and returns focus');
+  const all={dataset:{operatingOption:'all'},closest:selector=>selector==='[data-operating-option]'?all:picker};
+  listeners.click({target:all});assert.equal(redraws,2);
 });

@@ -125,6 +125,9 @@ try {
   const operating=d.querySelector('[data-dash-slot="operating"]');
   assert.equal(operating.querySelectorAll('.branch-card').length,0);
   assert.equal(operating.querySelectorAll('.dash-profit-bar').length,16);
+  assert.equal(operating.querySelector('select'),null);
+  assert.equal(operating.querySelectorAll('[data-operating-option]').length,3);
+  assert.match(operating.querySelector('[data-operating-trigger]').getAttribute('aria-label'),/현재 안양점과 인천점/);
   assert.deepEqual([...operating.querySelectorAll('.dash-profit-bar.is-latest')].map(e=>Number(e.dataset.profit)),[21453202,7032975]);
   assert.doesNotMatch(operating.textContent,/실제 입출금 기준|자료 기준|월별 수치 보기|자동 수집하지 않습니다/);
   const operatingLink=operating.querySelector('[data-dash-key="operating-2026-08-anyang"]');
@@ -134,7 +137,8 @@ try {
   assert.match(operating.textContent,/이전에 불러온 자료/);
   assert.equal(d.activeElement.dataset.dashKey,'operating-2026-08-anyang');
   assert.equal(operating.querySelectorAll('.dash-profit-bar').length,16);
-  assert.equal(operating.querySelector('details'),null);
+  assert.equal(operating.querySelectorAll('details').length,1);
+  assert.doesNotMatch(operating.querySelector('summary').textContent,/월별 수치 보기/);
   assert.equal(operating.querySelector('.dash-operating-scroll').scrollLeft,120);
   w.HomeDashboard.update('operating',report);assert.equal(operating.querySelector('.dash-warning'),null);
   assert.equal(adSlot.querySelectorAll('tbody tr').length,14);
