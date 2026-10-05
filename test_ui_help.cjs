@@ -58,4 +58,6 @@ test('dialog tooltips stay in the top layer and their source links are keyboard 
   const b=f.heading.querySelector('button'),p=f.first.parentElement;b.focus();assert.equal(p.parentElement,dialog);
   assert.ok(b.emit('keydown',{key:'Tab',shiftKey:false}).prevented);assert.equal(f.doc.activeElement,link);
   p.emit('keydown',{key:'Tab',shiftKey:true});assert.equal(f.doc.activeElement,b);b.emit('keydown',{key:'Tab',shiftKey:false});p.emit('keydown',{key:'Tab',shiftKey:false});assert.equal(f.doc.activeElement,f.next);assert.ok(p.hidden);
+  b.focus();b.emit('keydown',{key:'Tab',shiftKey:false});f.doc.emit('keydown',{key:'Escape'});assert.equal(f.doc.activeElement,b);assert.ok(p.hidden);
+  b.emit('pointerenter',{pointerType:'mouse'});assert.ok(p.hidden);b.emit('pointerleave');b.emit('pointerenter',{pointerType:'mouse'});assert.equal(p.hidden,false);
 });

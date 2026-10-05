@@ -51,12 +51,12 @@
       button.type='button';button.className='ui-button ui-info-button ui-help-button';button.innerHTML=icon;
       button.setAttribute('aria-label',label);button.setAttribute('aria-describedby',panel.id);button.setAttribute('aria-controls',panel.id);button.setAttribute('aria-expanded','false');
       anchor.append(button);
-      const entry={button,panel,anchor,label,sources:[{source,marker,wasOpen}],pinned:false,timer:null};entries.push(entry);
-      button.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse')show(entry);});
-      button.addEventListener('pointerleave',()=>leave(entry));
-      button.addEventListener('focus',()=>show(entry));
-      button.addEventListener('blur',event=>{if(!panel.contains(event.relatedTarget))hide(entry);});
-      button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();if(entry.pinned)hide(entry);else{show(entry);entry.pinned=true;}});
+      const entry={button,panel,anchor,label,sources:[{source,marker,wasOpen}],pinned:false,dismissed:false,timer:null};entries.push(entry);
+      button.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!entry.dismissed)show(entry);});
+      button.addEventListener('pointerleave',()=>{entry.dismissed=false;leave(entry);});
+      button.addEventListener('focus',()=>{if(!entry.dismissed)show(entry);});
+      button.addEventListener('blur',event=>{entry.dismissed=false;if(!panel.contains(event.relatedTarget))hide(entry);});
+      button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();entry.dismissed=false;if(entry.pinned)hide(entry);else{show(entry);entry.pinned=true;}});
       button.addEventListener('keydown',event=>{
         if(event.key==='Tab'&&!event.shiftKey&&!panel.hidden){const first=panel.querySelector(focusable);if(first){event.preventDefault();first.focus();}}
       });
@@ -75,7 +75,7 @@
     if(active&&active.button.isConnected)position(active);
   }
   doc.addEventListener('pointerdown',event=>{if(active&&!active.button.contains(event.target)&&!active.panel.contains(event.target))hide();});
-  doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&active){event.preventDefault();const entry=active;if(entry.panel.contains(doc.activeElement))entry.button.focus();hide(entry);}});
+  doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&active){event.preventDefault();const entry=active;entry.dismissed=true;if(entry.panel.contains(doc.activeElement))entry.button.focus();hide(entry);}});
   window.addEventListener('resize',()=>hide());
   window.addEventListener('scroll',event=>{if(active&&!active.panel.contains(event.target))hide();},true);
   window.addEventListener('beforeprint',()=>{
