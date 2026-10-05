@@ -32,13 +32,13 @@
 <script src="/assets/competitors-data.js" defer></script>
 <script src="/assets/competitors.js" defer></script>
 <script src="/assets/site.js" defer></script>
-<link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261002-liability" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2"></head>
+<link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261002-liability" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20261005-help"><script src="/assets/ui-help.js?v=20261005-help" defer></script></head>
 <body class="kb-detail competitor-page">
 <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
 <main>
 <section class="kb-page-heading">
   <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">경쟁사 분석</span></nav>
-  <div class="hero-row"><div><p class="kb-eyebrow">COMPETITOR INTELLIGENCE</p><h1>돌봄 시장을 읽고,<br>비교할 서비스를 찾으세요.</h1><p class="kb-description">장기요양 ERP부터 AI 업무보조, 시설 낙상·이상감지까지.<br>20개 서비스의 역할과 공개 근거를 한곳에서 비교합니다.</p></div>
+  <div class="hero-row"><div><p class="kb-eyebrow">COMPETITOR INTELLIGENCE</p><h1>돌봄 시장을 읽고,<br>비교할 서비스를 찾으세요.</h1><p class="kb-description" data-ui-help="화면 이용 안내" data-ui-help-target="main h1">장기요양 ERP부터 AI 업무보조, 시설 낙상·이상감지까지.<br>20개 서비스의 역할과 공개 근거를 한곳에서 비교합니다.</p></div>
   <div class="hero-facts" aria-label="조사 범위"><div><strong>20</strong><span>추적 서비스</span></div><div><strong>5</strong><span>업무 역할</span></div><div><strong>10<span>/20</span></strong><span>운영사 매출 근거 보유</span></div></div></div>
   <div class="hero-footer"><span class="as-of"><span aria-hidden="true"></span>자료 기준 <time datetime="2026-09-09">2026. 09. 09</time></span><a href="/competitor-news.html">경쟁사 및 요양원 뉴스 ↗</a></div>
 </section>
@@ -46,7 +46,7 @@
 
 <section class="landscape" id="landscape" aria-labelledby="landscape-title">
   <div class="section-title"><div><p class="section-kicker">THE LANDSCAPE</p><h2 id="landscape-title">어떤 업무에서 만나는 경쟁사인가요?</h2></div><span class="section-side">조사 대상 20개 서비스의 주된 역할</span></div>
-  <p class="section-description">서비스의 주된 역할을 기준으로 분류했습니다. 시설 낙상·이상감지는 요양원·요양병원 적용 사례가 공개된 공급사이며, 도입 단계와 근거를 상세에서 확인할 수 있습니다.</p>
+  <p class="section-description" data-ui-help="분석·비교 기준">서비스의 주된 역할을 기준으로 분류했습니다. 시설 낙상·이상감지는 요양원·요양병원 적용 사례가 공개된 공급사이며, 도입 단계와 근거를 상세에서 확인할 수 있습니다.</p>
   <div class="landscape-bar" aria-hidden="true"><span style="flex:9" class="tone-operations">9</span><span style="flex:3" class="tone-assist">3</span><span style="flex:3" class="tone-monitor">3</span><span style="flex:2" class="tone-care">2</span><span style="flex:3" class="tone-safety">3</span></div>
   <div class="role-grid">
     <button type="button" class="role-card tone-operations" data-role="operations" aria-pressed="false"><span class="role-top"><span class="role-mark" aria-hidden="true">01</span><b>9개</b></span><strong>기관 운영</strong><span>일정·청구·급여·회계</span><small>케어포 · 이지케어 · 케어샐러리 등</small><span class="role-link">서비스 살펴보기 →</span></button>
@@ -55,7 +55,7 @@
     <button type="button" class="role-card tone-care" data-role="care" aria-pressed="false"><span class="role-top"><span class="role-mark" aria-hidden="true">04</span><b>2개</b></span><strong>돌봄 운영·매칭</strong><span>직영·간병·주거 연계</span><small>케어링 · 케어닥</small><span class="role-link">서비스 살펴보기 →</span></button>
     <button type="button" class="role-card tone-safety" data-role="safety" aria-pressed="false"><span class="role-top"><span class="role-mark" aria-hidden="true">05</span><b>3개</b></span><strong>시설 낙상·이상감지</strong><span>요양원·요양병원 안전 관제</span><small>클레버러스 · 인지니어스 · 스페이스뱅크</small><span class="role-link">서비스 살펴보기 →</span></button>
   </div>
-  <p class="map-note">막대는 이 페이지의 조사 대상 구성을 나타냅니다. 시장점유율·성장률을 나타내지 않으며, 여러 역할을 가진 서비스도 있습니다.</p>
+  <p class="map-note" data-ui-help="분석·비교 기준">막대는 이 페이지의 조사 대상 구성을 나타냅니다. 시장점유율·성장률을 나타내지 않으며, 여러 역할을 가진 서비스도 있습니다.</p>
 </section>
 
 <section id="explorer" aria-labelledby="explorer-title">

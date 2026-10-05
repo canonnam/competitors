@@ -15,11 +15,16 @@
 .eval-note { color: var(--ui-muted); }
 .eval-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
 .eval-list-scroll { max-width: 100%; overflow-x: auto; }
-.eval-list-content { min-width: 600px; padding: 4px; }
+.eval-list-content { min-width: 680px; padding: 4px; }
 .eval-list-toolbar { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
 .eval-list-toolbar h2 { margin: 0 auto 0 0; }
 .eval-list-toolbar label { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.eval-list button { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) 140px 180px; align-items: center; gap: 12px; }
+.eval-list li { display: flex; align-items: center; gap: 4px; }
+.eval-list .eval-open { flex: 1; min-width: 0; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) 140px 180px; align-items: center; gap: 12px; }
+.eval-list .eval-list-action { flex-shrink: 0; }
+#eval-delete-dialog { width: min(440px,calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow:auto; border:1px solid var(--ui-border); border-radius:var(--ui-card-radius); padding:24px; color:var(--ui-text); }
+#eval-delete-dialog::backdrop { background:#202b3666; }
+.eval-dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
 .eval-list strong { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eval-list small, .eval-list .ui-status { white-space: nowrap; }
 .eval-list .ui-status { justify-self: end; text-align: left; }
@@ -40,3 +45,5 @@
 @media (max-width: 700px) {
   .eval-score-line { grid-template-columns: 1fr; }
 }
+
+.eval-detail-heading{display:flex;align-items:center;gap:4px}.eval-detail-heading h2{margin:0}

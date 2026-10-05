@@ -146,6 +146,12 @@
   body:is(.kb-navigable,.ui-standalone) .ui-tooltip[hidden] { display: none; }
   body:is(.kb-navigable,.ui-standalone) .ui-tooltip p { margin: 8px 0 0; font-size: inherit; line-height: inherit; }
   body:is(.kb-navigable,.ui-standalone) .ui-tooltip :is(strong,b) { color: var(--ui-text); }
+  body.kb-navigable .ui-help-button { vertical-align: middle; margin-left: 4px; }
+  body.kb-navigable .ui-help-tooltip :is(p,small,span,div,details) { font-size: inherit; line-height: inherit; }
+  body.kb-navigable .ui-help-tooltip > [data-ui-help] { margin: 8px 0 0; padding: 0; border: 0; background: transparent; }
+  body.kb-navigable .ui-help-tooltip > details > summary { display: none; }
+  body.kb-navigable .ui-help-tooltip :is(h2,h3) { margin: 8px 0 0; font-size: inherit; line-height: inherit; }
+  body.kb-navigable .ui-help-tooltip .reading-notes { display: block; }
 
   /* Search and chat composers keep their deliberately different geometry. */
   body:is(.kb-navigable,.ui-standalone) :is(input,select,textarea):not(.kb-search-input):where(:not([type="hidden"],[type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="submit"],[type="button"],.wiki-panel *)) {
@@ -224,4 +230,9 @@
 }
 @media (prefers-reduced-motion:reduce) {
   body:is(.kb-navigable,.ui-standalone) :is(.kb-category-button,.kb-nav-link,.kb-feature-card,.kb-shortcut,.ui-button) { transition: none; }
+}
+
+@media print {
+  body.kb-navigable .ui-help-button { display:none!important; }
+  body.kb-navigable .ui-help-tooltip,body.kb-navigable .ui-help-tooltip[hidden] { display:none!important; }
 }

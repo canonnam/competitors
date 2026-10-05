@@ -25,7 +25,7 @@
   <script src="/assets/contract-pdf.js?v=20260914-style" defer></script>
   <script src="/assets/payroll.js?v=20260912-seals" defer></script>
   <script src="/assets/site.js" defer></script>
-<link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261002-liability" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2"></head>
+<link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261002-liability" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20261005-help"><script src="/assets/ui-help.js?v=20261005-help" defer></script></head>
 <body class="kb-detail payroll-page" data-feedback-page="payroll">
 <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
 <main>
@@ -50,7 +50,7 @@
         <div class="pattern-editor"><div class="subheading"><span>근무순서</span><div id="pattern-actions"><button type="button" id="add-day">+ 근무일</button></div></div><div id="pattern" class="pattern" aria-label="근무순서"></div></div>
         <div id="shift-editors"></div>
         <div class="fields"><label>주휴시간 (주)<input name="weeklyPaidHours" type="number" value="8" min="0" max="8" step="0.1"></label><label>근로시간제<select name="workingSystem"><option value="standard">일반 근로시간제</option><option value="flexible">탄력근로제 · 별도 산정</option></select></label></div>
-        <p class="field-note">주휴시간 기본값은 기존 엑셀의 주 8시간입니다. 계약조건에 맞게 확인해주세요.</p>
+        <p class="field-note" data-ui-help="급여·계약 조건 안내" data-ui-help-target="#schedule-title">주휴시간 기본값은 기존 엑셀의 주 8시간입니다. 계약조건에 맞게 확인해주세요.</p>
       </section>
       <section class="form-section" aria-labelledby="pay-title">
         <h2 id="pay-title">급여 조건</h2>
@@ -61,12 +61,12 @@
         <div class="allowance-row fixed-allowance"><span>고정연장수당</span><input name="manualOvertime" type="number" min="0" step="1" readonly aria-label="고정연장수당 금액"><label class="ordinary-label"><input name="overtimeOrdinary" type="checkbox" aria-label="고정연장수당 통상임금 포함"></label><span></span></div>
         <div class="allowance-row fixed-allowance"><span>고정야간수당</span><input name="manualNight" type="number" min="0" step="1" readonly aria-label="고정야간수당 금액"><label class="ordinary-label"><input name="nightOrdinary" type="checkbox" aria-label="고정야간수당 통상임금 포함"></label><span></span></div>
         <div id="allowances"></div><button id="add-allowance" class="text-button" type="button">+ 수당 항목</button>
-        <p class="field-note">통상임금 포함 여부는 수당의 실제 지급 성격에 따라 확인이 필요합니다. <a href="https://1350.moel.go.kr/rtmview.do?id=1000302874" target="_blank" rel="noreferrer noopener">고용노동부 안내</a></p>
+        <p class="field-note" data-ui-help="급여·계약 조건 안내" data-ui-help-target="#pay-title">통상임금 포함 여부는 수당의 실제 지급 성격에 따라 확인이 필요합니다. <a href="https://1350.moel.go.kr/rtmview.do?id=1000302874" target="_blank" rel="noreferrer noopener">고용노동부 안내</a></p>
       </section>
       <section class="form-section" aria-labelledby="payment-title">
         <h2 id="payment-title">지급·기타 조건</h2>
         <div class="fields"><label>급여 지급월<select name="paymentMonth"><option value="next">익월</option><option value="current">당월</option></select></label><label>급여 지급일<input name="paymentDay" type="number" value="7" min="1" max="31" step="1"></label><label>은행<input name="bank" maxlength="40"></label><label>계좌번호<input name="account" maxlength="50" autocomplete="off"></label><label>예금주<input name="accountHolder" maxlength="40"></label><label class="wide">특약사항<textarea name="specialTerms" rows="3" maxlength="4000"></textarea></label></div>
-        <details class="original-clauses"><summary>원본 계약서 문구</summary><p>원본의 공통 조항을 유지합니다. 근무유형·시간·금액은 입력값을 반영합니다.</p><label class="check"><input name="includeFlexibleClause" type="checkbox">원본의 2주 단위 탄력근로제 조항 포함</label><div id="clauses-text"></div></details>
+        <details class="original-clauses"><summary>원본 계약서 문구</summary><p data-ui-help="급여·계약 조건 안내" data-ui-help-target="#payment-title">원본의 공통 조항을 유지합니다. 근무유형·시간·금액은 입력값을 반영합니다.</p><label class="check"><input name="includeFlexibleClause" type="checkbox">원본의 2주 단위 탄력근로제 조항 포함</label><div id="clauses-text"></div></details>
       </section>
     </form>
     <aside class="summary" aria-labelledby="result-title">
@@ -78,7 +78,7 @@
       <div class="seal-option"><label class="check"><input type="checkbox" name="includeSeal" form="contract-form" checked aria-describedby="seal-note">직인 포함</label><p id="seal-note" class="field-note" role="status">안양점 직인을 미리보기와 PDF에 포함합니다.</p></div>
       <button type="button" id="preview-contract" class="primary-button"><img src="/assets/icons/book-open.svg" alt="">계약서 미리보기</button>
       <button type="button" id="download-contract" class="secondary-button"><img src="/assets/icons/download.svg" alt="">PDF 다운로드</button>
-      <p class="privacy-note">미입력 항목은 공란으로 출력됩니다. 개인정보는 서버에 전송·저장하지 않습니다.</p>
+      <p class="privacy-note" data-ui-help="급여·계약 조건 안내" data-ui-help-target="#result-title">미입력 항목은 공란으로 출력됩니다. 개인정보는 서버에 전송·저장하지 않습니다.</p>
       <p id="pdf-status" class="pdf-status" role="status"></p>
     </aside>
   </div>

@@ -116,6 +116,7 @@ def connect():
 def init_db():
     with closing(connect()) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
+        db.execute('BEGIN IMMEDIATE')
         db.execute('''CREATE TABLE IF NOT EXISTS staff_evaluations (
             id TEXT PRIMARY KEY,
             token TEXT NOT NULL,
@@ -141,8 +142,12 @@ def init_db():
             items TEXT NOT NULL DEFAULT '[]',
             gemini_score INTEGER,
             gemini_note TEXT NOT NULL DEFAULT '',
-            submitted_at TEXT
+            submitted_at TEXT,
+            deleted_at TEXT
         )''')
+        columns = {row['name'] for row in db.execute('PRAGMA table_info(staff_evaluations)')}
+        if 'deleted_at' not in columns:
+            db.execute('ALTER TABLE staff_evaluations ADD COLUMN deleted_at TEXT')
 
 
 def now_iso():
@@ -179,14 +184,14 @@ def scenario_by_index(index):
     return SCENARIOS[index]
 
 
-def load(token=None, eval_id=None):
+def load(token=None, eval_id=None, include_deleted=False):
     init_db()
     with closing(connect()) as db:
         if token:
             row = db.execute('SELECT * FROM staff_evaluations WHERE token_hash=?', (hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
         else:
             row = db.execute('SELECT * FROM staff_evaluations WHERE id=?', (eval_id,)).fetchone()
-    if not row:
+    if not row or (row['deleted_at'] and not include_deleted):
         raise LookupError('평가 링크를 확인해 주세요.')
     return row
 
@@ -280,12 +285,15 @@ def create_session(body):
     return {'id': eval_id, 'url': '/staff-eval-session.html#' + token, 'expires': stamp(expires), 'name': name, 'branch': branch}
 
 
-def listing(branch=''):
+def listing(branch='', view='active'):
     if branch not in BRANCHES:
         raise ValueError('지점을 확인해 주세요.')
+    if view not in ('active', 'deleted'):
+        raise ValueError('목록 보기를 확인해 주세요.')
     init_db()
     with closing(connect()) as db:
-        rows = db.execute('SELECT * FROM staff_evaluations ORDER BY created DESC').fetchall()
+        condition = 'IS NOT NULL' if view == 'deleted' else 'IS NULL'
+        rows = db.execute(f'SELECT * FROM staff_evaluations WHERE deleted_at {condition} ORDER BY created DESC').fetchall()
     items = []
     for row in rows:
         if branch and row['branch'] != branch:
@@ -296,7 +304,8 @@ def listing(branch=''):
             'role': ROLE, 'status': status, 'status_label': STATUS_LABELS[status],
             'auto_score': row['auto_score'], 'confirmed_score': row['confirmed_score'], 'needs_human': bool(row['needs_human']),
             'created': row['created'], 'expires': stamp(row['expires']), 'submitted_at': row['submitted_at'],
-            'url': '/staff-eval-session.html#' + row['token'],
+            'deleted_at': row['deleted_at'],
+            'url': '' if row['deleted_at'] else '/staff-eval-session.html#' + row['token'],
         })
     return {'evaluations': items, 'ai_ready': bool(os.getenv('GEMINI_API_KEY', '').strip()), 'role': ROLE}
 
@@ -327,7 +336,9 @@ def detail(eval_id):
     row = load(eval_id=eval_id)
     status = display_status(row)
     base = listing()
-    item = next(entry for entry in base['evaluations'] if entry['id'] == row['id'])
+    item = next((entry for entry in base['evaluations'] if entry['id'] == row['id']), None)
+    if item is None:
+        raise LookupError('평가 링크를 확인해 주세요.')
     item.pop('url', None)
     return {
         **item,
@@ -349,7 +360,9 @@ def save_fields(eval_id, **fields):
     keys = list(fields)
     assignments = ', '.join(f'{key}=?' for key in keys)
     with closing(connect()) as db, db:
-        db.execute(f'UPDATE staff_evaluations SET {assignments} WHERE id=?', [*fields.values(), eval_id])
+        updated = db.execute(f'UPDATE staff_evaluations SET {assignments} WHERE id=? AND deleted_at IS NULL', [*fields.values(), eval_id])
+        if not updated.rowcount:
+            raise LookupError('평가 링크를 확인해 주세요.')
 
 
 def consent(token):
@@ -760,6 +773,24 @@ def retake(body):
     return detail(row['id'])
 
 
+def delete_evaluation(body):
+    if not isinstance(body, dict):
+        raise ValueError('입력 형식을 확인해 주세요.')
+    row = load(eval_id=str(body.get('id') or ''), include_deleted=True)
+    with closing(connect()) as db, db:
+        db.execute('UPDATE staff_evaluations SET deleted_at=COALESCE(deleted_at, ?), cookie_hash=NULL WHERE id=?', (now_iso(), row['id']))
+    return {'id': row['id'], 'deleted': True}
+
+
+def restore_evaluation(body):
+    if not isinstance(body, dict):
+        raise ValueError('입력 형식을 확인해 주세요.')
+    row = load(eval_id=str(body.get('id') or ''), include_deleted=True)
+    with closing(connect()) as db, db:
+        db.execute('UPDATE staff_evaluations SET deleted_at=NULL WHERE id=?', (row['id'],))
+    return {'id': row['id'], 'restored': True}
+
+
 def handle(handler, method):
     import support_applications as support
     import wiki_chat
@@ -821,12 +852,16 @@ def handle(handler, method):
                 result = confirm(body)
             elif route == '/retake':
                 result = retake(body)
+            elif route == '/delete':
+                result = delete_evaluation(body)
+            elif route == '/restore':
+                result = restore_evaluation(body)
             else:
                 raise LookupError('요청한 기능을 찾을 수 없습니다.')
         elif method in ('GET', 'HEAD'):
             query = urllib.parse.parse_qs(parts.query)
             if route == '':
-                result = listing(query.get('branch', [''])[0])
+                result = listing(query.get('branch', [''])[0], query.get('view', ['active'])[0])
             elif route == '/detail':
                 result = detail(query.get('id', [''])[0])
             else:

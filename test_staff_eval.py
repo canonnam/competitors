@@ -65,9 +65,10 @@ class StaffEvalTests(unittest.TestCase):
         self.admin = ''
         self.staff = ''
 
-    def request(self, path, body=None, cookie='', method=None):
+    def request(self, path, body=None, cookie='', method=None, extra_headers=None):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=10)
         headers = {'Content-Type': 'application/json'}
+        headers.update(extra_headers or {})
         if cookie:
             headers['Cookie'] = cookie
         connection.request(method or ('POST' if body is not None else 'GET'), path, json.dumps(body) if body is not None else None, headers)
@@ -360,6 +361,62 @@ class StaffEvalTests(unittest.TestCase):
         self.staff_call('verify', {'employee_hint': '4321'})
         staff_eval.save_fields(created['id'], expires=time.time() - 10)
         self.assertEqual(self.staff_call('skip', {'scenario_id': 'fall'})[0], 403)
+
+    def test_deleted_evaluation_is_hidden_and_all_participant_actions_are_blocked(self):
+        created = self.create()
+        self.staff_call('consent', {'accepted': True})
+        self.staff_call('verify', {'employee_hint': '4321'})
+        self.staff_call('message', {'text': '즉시 부축하고 의식을 확인합니다.'})
+        before = dict(staff_eval.load(eval_id=created['id']))
+        self.assertEqual(self.request('/api/support/staff-eval/delete', {'id': created['id']})[0], 200)
+        staff_eval.init_db()  # Hidden state survives reopening the database.
+        self.assertEqual(staff_eval.listing()['evaluations'], [])
+        self.assertEqual(staff_eval.listing('incheon', 'deleted')['evaluations'][0]['url'], '')
+        self.assertEqual(self.request('/api/support/staff-eval/detail?id=' + created['id'])[0], 404)
+        self.assertEqual(self.staff_call('')[0], 404)
+        for action, body in [('consent', {'accepted': True}), ('verify', {'employee_hint': '4321'}),
+                             ('message', {'text': '보고합니다.'}), ('skip', {'scenario_id': 'fall'}), ('live-token', {})]:
+            self.assertEqual(self.staff_call(action, body)[0], 404)
+        for action in ('confirm', 'retake'):
+            self.assertEqual(self.request('/api/support/staff-eval/' + action, {'id': created['id']})[0], 404)
+        deleted = dict(staff_eval.load(eval_id=created['id'], include_deleted=True))
+        self.assertEqual(deleted['transcript'], before['transcript'])
+        self.assertEqual(deleted['answers'], before['answers'])
+        self.assertIsNone(deleted['cookie_hash'])
+        self.assertEqual(self.request('/api/support/staff-eval/delete', {'id': created['id']})[0], 200)
+        self.assertEqual(staff_eval.load(eval_id=created['id'], include_deleted=True)['deleted_at'], deleted['deleted_at'])
+        with self.assertRaises(LookupError):
+            staff_eval.save_fields(created['id'], answers='{}')
+
+    def test_restore_preserves_scores_answers_and_original_expiry(self):
+        created = self.create()
+        staff_eval.save_fields(created['id'], status='completed', auto_score=80, confirmed_score=85,
+                               answers=json.dumps({'fall': GOOD[0]}), transcript='[]')
+        before = dict(staff_eval.load(eval_id=created['id']))
+        self.request('/api/support/staff-eval/delete', {'id': created['id']})
+        self.assertEqual(self.request('/api/support/staff-eval/restore', {'id': created['id']})[0], 200)
+        after = dict(staff_eval.load(eval_id=created['id']))
+        for key in ('expires', 'status', 'answers', 'transcript', 'auto_score', 'confirmed_score'):
+            self.assertEqual(after[key], before[key], key)
+        self.assertEqual(staff_eval.listing('incheon', 'deleted')['evaluations'], [])
+        self.assertEqual(staff_eval.listing()['evaluations'][0]['confirmed_score'], 85)
+        self.assertEqual(self.staff_call('')[1]['status'], 'completed')
+        self.assertEqual(self.request('/api/support/staff-eval/restore', {'id': created['id']})[0], 200)
+
+    def test_delete_restore_validation_origin_and_existing_schema_migration(self):
+        created = self.create()
+        with closing(staff_eval.connect()) as db, db:
+            db.execute('ALTER TABLE staff_evaluations DROP COLUMN deleted_at')
+        staff_eval.init_db()
+        self.assertIsNone(staff_eval.load(eval_id=created['id'])['deleted_at'])
+        self.assertEqual(staff_eval.listing()['evaluations'][0]['name'], '김보호')
+        for action in ('delete', 'restore'):
+            path = '/api/support/staff-eval/' + action
+            self.assertEqual(self.request(path, [created['id']])[0], 400)
+            self.assertEqual(self.request(path, {'id': 'missing'})[0], 404)
+            self.assertEqual(self.request(path, {'id': created['id']}, extra_headers={'Origin': 'https://other.example'})[0], 403)
+        self.assertEqual(self.request('/api/support/staff-eval?view=unknown')[0], 400)
+        self.assertEqual(staff_eval.listing('anyang', 'deleted')['evaluations'], [])
 
     def test_card_registration_and_image_copy(self):
         home = Path('index.html').read_text(encoding='utf-8')

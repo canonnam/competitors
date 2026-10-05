@@ -1,6 +1,6 @@
 # 더비다 지식 창고 개발 환경
 
-확인일: 2026-10-02. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
+확인일: 2026-10-05. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
 ## 저장소와 실행 구조
 
@@ -89,3 +89,10 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 `petdev`에 검증한 커밋을 반영하면 기존 Railway 연결을 통해 배포한다. 배포 후 `https://app.aivida.tech/statistics.html`과 `/assets/statistics-data.js`에서 변경된 자료를 확인하고 변경 기록에 결과를 추가한다. Railway의 서비스/환경 연결을 바꾸거나 새 프로젝트를 만들지 않는다.
 
 2026-09-28 로컬 `railway status`는 오래된 연결을 가리켜 서비스 조회 오류가 난다. 배포 확인에는 Git 원격 브랜치와 운영 URL을 사용한다. CLI 연결 정보를 문서에 있는 이름만 보고 재설정하지 않는다.
+
+## 종사자 평가 삭제·복구와 안내 툴팁 (2026-10-05)
+
+- 기존 `STAFF_EVAL_DB_PATH` DB에 nullable `deleted_at` 열만 자동 추가한다. 새 저장소·비밀 변수는 필요 없다. 초기화의 쓰기 트랜잭션으로 동시 마이그레이션을 직렬화한다.
+- 관리 POST `/api/support/staff-eval/delete`, `/restore`에 `{id}`를 전달한다. 기존 동일 출처 검사와 직접 관리 접근 방식을 유지한다. GET 목록의 `view=active|deleted` 기본값은 `active`다. 삭제는 응시 쿠키 해제와 링크 차단을 포함하며, 복구는 기존 답변·점수·상태·만료를 유지한다.
+- `assets/ui-help.js`는 명시된 설명 노드를 제목 옆 툴팁으로 옮기고 인쇄 시 원래 위치로 복원한다. 지원사업의 동적 탭도 관찰하며 기존 별도 툴팁 구현은 변경하지 않는다. HTML의 새 CSS/JS 조회 버전으로 브라우저 캐시를 갱신한다.
+- 검증: `python -m unittest test_ui_consistency.py test_static_pages.py test_claim_check.py test_staff_eval.py test_support_projects.py test_payroll.PayrollRouteTests.test_payroll_assets_and_no_personal_data_submission`; `node --test test_ui_help.cjs test_staff_eval_voice.cjs test_navigation.cjs test_payroll.cjs test_operating_math.cjs test_naver_ads_math.cjs test_nearby_facilities.cjs test_statistics.cjs test_search_visibility.cjs test_reputation_watch.cjs test_claim_check.cjs`.
