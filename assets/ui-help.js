@@ -75,7 +75,7 @@
     if(active&&active.button.isConnected)position(active);
   }
   doc.addEventListener('pointerdown',event=>{if(active&&!active.button.contains(event.target)&&!active.panel.contains(event.target))hide();});
-  doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&active){const entry=active;if(entry.panel.contains(doc.activeElement))entry.button.focus();hide(entry);}});
+  doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&active){event.preventDefault();const entry=active;if(entry.panel.contains(doc.activeElement))entry.button.focus();hide(entry);}});
   window.addEventListener('resize',()=>hide());
   window.addEventListener('scroll',event=>{if(active&&!active.panel.contains(event.target))hide();},true);
   window.addEventListener('beforeprint',()=>{

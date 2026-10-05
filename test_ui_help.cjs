@@ -41,7 +41,7 @@ test('groups explanations at the nearest heading, preserving live nodes and exis
 test('focus, click, Escape and outside click open and close a single tooltip',()=>{
   const f=fixture();f.run();const b=f.heading.querySelector('button'),p=f.doc.querySelector('#'+b.getAttribute('aria-controls'));
   b.focus();assert.equal(p.parentElement,f.doc.body);assert.equal(b.getAttribute('aria-expanded'),'true');b.emit('click');b.emit('click');assert.ok(p.hidden);
-  b.emit('click');f.doc.emit('keydown',{key:'Escape'});assert.ok(p.hidden);b.emit('click');f.doc.emit('pointerdown',{target:f.next});assert.ok(p.hidden);
+  b.emit('click');assert.ok(f.doc.emit('keydown',{key:'Escape'}).prevented);assert.ok(p.hidden);b.emit('click');f.doc.emit('pointerdown',{target:f.next});assert.ok(p.hidden);
 });
 test('print restores each source to its original position and details state, then remounts',()=>{
   const f=fixture(),details=new f.Node('details'),summary=new f.Node('summary');details.append(summary);details.dataset.uiHelp='기준';f.section.append(details);f.run();
