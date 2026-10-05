@@ -4,9 +4,32 @@
   const money = value => value == null ? '—' : new Intl.NumberFormat('ko-KR').format(value);
   const date = value => value ? new Date(value).toLocaleString('ko-KR', {timeZone:'Asia/Seoul',hour12:false}) : '미확정';
   let report = null, requestId = 0;
+  const helpButton=$('help-button'),helpPanel=$('help-tooltip');
+  let helpPinned=false,helpTimer;
+  function hideHelp(){clearTimeout(helpTimer);helpPinned=false;helpPanel.hidden=true;helpButton.setAttribute('aria-expanded','false');}
+  function positionHelp(){
+    if(helpPanel.hidden)return;
+    const anchor=helpButton.getBoundingClientRect(),box=helpPanel.getBoundingClientRect(),width=document.documentElement.clientWidth,height=window.innerHeight;
+    helpPanel.style.left=Math.max(12,Math.min(anchor.left,width-box.width-12))+'px';
+    const top=anchor.bottom+8+box.height<=height-12?anchor.bottom+8:anchor.top-box.height-8;
+    helpPanel.style.top=Math.max(12,Math.min(top,height-box.height-12))+'px';
+  }
+  function showHelp(){clearTimeout(helpTimer);helpPanel.hidden=false;helpButton.setAttribute('aria-expanded','true');positionHelp();}
+  function leaveHelp(){clearTimeout(helpTimer);if(!helpPinned)helpTimer=setTimeout(hideHelp,180);}
+  helpButton.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse')showHelp();});
+  helpButton.addEventListener('pointerleave',leaveHelp);
+  helpButton.addEventListener('focus',showHelp);
+  helpButton.addEventListener('blur',hideHelp);
+  helpButton.addEventListener('click',()=>{if(helpPinned)hideHelp();else{helpPinned=true;showHelp();}});
+  helpPanel.addEventListener('pointerenter',()=>clearTimeout(helpTimer));
+  helpPanel.addEventListener('pointerleave',leaveHelp);
+  document.addEventListener('pointerdown',event=>{if(!helpButton.contains(event.target)&&!helpPanel.contains(event.target))hideHelp();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideHelp();});
+  window.addEventListener('resize',hideHelp);
+  window.addEventListener('scroll',event=>{if(!helpPanel.contains(event.target))hideHelp();},true);
   const node = (tag, text, cls) => {const el=document.createElement(tag); if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
-  function status(text, type='') {$('status').textContent=text;$('status').dataset.status=type;}
-  function clear() {report=null;$('data').hidden=true;$('download').disabled=true;$('source').textContent='';$('totals').replaceChildren();for(const id of ['groups','people','reconcile'])$(id).tBodies[0].replaceChildren();}
+  function status(text, type='') {$('status').textContent=text;$('status').dataset.status=type;helpButton.dataset.status=type;helpButton.setAttribute('aria-label','조회 일정·상태 안내 · '+text);positionHelp();}
+  function clear() {report=null;$('data').hidden=true;$('download').disabled=true;$('source').textContent='';$('source').hidden=true;$('totals').replaceChildren();for(const id of ['groups','people','reconcile'])$(id).tBodies[0].replaceChildren();}
   async function api(path, options={}) {
     const response=await fetch('/api/support/'+path,{cache:'no-store',credentials:'same-origin',...options});
     const body=await response.json();
@@ -47,6 +70,7 @@
     }
     if(selected.length>1)appendRow('groups',['전체','전체 합계',sum('payrollPeople')+' / '+sum('insurancePeople'),sum('grossPay'),sum('employeeDeductions'),sum('insuranceTotal')],true);
     $('source').textContent=report.month+' 귀속 · '+selected.map(b=>b.name+' 급여 '+(b.confirmedAt?'확정 '+date(b.confirmedAt):'미확정')+' / ERP 조회 '+date(b.payrollCheckedAt)+' / 공단 확인 '+date(b.insuranceCheckedAt)).join(' · ');
+    $('source').hidden=false;positionHelp();
     renderPeople();$('data').hidden=false;$('download').disabled=false;
   }
   async function load(period='') {
