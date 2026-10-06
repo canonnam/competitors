@@ -2,6 +2,7 @@
   'use strict';
   const $ = id => document.getElementById('pi-' + id);
   const money = value => value == null ? '—' : new Intl.NumberFormat('ko-KR').format(value);
+  const employerShare = totals => totals.insuranceTotal == null || totals.employeeDeductions == null ? null : totals.insuranceTotal - totals.employeeDeductions;
   const date = value => value ? new Date(value).toLocaleString('ko-KR', {timeZone:'Asia/Seoul',hour12:false}) : '미확정';
   let report = null, requestId = 0;
   const helpButton=$('help-button'),helpPanel=$('help-tooltip');
@@ -62,13 +63,16 @@
       const card=node('div',null,'pi-stat');card.append(node('span',label),node('strong',money(sum(key))+'원'),node('small',detail));$('totals').append(card);
     }
     for(const b of selected){
-      for(const g of b.groups){if(!g.people&&['기타','직책 미확인'].includes(g.role))continue;appendRow('groups',[b.name,g.role,g.payrollPeople+' / '+g.insurancePeople,g.grossPay,g.employeeDeductions,g.insuranceTotal]);}
-      const t=b.totals;appendRow('groups',[b.name,'지점 합계',t.payrollPeople+' / '+t.insurancePeople,t.grossPay,t.employeeDeductions,t.insuranceTotal],true);
+      for(const g of b.groups){if(!g.people&&['기타','직책 미확인'].includes(g.role))continue;appendRow('groups',[b.name,g.role,g.payrollPeople+' / '+g.insurancePeople,g.grossPay,g.employeeDeductions,g.insuranceTotal,employerShare(g)]);}
+      const t=b.totals;appendRow('groups',[b.name,'지점 합계',t.payrollPeople+' / '+t.insurancePeople,t.grossPay,t.employeeDeductions,t.insuranceTotal,employerShare(t)],true);
       for(const [key,label] of [['healthCare','건강·요양'],['pension','국민연금'],['employment','고용'],['accident','산재']]){
         const r=b.reconciliation[key];appendRow('reconcile',[b.name,label,r.individual,r.portal,r.difference]);
       }
     }
-    if(selected.length>1)appendRow('groups',['전체','전체 합계',sum('payrollPeople')+' / '+sum('insurancePeople'),sum('grossPay'),sum('employeeDeductions'),sum('insuranceTotal')],true);
+    if(selected.length>1){
+      const share=selected.every(b=>employerShare(b.totals)!=null)?sum('insuranceTotal')-sum('employeeDeductions'):null;
+      appendRow('groups',['전체','전체 합계',sum('payrollPeople')+' / '+sum('insurancePeople'),sum('grossPay'),sum('employeeDeductions'),sum('insuranceTotal'),share],true);
+    }
     $('source').textContent=report.month+' 귀속 · '+selected.map(b=>b.name+' 급여 '+(b.confirmedAt?'확정 '+date(b.confirmedAt):'미확정')+' / ERP 조회 '+date(b.payrollCheckedAt)+' / 공단 확인 '+date(b.insuranceCheckedAt)).join(' · ');
     $('source').hidden=false;positionHelp();
     renderPeople();$('data').hidden=false;$('download').disabled=false;
