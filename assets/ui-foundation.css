@@ -152,6 +152,8 @@
   body.kb-navigable .ui-help-tooltip > details > summary { display: none; }
   body.kb-navigable .ui-help-tooltip :is(h2,h3) { margin: 8px 0 0; font-size: inherit; line-height: inherit; }
   body.kb-navigable .ui-help-tooltip .reading-notes { display: block; }
+  body.kb-navigable .ui-help-tooltip > .ui-help-section-title { display: block; }
+  body.kb-navigable .ui-help-tooltip > .ui-help-section-title:not(:first-child) { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ui-border); }
 
   /* Search and chat composers keep their deliberately different geometry. */
   body:is(.kb-navigable,.ui-standalone) :is(input,select,textarea):not(.kb-search-input):where(:not([type="hidden"],[type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="submit"],[type="button"],.wiki-panel *)) {

@@ -41,17 +41,27 @@
       mounted.add(source);
       const label=source.dataset.uiHelp, marker=doc.createComment('Explanation print position');
       const wasOpen=source.tagName==='DETAILS'?source.open:null;
-      const group=entries.find(entry=>entry.anchor===anchor&&entry.label===label);
-      if(group){source.before(marker);group.panel.append(source);if(wasOpen!==null)source.open=true;group.sources.push({source,marker,wasOpen});continue;}
+      const slot=doc.createComment('Tooltip explanation position');
+      const group=entries.find(entry=>entry.anchor===anchor);
+      if(group){
+        source.before(marker);
+        if(group.lastLabel!==label){
+          const title=doc.createElement('strong');title.className='ui-help-section-title';title.textContent=label;group.panel.append(title);group.lastLabel=label;
+          group.button.setAttribute('aria-label',group.headingLabel);
+        }
+        group.panel.append(slot,source);if(wasOpen!==null)source.open=true;group.sources.push({source,marker,slot,wasOpen});continue;
+      }
       const panel=doc.createElement('div'),button=doc.createElement('button');
       panel.id='ui-help-'+(++sequence);panel.className='ui-tooltip ui-help-tooltip';panel.setAttribute('role','tooltip');panel.hidden=true;
-      const title=doc.createElement('strong');title.textContent=label;panel.append(title);
-      source.before(marker);source.replaceWith(panel);panel.append(source);
+      const title=doc.createElement('strong');title.className='ui-help-section-title';title.textContent=label;panel.append(title);
+      source.before(marker);source.replaceWith(panel);panel.append(slot,source);
       if(wasOpen!==null)source.open=true;
       button.type='button';button.className='ui-button ui-info-button ui-help-button';button.innerHTML=icon;
       button.setAttribute('aria-label',label);button.setAttribute('aria-describedby',panel.id);button.setAttribute('aria-controls',panel.id);button.setAttribute('aria-expanded','false');
+      const headingText=(anchor.textContent||label).trim().replace(/\s+/g,' ');
+      const headingLabel=/안내$/.test(headingText)?headingText:headingText+' 안내';
       anchor.append(button);
-      const entry={button,panel,anchor,label,sources:[{source,marker,wasOpen}],pinned:false,dismissed:false,timer:null};entries.push(entry);
+      const entry={button,panel,anchor,label,lastLabel:label,headingLabel,sources:[{source,marker,slot,wasOpen}],pinned:false,dismissed:false,timer:null};entries.push(entry);
       button.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!entry.dismissed)show(entry);});
       button.addEventListener('pointerleave',()=>{entry.dismissed=false;leave(entry);});
       button.addEventListener('focus',()=>{if(!entry.dismissed)show(entry);});
@@ -83,7 +93,7 @@
     for(const entry of entries){for(const item of entry.sources){item.marker.after(item.source);if(item.wasOpen!==null)item.source.open=item.wasOpen;}entry.panel.remove();}
   });
   window.addEventListener('afterprint',()=>{
-    for(const entry of entries){entry.sources[0].marker.after(entry.panel);for(const item of entry.sources){entry.panel.append(item.source);if(item.wasOpen!==null)item.source.open=true;}}
+    for(const entry of entries){entry.sources[0].marker.after(entry.panel);for(const item of entry.sources){item.slot.after(item.source);if(item.wasOpen!==null)item.source.open=true;}}
   });
   mount();
   new MutationObserver(mount).observe(doc.body,{childList:true,subtree:true});
