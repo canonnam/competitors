@@ -36,6 +36,7 @@
       daily: group(rows, 'date').sort((a,b) => a.key.localeCompare(b.key)),
       monthly: group(rows, row => row.date.slice(0, 7)).sort((a,b) => a.key.localeCompare(b.key)),
       channels: group(rows, 'channel').sort((a,b) => b.cost-a.cost),
+      campaigns: group(rows, 'entity').sort((a,b) => String(a.channel).localeCompare(String(b.channel), 'ko') || String(a.title).localeCompare(String(b.title), 'ko', {numeric:true}) || String(a.key).localeCompare(String(b.key))),
       creatives: group(data.daily.filter(row => row.level === 'creative' && row.date >= start && row.date <= end), 'entity')};
   }
   const arithmetic = {sum, shift, dayCount, change, group, wilson, selection};
@@ -82,6 +83,7 @@
     }).join('');
     $('comparison-label').textContent = s.comparable ? `비교 기간 ${s.prevStart} ~ ${s.prevEnd} (${s.length}일). 노출 중단과 예산 변경 등 운영 조건의 차이가 포함됩니다.` : '이전 동기간 데이터가 없어 증감률을 표시하지 않습니다.';
     $('range-label').textContent = `${s.start} ~ ${s.end} · ${s.length}일`;
+    $('campaign-coverage').textContent = s.campaigns.length ? `집계 캠페인: ${s.campaigns.map(row=>row.title).join(' · ')}` : '해당 기간에 수집된 캠페인이 없습니다.';
   }
 
   function renderOverview() {
@@ -133,6 +135,7 @@
       {label:'광고비 비중 (%)',data:rows.map(row=>total.cost ? row.cost/total.cost*100 : null),backgroundColor:palette[0],maxBarThickness:36},
       {label:'클릭 비중 (%)',data:rows.map(row=>total.clicks ? row.clicks/total.clicks*100 : null),backgroundColor:palette[1],maxBarThickness:36}]});
     $('channel-table').innerHTML = table(rows,'광고 유형',row=>esc(row.key));
+    $('campaign-table').innerHTML = table(selected.campaigns,'캠페인',row=>`${esc(row.title)}<span>${esc(row.channel)}${!row.impressions && !row.clicks && !row.cost ? ' · 선택 기간 실적 없음' : ''}</span>`);
   }
 
   function renderCreatives() {
@@ -228,8 +231,8 @@
   $('download').addEventListener('click',()=>{
     if(!selected)return;
     const csvCell=value=>{const text=String(value??'');return '"'+(/^[=+@\-]/.test(text)?"'":'')+text.replace(/"/g,'""')+'"';};
-    const header=['날짜','광고 유형','노출 수','클릭 수','광고비(원, VAT 포함)','CTR(%)','CPC(원)'];
-    const rows=selected.rows.map(row=>{const m=sum([row]);return [row.date,row.channel,m.impressions,m.clicks,m.cost,m.ctr,m.cpc];});
+    const header=['날짜','광고 유형','캠페인','노출 수','클릭 수','광고비(원, VAT 포함)','CTR(%)','CPC(원)'];
+    const rows=selected.rows.map(row=>{const m=sum([row]);return [row.date,row.channel,row.title,m.impressions,m.clicks,m.cost,m.ctr,m.cpc];});
     const content='\uFEFF'+[header,...rows].map(row=>row.map(csvCell).join(',')).join('\r\n');
     const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
     const link=document.createElement('a');link.href=url;link.download=`더비다_인천_광고_${selected.start}_${selected.end}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);

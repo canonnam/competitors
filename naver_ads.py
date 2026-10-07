@@ -359,11 +359,10 @@ def report(path, now=None, summary=False):
                 GROUP BY m.day ORDER BY m.day""", (first, through))] if through else []
         else:
             daily = [dict(row) for row in db.execute("""SELECT m.day AS date,e.level,e.channel,
-            CASE WHEN e.level='creative' THEN e.id ELSE e.channel END AS entity,
-            CASE WHEN e.level='creative' THEN e.title ELSE e.channel END AS title,
+            e.id AS entity,e.title AS title,
             SUM(m.impressions) AS impressions,SUM(m.clicks) AS clicks,SUM(m.cost) AS cost
             FROM metrics m JOIN entities e ON e.id=m.entity_id
-            GROUP BY m.day,e.level,entity,title ORDER BY m.day,e.level,entity""")]
+            GROUP BY m.day,e.id ORDER BY m.day,e.level,e.id""")]
     config = load_config()
     enabled = configured(config) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true"
     result = {"branch": "더비다요양원 인천점", "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),

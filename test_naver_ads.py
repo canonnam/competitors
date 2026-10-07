@@ -124,6 +124,48 @@ class ReportTests(unittest.TestCase):
         self.assertFalse(result["sync"]["stale"])
         self.assertEqual(sum(row["clicks"] for row in result["daily"] if row["level"]=="campaign"),5)
 
+    def test_report_keeps_campaign_ids_and_names_including_inactive_history(self):
+        with ads.connect(self.path) as db:
+            db.executemany("INSERT INTO entities VALUES (?,?,?,?,?)", [
+                ('power-2','campaign','파워링크','파워링크#2',1),
+                ('power-3','campaign','파워링크','파워링크#3',1),
+                ('old-power-3','campaign','파워링크','파워링크#3',0),
+                ('creative-3','creative','파워링크','소재',1)])
+            db.executemany("INSERT INTO metrics VALUES (?,?,?,?,?)", [
+                ('power-2','2026-09-06',100,5,900),
+                ('power-3','2026-09-06',200,8,1200),
+                ('old-power-3','2026-09-06',30,2,100),
+                ('creative-3','2026-09-06',200,8,1200),
+                ('power-3','2026-09-05',0,0,0)])
+        result=ads.report(self.path,self.now)
+        rows={r['entity']:r for r in result['daily'] if r['level']=='campaign' and r['date']=='2026-09-06'}
+        self.assertEqual(set(rows),{'power-2','power-3','old-power-3'})
+        self.assertEqual(rows['power-2']['title'],'파워링크#2')
+        self.assertEqual(rows['power-3']['title'],'파워링크#3')
+        self.assertEqual(rows['old-power-3']['clicks'],2)
+        self.assertEqual(sum(r['clicks'] for r in rows.values()),15)
+        self.assertEqual(sum(r['cost'] for r in rows.values()),2200)
+        compact=ads.report(self.path,self.now,summary=True)
+        self.assertEqual(sum(r['clicks'] for r in compact['daily']),15)
+        zero=next(r for r in result['daily'] if r['entity']=='power-3' and r['date']=='2026-09-05')
+        self.assertEqual(zero['impressions'],0)
+
+    def test_new_campaign_is_backfilled_without_double_counting_on_repeat_sync(self):
+        class CampaignClient(FakeClient):
+            def get(self,uri,params=None):
+                if uri=='/ncc/campaigns':
+                    return [dict(nccCampaignId=key,campaignTp='WEB_SITE',name=name) for key,name in
+                            [('campaign-1','파워링크#2'),('campaign-3','파워링크#3')]]
+                return super().get(uri,params)
+        client=CampaignClient()
+        ads.sync(self.path,client,self.now)
+        new_spans=[json.loads(p['timeRange']) for uri,p in client.calls if uri=='/stats' and p['id']=='campaign-3']
+        self.assertEqual(new_spans[0]['since'],ads.START.isoformat())
+        self.assertEqual(new_spans[-1]['until'],'2026-09-07')
+        before=ads.report(self.path,self.now)['daily']
+        ads.sync(self.path,CampaignClient(),self.now)
+        self.assertEqual(ads.report(self.path,self.now)['daily'],before)
+
     def test_http_report_and_private_files_for_get_and_head(self):
         ads.sync(self.path,FakeClient(),self.now)
         server=ThreadingHTTPServer(("127.0.0.1",0),app.App)

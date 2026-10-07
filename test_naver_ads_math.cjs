@@ -38,3 +38,24 @@ test('Wilson intervals represent zero-click uncertainty, not certain failure', (
   assert.ok(full[0]>96 && full[0]<97);
   assert.ok(Math.abs(full[1]-100)<1e-10);
 });
+
+test('Powerlink campaigns stay separate while channel and overall totals include both exactly once', () => {
+  const row=(entity,title,impressions,clicks,cost,date='2026-09-06',level='campaign')=>({entity,title,channel:'파워링크',date,level,impressions,clicks,cost});
+  const data={since:'2025-02-01',daily:[
+    row('power-2','파워링크#2',100,5,900),row('power-3','파워링크#3',900,9,2700),
+    row('creative-3','소재',900,9,2700,'2026-09-06','creative'),
+    row('power-3','파워링크#3',10,1,20,'2026-09-05'),
+    row('power-1','파워링크#1',0,0,0),row('old-3','파워링크#3',0,0,0)
+  ]};
+  const result=selection(data,'2026-09-06','2026-09-06');
+  assert.equal(result.campaigns.length,4);
+  assert.equal(result.campaigns.find(r=>r.key==='power-2').clicks,5);
+  assert.equal(result.campaigns.find(r=>r.key==='power-3').clicks,9);
+  assert.equal(result.channels.length,1);
+  assert.deepEqual(result.channels.map(r=>[r.key,r.impressions,r.clicks,r.cost]),[['파워링크',1000,14,3600]]);
+  assert.equal(result.total.clicks,14);
+  assert.ok(Math.abs(result.total.ctr-1.4)<1e-12);
+  assert.equal(result.total.cpc,3600/14);
+  assert.equal(result.previous.clicks,1);
+  assert.equal(result.campaigns.find(r=>r.key==='power-1').cpc,null);
+});
