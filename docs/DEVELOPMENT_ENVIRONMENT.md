@@ -2,6 +2,12 @@
 
 확인일: 2026-10-08. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
+## 시설 맞춤 대시보드 랜딩 접수
+
+- 웹 dev 주소: `https://thevidaweb-dev.up.railway.app/facility-dashboard`. `POST /api/dashboard-inquiry`가 기존 서버 간 `POST /api/website-intake` 연결을 사용한다. 추가 환경 변수나 DB 스키마 변경은 없다.
+- `data.service=facility-dashboard`일 때 `facilityType`(요양원/주야간보호/방문요양/기타 장기요양기관), `position`(대표/시설장/실무 담당자/기타)을 필수로 검사하고 `message`는 최대 2,000자로 저장한다. `trial`은 구축 신청, `pricing`은 구축 상담으로 표시한다. 기존 홈페이지 자료에 새 필드가 없으면 기존 처리와 표시를 유지한다.
+- dev 신청은 `environment=dev`로 기존 상담함의 dev 필터에서 확인한다. 이 기능은 `petdev` → `competitors/dev`에만 배포한다. 상담함 조회는 기존 전체 사이트 인증이 필요하며, 외부 접수의 Bearer 인증 예외는 POST에만 유지한다.
+
 ## 저장소와 실행 구조
 
 | 항목 | 현재 구성 |

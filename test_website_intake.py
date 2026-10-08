@@ -12,6 +12,7 @@ import uuid
 import app
 import support_applications as support
 import website_intake as intake
+import facility_access as access
 
 
 class WebsiteIntakeTest(unittest.TestCase):
@@ -21,6 +22,8 @@ class WebsiteIntakeTest(unittest.TestCase):
             'WEBSITE_INTAKE_DB_PATH': self.temp.name + '/requests.db',
             'SUPPORT_DB_PATH': self.temp.name + '/support.db',
             'WEBSITE_INTAKE_SECRET': 'test-create-only', 'SUPPORT_ACCESS_KEY': 'test-operator',
+            access.HASH_ENV: access.make_password_hash('intake-test-password'),
+            'SITE_ACCESS_DB_PATH': self.temp.name + '/access.db', 'RAILWAY_ENVIRONMENT_ID': '',
         })
         self.env.start(); intake.init_db(); support.init_db()
         class QuietApp(app.App):
@@ -28,6 +31,8 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.server = app.ThreadingHTTPServer(('127.0.0.1', 0), QuietApp)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
+        _, headers, _ = self.request('POST', access.PREFIX+'session', {'password':'intake-test-password'})
+        self.site_cookie = headers['Set-Cookie'].split(';')[0]
 
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
@@ -38,9 +43,12 @@ class WebsiteIntakeTest(unittest.TestCase):
         if kind == 'visit': data = {'branch': 'anyang', 'date': '2099-09-15', 'time': '10:00', 'elderName': '가상 어르신', 'guardianName': '가상 보호자', 'guardianPhone': '010-0000-0000', 'relationship': '자녀', 'inquiryType': '입소 상담', 'message': '<script>가상 내용</script>', 'privacyConsent': True}
         return {'id': str(uuid.uuid4()), 'kind': kind, 'environment': 'dev', 'clientHash': 'a'*64, 'data': data}
 
-    def request(self, method, path, body=None, headers=None):
+    def request(self, method, path, body=None, headers=None, authenticated=True):
         conn = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=10)
-        conn.request(method, path, json.dumps(body) if body is not None else None, {'Content-Type': 'application/json', **(headers or {})})
+        request_headers = {'Content-Type': 'application/json', 'Origin': f'http://127.0.0.1:{self.server.server_port}', **(headers or {})}
+        if authenticated and getattr(self, 'site_cookie', None):
+            request_headers['Cookie'] = '; '.join(filter(None, (self.site_cookie, request_headers.get('Cookie'))))
+        conn.request(method, path, json.dumps(body) if body is not None else None, request_headers)
         response = conn.getresponse(); raw = response.read()
         result = response.status, dict(response.getheaders()), json.loads(raw) if raw and response.getheader('Content-Type', '').startswith('application/json') else raw
         conn.close(); return result
@@ -57,6 +65,7 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.request('POST', intake.INGEST, self.payload())[0], 401)
         self.assertEqual(self.request('GET', intake.INGEST)[0], 405)
         for method in ('GET', 'HEAD'):
+            self.assertEqual(self.request(method, intake.ADMIN, authenticated=False)[0], 401)
             self.assertEqual(self.request(method, intake.ADMIN)[0], 200)
             self.assertEqual(self.request(method, intake.ADMIN+'/summary')[0], 200)
         self.assertEqual(self.request('GET', '/api/support/profile')[0], 200)
@@ -77,7 +86,7 @@ class WebsiteIntakeTest(unittest.TestCase):
             p = self.payload(kind); status, _, result = self.submit(p)
             self.assertEqual(status, 201); self.assertTrue(result['received']); ids.append(p['id'])
         intake.init_db()
-        cookie = {}  # Listing, filters and updates work without a support session.
+        cookie = {}  # Site password is required; a separate support session is unnecessary.
         status, headers, result = self.request('GET', intake.ADMIN, headers=cookie)
         self.assertEqual(status, 200); self.assertEqual(result['total'], 3)
         self.assertEqual(headers['Cache-Control'], 'no-store')
@@ -96,6 +105,37 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.submit(p)[0], 409)
         for _ in range(4): self.assertEqual(self.submit(self.payload())[0], 201)
         self.assertEqual(self.submit(self.payload())[0], 429)
+
+    def test_dashboard_inquiry_round_trip_and_retry(self):
+        p = self.payload('pricing')
+        p['data'].update(service='facility-dashboard', facilityType='요양원',
+                         position='시설장', message='  운영손익과 상담을 함께 확인하고 싶습니다.  ')
+        self.assertEqual(self.submit(p)[0], 201)
+        self.assertEqual(self.submit(p)[2]['duplicate'], True)
+        intake.init_db()
+        result = self.request('GET', intake.ADMIN+'?environment=dev')[2]
+        self.assertEqual(result['total'], 1)
+        card = result['cards'][0]
+        self.assertEqual(card['data']['service'], 'facility-dashboard')
+        self.assertEqual(card['data']['facilityType'], '요양원')
+        self.assertEqual(card['data']['position'], '시설장')
+        self.assertEqual(card['data']['message'], '운영손익과 상담을 함께 확인하고 싶습니다.')
+        self.assertEqual(card['environment'], 'dev')
+        self.assertEqual(self.request('GET', intake.ADMIN+'/summary')[2]['total'], 0)
+        p['data']['message'] = '변경된 문의'
+        self.assertEqual(self.submit(p)[0], 409)
+
+    def test_dashboard_optional_fields_are_bounded_and_validated(self):
+        for changes in ({'service':'unknown'}, {'facilityType':'unknown'},
+                        {'position':'unknown'}, {'message':'x'*2001}, {'message':[]}):
+            p = self.payload('trial')
+            p['data'].update(service='facility-dashboard', facilityType='주야간보호',
+                             position='대표', message='')
+            p['data'].update(changes)
+            self.assertEqual(self.submit(p)[0], 400)
+        p = self.payload('visit'); p['data']['service'] = 'facility-dashboard'
+        self.assertEqual(self.submit(p)[0], 400)
+        self.assertEqual(self.request('GET', intake.ADMIN)[2]['total'], 0)
 
     def test_open_summary_is_production_only_and_contains_no_applicant_data(self):
         cookie = {}

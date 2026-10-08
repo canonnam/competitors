@@ -25,6 +25,9 @@
     name: "신청자",
     organization: "기관명",
     phone: "연락처",
+    service: "신청 서비스",
+    facilityType: "시설 유형",
+    position: "직책",
   };
   const drafts = new Map();
   const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -53,6 +56,9 @@
     return n;
   };
   const applicant = (item) => item.data.guardianName || item.data.name;
+  const inquiryLabel = (item) => item.data.service === "facility-dashboard"
+    ? (item.kind === "trial" ? "대시보드 구축 신청" : "대시보드 구축 상담")
+    : kinds[item.kind];
   const dateText = (value) => dateFormatter.format(new Date(value));
   const timeText = (value) => timeFormatter.format(new Date(value));
   const statusBadge = (status) =>
@@ -114,12 +120,12 @@
         const row = make("tr", selectedId === item.id ? "is-selected" : "");
         row.dataset.requestId = item.id;
         const titleCell = make("td"),
-          title = make("button", "request-title", kinds[item.kind]);
+          title = make("button", "request-title", inquiryLabel(item));
         title.type = "button";
         title.dataset.requestId = item.id;
         title.setAttribute(
           "aria-label",
-          applicant(item) + " · " + kinds[item.kind] + " 상세 보기",
+          applicant(item) + " · " + inquiryLabel(item) + " 상세 보기",
         );
         title.setAttribute("aria-controls", "request-detail");
         if (selectedId === item.id) title.setAttribute("aria-current", "true");
@@ -218,7 +224,7 @@
     const body = make("div", "detail-body"),
       meta = make("div", "detail-meta");
     meta.append(
-      make("span", "badge", kinds[item.kind]),
+      make("span", "badge", inquiryLabel(item)),
       statusBadge(item.status),
       make(
         "span",
@@ -242,6 +248,7 @@
     for (const [key, label] of Object.entries(fields))
       if (item.data[key]) {
         let value = item.data[key];
+        if (key === "service" && value === "facility-dashboard") value = "시설 맞춤 대시보드";
         if (key === "branch") value = branches[value];
         if (key === "inquiryType")
           value =
