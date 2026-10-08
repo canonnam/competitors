@@ -23,6 +23,9 @@
 .dash-residents { grid-column:1 / -1; }
 .dash-resident-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
 .dash-resident-toolbar select { width:auto; margin:0; }
+.dash-resident-summary { display:flex; flex-wrap:wrap; gap:8px 24px; font-size:14px; font-variant-numeric:tabular-nums; }
+.dash-resident-summary p { margin:0; }
+.dash-resident-summary span { color:var(--ui-muted); }
 .dash-resident-scroll { max-width:100%; }
 .dash-resident-table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .dash-resident-table :is(th,td) { padding:10px 12px; text-align:center; border-bottom:1px solid var(--ui-border); min-width:52px; }
@@ -31,6 +34,8 @@
 .dash-resident-table tbody th { font-weight:500; }
 .dash-resident-table th[scope=rowgroup] { background:var(--ui-surface); text-align:left; min-width:76px; }
 .dash-resident-table .is-current { background:var(--ui-selected); }
+.dash-resident-table .dash-resident-total { background:var(--ui-surface); min-width:80px; }
+.dash-resident-total small { display:block; margin-top:3px; color:var(--ui-muted); font-size:12px; font-weight:400; }
 .dash-resident-unknown { color:var(--ui-muted); font-weight:400; }
 .dash-resident-footer { margin-top:12px!important; font-size:13px; }
 .dash-operating-meta { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px; }

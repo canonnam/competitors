@@ -60,10 +60,12 @@ def deleted(row):
     return row.get('is_deleted') is True or bool(row.get('deleted_at')) or row.get('status') == 'deleted'
 
 
-def rows(ident, endpoint, status=None):
+def rows(ident, endpoint, status=None, date=None):
     params = {'nursing_home': ident}
     if status:
         params['status'] = status
+    if date:
+        params['date'] = date
     path = endpoint + '?' + urlencode(params)
     visited, seen, total = set(), set(), 0
     deadline = time.monotonic() + 60
@@ -72,6 +74,7 @@ def rows(ident, endpoint, status=None):
         query = parse_qs(url.query)
         if (url.scheme != 'https' or url.netloc != urlsplit(erp.BACKEND).netloc or url.path != endpoint
                 or query.get('nursing_home') != [str(ident)] or (status and query.get('status') != [status])
+                or (date and query.get('date') != [date])
                 or url.geturl() in visited or len(visited) >= 100):
             raise erp.ApiError(502, 'ERP 입·퇴소 목록의 지점과 페이지 연결을 확인해주세요.')
         visited.add(url.geturl())
@@ -115,8 +118,20 @@ def bundle(ident):
     # Only counts survive the collection. Names, IDs and individual dates are discarded.
     months = [{'month': month, 'admitted': len(admissions.get(month, ())),
                'discharged': len(discharges.get(month, ()))} for month in sorted(admissions.keys() | discharges.keys())]
+    year_starts = []
+    years = {cutoff.year} | {int(month['month'][:4]) for month in months}
+    for year in sorted(years):
+        date = f'{year:04}-01-01'
+        try:
+            occupancy = sum(1 for _ in rows(ident, '/api/elderly/list/', date=date))
+            year_starts.append({'year': year, 'date': date, 'occupancy': occupancy, 'error': None})
+        except Exception:
+            # A failed rate denominator must not discard valid monthly counts.
+            year_starts.append({'year': year, 'date': date, 'occupancy': None,
+                                'error': '연초 현원을 조회하지 못했습니다.'})
     return {'id': ident, 'name': erp.BRANCHES[ident], 'asOf': cutoff.isoformat(),
-            'checkedAt': now().isoformat(timespec='seconds'), 'missingAdmissionDates': missing, 'months': months}
+            'checkedAt': now().isoformat(timespec='seconds'), 'missingAdmissionDates': missing,
+            'months': months, 'yearStarts': year_starts}
 
 
 def collect_once():

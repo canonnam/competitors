@@ -24,6 +24,10 @@ def synthetic(path, access=None, body=None, timeout=15):
     if url.path == '/api/token/refresh/':
         return {'access': 'synthetic-refreshed-123456789'}
     ident = int(parse_qs(url.query)['nursing_home'][0])
+    if url.path == '/api/elderly/list/':
+        assert parse_qs(url.query)['date'] == ['2026-01-01']
+        return [{'id': 101, 'nursing_home': ident, 'name': 'PRIVATE-BASELINE'},
+                {'id': 102, 'nursing_home': ident}]
     if url.path == '/api/elderly/':
         assert parse_qs(url.query)['status'] == ['all']
         if 'page=2' in url.query:
@@ -62,8 +66,10 @@ class MovementTests(unittest.TestCase):
             self.assertEqual(branch['months'], [{'month': '2026-09', 'admitted': 1, 'discharged': 1},
                                                {'month': '2026-10', 'admitted': 1, 'discharged': 1}])
             self.assertEqual(branch['missingAdmissionDates'], 1)
+            self.assertEqual(branch['yearStarts'], [{'year': 2026, 'date': '2026-01-01', 'occupancy': 2, 'error': None}])
         raw = json.dumps(M.STATE)
-        self.assertNotIn('PRIVATE-NAME', raw); self.assertNotIn('elderly', raw); self.assertNotIn('admission_date', raw)
+        self.assertNotIn('PRIVATE-NAME', raw); self.assertNotIn('PRIVATE-BASELINE', raw)
+        self.assertNotIn('elderly', raw); self.assertNotIn('admission_date', raw)
         self.assertEqual(M.month_key('2026-09-30T23:30:00-07:00', NOW.date()), '2026-10')
         self.assertEqual(M.month_key('2026-09-30T23:30:00', NOW.date()), '2026-09')
         with self.assertRaises(E.ApiError): M.month_key('2026-02-30', NOW.date())
@@ -111,6 +117,38 @@ class MovementTests(unittest.TestCase):
         self.upstream.side_effect = expired; M.collect_once()
         self.assertFalse(M.report()['branches'][0]['stale'])
         self.assertEqual(M.report()['branches'][0]['months'], [])
+
+    def test_year_start_failure_keeps_counts_and_zero_baseline_is_valid(self):
+        def lookup(path, *args, **kwargs):
+            if urlsplit(path).path == '/api/elderly/list/':
+                if 'nursing_home=2' in path: raise E.ApiError(502, '합성 기준 현원 조회 실패')
+                return []
+            return synthetic(path, *args, **kwargs)
+        self.upstream.side_effect = lookup; M.collect_once()
+        first, second = M.report()['branches']
+        self.assertFalse(first['stale']); self.assertEqual(len(first['months']), 2)
+        self.assertIsNone(first['yearStarts'][0]['occupancy']); self.assertTrue(first['yearStarts'][0]['error'])
+        self.assertEqual(second['yearStarts'][0]['occupancy'], 0); self.assertIsNone(second['yearStarts'][0]['error'])
+
+    def test_year_start_pagination_retains_date_and_collects_each_observed_year(self):
+        requested = []
+        def lookup(path, *args, **kwargs):
+            url = urlsplit(path); query = parse_qs(url.query)
+            if url.path == '/api/elderly/':
+                return [{'id': 1, 'admission_date': '2025-12-01'}]
+            if url.path == '/api/elderly/list/':
+                date, ident = query['date'][0], query['nursing_home'][0]
+                requested.append((ident, date))
+                if query.get('page') == ['2']: return {'results': [{'id': 102}], 'next': None}
+                return {'results': [{'id': 101}], 'next': f'/api/elderly/list/?nursing_home={ident}&date={date}&page=2'}
+            return synthetic(path, *args, **kwargs)
+        self.upstream.side_effect = lookup; M.collect_once()
+        for branch in M.report()['branches']:
+            self.assertEqual([s['year'] for s in branch['yearStarts']], [2025, 2026])
+            self.assertTrue(all(s['occupancy'] == 2 for s in branch['yearStarts']))
+        self.assertIn(('2','2025-01-01'), requested)
+        self.upstream.side_effect = lambda *a, **k: {'results': [], 'next': '/api/elderly/list/?nursing_home=2&date=2026-01-02'}
+        with self.assertRaises(E.ApiError): list(M.rows(2, '/api/elderly/list/', date='2026-01-01'))
 
     def test_authenticated_http_reads_only_cached_aggregates_and_head_has_no_body(self):
         M.collect_once(); calls = self.upstream.call_count
