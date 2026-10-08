@@ -1,6 +1,6 @@
 # 더비다 지식 창고 개발 환경
 
-확인일: 2026-10-05. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
+확인일: 2026-10-08. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
 ## 저장소와 실행 구조
 
@@ -58,7 +58,7 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - 홈페이지·모든 HTML·외부 지원사업 공유·종사자 응시 페이지와 인코딩·상대 경로는 인증 전 독립 로그인 화면을 응답한다. 성공하면 현재 URL을 새로고침하여 경로·쿼리·해시를 유지한다. 내부 탐색·업무 데이터 스크립트는 로그인 화면에 포함하지 않는다. 지도에는 별도 인증 화면이 없다.
 - 모든 조회·작성 API와 데이터·문서·업무 자산 직접 주소는 인증 전 401이다. 인증 후 쓰기는 동일 출처도 확인한다. 로그인용 favicon·robots·foundation CSS·로그인 CSS/JS만 방문자에게 제공한다. Python 소스·DB·환경 파일은 인증 후에도 기존 정적 허용 목록에서 제외한다.
 - 기존 외부 홈페이지 접수 `POST /api/website-intake`만 별도 서버 Bearer 비밀 인증을 유지한다. 방문자 조회·업무 진입의 예외가 아니며 GET·HEAD는 공통 잠금으로 차단한다. 외부 링크의 범위·만료와 응시자 본인 확인은 공통 인증 이후 기존 구현을 그대로 적용한다.
-- 검증: `python -m unittest test_facility_access.py test_facility_assets.py test_facility_projects.py test_facility_collection.py test_ui_consistency.py test_static_pages.py`; `node --check assets/facility-map-login.js`; `node --check assets/facility-3d.js`.
+- 검증: `python -m unittest test_facility_access.py test_facility_assets.py test_facility_projects.py test_facility_collection.py test_ui_consistency.py test_static_pages.py`; `node --check assets/facility-map-login.js`; `node --check assets/facility-3d.js`; `node --test test_site_access_login.cjs`.
 
 ## 시설 3D 지도 구성
 
