@@ -1,0 +1,28 @@
+.site-access-main {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 24px 16px;
+}
+.site-access { margin: 0; }
+.site-access-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-card-radius);
+}
+.site-access-brand { margin: 0 0 24px; color: var(--ui-primary); font-weight: 700; }
+.site-access-card h1 { margin: 0; font-size: 24px; line-height: 1.5; overflow-wrap: anywhere; }
+.site-access-description { margin: 12px 0 24px; color: var(--ui-muted); }
+.site-access-form { display: grid; gap: 12px; }
+.site-access-form label { font-weight: 600; }
+.site-access-form input { box-sizing: border-box; width: 100%; min-width: 0; font-size: 16px; }
+.site-access-form button { width: 100%; margin-top: 4px; }
+.site-access-form .ui-status { margin: 0; }
+.site-access-duration { margin: 24px 0 0; color: var(--ui-muted); font-size: 14px; }
+@media (max-width: 480px) { .site-access-card { padding: 24px; } }

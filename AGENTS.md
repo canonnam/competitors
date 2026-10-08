@@ -13,6 +13,8 @@
 
 ## Existing application
 
+- The whole Site requires the shared server password before any page, API, or data asset, including external share and staff evaluation entry pages. Only the minimal login assets and the existing Bearer-authenticated website ingestion POST bypass this visitor gate. Reuse `facility_access.py` and the existing password-hash variable; do not restore anonymous business routes or a separate map password prompt.
+
 This repository is the existing Python/static application served at `app.aivida.tech`. Preserve its architecture and Railway deployment flow; do not initialize a replacement app or migrate hosting to perform a UI edit. Do not change secrets, storage, collectors, business calculations, or authentication as part of styling work.
 
 ## Change history

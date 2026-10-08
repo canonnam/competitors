@@ -1,4 +1,4 @@
-"""Password gate for the facility map and its data. Secrets stay on the server."""
+"""Site-wide password gate, reusing the map's server-only password hash."""
 from http.cookies import SimpleCookie, CookieError
 from io import BytesIO
 from pathlib import Path
@@ -12,10 +12,18 @@ import time
 from urllib.parse import urlsplit
 import facility_observation as erp
 
-PREFIX = '/api/facility-map-access/'
-COOKIE = 'vida_facility_map'
+PREFIX = '/api/site-access/'
+LEGACY_PREFIX = '/api/facility-map-access/'
+COOKIE = 'vida_knowledge_access'
 TTL = 24 * 60 * 60
 HASH_ENV = 'FACILITY_MAP_PASSWORD_HASH'
+ROOT = Path(__file__).resolve().parent
+LOGIN_ASSETS = {
+    ROOT / 'favicon.ico', ROOT / 'robots.txt',
+    ROOT / 'assets' / 'ui-foundation.css',
+    ROOT / 'assets' / 'site-access.css',
+    ROOT / 'assets' / 'facility-map-login.js',
+}
 ATTEMPTS = {}
 LOCK = threading.Lock()
 
@@ -32,7 +40,8 @@ def setting():
 
 
 def signature(value):
-    return hmac.new(setting().encode(), ('facility-map:' + value).encode(), hashlib.sha256).hexdigest()
+    # A new scope invalidates previously issued map-only cookies at rollout.
+    return hmac.new(setting().encode(), ('knowledge-site:' + value).encode(), hashlib.sha256).hexdigest()
 
 
 def issue_cookie():
@@ -62,7 +71,7 @@ def cookie_header(handler, value='', age=0):
 def require(handler, head=False):
     if authorized(handler):
         return True
-    erp.send(handler, 401, {'error': '비밀번호 인증이 필요합니다.', 'code': 'facility_map_locked'}, head)
+    erp.send(handler, 401, {'error': '지식 창고 비밀번호 인증이 필요합니다.', 'code': 'site_locked'}, head)
     return False
 
 
@@ -83,7 +92,10 @@ def rate_limit(handler):
 
 def handle(handler, method):
     path = urlsplit(handler.path).path
-    if path == PREFIX + 'session':
+    handler._site_access_protected = True
+    handler._site_cache_sent = False
+    handler._site_vary_sent = False
+    if path in (PREFIX + 'session', LEGACY_PREFIX + 'session'):
         head = method == 'HEAD'
         try:
             if method in ('GET', 'HEAD'):
@@ -95,7 +107,7 @@ def handle(handler, method):
                     raise erp.ApiError(400, '비밀번호를 입력해주세요.')
                 stored = setting()
                 if not stored:
-                    raise erp.ApiError(503, '지도 비밀번호 설정을 확인해주세요.')
+                    raise erp.ApiError(503, '지식 창고 비밀번호 설정을 확인해주세요.')
                 ip, attempt = rate_limit(handler)
                 _, rounds, salt, expected = stored.split('$')
                 actual = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), int(rounds)).hex()
@@ -114,8 +126,31 @@ def handle(handler, method):
         except erp.ApiError as error:
             erp.send(handler, error.status, {'error': error.message}, head)
         return True
-    protected = path.startswith('/api/facility-projects/') or path in (erp.PREFIX + 'data', erp.PREFIX + 'residents')
-    return protected and not require(handler, method == 'HEAD')
+    # Machine ingestion keeps its existing Bearer-secret check in website_intake.
+    if path == '/api/website-intake' and method == 'POST':
+        return False
+    resolved = Path(handler.translate_path(handler.path)).resolve()
+    if method in ('GET', 'HEAD') and resolved in LOGIN_ASSETS:
+        handler._site_access_protected = False
+        return False
+    if authorized(handler):
+        if method not in ('GET', 'HEAD'):
+            try:
+                erp.same_origin(handler)
+            except erp.ApiError:
+                erp.send(handler, 403, {'error': '지식 창고에서 다시 시도해주세요.'})
+                return True
+        return False
+    # Preserve the requested URL. API and file requests never receive HTML data.
+    relative = resolved.relative_to(ROOT) if resolved.is_relative_to(ROOT) else None
+    api = relative is not None and relative.parts and relative.parts[0] == 'api'
+    hidden = relative is not None and any(part.startswith('.') for part in relative.parts)
+    if method in ('GET', 'HEAD') and not api and not hidden and resolved.suffix.lower() in ('', '.html'):
+        with gate_page(handler) as page:
+            if method == 'GET':
+                handler.wfile.write(page.read())
+        return True
+    return not require(handler, method == 'HEAD')
 
 
 def gate_page(handler):

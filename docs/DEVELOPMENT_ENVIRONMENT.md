@@ -50,11 +50,17 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - PDF.js·Tesseract의 기존 자체 제공 파일로 PDF(자동 추출 20페이지)·스캔·JPG·PNG·WEBP를 브라우저에서 읽는다. 보험 이름·가입 인원·가입기간의 명시적 문구를 추출하며 여러 값이 충돌하면 직접 확인을 요구한다. 자동 저장하지 않는다. 입력 및 선택한 새 증서는 ‘확인 후 저장’으로 원자적으로 저장하며 기존 증서는 새 증서 저장 때만 교체한다. 버전 충돌은 409로 막는다.
 - 검증: `python -m unittest test_liability_insurance.py test_ui_consistency.py test_static_pages.py test_card_knowledge.py test_claim_check.py test_facility_collection.py`; `node --test test_liability_certificate.cjs test_liability_ui.cjs test_navigation.cjs test_dashboard.cjs`.
 
+## 전체 사이트 접근 인증
+
+- `facility_access.py`가 `app.App`의 GET·HEAD·POST·DELETE에서 업무 처리보다 먼저 인증한다. 기존 `FACILITY_MAP_PASSWORD_HASH` 비밀 변수의 PBKDF2-SHA256(600,000회·무작위 salt) 값을 그대로 검증하며 비밀번호 원문·hash 값은 소스·문서에 저장하지 않는다. 설정 누락·형식 오류는 잠금 상태다.
+- 서명된 24시간 `vida_knowledge_access` 쿠키는 HttpOnly·SameSite=Strict·운영 HTTPS Secure·Path=/이며 인증 화면·API·업무 파일은 no-store와 Vary: Cookie를 적용한다. 이전 map-only 쿠키는 새 인증으로 인정하지 않아 배포 후 최초 진입 비밀번호를 다시 요구한다. 비밀번호 hash 변경도 기존 인증을 무효화한다. 실패 제한은 IP별 5회/5분·전체 30회/5분이다.
+- `/api/site-access/session`의 POST는 인증, GET·HEAD는 인증 상태, DELETE는 현재 브라우저 잠금이다. 기존 `/api/facility-map-access/session`은 같은 공통 인증의 호환 별칭으로만 유지한다. 3D 지도의 더보기 ‘지식 창고 잠그기’도 전체 쿠키를 지운다.
+- 홈페이지·모든 HTML·외부 지원사업 공유·종사자 응시 페이지와 인코딩·상대 경로는 인증 전 독립 로그인 화면을 응답한다. 성공하면 현재 URL을 새로고침하여 경로·쿼리·해시를 유지한다. 내부 탐색·업무 데이터 스크립트는 로그인 화면에 포함하지 않는다. 지도에는 별도 인증 화면이 없다.
+- 모든 조회·작성 API와 데이터·문서·업무 자산 직접 주소는 인증 전 401이다. 인증 후 쓰기는 동일 출처도 확인한다. 로그인용 favicon·robots·foundation CSS·로그인 CSS/JS만 방문자에게 제공한다. Python 소스·DB·환경 파일은 인증 후에도 기존 정적 허용 목록에서 제외한다.
+- 기존 외부 홈페이지 접수 `POST /api/website-intake`만 별도 서버 Bearer 비밀 인증을 유지한다. 방문자 조회·업무 진입의 예외가 아니며 GET·HEAD는 공통 잠금으로 차단한다. 외부 링크의 범위·만료와 응시자 본인 확인은 공통 인증 이후 기존 구현을 그대로 적용한다.
+- 검증: `python -m unittest test_facility_access.py test_facility_assets.py test_facility_projects.py test_facility_collection.py test_ui_consistency.py test_static_pages.py`; `node --check assets/facility-map-login.js`; `node --check assets/facility-3d.js`.
+
 ## 시설 3D 지도 구성
-
-- `facility_access.py`는 `FACILITY_MAP_PASSWORD_HASH`의 PBKDF2-SHA256(600,000회·무작위 salt) 값을 서버에서 검증한다. 원문은 저장하지 않는다. 설정이 없거나 잘못되면 잠금을 유지한다. 서명한 24시간 쿠키는 HttpOnly·SameSite=Strict·운영 HTTPS Secure이고 인증 HTML·API는 no-store/private다. 비밀번호 hash 변경은 기존 인증도 무효화한다. 실패는 IP별 5회/5분·전체 30회/5분으로 제한한다. hash는 Railway competitors/dev 비밀 변수에 설정하며 Git·문서에 값이나 원문을 기록하지 않는다.
-- `/api/facility-map-access/session`의 POST는 인증, GET은 상태 확인, DELETE는 현재 브라우저 잠금이다. `/facility-3d.html`은 인증 전 `facility-map-login.html`을 응답하고 인증 후 지도 HTML을 제공한다. URL 인코딩·상대 경로로 같은 파일에 접근해도 보호한다. 로그인 HTML 자체와 Python 소스는 독립 공개 경로로 제공하지 않는다. `/api/facility-projects/` 조회·저장·삭제·복구와 관찰 `/data`, `/residents`도 같은 인증을 요구한다. 더보기의 지도 잠그기로 쿠키를 지울 수 있다. ERP 연결 버튼은 추가하지 않는다.
-
 
 - `/facility-3d.html`: 기존 서버의 정적 페이지 목록과 Docker 이미지에 포함하되 비밀번호 인증 후 제공한다. 시설 인수·개설 메뉴, 홈 기능 카드, 지식 질문의 기능 안내에 등록한다.
 - `assets/facility-3d-model.js`: 층·공간·치수와 JSON 도면 파일의 검증 및 공간 배치. `assets/facility-3d.js`는 화면 조작·렌더링을 담당한다.

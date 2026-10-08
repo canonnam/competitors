@@ -2,31 +2,26 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>시설 3D 지도 | 더비다 지식 창고</title>
+  <title>비밀번호 입력 | 더비다 지식 창고</title>
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-  <link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/assets/site.css">
-  <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
-  <link rel="stylesheet" href="/assets/facility-3d.css?v=20261003-labels1">
-  <script src="/assets/site.js" defer></script><script src="/assets/navigation.js?v=20261002-map2" defer></script>
-  <script src="/assets/facility-map-login.js?v=20261002-access1" defer></script>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/assets/site-access.css?v=20261008-access1">
+  <script src="/assets/facility-map-login.js?v=20261008-access1" defer></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20260917-gnb2">
 </head>
-<body class="kb-detail" data-feedback-page="facility-3d">
-  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
-  <main class="facility3d-main">
-    <section class="kb-page-heading">
-      <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/?category=facility">시설 인수·개설</a><span aria-hidden="true">/</span><span aria-current="page">시설 3D 지도</span></nav>
-      <h1>시설 3D 지도</h1>
-    </section>
-    <section class="f3-access-card" aria-labelledby="access-heading">
-      <h2 id="access-heading">비밀번호를 입력해주세요</h2>
-      <p>시설 도면과 입소자 현황을 확인하려면 비밀번호가 필요합니다.</p>
-      <form id="map-access-form" class="f3-form">
-        <label>비밀번호<input id="map-access-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus></label>
-        <button class="ui-button ui-button--primary" id="map-access-submit" type="submit">지도 열기</button>
+<body class="ui-standalone site-access">
+  <main class="site-access-main">
+    <section class="site-access-card" aria-labelledby="access-heading">
+      <p class="site-access-brand">더비다 지식 창고</p>
+      <h1 id="access-heading">비밀번호를 입력해주세요</h1>
+      <p class="site-access-description">지식 창고를 이용하려면 비밀번호가 필요합니다.</p>
+      <form id="map-access-form" class="site-access-form">
+        <label for="map-access-password">비밀번호</label>
+        <input id="map-access-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus aria-describedby="access-duration">
+        <button class="ui-button ui-button--primary" id="map-access-submit" type="submit">지식 창고 들어가기</button>
         <p id="map-access-error" class="ui-status" role="status" aria-live="polite" hidden></p>
       </form>
-      <p class="f3-small">이 브라우저에서 24시간 동안 인증을 유지합니다.</p>
+      <p id="access-duration" class="site-access-duration">이 브라우저에서 24시간 동안 인증을 유지합니다.</p>
     </section>
   </main>
 </body>

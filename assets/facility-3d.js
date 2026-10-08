@@ -167,8 +167,8 @@ $('edit-project-form').onsubmit=event=>{
   project.name=name;project.nursingHomeId=$('edit-project-branch').value?Number($('edit-project-branch').value):null;project.example=false;markDirty();renderUI();rebuild();$('edit-project-dialog').close();status('건물 이름과 ERP 지점을 적용했습니다. 저장을 눌러 보관하세요.');
 };
 $('lock-map').onclick=async()=>{
-  if(dirty&&!window.confirm('저장하지 않은 변경이 있습니다. 저장하지 않고 지도를 잠글까요?'))return;
-  try{const response=await fetch('/api/facility-map-access/session',{method:'DELETE',credentials:'same-origin'});if(!response.ok)throw new Error('지도를 잠그지 못했습니다.');dirty=false;location.replace('/facility-3d.html');}
+  if(dirty&&!window.confirm('저장하지 않은 변경이 있습니다. 저장하지 않고 지식 창고를 잠글까요?'))return;
+  try{const response=await fetch('/api/site-access/session',{method:'DELETE',credentials:'same-origin'});if(!response.ok)throw new Error('지식 창고를 잠그지 못했습니다.');dirty=false;location.replace('/facility-3d.html');}
   catch(error){ui.notify(error.message,true);}
 };
 $('new-project').onclick=()=>{

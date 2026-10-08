@@ -57,7 +57,7 @@ def post_json(url, payload, headers=None):
 class App(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         path = urllib.parse.urlsplit(self.path).path
-        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/') or path.startswith('/api/facility-observation/') or path.startswith('/api/facility-map-access/'):
+        if path.startswith('/api/project-share/') or path.startswith('/api/staff-eval/') or path.startswith('/api/facility-observation/') or path.startswith('/api/facility-map-access/') or path.startswith('/api/site-access/'):
             super().log_message('%s', 'Tokenized request (token redacted)')
         else:
             super().log_message(fmt, *args)
@@ -65,7 +65,23 @@ class App(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def send_header(self, keyword, value):
+        if getattr(self, '_site_access_protected', False):
+            if keyword.lower() == 'cache-control':
+                value = value if 'no-store' in value.lower() else 'no-store, private'
+                self._site_cache_sent = True
+            elif keyword.lower() == 'vary':
+                if 'cookie' not in {part.strip().lower() for part in value.split(',')}:
+                    value += ', Cookie'
+                self._site_vary_sent = True
+        super().send_header(keyword, value)
+
     def end_headers(self):
+        if getattr(self, '_site_access_protected', False):
+            if not self._site_cache_sent:
+                self.send_header('Cache-Control', 'no-store, private')
+            if not self._site_vary_sent:
+                self.send_header('Vary', 'Cookie')
         # Applies to HTML, images, API responses and errors, including HEAD/304.
         self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet, noimageindex")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -306,16 +322,6 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        if path == ROOT / 'facility-3d.html':
-            if not facility_access.authorized(self):
-                return facility_access.gate_page(self)
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
-            self.send_header('Cache-Control', 'no-store, private')
-            self.send_header('Vary', 'Cookie')
-            self.send_header('Content-Length', str(path.stat().st_size))
-            self.end_headers()
-            return path.open('rb')
         public_pages = {"website-requests.html", "support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-uiux.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "borrowing-status.html", "nearby-facilities.html", "statistics.html", "knowledge.html", "facility-acquisition.html", "facility-3d.html"}
         if path == ROOT:
             self.path = "/index.html"

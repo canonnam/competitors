@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 EXTERNAL_PAGES = {'support-share.html', 'staff-eval-session.html'}
+AUTH_PAGES = {'facility-map-login.html'}
 FOUNDATION = '/assets/ui-foundation.css'
 
 
@@ -36,7 +37,7 @@ class UIConsistencyTest(unittest.TestCase):
         pages = sorted(ROOT.glob('*.html'))
         self.assertTrue(pages, 'No HTML entry points found')
         for path in pages:
-            if path.name in EXTERNAL_PAGES:
+            if path.name in EXTERNAL_PAGES | AUTH_PAGES:
                 continue
             with self.subTest(page=path.name):
                 page = Page(path.read_text(encoding='utf-8'))
@@ -64,13 +65,24 @@ class UIConsistencyTest(unittest.TestCase):
 
     def test_internal_headers_use_resolvable_external_destinations(self):
         for path in sorted(ROOT.glob('*.html')):
-            if path.name in EXTERNAL_PAGES:
+            if path.name in EXTERNAL_PAGES | AUTH_PAGES:
                 continue
             with self.subTest(page=path.name):
                 source = path.read_text(encoding='utf-8')
                 self.assertIn('href="https://www.thevida.co.kr/"', source)
                 self.assertIn('href="https://admin.thevida.co.kr/"', source)
                 self.assertNotIn('href="https://thevida.co.kr/"', source)
+
+    def test_site_password_entry_is_standalone_and_has_no_internal_navigation(self):
+        for name in AUTH_PAGES:
+            source = (ROOT / name).read_text(encoding='utf-8')
+            page = Page(source)
+            self.assertEqual(page.stylesheets.count(FOUNDATION), 1)
+            self.assertEqual(page.stylesheets[-1], FOUNDATION)
+            self.assertEqual(page.main_regions, 1)
+            self.assertIn('ui-standalone', source)
+            self.assertNotIn('/assets/navigation.js', page.scripts)
+            self.assertNotIn('/assets/site.js', page.scripts)
 
     def test_future_work_instructions_link_to_the_contract(self):
         instructions = (ROOT / 'AGENTS.md').read_text(encoding='utf-8')
