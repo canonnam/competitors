@@ -236,8 +236,8 @@ class MapAccessTests(unittest.TestCase):
     def test_one_ip_lock_does_not_lock_other_ips_or_an_existing_authenticated_session(self):
         cookie=self.login()
         with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_ID':'synthetic'}):
-            bad={'X-Forwarded-For':'203.0.113.10'}
-            good={'X-Forwarded-For':'203.0.113.11'}
+            bad={'X-Real-IP':'203.0.113.10'}
+            good={'X-Real-IP':'203.0.113.11'}
             key=A.client_key(SimpleNamespace(client_address=('127.0.0.1',0),headers=bad))
             for _ in range(10):
                 with self.assertRaises(A.LoginError): A.record_attempt(key,False)
@@ -261,15 +261,16 @@ class MapAccessTests(unittest.TestCase):
         def key(headers,peer='127.0.0.1'):
             return A.client_key(SimpleNamespace(client_address=(peer,0),headers=headers))
         with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_ID':'synthetic'}):
-            expected=key({'X-Forwarded-For':'203.0.113.20'})
-            self.assertEqual(key({'X-Forwarded-For':'198.51.100.1, 203.0.113.20'}),expected)
+            expected=key({'X-Real-IP':'203.0.113.20'})
+            self.assertEqual(key({'X-Real-IP':'198.51.100.1, 203.0.113.20'}),expected)
             headers=Message()
-            headers.add_header('X-Forwarded-For','198.51.100.1')
-            headers.add_header('X-Forwarded-For','198.51.100.2, 203.0.113.20')
+            headers.add_header('X-Real-IP','198.51.100.1')
+            headers.add_header('X-Real-IP','198.51.100.2, 203.0.113.20')
             self.assertEqual(key(headers),expected)
-            self.assertEqual(key({'X-Forwarded-For':'::ffff:203.0.113.20'}),expected)
-            self.assertEqual(key({'X-Real-IP':'198.51.100.2, 203.0.113.20'}),expected)
-            self.assertEqual(key({'X-Forwarded-For':'invalid'}),key({}))
+            self.assertEqual(key({'X-Real-IP':'::ffff:203.0.113.20'}),expected)
+            self.assertEqual(key({'X-Real-IP':'203.0.113.20','X-Forwarded-For':'198.51.100.2'}),expected)
+            self.assertEqual(key({'X-Real-IP':'invalid'}),key({}))
+            self.assertEqual(key({'X-Forwarded-For':'198.51.100.2'}),key({}))
         self.assertEqual(key({'X-Forwarded-For':'203.0.113.20'}),key({}))
 
     def test_unavailable_attempt_database_fails_closed_before_password_verification(self):

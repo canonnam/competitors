@@ -90,17 +90,15 @@ def require(handler, head=False):
 def client_key(handler):
     address = handler.client_address[0]
     if os.getenv('RAILWAY_ENVIRONMENT_ID'):
-        # Railway appends the verified remote IP; never trust the leftmost value.
-        # Read all header lines so a duplicate user header cannot take precedence.
-        for name in ('X-Forwarded-For', 'X-Real-IP'):
-            values = handler.headers.get_all(name, []) if hasattr(handler.headers, 'get_all') else [handler.headers.get(name, '')]
-            value = ','.join(values).split(',')[-1].strip()
-            if value:
-                try:
-                    address = str(ipaddress.ip_address(value))
-                    break
-                except ValueError:
-                    continue
+        # Railway's documented client header is X-Real-IP. Live ingress forwards
+        # a caller's X-Forwarded-For unchanged, so never use it for lockout identity.
+        values = handler.headers.get_all('X-Real-IP', []) if hasattr(handler.headers, 'get_all') else [handler.headers.get('X-Real-IP', '')]
+        value = ','.join(values).split(',')[-1].strip()
+        if value:
+            try:
+                address = str(ipaddress.ip_address(value))
+            except ValueError:
+                pass
     address = ipaddress.ip_address(address)
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
         address = address.ipv4_mapped
