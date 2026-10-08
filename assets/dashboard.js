@@ -16,6 +16,7 @@
     requests:{title:'상담·무료체험 신청 현황',href:'/website-requests.html'},
     ads:{title:'네이버 광고 추이',href:'/naver-ads.html'},
     operating:{title:'운영비 분석',href:'/operating-costs.html'},
+    residents:{title:'월별 입·퇴소 현황',href:'/'},
     liability:{title:'배상책임보험 운영 현황',href:'/liability-insurance.html'}
   };
   const state={};
@@ -74,6 +75,7 @@
     container.innerHTML=`<div class="dash-heading"><h1 id="dashboard-title">대시보드</h1><time class="dash-date"></time></div>
       <div class="dash-metrics" data-dash-slot="metrics" aria-label="핵심 현황"></div>
       <div class="dash-columns">
+        <section class="dash-panel dash-residents" aria-labelledby="dashboard-residents-title"><div class="dash-panel-head"><h2 id="dashboard-residents-title">월별 입·퇴소 현황</h2></div><div data-ui-help="입·퇴소 집계 기준" data-ui-help-target="#dashboard-residents-title"><p>서울 날짜 기준으로 입소자 목록의 최근 입소일과 퇴소 기록의 퇴소일을 월별로 집계합니다. 퇴소는 지점·월별 어르신 ID를 중복 제거한 인원입니다. 같은 사람이 같은 달에 두 번 퇴소해도 1명으로 셉니다.</p><p>입소 목록은 재원·퇴소자를 포함하고 삭제된 항목은 제외합니다. 재입소 시 최근 입소일로 바뀌므로 과거 입소가 누락될 수 있습니다. 입소일 미등록자는 제외하며 해당 인원을 표시합니다. 월말 현원과는 다른 수치입니다.</p><p>매시간 자동 수집합니다. 이번 달은 조회 기준일까지의 인원이며, 실패·미조회는 0명으로 표시하지 않습니다.</p></div><div data-dash-slot="residents" aria-live="polite"></div></section>
         <section class="dash-panel dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">월별 운영손익</h2><a href="/operating-costs.html">운영비 상세 보기</a></div><div data-dash-slot="operating"></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="requests-time"></span><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests" aria-label="신청 현황 새로고침">새로고침</button></div></section>
@@ -117,6 +119,7 @@
       const adsExpanded=!!container.querySelector('[data-dash-slot="ads"] details[open]');
       slot('ads',win.DashboardAds?win.DashboardAds.render(state.ads,adsExpanded):'<p class="dash-empty">광고 추이 확인 중</p>');
       slot('operating',win.DashboardOperating?win.DashboardOperating.render(state.operating):'<p class="dash-empty">운영비 자료를 불러오는 중입니다.</p>');
+      slot('residents',win.DashboardResidents?win.DashboardResidents.render(state.residents):'<p class="dash-empty">입·퇴소 현황 확인 중</p>');
     }
     redraw=draw;win.NewsBadge?.subscribe(draw);draw();
     win.addEventListener('pageshow',draw);

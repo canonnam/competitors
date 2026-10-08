@@ -8,6 +8,7 @@ function boot(query='') {
   w.setInterval=()=>0;
   w.DashboardAds=require('../assets/dashboard-ads.js');
   w.DashboardOperating=require('../assets/dashboard-operating.js');
+  w.DashboardResidents=require('../assets/dashboard-residents.js');
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   w.HTMLDialogElement.prototype.close=function(){this.open=false;};
   const liveNodes=[...w.document.querySelectorAll('[id^="home-"]')];
@@ -39,8 +40,12 @@ try {
   assert.ok(d.getElementById('dashboard-requests-title'));
   assert.ok(d.getElementById('dashboard-ads-title'));
   assert.ok(d.getElementById('dashboard-operating-title'));
-  assert.ok(d.querySelector('.dash-columns > :first-child').contains(d.getElementById('dashboard-operating-title')),'operating graph is directly below the four metrics');
+  assert.ok(d.querySelector('.dash-columns > :first-child').contains(d.getElementById('dashboard-residents-title')),'monthly resident movement is directly below the four metrics');
+  assert.ok(d.querySelector('.dash-residents').nextElementSibling.contains(d.getElementById('dashboard-operating-title')),'monthly resident movement is directly above operating profit');
   assert.equal(d.querySelector('.dash-metrics').nextElementSibling,d.querySelector('.dash-columns'));
+  w.HomeDashboard.update('residents',{schemaVersion:1,today:'2026-10-08',branches:[{id:2,name:'안양점',asOf:'2026-10-08',months:[{month:'2026-09',admitted:4,discharged:2}],stale:false},{id:3,name:'인천점',asOf:'2026-10-08',months:[],stale:false}]});
+  assert.ok(d.querySelector('[aria-label="안양점 9월 입소 4명"]'),'actual dashboard accepts and displays the movement collector');
+  w.HomeDashboard.fail('residents');assert.match(d.querySelector('.dash-residents').textContent,/갱신 실패.*이전 조회/);
   assert.equal(d.getElementById('dashboard-news-title'),null);
   assert.equal(d.getElementById('dashboard-marketing-title'),null);
   const select=id=>d.querySelector('#kb-navigation [data-kb-category="'+id+'"]').click();

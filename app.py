@@ -18,6 +18,7 @@ import facility_collection
 import facility_projects
 import facility_access
 import liability_insurance
+import resident_movement
 import aeo_missions
 import web_search_results
 import support_applications
@@ -94,6 +95,8 @@ class App(SimpleHTTPRequestHandler):
             return
         if liability_insurance.handle(self, 'GET'):
             return
+        if resident_movement.handle(self, 'GET'):
+            return
         if facility_projects.handle(self, 'GET') or facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
             return
         if support_projects.handle(self, "GET"):
@@ -138,6 +141,8 @@ class App(SimpleHTTPRequestHandler):
         if facility_access.handle(self, 'HEAD'):
             return
         if liability_insurance.handle(self, 'HEAD'):
+            return
+        if resident_movement.handle(self, 'HEAD'):
             return
         if facility_projects.handle(self, 'HEAD') or facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
             return
@@ -522,6 +527,7 @@ if __name__ == "__main__":
     facility_scheduler_stop = facility_collection.start_scheduler()
     liability_insurance.init_db()
     liability_scheduler_stop = liability_insurance.start_scheduler()
+    resident_scheduler_stop = resident_movement.start_scheduler()
     port = int(os.getenv("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), App)
     print(f"Local: http://localhost:{port}", flush=True)
@@ -536,4 +542,5 @@ if __name__ == "__main__":
         reputation_scheduler_stop.set()
         facility_scheduler_stop.set()
         liability_scheduler_stop.set()
+        resident_scheduler_stop.set()
         server.server_close()

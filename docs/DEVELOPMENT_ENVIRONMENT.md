@@ -38,6 +38,15 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 
 앱은 `python app.py`로 실행하며 기본 포트는 8080이다. 로컬 실행에서 외부 API 기능을 사용하려면 해당 기능의 환경변수가 필요하다. 통계자료 정적 화면과 위 테스트에는 운영 비밀 값이 필요하지 않다.
 
+## 월별 입·퇴소 현황
+
+- `resident_movement.py`, `assets/dashboard-residents.js`: 대시보드의 월별 운영손익 위에 안양점(2)·인천점(3)의 월별 입소/퇴소 인원 표와 연도 선택을 제공한다. 기존 Python/정적 앱과 Railway `petdev` 배포를 재사용한다.
+- 서버 시작 직후와 1시간마다 기존 `FACILITY_ERP_USERNAME/PASSWORD`(미설정 시 `LIABILITY_ERP_USERNAME/PASSWORD`)로 `/api/token/` 인증 후 `/api/elderly/?nursing_home=...&status=all`, `/api/discharge-records/?nursing_home=...`의 전체 페이지를 조회한다. 기존 ERP 요청·토큰 갱신·재로그인 규칙을 재사용한다. 지점·경로·호스트·status가 바뀐 페이지나 반복/잘못된 응답은 거부한다.
+- 입소는 삭제되지 않은 재원·퇴소자의 `admission_date`, 퇴소는 삭제되지 않은 퇴소 기록의 `discharge_date`를 서울 시간으로 변환해 월별 집계한다. 퇴소는 어르신 ID를 지점·월별 중복 제거한 사람 수다. 최근 입소일 덮어쓰기로 재입소자의 과거 입소는 복원할 수 없으며 안내 아이콘과 표 하단에 기준을 명시한다. 입소일 미등록 인원은 별도 표시하고 미래 날짜는 제외한다. 월말 현원은 계산하지 않는다.
+- 개인별 이름·ID·날짜는 집계 중에만 사용하고 저장하지 않는다. 서버 메모리에는 월별 인원·조회시각·오류만 남긴다. 새 DB/비밀 변수는 추가하지 않는다. `/api/resident-movement`의 GET/HEAD는 기존 전체 사이트 비밀번호 인증 후 집계만 반환하며 no-store로 제공한다. 브라우저는 분마다 캐시를 읽고 ERP 수집을 직접 시작하지 않는다.
+- 실패한 지점은 이전 집계를 유지하면서 이전 결과와 오류를 표시하고, 최초 미조회는 null/‘—’로 표시한다. 성공한 빈 목록만 0명으로 해석한다. 재시작 직후 첫 수집 전에는 미조회 상태이며 수집 완료 후 자동 표시한다. 기본값은 올해이며 올해는 현재 월까지, 과거 연도는 12개월을 표시한다. 모바일은 표 내부 스크롤·키보드 이동을 지원한다.
+- 검증: `python -m unittest test_resident_movement.py test_ui_consistency.py test_static_pages.py test_facility_access.py test_facility_collection.py`; `node --test test_dashboard_residents.cjs test_dashboard.cjs test_dashboard_operating.cjs`; `node scripts/verify_dashboard_ui.cjs`. 실제 ERP 조회는 집계 결과만 확인하며 계정/토큰·개인별 응답은 로그/문서에 남기지 않는다.
+
 ## 배상책임보험 관리
 
 - `/liability-insurance.html`, `liability_insurance.py`, `assets/liability-*`: 운영·인사·회계의 보험 관리와 대시보드 운영 현황. Python 서버의 기존 정적 구조와 Railway 배포를 재사용한다.
