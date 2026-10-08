@@ -2,11 +2,16 @@
 from http.cookies import SimpleCookie, CookieError
 from io import BytesIO
 from pathlib import Path
+from contextlib import closing
 import hashlib
 import hmac
+import ipaddress
+import json
+import math
 import os
 import re
 import secrets
+import sqlite3
 import threading
 import time
 from urllib.parse import urlsplit
@@ -24,8 +29,15 @@ LOGIN_ASSETS = {
     ROOT / 'assets' / 'site-access.css',
     ROOT / 'assets' / 'facility-map-login.js',
 }
-ATTEMPTS = {}
-LOCK = threading.Lock()
+MAX_FAILURES = 10
+LOCK_SECONDS = 60 * 60
+VERIFY_SLOTS = threading.BoundedSemaphore(4)
+
+
+class LoginError(erp.ApiError):
+    def __init__(self, status, message, retry_after=0, remaining=None, code=''):
+        super().__init__(status, message)
+        self.retry_after, self.remaining, self.code = retry_after, remaining, code
 
 
 def make_password_hash(password):
@@ -75,19 +87,121 @@ def require(handler, head=False):
     return False
 
 
-def rate_limit(handler):
-    # The global limit also bounds attempts when an upstream proxy shares an IP.
-    ip, now = handler.client_address[0], time.time()
-    with LOCK:
-        for key in list(ATTEMPTS):
-            ATTEMPTS[key] = [t for t in ATTEMPTS[key] if t > now - 300]
-            if not ATTEMPTS[key]:
-                del ATTEMPTS[key]
-        if len(ATTEMPTS.get(ip, [])) >= 5 or len(ATTEMPTS.get('*', [])) >= 30:
-            raise erp.ApiError(429, '입력 시도가 많습니다. 5분 후 다시 시도해주세요.')
-        ATTEMPTS.setdefault(ip, []).append(now)
-        ATTEMPTS.setdefault('*', []).append(now)
-    return ip, now
+def client_key(handler):
+    address = handler.client_address[0]
+    if os.getenv('RAILWAY_ENVIRONMENT_ID'):
+        # Railway appends the verified remote IP; never trust the leftmost value.
+        # Read all header lines so a duplicate user header cannot take precedence.
+        for name in ('X-Forwarded-For', 'X-Real-IP'):
+            values = handler.headers.get_all(name, []) if hasattr(handler.headers, 'get_all') else [handler.headers.get(name, '')]
+            value = ','.join(values).split(',')[-1].strip()
+            if value:
+                try:
+                    address = str(ipaddress.ip_address(value))
+                    break
+                except ValueError:
+                    continue
+    address = ipaddress.ip_address(address)
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    return hmac.new(setting().encode(), ('site-login-ip:' + str(address)).encode(), hashlib.sha256).hexdigest()
+
+
+def attempt_store():
+    default = '/data/site-access.db' if os.getenv('RAILWAY_ENVIRONMENT_ID') else ROOT / '.local' / 'site-access.db'
+    path = Path(os.getenv('SITE_ACCESS_DB_PATH') or default)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path, timeout=5)
+    try:
+        db.execute('''CREATE TABLE IF NOT EXISTS login_attempts (
+            client TEXT PRIMARY KEY, failures INTEGER NOT NULL,
+            locked_until REAL NOT NULL DEFAULT 0)''')
+        db.commit()
+        return db
+    except Exception:
+        db.close()
+        raise
+
+
+def blocked(retry_after):
+    seconds = max(1, math.ceil(retry_after))
+    raise LoginError(429, f'비밀번호 10회 오류로 로그인이 1시간 동안 제한되었습니다. 약 {math.ceil(seconds / 60)}분 후 다시 시도해주세요.',
+                     retry_after=seconds, code='login_temporarily_blocked')
+
+
+def check_attempt(key):
+    with closing(attempt_store()) as db:
+        row = db.execute('SELECT locked_until FROM login_attempts WHERE client=?', (key,)).fetchone()
+        now = time.time()
+        if row and row[0] > now:
+            blocked(row[0] - now)
+
+
+def record_attempt(key, correct):
+    # Serialize the final decision across threads/processes. A success that races
+    # with the tenth failure cannot clear a lock that has already started.
+    with closing(attempt_store()) as db, db:
+        db.execute('BEGIN IMMEDIATE')
+        now = time.time()
+        row = db.execute('SELECT failures, locked_until FROM login_attempts WHERE client=?', (key,)).fetchone()
+        if row and row[1] > now:
+            retry_after = row[1] - now
+            remaining = 0
+        else:
+            failures = row[0] if row and not row[1] else 0
+            if correct:
+                db.execute('DELETE FROM login_attempts WHERE client=?', (key,))
+                retry_after, remaining = 0, MAX_FAILURES
+            else:
+                failures += 1
+                until = now + LOCK_SECONDS if failures >= MAX_FAILURES else 0
+                db.execute('''INSERT INTO login_attempts(client, failures, locked_until) VALUES(?,?,?)
+                    ON CONFLICT(client) DO UPDATE SET failures=excluded.failures, locked_until=excluded.locked_until''',
+                           (key, failures, until))
+                retry_after, remaining = max(0, until - now), max(0, MAX_FAILURES - failures)
+    # Raise after the transaction commits, so the tenth failure's lock persists.
+    if retry_after:
+        blocked(retry_after)
+    if not correct:
+        raise LoginError(401, f'비밀번호가 올바르지 않습니다. 남은 시도는 {remaining}회입니다.',
+                         remaining=remaining, code='incorrect_password')
+
+
+def verify_password(handler, password, stored):
+    key = client_key(handler)
+    check_attempt(key)
+    if not VERIFY_SLOTS.acquire(blocking=False):
+        raise LoginError(429, '로그인 요청이 많습니다. 잠시 후 다시 시도해주세요.', retry_after=1, code='login_busy')
+    try:
+        # Recheck after acquiring a verification slot, before expensive hashing.
+        check_attempt(key)
+        _, rounds, salt, expected = stored.split('$')
+        actual = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), int(rounds)).hex()
+        record_attempt(key, hmac.compare_digest(actual, expected))
+    finally:
+        VERIFY_SLOTS.release()
+
+
+def send_session_error(handler, error, head=False):
+    payload = {'error': error.message}
+    if isinstance(error, LoginError):
+        if error.code:
+            payload['code'] = error.code
+        if error.remaining is not None:
+            payload['remainingAttempts'] = error.remaining
+        if error.retry_after:
+            payload['retryAfter'] = error.retry_after
+    raw = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode()
+    handler.send_response(error.status)
+    handler.send_header('Content-Type', 'application/json; charset=utf-8')
+    handler.send_header('Cache-Control', 'no-store, private')
+    handler.send_header('Vary', 'Cookie')
+    handler.send_header('Content-Length', str(len(raw)))
+    if isinstance(error, LoginError) and error.retry_after:
+        handler.send_header('Retry-After', str(error.retry_after))
+    handler.end_headers()
+    if not head:
+        handler.wfile.write(raw)
 
 
 def handle(handler, method):
@@ -108,15 +222,7 @@ def handle(handler, method):
                 stored = setting()
                 if not stored:
                     raise erp.ApiError(503, '지식 창고 비밀번호 설정을 확인해주세요.')
-                ip, attempt = rate_limit(handler)
-                _, rounds, salt, expected = stored.split('$')
-                actual = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), int(rounds)).hex()
-                if not hmac.compare_digest(actual, expected):
-                    raise erp.ApiError(401, '비밀번호가 올바르지 않습니다.')
-                with LOCK:
-                    for key in (ip, '*'):
-                        if attempt in ATTEMPTS.get(key, []):
-                            ATTEMPTS[key].remove(attempt)
+                verify_password(handler, password, stored)
                 erp.send(handler, 200, {'unlocked': True}, cookie=cookie_header(handler, issue_cookie(), TTL))
             elif method == 'DELETE':
                 erp.same_origin(handler)
@@ -124,7 +230,9 @@ def handle(handler, method):
             else:
                 raise erp.ApiError(405, '지원하지 않는 요청입니다.')
         except erp.ApiError as error:
-            erp.send(handler, error.status, {'error': error.message}, head)
+            send_session_error(handler, error, head)
+        except (sqlite3.Error, OSError):
+            send_session_error(handler, erp.ApiError(503, '로그인 보호 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.'), head)
         return True
     # Machine ingestion keeps its existing Bearer-secret check in website_intake.
     if path == '/api/website-intake' and method == 'POST':

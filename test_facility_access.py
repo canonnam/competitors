@@ -8,10 +8,13 @@ from pathlib import Path
 import hashlib
 import hmac
 import secrets
+import tempfile
 import unittest
 from unittest.mock import patch
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+from concurrent.futures import ThreadPoolExecutor
+from email.message import Message
 import facility_access as A
 from test_facility_assets import QuietApp
 
@@ -21,18 +24,20 @@ TEST_HASH = A.make_password_hash(TEST_PASSWORD)
 
 class MapAccessTests(unittest.TestCase):
     def setUp(self):
-        self.env = patch.dict(os.environ, {A.HASH_ENV: TEST_HASH})
-        self.env.start(); A.ATTEMPTS.clear()
+        self.folder = tempfile.TemporaryDirectory()
+        self.env = patch.dict(os.environ, {A.HASH_ENV: TEST_HASH, 'SITE_ACCESS_DB_PATH': str(Path(self.folder.name) / 'attempts.db'), 'RAILWAY_ENVIRONMENT_ID': ''})
+        self.env.start()
         self.server = ThreadingHTTPServer(('127.0.0.1', 0), QuietApp)
         self.thread = Thread(target=self.server.serve_forever, daemon=True); self.thread.start()
         self.base = f'http://127.0.0.1:{self.server.server_port}'
 
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
-        self.env.stop(); A.ATTEMPTS.clear()
+        self.env.stop(); self.folder.cleanup()
 
-    def call(self, path=A.PREFIX+'session', method='GET', data=None, cookie=None, origin=None):
+    def call(self, path=A.PREFIX+'session', method='GET', data=None, cookie=None, origin=None, extra_headers=None):
         headers={'Origin': origin or self.base, 'Content-Type': 'application/json'}
+        headers.update(extra_headers or {})
         if cookie: headers['Cookie']=cookie
         req=Request(self.base+path, method=method, headers=headers, data=json.dumps(data).encode() if data is not None else None)
         try: response=urlopen(req, timeout=10)
@@ -171,9 +176,20 @@ class MapAccessTests(unittest.TestCase):
 
     def test_wrong_password_and_csrf_never_unlock_and_repeated_failures_are_limited(self):
         self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD},origin='https://other.example')[0],403)
-        for _ in range(5): self.assertEqual(self.call(method='POST',data={'password':'wrong'})[0],401)
-        self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD})[0],429)
-        with patch.object(A.time,'time',return_value=A.time.time()+301):
+        now=A.time.time()
+        with patch.object(A.time,'time',return_value=now):
+            for attempt in range(1,10):
+                code,headers,raw=self.call(method='POST',data={'password':'wrong'})
+                self.assertEqual(code,401)
+                self.assertEqual(json.loads(raw)['remainingAttempts'],10-attempt)
+            code,headers,raw=self.call(method='POST',data={'password':'wrong'})
+            self.assertEqual(code,429); self.assertEqual(headers['Retry-After'],'3600')
+            self.assertEqual(json.loads(raw)['code'],'login_temporarily_blocked')
+            self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD})[0],429)
+        with patch.object(A.time,'time',return_value=now+3599):
+            code,headers,raw=self.call(method='POST',data={'password':TEST_PASSWORD})
+            self.assertEqual(code,429); self.assertEqual(headers['Retry-After'],'1')
+        with patch.object(A.time,'time',return_value=now+3600):
             self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD})[0],200)
 
     def test_forgery_expiry_changed_password_and_missing_configuration_fail_closed(self):
@@ -184,6 +200,82 @@ class MapAccessTests(unittest.TestCase):
         with patch.dict(os.environ,{A.HASH_ENV:A.make_password_hash('changed')}): self.assertFalse(valid(token))
         with patch.dict(os.environ,{A.HASH_ENV:''}):
             self.assertFalse(valid(token)); self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD})[0],503)
+
+    def test_success_resets_consecutive_failures_and_wrong_password_after_expiry_starts_fresh(self):
+        for _ in range(3):
+            self.assertEqual(self.call(method='POST',data={'password':'wrong'})[0],401)
+        self.login()
+        code,headers,raw=self.call(method='POST',data={'password':'wrong'})
+        self.assertEqual(code,401); self.assertEqual(json.loads(raw)['remainingAttempts'],9)
+        now=A.time.time()
+        key=A.client_key(SimpleNamespace(client_address=('127.0.0.1',0),headers={}))
+        with patch.object(A.time,'time',return_value=now):
+            for _ in range(9):
+                with self.assertRaises(A.LoginError): A.record_attempt(key,False)
+        with patch.object(A.time,'time',return_value=now+3600):
+            code,headers,raw=self.call(method='POST',data={'password':'wrong'})
+            self.assertEqual(code,401); self.assertEqual(json.loads(raw)['remainingAttempts'],9)
+
+    def test_lock_survives_server_restart_and_retries_do_not_extend_it(self):
+        now=A.time.time()
+        key=A.client_key(SimpleNamespace(client_address=('127.0.0.1',0),headers={}))
+        with patch.object(A.time,'time',return_value=now):
+            for _ in range(10):
+                with self.assertRaises(A.LoginError): A.record_attempt(key,False)
+        self.server.shutdown(); self.server.server_close(); self.thread.join()
+        self.server=ThreadingHTTPServer(('127.0.0.1',0),QuietApp)
+        self.thread=Thread(target=self.server.serve_forever,daemon=True); self.thread.start()
+        self.base=f'http://127.0.0.1:{self.server.server_port}'
+        with patch.object(A.time,'time',return_value=now+1200), patch.object(A.hashlib,'pbkdf2_hmac') as hashing:
+            for path in (A.PREFIX+'session',A.LEGACY_PREFIX+'session'):
+                code,headers,raw=self.call(path,method='POST',data={'password':TEST_PASSWORD})
+                self.assertEqual(code,429); self.assertEqual(headers['Retry-After'],'2400')
+            hashing.assert_not_called()
+        with patch.object(A.time,'time',return_value=now+3600): self.login()
+
+    def test_one_ip_lock_does_not_lock_other_ips_or_an_existing_authenticated_session(self):
+        cookie=self.login()
+        with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_ID':'synthetic'}):
+            bad={'X-Forwarded-For':'203.0.113.10'}
+            good={'X-Forwarded-For':'203.0.113.11'}
+            key=A.client_key(SimpleNamespace(client_address=('127.0.0.1',0),headers=bad))
+            for _ in range(10):
+                with self.assertRaises(A.LoginError): A.record_attempt(key,False)
+            self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD},extra_headers=bad)[0],429)
+            self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD},extra_headers=good)[0],200)
+            self.assertNotIn('map-access-form',self.call('/',cookie=cookie,extra_headers=bad)[2].decode())
+
+    def test_concurrent_failure_updates_cannot_lose_counts_or_unlock_a_blocked_ip(self):
+        key=A.client_key(SimpleNamespace(client_address=('127.0.0.1',0),headers={}))
+        def attempt(_):
+            try: A.record_attempt(key,False)
+            except A.LoginError as error: return error.status
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            statuses=list(pool.map(attempt,range(20)))
+        self.assertEqual(statuses.count(401),9)
+        self.assertEqual(statuses.count(429),11)
+        with self.assertRaises(A.LoginError) as result: A.record_attempt(key,True)
+        self.assertEqual(result.exception.status,429)
+
+    def test_proxy_ip_cannot_be_changed_with_spoofed_leftmost_or_duplicate_headers(self):
+        def key(headers,peer='127.0.0.1'):
+            return A.client_key(SimpleNamespace(client_address=(peer,0),headers=headers))
+        with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_ID':'synthetic'}):
+            expected=key({'X-Forwarded-For':'203.0.113.20'})
+            self.assertEqual(key({'X-Forwarded-For':'198.51.100.1, 203.0.113.20'}),expected)
+            headers=Message()
+            headers.add_header('X-Forwarded-For','198.51.100.1')
+            headers.add_header('X-Forwarded-For','198.51.100.2, 203.0.113.20')
+            self.assertEqual(key(headers),expected)
+            self.assertEqual(key({'X-Forwarded-For':'::ffff:203.0.113.20'}),expected)
+            self.assertEqual(key({'X-Real-IP':'198.51.100.2, 203.0.113.20'}),expected)
+            self.assertEqual(key({'X-Forwarded-For':'invalid'}),key({}))
+        self.assertEqual(key({'X-Forwarded-For':'203.0.113.20'}),key({}))
+
+    def test_unavailable_attempt_database_fails_closed_before_password_verification(self):
+        with patch.object(A,'attempt_store',side_effect=A.sqlite3.OperationalError('synthetic failure')), patch.object(A.hashlib,'pbkdf2_hmac') as hashing:
+            self.assertEqual(self.call(method='POST',data={'password':TEST_PASSWORD})[0],503)
+            hashing.assert_not_called()
 
 
 if __name__=='__main__': unittest.main()

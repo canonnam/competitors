@@ -62,7 +62,10 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 ## 전체 사이트 접근 인증
 
 - `facility_access.py`가 `app.App`의 GET·HEAD·POST·DELETE에서 업무 처리보다 먼저 인증한다. 기존 `FACILITY_MAP_PASSWORD_HASH` 비밀 변수의 PBKDF2-SHA256(600,000회·무작위 salt) 값을 그대로 검증하며 비밀번호 원문·hash 값은 소스·문서에 저장하지 않는다. 설정 누락·형식 오류는 잠금 상태다.
-- 서명된 24시간 `vida_knowledge_access` 쿠키는 HttpOnly·SameSite=Strict·운영 HTTPS Secure·Path=/이며 인증 화면·API·업무 파일은 no-store와 Vary: Cookie를 적용한다. 이전 map-only 쿠키는 새 인증으로 인정하지 않아 배포 후 최초 진입 비밀번호를 다시 요구한다. 비밀번호 hash 변경도 기존 인증을 무효화한다. 실패 제한은 IP별 5회/5분·전체 30회/5분이다.
+- 서명된 24시간 `vida_knowledge_access` 쿠키는 HttpOnly·SameSite=Strict·운영 HTTPS Secure·Path=/이며 인증 화면·API·업무 파일은 no-store와 Vary: Cookie를 적용한다. 이전 map-only 쿠키는 새 인증으로 인정하지 않아 배포 후 최초 진입 비밀번호를 다시 요구한다. 비밀번호 hash 변경도 기존 인증을 무효화한다. 같은 IP에서 연속 10회 비밀번호 오류가 나면 10번째 요청부터 1시간 동안 새 로그인을 차단한다. 올바른 비밀번호도 차단 중에는 거부하며 추가 시도로 만료 시각을 연장하지 않는다. 성공하면 이전 실패 횟수를 지우고, 차단 만료 후에는 새 횟수로 시작한다. 이미 인증된 브라우저의 업무 사용과 다른 IP의 새 로그인은 유지한다.
+- 실패 횟수와 차단 만료는 `SITE_ACCESS_DB_PATH` SQLite에 저장한다. 기본 경로는 Railway `/data/site-access.db`, 로컬 `.local/site-access.db`이며 기존 영구 볼륨을 재사용한다. 비밀번호나 IP 원문은 저장하지 않고 기존 서버 비밀 hash를 키로 한 HMAC-SHA256 IP 식별자만 보관한다. 브라우저/서버 재시작으로 차단을 해제할 수 없다. DB 조회 실패는 503으로 로그인을 막는다.
+- Railway에서는 플랫폼이 마지막에 추가한 `X-Forwarded-For` 주소를 사용하고 없으면 `X-Real-IP`를 확인한다. 중복 헤더도 마지막 값을 읽고 IP 형식을 검사하며 IPv4-mapped IPv6는 IPv4로 통일한다. 로컬에서는 전달 헤더를 신뢰하지 않는다. [Railway 요청 헤더](https://docs.railway.com/networking/public-networking/specs-and-limits)와 저장소의 기존 서버 채팅 IP 처리 방식을 따른다. 4개 검증 슬롯으로 비밀번호 hash 작업을 제한하며 동시에 진행된 결과는 SQLite 트랜잭션으로 집계한다.
+- 오류 응답은 남은 횟수, 차단 응답은 HTTP 429와 `Retry-After`/`retryAfter` 남은 초를 제공한다. 1시간 차단 전후와 동시 성공/실패의 경합에서도 이미 시작한 차단을 성공 요청이 지우지 못한다. 공통·이전 지도 인증 주소가 같은 기록을 사용한다.
 - `/api/site-access/session`의 POST는 인증, GET·HEAD는 인증 상태, DELETE는 현재 브라우저 잠금이다. 기존 `/api/facility-map-access/session`은 같은 공통 인증의 호환 별칭으로만 유지한다. 3D 지도의 더보기 ‘지식 창고 잠그기’도 전체 쿠키를 지운다.
 - 홈페이지·모든 HTML·외부 지원사업 공유·종사자 응시 페이지와 인코딩·상대 경로는 인증 전 독립 로그인 화면을 응답한다. 성공하면 현재 URL을 새로고침하여 경로·쿼리·해시를 유지한다. 내부 탐색·업무 데이터 스크립트는 로그인 화면에 포함하지 않는다. 지도에는 별도 인증 화면이 없다.
 - 모든 조회·작성 API와 데이터·문서·업무 자산 직접 주소는 인증 전 401이다. 인증 후 쓰기는 동일 출처도 확인한다. 로그인용 favicon·robots·foundation CSS·로그인 CSS/JS만 방문자에게 제공한다. Python 소스·DB·환경 파일은 인증 후에도 기존 정적 허용 목록에서 제외한다.
