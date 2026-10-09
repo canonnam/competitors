@@ -35,4 +35,5 @@ COPY nginx /app/nginx
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
+COPY clarity_report.py clarity-report.html /app/
 CMD ["python", "app.py"]

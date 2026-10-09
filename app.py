@@ -25,6 +25,7 @@ import support_applications
 import support_projects
 import website_intake
 import staff_eval
+import clarity_report
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -93,6 +94,8 @@ class App(SimpleHTTPRequestHandler):
     def do_GET(self):
         if facility_access.handle(self, 'GET'):
             return
+        if clarity_report.handle(self, 'GET'):
+            return
         if liability_insurance.handle(self, 'GET'):
             return
         if resident_movement.handle(self, 'GET'):
@@ -139,6 +142,8 @@ class App(SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         if facility_access.handle(self, 'HEAD'):
+            return
+        if clarity_report.handle(self, 'HEAD'):
             return
         if liability_insurance.handle(self, 'HEAD'):
             return
@@ -332,6 +337,7 @@ class App(SimpleHTTPRequestHandler):
             self.path = "/index.html"
             path = ROOT / "index.html"
         public_pages.add("liability-insurance.html")
+        public_pages.add("clarity-report.html")
         public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
@@ -510,6 +516,8 @@ if __name__ == "__main__":
     support_applications.init_db()
     support_projects.init_db()
     website_intake.init_db()
+    clarity_report.init_db()
+    clarity_scheduler_stop = clarity_report.start_scheduler()
     staff_eval.init_db()
     facility_projects.init_db()
     wiki_chat.init_db()
@@ -534,6 +542,7 @@ if __name__ == "__main__":
     try:
         server.serve_forever()
     finally:
+        clarity_scheduler_stop.set()
         scheduler_stop.set()
         news_scheduler_stop.set()
         agency_scheduler_stop.set()

@@ -29,6 +29,7 @@
     {id:'agency-news', category:'support', title:'건보공단·복지부 뉴스·지원사업', description:'공공기관 소식과 지원사업 공고', keywords:'정부 정책 공모 장기요양 제도'},
     {id:'ai-hub-data', category:'research', title:'AI 허브 활용데이터', description:'요양원 ERP와 연결할 데이터셋·활용안', keywords:'AI Hub 인공지능 연구 건강 간호'},
     {id:'naver-ads', category:'marketing', title:'네이버 광고분석', description:'월별 광고 추이와 소재별 성과', keywords:'마케팅 파워링크 플레이스 광고비 인천'},
+    {id:'clarity-report', category:'marketing', title:'홈페이지 방문·상담 분석', description:'방문 흐름·전화 클릭·상담 완료와 개선 후보', keywords:'Clarity 클라리티 홈페이지 방문자 유입 스크롤 이벤트 보고서 인천 안양 전화 전환'},
     {id:'search-visibility', category:'marketing', title:'검색노출 현황', description:'네이버·ChatGPT·Gemini 검색노출 확인', keywords:'SEO AEO GEO 안양 인천 홍보'},
     {id:'reputation-watch', category:'marketing', title:'평판 점검', description:'공개 뉴스·검색의 부정적 언급 확인', keywords:'불만 리뷰 안양 인천'},
     {id:'operating-costs', category:'operations', title:'운영비 분석', description:'지점별 월별 수입·비용과 자금 흐름', keywords:'안양 인천 손익 매출 지출 회계'},

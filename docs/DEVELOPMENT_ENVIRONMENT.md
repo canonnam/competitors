@@ -1,5 +1,14 @@
 # 더비다 지식 창고 개발 환경
 
+## 홈페이지 방문·상담 분석 (2026-10-09)
+
+- `/clarity-report.html`과 인증이 필요한 `GET/HEAD /api/clarity-report`는 기존 Python 앱과 공통 사이트 비밀번호를 사용한다. 홍보·상담·영업 메뉴와 홈 기능 카드에서 연다.
+- `clarity_report.py`는 서버 전용 `THEVIDA_BRANDSITE_CLARITY`를 읽는다. 첫 실행 및 매일 09:40 KST에 Clarity Export API의 최근 24시간 통계와 Microsoft 공식 MCP 대시보드의 봇 제외 세션·맞춤 이벤트 세션 수를 수집한다. 토큰은 로그·응답·Git에 포함하지 않는다.
+- `CLARITY_REPORT_DB_PATH` 기본값은 Railway 기존 `/data/clarity-report.db`, 로컬 `.local/clarity-report.db`다. `CLARITY_REPORT_SYNC_ENABLED=false`는 자동 수집만 끈다. 화면 새로고침은 저장 결과만 읽는다. 수집 재시도는 최소 30분 간격, 최근 24시간 최대 3회로 Export 호출 예산을 제한한다.
+- 관측별 시작·종료 시각을 저장하며 최근 30개 일별 스냅샷을 표시한다. 시각이 다른 24시간 관측을 주간·월간 합계로 더하지 않는다. 이벤트는 횟수가 아닌 해당 이벤트가 발생한 세션 수다. 오류·미조회는 0으로 바꾸지 않는다. 실제 접수는 같은 UTC 구간의 기존 홈페이지 접수 DB에서 production 집계만 읽는다. 이름·전화·내용·접수 ID는 보고서에 포함하지 않는다.
+- 공식 근거: https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api 와 https://github.com/microsoft/clarity-mcp-server . MCP 집계는 지정한 UTC 범위와 단일 정수 열을 검증하고 실제 프로젝트 토큰으로 확인한다.
+- 검증: `python -m unittest test_clarity_report test_ui_consistency test_static_pages test_facility_access test_website_intake`; `node --test test_clarity_report.cjs test_navigation.cjs test_dashboard.cjs`; 실제 토큰 조회는 집계만 확인한다.
+
 확인일: 2026-10-08. 이 문서는 실행과 배포에 필요한 구조를 기록한다. 계정 비밀 값과 운영 데이터는 포함하지 않는다.
 
 ## 시설 맞춤 대시보드 랜딩 접수
