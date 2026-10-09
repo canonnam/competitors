@@ -11,10 +11,12 @@ import urllib.error
 
 from app import App
 import facility_observation as F
+import facility_access as A
 
 
 ACCESS = 'synthetic-access-token-for-local-tests-only'
 REFRESH = 'synthetic-refresh-token-for-local-tests-only'
+SITE_TEST_HASH = A.make_password_hash('observation-test-site-only')
 
 
 def synthetic(path, access=None, body=None, timeout=15):
@@ -45,6 +47,9 @@ class QuietApp(App):
 class ObservationTests(unittest.TestCase):
     def setUp(self):
         F.SESSIONS.clear(); F.ATTEMPTS.clear()
+        self.site_env=patch.dict('os.environ',{A.HASH_ENV:SITE_TEST_HASH})
+        self.site_env.start()
+        self.site_cookie=A.COOKIE+'='+A.issue_cookie()
         self.server = ThreadingHTTPServer(('127.0.0.1', 0), QuietApp)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -54,11 +59,14 @@ class ObservationTests(unittest.TestCase):
 
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join(); self.patch.stop()
+        self.site_env.stop()
         F.SESSIONS.clear(); F.ATTEMPTS.clear()
 
     def call(self, path='session', method='GET', data=None, cookie=None, origin=None):
         headers = {'Origin': origin or self.base, 'Content-Type': 'application/json'}
-        if cookie: headers['Cookie'] = cookie
+        # ERP session tests run behind the shared Site gate; its boundary is
+        # covered independently by test_facility_access.
+        headers['Cookie']=(cookie if cookie and A.COOKIE+'=' in cookie else self.site_cookie+(';' + cookie if cookie else ''))
         req = urllib.request.Request(self.base + F.PREFIX + path, method=method, headers=headers,
                                      data=json.dumps(data).encode() if data is not None else None)
         try: response = urllib.request.urlopen(req, timeout=5)

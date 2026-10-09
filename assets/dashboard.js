@@ -73,6 +73,7 @@
     const badge=(text,tone='')=>`<span class="ui-status"${tone?` data-status="${tone===true?'warning':esc(tone)}"`:''}>${esc(text)}</span>`;
     container.className='kb-dashboard';container.id='kb-dashboard';container.setAttribute('aria-labelledby','dashboard-title');
     container.innerHTML=`<div class="dash-heading"><h1 id="dashboard-title">대시보드</h1><time class="dash-date"></time></div>
+      <section class="dash-panel dash-facility" aria-labelledby="dashboard-facility-title"><div class="dash-panel-head"><h2 id="dashboard-facility-title">시설 3D 지도</h2></div><iframe class="dash-facility-frame" src="/facility-3d.html?viewer=dashboard" title="시설 3D 지도 조회 전용 뷰어" loading="lazy" allow="fullscreen" allowfullscreen></iframe></section>
       <div class="dash-metrics" data-dash-slot="metrics" aria-label="핵심 현황"></div>
       <div class="dash-columns">
         <section class="dash-panel dash-residents" aria-labelledby="dashboard-residents-title"><div class="dash-panel-head"><h2 id="dashboard-residents-title">월별 입·퇴소 현황</h2></div><div data-ui-help="입·퇴소 집계 기준" data-ui-help-target="#dashboard-residents-title"><p>서울 날짜 기준으로 입소자 목록의 최근 입소일과 퇴소 기록의 퇴소일을 월별로 집계합니다. 퇴소는 지점·월별 어르신 ID를 중복 제거한 인원입니다. 같은 사람이 같은 달에 두 번 퇴소해도 1명으로 셉니다.</p><p>합계는 선택 연도의 월별 인원을 더한 누적 인원입니다. 같은 사람이 다른 달에 퇴소하면 각 달에 포함됩니다. 입소율·퇴소율은 누적 입소·퇴소 인원 ÷ 해당 연도 1월 1일 현원 × 100입니다. 전체 비율은 두 지점의 인원과 기준 현원을 각각 합쳐 계산하며 100%를 넘을 수 있습니다. 기준 현원이 0명 또는 미조회이면 비율은 ‘—’입니다.</p><p>입소 목록은 재원·퇴소자를 포함하고 삭제된 항목은 제외합니다. 재입소 시 최근 입소일로 바뀌므로 과거 입소가 누락될 수 있습니다. 입소일 미등록자는 제외하며 해당 인원을 표시합니다. 월말 현원과는 다른 수치입니다.</p><p>매시간 자동 수집합니다. 이번 달은 조회 기준일까지의 인원이며, 실패·미조회는 0명으로 표시하지 않습니다.</p></div><div data-dash-slot="residents" aria-live="polite"></div></section>
@@ -88,6 +89,27 @@
         <a href="/operating-costs.html"><strong>운영비 분석</strong><span>지점별 수입·비용 비교</span></a>
         <a href="/support-projects.html"><strong>지원사업 준비·기록</strong><span>참여 과제와 준비 현황</span></a>
       </div></section>`;
+    const facilityFrame=container.querySelector('.dash-facility-frame');
+    const facilityPanel=container.querySelector('.dash-facility');
+    let facilityInert=[];
+    let facilityVisible=true;
+    const sendFacilityVisibility=()=>facilityFrame.contentWindow?.postMessage({type:'facility-viewer-visibility',visible:facilityVisible&&!doc.hidden},win.location.origin);
+    win.addEventListener('message',event=>{
+      if(event.origin!==win.location.origin||event.source!==facilityFrame.contentWindow)return;
+      if(event.data?.type==='facility-viewer-expanded'){
+        const open=event.data.open===true;
+        facilityPanel.classList.toggle('is-expanded',open);doc.body.classList.toggle('dash-facility-expanded-body',open);
+        if(open){for(let node=facilityPanel;node.parentElement&&node!==doc.body;node=node.parentElement){for(const sibling of node.parentElement.children){if(sibling!==node&&!sibling.inert){sibling.inert=true;facilityInert.push(sibling);}}}}
+        else{facilityInert.forEach(node=>node.inert=false);facilityInert=[];}
+        return;
+      }
+      if(event.data?.type!=='facility-viewer-size')return;
+      const height=event.data.height;
+      if(Number.isFinite(height)&&height>0&&height<=1600)facilityFrame.style.height=height+'px';
+    });
+    facilityFrame.addEventListener('load',sendFacilityVisibility);
+    doc.addEventListener('visibilitychange',sendFacilityVisibility);
+    if(win.IntersectionObserver)new win.IntersectionObserver(entries=>{facilityVisible=entries.some(entry=>entry.isIntersecting);sendFacilityVisibility();}).observe(facilityFrame);
     // Replace only changed sections, preserving keyboard focus across refreshes.
     function slot(name,html) {
       const target=container.querySelector('[data-dash-slot="'+name+'"]');

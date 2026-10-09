@@ -1,4 +1,4 @@
-import {checkAccess} from './facility-access.js?v=20261002-access1';
+import {checkAccess} from './facility-access.js?v=20261009-viewer1';
 /* The browser reads the authenticated hourly room and resident cache. */
 export function initObservation(ctx){
   const $=id=>document.getElementById(id),O=window.FacilityObservation,M=window.FacilityModel;
@@ -82,6 +82,6 @@ export function initObservation(ctx){
     try{const response=await fetch('/api/facility-observation/residents?nursing_home_id='+branch,{cache:'no-store',credentials:'same-origin',signal:active.signal});checkAccess(response);const body=await response.json();if(!response.ok)throw new Error(body.error||'생활실 자료를 불러오지 못했습니다.');if(id!==sequence||ctx.getProject().nursingHomeId!==branch)return;data=body;if(JSON.stringify(previous)!==JSON.stringify(body))ctx.changed();else render();const checked=new Date(body.checkedAt),date=checked.toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false}),time=checked.toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour12:false,hour:'2-digit',minute:'2-digit'});status(`자동 수집 ${time} · 1시간 간격${body.stale?' · 이전 자료':''}`,body.stale?'warning':'success');$('observation-status').title=`${body.nursingHomeName} · ${date} 수집${body.stale?' · '+(body.collectionError||'갱신 대기'):''}`;}
     catch(error){if(id!==sequence)return;data=null;ctx.changed();status(error.name==='AbortError'?'자료 조회가 지연되고 있습니다.':error.message,'error');}finally{clearTimeout(timeout);}
   }
-  window.addEventListener('pageshow',event=>{if(event.persisted)load();});window.addEventListener('pagehide',()=>{sequence++;controller?.abort();data=null;ctx.changed();});setInterval(()=>{if(!document.hidden)load();},60000);
+  window.addEventListener('pageshow',event=>{if(event.persisted)load();});window.addEventListener('pagehide',()=>{sequence++;controller?.abort();data=null;ctx.changed();});setInterval(()=>{if(ctx.active?ctx.active():!document.hidden)load();},60000);
   return {load,mapped,render,open,sync(){if(currentBranch!==ctx.getProject().nursingHomeId)load();else render();}};
 }

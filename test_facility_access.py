@@ -62,6 +62,20 @@ class MapAccessTests(unittest.TestCase):
         self.assertEqual(self.call('/facility_access.py',cookie=cookie)[0],404)
         self.assertEqual(self.call('/facility-map-login.html',cookie=cookie)[0],404)
 
+    def test_only_authenticated_dashboard_viewer_allows_same_origin_embedding(self):
+        path='/facility-3d.html?viewer=dashboard'
+        code,headers,raw=self.call(path)
+        self.assertEqual(headers['X-Frame-Options'],'DENY')
+        self.assertIn('map-access-form',raw.decode())
+        cookie=self.login()
+        for method in ('GET','HEAD'):
+            code,headers,raw=self.call(path,method,cookie=cookie)
+            self.assertEqual(code,200)
+            self.assertEqual(headers['X-Frame-Options'],'SAMEORIGIN')
+            self.assertIn('no-store',headers['Cache-Control'])
+        for path in ('/facility-3d.html','/?viewer=dashboard','/payroll.html?viewer=dashboard','/facility-3d.html?viewer=edit'):
+            self.assertEqual(self.call(path,cookie=cookie)[1]['X-Frame-Options'],'DENY')
+
     def test_every_html_entry_and_encoded_shared_url_requires_site_password(self):
         pages = sorted(Path(__file__).parent.glob('*.html'))
         for page in pages:

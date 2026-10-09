@@ -1,4 +1,16 @@
 .facility3d-main{font-family:var(--ui-font);color:var(--ui-text)}
+/* Embedded dashboard viewer shares map controls but has no editing surface. */
+.f3-readonly body.kb-detail{margin:0;background:var(--ui-surface)}
+.f3-readonly body.kb-detail>main{max-width:none;margin:0;padding:0}
+.f3-readonly :is(.kb-header,.kb-page-heading,.f3-panel,.f3-floor-tools,.f3-more,dialog,#save-project,#undo-project,#drawing-controls){display:none!important}
+.f3-readonly .f3-workspace{grid-template-columns:minmax(0,1fr)}
+.f3-readonly .f3-workspace[hidden]{display:none}
+.f3-readonly .f3-workspace:not([data-viewer-ready]),.f3-readonly #project-status:not([data-viewer-ready]){display:none}
+.f3-readonly .f3-project-bar{margin-bottom:12px}
+.f3-readonly .f3-viewport{height:440px}
+.f3-readonly .f3-viewer:fullscreen .f3-viewport{height:auto}
+.f3-readonly .f3-status{margin:12px 0 0}
+@media(max-width:500px){.f3-readonly .f3-viewport{height:340px}.f3-readonly .f3-view-actions{justify-content:space-between;gap:4px}.f3-readonly .f3-view-actions>.ui-button{font-size:12px;padding:8px}.f3-readonly .f3-view-floor-select{gap:4px}.f3-readonly .f3-view-floor-select>span{display:none}}
 .facility3d-main *, .f3-dialog *{box-sizing:border-box}
 .facility3d-main .kb-page-heading{margin-bottom:20px}
 .facility3d-main .kb-breadcrumb{margin-bottom:12px}

@@ -1,5 +1,12 @@
 # 더비다 지식 창고 개발 환경
 
+## 대시보드 시설 3D 뷰어 (2026-10-09)
+
+- 대시보드는 기존 `/facility-3d.html?viewer=dashboard`를 같은 출처 iframe으로 연다. `assets/facility-viewer.js`가 조회 전용 표시·높이·활성 상태와 전체 화면 대체 보기를 연결하며 기존 렌더러와 서버 저장 도면을 재사용한다. 추가 DB·비밀 변수·배포 서비스는 없다.
+- 조회 전용 모드에서는 편집/저장/삭제/파일 처리 이벤트와 도면 가져오기를 연결하지 않고 공유 도면 요청은 GET만 허용한다. 브라우저 편집 보관본을 읽거나 덮어쓰지 않는다. 지점 현황과 예시 이동은 기존 인증 API를 사용하며 비활성 영역에서는 반복 조회와 이동을 멈춘다. 인증 만료 시 전체 대시보드를 공통 인증으로 돌린다.
+- 서버는 인증된 GET/HEAD의 정확한 뷰어 URL에만 `X-Frame-Options: SAMEORIGIN`을 제공한다. 외부 사이트 임베드는 차단하고 일반 지도·다른 페이지·인증 전 로그인은 기존 DENY를 유지한다. 기존 공통 비밀번호·API 인증·영구 도면 저장을 유지한다.
+- 검증: `python -m unittest test_ui_consistency test_static_pages test_facility_assets test_facility_access test_facility_projects test_facility_collection test_facility_observation`; `node --test test_dashboard.cjs test_navigation.cjs test_facility_3d.cjs test_facility_mvp.cjs test_facility_observation.cjs test_facility_viewer.cjs test_facility_residents.cjs`.
+
 ## 홈페이지 방문·상담 분석 (2026-10-09)
 
 - `/clarity-report.html`과 인증이 필요한 `GET/HEAD /api/clarity-report`는 기존 Python 앱과 공통 사이트 비밀번호를 사용한다. 홍보·상담·영업 메뉴와 홈 기능 카드에서 연다.

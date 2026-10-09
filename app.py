@@ -87,7 +87,11 @@ class App(SimpleHTTPRequestHandler):
         # Applies to HTML, images, API responses and errors, including HEAD/304.
         self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet, noimageindex")
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Frame-Options", "DENY")
+        target = urllib.parse.urlsplit(self.path)
+        embedded_viewer = (target.path == '/facility-3d.html'
+                           and urllib.parse.parse_qs(target.query).get('viewer') == ['dashboard']
+                           and self.command in ('GET', 'HEAD') and facility_access.authorized(self))
+        self.send_header("X-Frame-Options", "SAMEORIGIN" if embedded_viewer else "DENY")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         super().end_headers()
 

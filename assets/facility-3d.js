@@ -1,16 +1,19 @@
-import {checkAccess} from './facility-access.js?v=20261002-access1';
+import {checkAccess} from './facility-access.js?v=20261009-viewer1';
 import {initImport} from './facility-3d-import.js?v=20261002-b1';
-import {initObservation} from './facility-observation.js?v=20261002-access1';
-import {initStaff} from './facility-staff.js?v=20261003-residents1';
+import {initObservation} from './facility-observation.js?v=20261009-viewer1';
+import {initStaff} from './facility-staff.js?v=20261009-viewer1';
 import {initResidents} from './facility-residents.js?v=20261003-residents1';
 import {initFacilityUI} from './facility-3d-ui.js?v=20261003-residents1';
 /* Shared facility composition and Three.js building viewer. */
 const M = window.FacilityModel;
 const $ = id => document.getElementById(id);
+const readOnly=window.FacilityViewer?.readOnly===true;
+const viewerActive=()=>window.FacilityViewer?.active()??!document.hidden;
+window.FacilityViewer?.prepare();
 const STORAGE = 'vida-facility-3d-v1';
 let projects = [], loadError = '';
 try {
-  const saved = JSON.parse(localStorage.getItem(STORAGE) || 'null');
+  const saved = readOnly?null:JSON.parse(localStorage.getItem(STORAGE) || 'null');
   if (saved) {
     if(saved.version!==1 || !Array.isArray(saved.projects) || saved.projects.length>8) throw new Error('format');
     projects=saved.projects.map(M.validate);
@@ -21,6 +24,7 @@ let removedFloor=null;
 const ui=initFacilityUI();
 const revisions=new Map();let sharedReady=false,saving=false,editVersion=0;
 async function sharedRequest(path='',method='GET',body){
+  if(readOnly&&method!=='GET')throw new Error('조회 전용 지도에서는 변경할 수 없습니다.');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
   try {
     const response=await fetch('/api/facility-projects/'+path,{method,cache:'no-store',credentials:'same-origin',signal:controller.signal,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
@@ -28,12 +32,17 @@ async function sharedRequest(path='',method='GET',body){
   } catch(error){if(error.name==='AbortError')throw new Error('서버 응답이 지연되고 있습니다. 다시 저장해주세요.');throw error;}
   finally {clearTimeout(timeout);}
 }
-function cacheBackup(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,projects}));}catch{/* A failed browser backup does not invalidate the committed server save. */}}
-function saveControls(){for(const id of ['save-project','project-select','new-project','delete-project','undo-project'])$(id).disabled=!sharedReady||saving;}
+function cacheBackup(){if(readOnly)return;try{localStorage.setItem(STORAGE,JSON.stringify({version:1,projects}));}catch{/* A failed browser backup does not invalidate the committed server save. */}}
+function saveControls(){if(readOnly){$('project-select').disabled=!sharedReady||!projects.length;return;}for(const id of ['save-project','project-select','new-project','delete-project','undo-project'])$(id).disabled=!sharedReady||saving;}
 async function loadShared(initial=false){
   if(saving||(!initial&&(dirty||document.querySelector('dialog[open]')||document.activeElement?.matches('input,select,textarea'))))return;
   try {
     const result=await sharedRequest(),entries=result.projects.map(row=>({...row,project:M.validate(row.project)}));
+    if(readOnly){
+      document.querySelector('.f3-workspace').dataset.viewerReady='true';
+      document.querySelector('.f3-workspace').hidden=!entries.length;
+      if(!entries.length){projects=[];revisions.clear();sharedReady=true;setProject(M.blank({name:'저장된 건물 없음',count:1}));saveControls();status('저장된 시설 도면이 없습니다.');return;}
+    }
     sharedReady=true;saveControls();
     if(!initial&&(dirty||document.querySelector('dialog[open]')))return;
     if(initial&&!entries.length){status(projects.length?'기존 도면을 불러왔습니다. 저장을 누르면 다른 사람과 공유됩니다.':'새 건물을 저장하면 다른 사람도 같은 도면과 종사자 배치를 볼 수 있습니다.');return;}
@@ -49,7 +58,8 @@ async function loadShared(initial=false){
     }
     else renderProjectSelect();
     cacheBackup();
-  } catch(error){if(initial){sharedReady=false;saveControls();status('공유 도면을 불러오지 못했습니다. 새로고침 후 다시 연결해주세요. 브라우저 보관본은 파일로 내보낼 수 있습니다.','error');}}
+    if(readOnly){saveControls();status('');}
+  } catch(error){if(readOnly){if(initial){sharedReady=false;document.querySelector('.f3-workspace').hidden=true;saveControls();}status(initial?'시설 도면을 불러오지 못했습니다. 잠시 후 자동으로 다시 확인합니다.':'도면 갱신에 실패해 이전 저장본을 표시합니다. 잠시 후 다시 확인합니다.',initial?'error':'warning');}else if(initial){sharedReady=false;saveControls();status('공유 도면을 불러오지 못했습니다. 새로고침 후 다시 연결해주세요. 브라우저 보관본은 파일로 내보낼 수 있습니다.','error');}}
 }
 let drawing = false, startPoint = null, downPoint = null, showNames = true, showWalls = true;
 let THREE, OrbitControls, renderer, scene, camera, controls, root, grid, raycaster, preview;
@@ -62,6 +72,7 @@ const floor = () => project.floors.find(f=>f.level===selectedFloor);
 const floorLabel = f => f.name===M.floorName(f.level)?f.name:`${M.floorName(f.level)} · ${f.name}`;
 const currentRoom = () => floor().rooms.find(r=>r.id===selectedRoom);
 function status(message,kind='') {
+  if(readOnly)$('project-status').dataset.viewerReady='true';
   $('project-status').textContent=message;
   $('project-status').hidden=!message;
   if(kind) $('project-status').dataset.status=kind; else delete $('project-status').dataset.status;
@@ -102,7 +113,7 @@ function renderUI() {
     const g=observation?.mapped().groups.find(g=>g.level===selectedFloor&&g.roomId===r.id);button.append(dot,make('span','',r.name),make('small','',g?.occupancy!=null?`현재 ${g.occupancy}명`:M.TYPES[r.type]));return button;
   }));
   if(!floor().rooms.length) $('room-list').append(make('p','f3-small','공간 추가를 눌러 생활실·복도·공용공간을 지정하세요.'));
-  const room=currentRoom();$('room-details').hidden=!room;
+  const room=currentRoom();$('room-details').hidden=readOnly||!room;
   if(room) {
     $('room-name').value=room.name;$('room-type').value=room.type;$('room-beds').value=room.beds;
     $('beds-field').hidden=room.type!=='living';
@@ -112,13 +123,14 @@ function renderUI() {
   $('image-status').textContent=floor().image?floor().image.name:'등록한 이미지 없음';
   $('remove-image').hidden=!floor().image;$('auto-from-image').disabled=!floor().image;
   document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
-  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:floorLabel(floor()),plan:M.floorName(selectedFloor)+' 평면 편집'};
+  const titles={building:'건물 전체',exploded:'층별 펼치기',floor:floorLabel(floor()),plan:M.floorName(selectedFloor)+(readOnly?' 평면 보기':' 평면 편집')};
   $('view-title').textContent=titles[mode];
-  $('view-description').textContent=mode==='building'?`${project.floors.length}개 층을 함께 살펴보세요.`:mode==='exploded'?'층 사이를 띄워 내부 공간을 비교하세요.':mode==='plan'?'도면을 기준으로 공간을 지정하고 수정하세요.':'공간을 클릭해 이름과 용도를 확인하세요.';
+  $('view-description').textContent=mode==='building'?`${project.floors.length}개 층을 함께 살펴보세요.`:mode==='exploded'?'층 사이를 띄워 내부 공간을 비교하세요.':mode==='plan'?(readOnly?'저장된 층별 도면과 공간을 살펴보세요.':'도면을 기준으로 공간을 지정하고 수정하세요.'):'공간을 클릭해 이름과 용도를 확인하세요.';
   $('add-room').textContent=drawing?'추가 취소':'공간 추가';
   $('view-help').textContent=drawing?(drawingShape==='polygon'?'모서리를 차례로 클릭 · 첫 점 클릭/Enter로 완성 · Backspace로 한 점 취소 · Esc로 종료':'첫 모서리와 반대 모서리를 클릭 · Esc로 취소'):mode==='plan'?'드래그로 이동 · 휠로 확대 · 공간을 클릭해 선택':'드래그로 회전 · 휠로 확대 · 오른쪽 드래그로 이동';
   $('drawing-controls').hidden=!drawing;$('drawing-count').textContent='점 '+drawingPoints.length+'개';$('drawing-finish').disabled=drawingShape!=='polygon'||drawingPoints.length<3;$('drawing-undo').disabled=!drawingPoints.length;$('drawing-finish').hidden=drawingShape!=='polygon';$('drawing-undo').hidden=drawingShape!=='polygon';
   canvas.setAttribute('aria-label',fallback?`${M.floorName(selectedFloor)} 평면 화면. 공간을 클릭하거나 목록에서 선택할 수 있습니다.`:`${project.floors.length}개 층의 ${titles[mode]} 화면. 방향키로 ${mode==='plan'?'이동':'회전'}하고 더하기·빼기로 확대·축소할 수 있습니다. 공간 선택은 목록에서도 가능합니다.`);
+  if(readOnly)canvas.setAttribute('aria-label',`${project.name} ${titles[mode]} 조회 전용 화면. 방향키로 ${mode==='plan'?'이동':'회전'}, 더하기·빼기로 확대·축소. 공간 이름과 현황 버튼으로 정보를 확인할 수 있습니다.`);
   viewport.classList.toggle('is-drawing',drawing);
   observation?.sync();
   staff?.render();
@@ -129,7 +141,7 @@ function setProject(next) {
   project=next;selectedFloor=next.floors.some(f=>f.level===1)?1:next.floors[0].level;selectedRoom=null;removedFloor=null;dirty=false;cancelDrawing();mode='building';renderUI();rebuild();fitCamera();
 }
 async function save() {
-  if(saving||!sharedReady)return;
+  if(readOnly||saving||!sharedReady)return;
   saving=true;saveControls();status('');const version=editVersion;
   try {
     const clean=M.validate(project),row=await sharedRequest('','POST',{project:clean,revision:revisions.get(clean.id)||0});
@@ -140,10 +152,12 @@ async function save() {
   finally {saving=false;saveControls();}
 }
 function closeMore(focus=false){$('project-menu').hidden=true;$('project-more').setAttribute('aria-expanded','false');if(focus)$('project-more').focus();}
+if(!readOnly){
 $('project-more').onclick=()=>{const opening=$('project-menu').hidden;$('project-menu').hidden=!opening;$('project-more').setAttribute('aria-expanded',String(opening));if(opening)$('edit-project').focus();};
 $('project-menu').addEventListener('click',event=>{if(event.target.closest('button'))closeMore();});
 document.addEventListener('click',event=>{if(!event.target.closest('.f3-more'))closeMore();});
 $('project-menu').addEventListener('keydown',event=>{if(event.key==='Escape'){closeMore(true);event.preventDefault();}});
+}
 function cancelDrawing() {
   drawing=false;startPoint=null;drawingPoints=[];previewEnd=null;
   if(preview){scene?.remove(preview);dispose(preview);preview=null;}
@@ -156,6 +170,7 @@ $('project-select').addEventListener('change',()=>{
   if(!confirmLeave()) {$('project-select').value=project.id;return;}
   const next=projects.find(p=>p.id===$('project-select').value);if(next)setProject(structuredClone(next));
 });
+if(!readOnly){
 $('save-project').onclick=save;
 $('edit-project').onclick=()=>{
   $('edit-project-name').value=project.name;$('edit-project-branch').value=project.nursingHomeId??'';$('edit-project-error').textContent='';$('edit-project-dialog').showModal();
@@ -186,6 +201,7 @@ $('new-building-form').onsubmit=event=>{
     status(`${next.floors.length}층 건물을 만들었습니다. 층을 선택해 도면 이미지를 등록하거나 공간을 추가하세요.`);
   } catch(error) {$('new-building-error').textContent=error.message;}
 };
+}
 $('floor-list').onclick=event=>{
   const button=event.target.closest('[data-level]');if(!button)return;
   chooseFloor(Number(button.dataset.level));
@@ -197,6 +213,7 @@ function chooseFloor(level){
   renderUI();rebuild();fitCamera();
 }
 $('view-floor-select').onchange=()=>chooseFloor(Number($('view-floor-select').value));
+if(!readOnly){
 $('add-floor').onclick=()=>{
   const used=new Set(project.floors.map(f=>f.level)),available=M.FLOOR_LEVELS.filter(level=>!used.has(level));
   if(!available.length)return;
@@ -232,8 +249,10 @@ $('undo-floor').onclick=()=>{
     const level=removedFloor.floor.level;removedFloor=null;markDirty();chooseFloor(level);status('층과 도면·공간·종사자 배치를 복구했습니다. 저장하면 공유됩니다.');
   }catch(error){status(error.message,'error');}
 };
+}
 $('room-list').onclick=event=>{const button=event.target.closest('[data-room]');if(button)selectRoom(selectedFloor,button.dataset.room);};
 document.querySelectorAll('[data-mode]').forEach(button=>button.onclick=()=>changeMode(button.dataset.mode));
+if(!readOnly){
 $('room-type').onchange=()=>{$('beds-field').hidden=$('room-type').value!=='living';};
 $('room-form').onsubmit=event=>{
   event.preventDefault();const room=currentRoom();if(!room)return;
@@ -258,14 +277,16 @@ $('add-room').onclick=()=>{
 $('drawing-shape').onchange=()=>{drawingShape=$('drawing-shape').value;startPoint=null;drawingPoints=[];previewEnd=null;if(preview){scene?.remove(preview);dispose(preview);preview=null;}renderUI();if(fallback)drawFallback();needsRender=true;};
 $('drawing-finish').onclick=finishPolygon;
 $('drawing-undo').onclick=()=>{drawingPoints.pop();previewEnd=null;drawPreview(null);renderUI();};
+}
 function finishPolygon(){if(!drawing||drawingShape!=='polygon')return;try{finishRoom(M.polygon(drawingPoints,project));}catch(error){status(error.message+' 마지막 점 취소로 수정할 수 있습니다.','error');}}
-function finishRoom(shape){const room=M.addRoom(project,selectedFloor,shape);cancelDrawing();selectedRoom=room.id;markDirty();renderUI();rebuild();status('공간을 추가했습니다. 오른쪽에서 이름과 용도를 지정한 뒤 저장하세요.','success');}
+function finishRoom(shape){if(readOnly)return;const room=M.addRoom(project,selectedFloor,shape);cancelDrawing();selectedRoom=room.id;markDirty();renderUI();rebuild();status('공간을 추가했습니다. 오른쪽에서 이름과 용도를 지정한 뒤 저장하세요.','success');}
 $('show-labels').onclick=()=>{showNames=!showNames;$('show-labels').setAttribute('aria-pressed',String(showNames));labelSprites.forEach(s=>s.visible=showNames);document.querySelectorAll('.f3-space-name').forEach(name=>name.hidden=!showNames);needsRender=true;if(fallback)drawFallback();};
 $('show-walls').onclick=()=>{showWalls=!showWalls;$('show-walls').setAttribute('aria-pressed',String(showWalls));rebuild();};
 $('reset-view').onclick=fitCamera;
 let expandedInert=[];
 function expandViewer(open){
   const viewer=document.querySelector('.f3-viewer');viewer.classList.toggle('is-expanded',open);document.body.classList.toggle('f3-expanded-body',open);
+  window.FacilityViewer?.setExpanded(open);
   if(open){for(let node=viewer;node.parentElement&&node!==document.body;node=node.parentElement){for(const sibling of node.parentElement.children){if(sibling!==node&&!sibling.inert){sibling.inert=true;expandedInert.push(sibling);}}}}
   else{expandedInert.forEach(node=>node.inert=false);expandedInert=[];}
   $('fullscreen').textContent=open?'전체 화면 닫기':'전체 화면';$('fullscreen').focus();resize();
@@ -277,6 +298,7 @@ $('fullscreen').onclick=async()=>{
 };
 document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'전체 화면 닫기':'전체 화면';resize();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.querySelector('.f3-viewer').classList.contains('is-expanded'))expandViewer(false);});
+if(!readOnly){
 $('export-project').onclick=()=>{
   const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=(project.name.replace(/[<>:"/\\|?*]/g,'_')||'시설')+'-3D도면.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
@@ -336,9 +358,10 @@ $('undo-project').onclick=async()=>{
 };
 $('remove-image').onclick=()=>{floor().image=null;project.example=false;markDirty();renderUI();rebuild();status('선택 층의 도면 이미지를 제거했습니다. 공간 구성은 유지됩니다.');};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
-observation=initObservation({getProject:()=>project,getFloor:floor,getRoom:currentRoom,getMode:()=>mode,changed:()=>{renderUI();rebuild();},select:(level,id)=>selectRoom(level,id)});
-staff=initStaff({getProject:()=>project,getFloor:floor,updated:()=>{needsRender=true;},applied:()=>{project.example=false;markDirty();renderUI();rebuild();status('선택 층에 종사자를 배치했습니다. 저장을 눌러 보관하세요.','success');}});
-residents=initResidents({project:()=>project,observations:()=>observation.mapped(),three:()=>THREE,playing:()=>staff.active(),speed:()=>staff.speed(),drawing:()=>drawing,updated:()=>{needsRender=true;updateStaff(0);}});
+}
+observation=initObservation({active:viewerActive,getProject:()=>project,getFloor:floor,getRoom:currentRoom,getMode:()=>mode,changed:()=>{renderUI();rebuild();},select:(level,id)=>selectRoom(level,id)});
+staff=initStaff({readOnly,getProject:()=>project,getFloor:floor,updated:()=>{needsRender=true;},applied:()=>{project.example=false;markDirty();renderUI();rebuild();status('선택 층에 종사자를 배치했습니다. 저장을 눌러 보관하세요.','success');}});
+residents=initResidents({project:()=>project,observations:()=>observation.mapped(),three:()=>THREE,playing:()=>staff.active()&&viewerActive(),speed:()=>staff.speed(),drawing:()=>drawing,updated:()=>{needsRender=true;updateStaff(0);}});
 function selectRoom(level,id) {
   selectedFloor=level;selectedRoom=id;renderUI();rebuild();const room=currentRoom();if(room)status(`${M.floorName(level)} ${room.name} · ${M.TYPES[room.type]}`);
 }
@@ -373,7 +396,7 @@ function staffFigure(parent,actor){
 }
 function prepareStaff(f,group){const motion=window.FacilityStaff.create(project,f);for(const actor of motion.actors)actor.mesh=group?staffFigure(group,actor):null;staffFloors.push({floor:f,group,motion});}
 function updateStaff(dt){
-  const active=staff?.active()&&!drawing&&!document.hidden;let moved=false;
+  const active=staff?.active()&&!drawing&&viewerActive();let moved=false;
   for(const entry of staffFloors){if(active&&entry.motion.actors.length){entry.motion.tick?.(dt,staff.speed());moved=true;}for(const a of entry.motion.actors){if(!a.mesh)continue;a.mesh.position.set(a.x,.08+(a.walking&&active?Math.sin(a.phase*2)*.025:0),a.z);a.mesh.rotation.y=a.heading;a.mesh.userData.legs.forEach((leg,i)=>leg.rotation.x=a.walking&&active?Math.sin(a.phase+i*Math.PI)*.45:0);}}
   const residentMoved=residents?.update(dt),total=staffFloors.reduce((n,f)=>n+f.motion.actors.length,0),configured=staffFloors.reduce((n,{floor:f})=>n+(f.staff||[]).reduce((s,r)=>s+r.count,0),0),text=`예시 · 직원 ${total}명${total<configured?' · 이동 공간 없음 '+(configured-total)+'명':''} · ${residents?.summary()||'어르신 자료 미연결'}`;
   if($('staff-status').textContent!==text)$('staff-status').textContent=text;
@@ -657,7 +680,7 @@ try {
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();$('viewer-loading').hidden=false;$('viewer-loading').textContent='3D 표시 연결이 중단되었습니다. 페이지를 새로고침하면 저장한 도면을 다시 열 수 있습니다.';});
   rebuild();fitCamera();resize();$('viewer-loading').hidden=true;
   let visible=true;document.addEventListener('visibilitychange',()=>{visible=!document.hidden;needsRender=true;});
-  let lastFrame=performance.now();function animate(now){requestAnimationFrame(animate);const dt=(now-lastFrame)/1000;lastFrame=now;if(!visible)return;if(updateStaff(dt))needsRender=true;controls.update();if(needsRender){renderer.render(scene,camera);updateMarkers();needsRender=false;}}
+  let lastFrame=performance.now();function animate(now){requestAnimationFrame(animate);const dt=(now-lastFrame)/1000;lastFrame=now;if(!visible||!viewerActive())return;if(updateStaff(dt))needsRender=true;controls.update();if(needsRender){renderer.render(scene,camera);updateMarkers();needsRender=false;}}
   requestAnimationFrame(animate);
 } catch(error) {
   renderer?.dispose();renderer=null;camera=null;controls=null;
@@ -665,10 +688,10 @@ try {
   if(canvas.getContext('2d')===null){fallbackCanvas=document.createElement('canvas');fallbackCanvas.className='f3-fallback-canvas';fallbackCanvas.setAttribute('aria-hidden','true');viewport.append(fallbackCanvas);}
   status('이 브라우저는 3D 표시를 지원하지 않아 선택 층을 2D 평면으로 표시합니다.','warning');
   document.querySelectorAll('[data-mode]').forEach(button=>{if(button.dataset.mode!=='plan')button.disabled=true;});
-  renderUI();rebuild();let previous=performance.now();function animateFallback(now){requestAnimationFrame(animateFallback);const dt=(now-previous)/1000;previous=now;updateStaff(dt);}requestAnimationFrame(animateFallback);
+  renderUI();rebuild();let previous=performance.now();function animateFallback(now){requestAnimationFrame(animateFallback);const dt=(now-previous)/1000;previous=now;if(viewerActive())updateStaff(dt);}requestAnimationFrame(animateFallback);
 }
 new ResizeObserver(resize).observe(viewport);
 new ResizeObserver(()=>{needsRender=true;if(fallback)drawFallback();}).observe($('observation-details'));
 observation.load();
-setInterval(()=>{if(!document.hidden&&!drawing)loadShared();},30000);
+setInterval(()=>{if(viewerActive()&&!drawing)loadShared();},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!drawing)loadShared();});

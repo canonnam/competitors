@@ -2,7 +2,7 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
-  if (root.document) api.mount(root);
+  if (root.document && !root.FacilityViewer?.readOnly) api.mount(root);
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
   const categories = [
