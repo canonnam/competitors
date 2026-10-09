@@ -36,6 +36,10 @@ class CollectionError(Exception):
     pass
 
 
+class QueryMismatch(CollectionError):
+    pass
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         # Never forward a project token to another location.
@@ -144,7 +148,7 @@ def session_count(response, start=None, end=None, event=None):
                  re.findall(r'20\d\d[/-]\d\d[/-]\d\d[ T]\d\d:\d\d:\d\d', description)}
         expected = {date.strftime('%Y/%m/%d %H:%M:%S') for date in (start, end)}
         if not expected.issubset(dates) or (event and event not in description):
-            raise CollectionError('이벤트 조회 구간·필터가 일치하지 않아 집계를 확인해야 합니다.')
+            raise QueryMismatch('이벤트 조회 구간·필터가 일치하지 않아 집계를 확인해야 합니다.')
     rows = response.get('data')
     if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
         raise CollectionError('이벤트 세션 집계를 확인하지 못했습니다.')
@@ -203,8 +207,16 @@ def collect_once(at=None, fetch=fetch_json):
                      f"Use UTC timestamps from {start.isoformat()} inclusive to {at.isoformat()} exclusive. "
                      "Return exactly one row with one integer column named SessionCount. Do not return user identifiers.")
             try:
-                counts[event] = session_count(fetch(MCP, token, {'query': query, 'timezone': 'UTC'}),
-                    start, at, None if event == 'all_non_bot' else event)
+                for query_attempt in range(2):
+                    try:
+                        counts[event] = session_count(fetch(MCP, token, {'query': query, 'timezone': 'UTC'}),
+                            start, at, None if event == 'all_non_bot' else event)
+                        break
+                    except QueryMismatch:
+                        # Natural-language query generation may choose another window.
+                        # Retry once, but never accept an unverified count or retry HTTP limits.
+                        if query_attempt:
+                            raise
             except CollectionError as exc:
                 counts[event], errors[event] = None, str(exc)
         # Invalid cross-query counts cannot be presented as a conversion rate.

@@ -112,6 +112,25 @@ class ReportTests(unittest.TestCase):
             cr.report(AT)
         self.assertEqual(len(calls), 15)
 
+    def test_query_mismatch_retries_once_and_never_accepts_wrong_window(self):
+        calls = {}
+        def fetch(url, token, body=None):
+            if body is None:
+                return EXPORT
+            query = body['query']
+            calls[query] = calls.get(query, 0) + 1
+            if ('phone_click_incheon' in query and calls[query] == 1) or 'phone_click_anyang' in query:
+                return {'query': 'Different dates and filter', 'dataErrorType': 0, 'data': [{'SessionCount': 0}]}
+            if 'consultation_submitted' in query:
+                raise cr.CollectionError('Clarity 조회 한도에 도달했습니다.')
+            return fixture_fetch(url, token, body)
+        self.assertTrue(cr.collect_once(AT, fetch))
+        latest = cr.report(AT)['latest']
+        self.assertEqual(latest['event_sessions']['phone_click_incheon'], 2)
+        self.assertIsNone(latest['event_sessions']['phone_click_anyang'])
+        self.assertIsNone(latest['event_sessions']['consultation_submitted'])
+        self.assertEqual(sorted(calls.values()), [1, 1, 2, 2])
+
     def test_strict_unknown_and_zero_semantics(self):
         for n in (None, True, 'NaN', float('inf'), -1, '', [], {}):
             with self.subTest(n=n), self.assertRaises(cr.CollectionError):
