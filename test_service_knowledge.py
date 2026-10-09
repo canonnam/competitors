@@ -41,7 +41,7 @@ class ServiceKnowledgeTest(unittest.TestCase):
 
     def test_competitor_data_matches_dashboard_and_revenue(self):
         rows = service.competitor_catalog()
-        self.assertEqual(len(rows), 20)
+        self.assertEqual(len(rows), 21)
         found = service.retrieve("케어포와 이지케어의 50인 가격과 매출을 비교", today=TODAY)
         self.assertEqual(len(found), 2)
         carefor = next(r for r in found if r["title"].startswith("케어포"))

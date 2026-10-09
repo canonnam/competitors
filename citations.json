@@ -192,6 +192,13 @@
       "source_type": "media",
       "published": "2026-01-07",
       "accessed": "2026-09-08"
+    },
+    {
+      "id": 31,
+      "url": "https://cura.io.kr/landing",
+      "title": "cura 공식 소개·요금제",
+      "source_type": "official_product_page",
+      "accessed": "2026-10-09"
     }
   ]
 }

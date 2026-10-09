@@ -3,7 +3,7 @@
   'use strict';
   const data = window.competitorData;
   const roles = {
-    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys']},
+    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura']},
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
