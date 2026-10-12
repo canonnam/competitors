@@ -30,7 +30,9 @@ ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어�
            "aicareplus": ["아이케어플러스"], "caredoc": ["케어닥", "shos"],
            "cleverus": ["클레버러스", "비클레버", "be:clever"],
            "inzinious": ["인지니어스", "incare24"],
-           "spacebank": ["스페이스뱅크", "aiot wright", "휴먼케어"]}
+           "spacebank": ["스페이스뱅크", "aiot wright", "휴먼케어"],
+           "careaigpt": ["요양AI", "요양AI & GPT", "careaigpt"],
+           "koreacareai": ["코리아케어 AI 요양 서비스", "코리아케어플랫폼 AI요양서비스"]}
 
 
 def compact(text):

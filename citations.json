@@ -199,6 +199,20 @@
       "title": "cura 공식 소개·요금제",
       "source_type": "official_product_page",
       "accessed": "2026-10-09"
+    },
+    {
+      "id": 32,
+      "url": "https://careaigpt.com/nursing-ai/",
+      "title": "요양AI&GPTs 공식 서비스 안내",
+      "source_type": "official_product_page",
+      "accessed": "2026-10-12"
+    },
+    {
+      "id": 33,
+      "url": "https://koreacareplatform.com/ai-nursing-service/",
+      "title": "코리아케어플랫폼 AI 요양 서비스 공식 서비스 안내",
+      "source_type": "official_product_page",
+      "accessed": "2026-10-12"
     }
   ]
 }

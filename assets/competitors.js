@@ -4,7 +4,7 @@
   const data = window.competitorData;
   const roles = {
     operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura']},
-    assist: {name:'업무보조·교육', keys:['planner','well','aicareplus']},
+    assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
     safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank']}
@@ -128,6 +128,10 @@
       ['주된 역할', key => escape(roles[roleOf[key]].name) + `<p>${escape(data[key].type)}</p>`],
       ['운영사', key => escape(fact(key,['운영사']))],
       ['공개 기능', key => escape(fact(key,['핵심 기능','핵심 공개 내용']))],
+      ['환수 위험 점검', key => escape(fact(key,['환수 예방 기능']))],
+      ['사용·연계 방식', key => escape(fact(key,['사용 방식','데이터 연계']))],
+      ['페이지 업데이트', key => escape(fact(key,['페이지 업데이트']))],
+      ['관련 서비스', key => escape(fact(key,['관련 서비스']))],
       ['감지 방식', key => escape(fact(key,['감지 방식']))],
       ['요양시설 도입', key => escape(fact(key,['요양시설 도입']))],
       ['도입 상태', key => escape(fact(key,['도입 상태']))],
