@@ -166,9 +166,26 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.request('GET', intake.ADMIN+'/summary', headers=session)[0], 200)
 
     def test_private_files_not_served(self):
-        for path in ('/website_intake.py', '/data/website-intake.db', '/.env'):
+        for path in ('/website_intake.py', '/website_telegram.py', '/data/website-intake.db', '/.env'):
             self.assertEqual(self.request('GET', path)[0], 404)
         self.assertEqual(self.request('GET', '/website-requests.html')[0], 200)
+
+    def test_production_ingestion_enqueues_without_waiting_for_telegram(self):
+        import website_telegram as telegram
+        body = self.payload('visit'); body['environment'] = 'production'
+        with patch.dict(os.environ, {'TELEGRAM_BOT_TOKEN': '123456:fake_test_token',
+                                     'TELEGRAM_CHAT_ID': '12345678', 'WEBSITE_TELEGRAM_ENABLED': 'true'}):
+            with patch.object(telegram, 'send_notification', return_value=108) as send:
+                status, _, result = self.request('POST', intake.INGEST, body,
+                    {'Authorization': 'Bearer test-create-only'}, authenticated=False)
+                self.assertEqual(status, 201)
+                self.assertTrue(result['received'])
+                send.assert_not_called()
+                with closing(intake.connect()) as db:
+                    row = db.execute('SELECT request_id,state FROM website_telegram_outbox').fetchone()
+                self.assertEqual((row['request_id'], row['state']), (body['id'], 'pending'))
+                self.assertEqual(telegram.dispatch_pending()['sent'], 1)
+                send.assert_called_once()
 
 
 if __name__ == '__main__': unittest.main()

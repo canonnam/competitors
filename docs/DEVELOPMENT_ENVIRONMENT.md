@@ -1,5 +1,13 @@
 # 더비다 지식 창고 개발 환경
 
+## 상담신청 텔레그램 알림 (2026-10-12)
+
+- 기존 Python/정적 앱과 Railway `competitors/dev`, `petdev` 배포 경로를 유지한다. `website_telegram.py`를 기존 Docker 이미지에 포함하며 별도 서비스·라이브러리는 추가하지 않는다.
+- 서버 비밀 변수 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`에 연결 메시지로 검증한 봇·개인 수신 채팅을 설정한다. 토큰은 Telegram HTTPS POST에만 사용하고 리디렉션은 따르지 않는다. 실제 값은 저장소·화면·로그에 포함하지 않는다.
+- `WEBSITE_TELEGRAM_ENABLED` 기본 `true`, `WEBSITE_TELEGRAM_NOTIFY_DEV` 기본 `false`다. 두 비밀 변수 누락·형식 오류·비활성화 시 기존 접수 저장은 계속되며 전송 대기 항목은 생성하지 않는다. 연결 전 접수를 소급 발송하지 않는다.
+- 접수와 전송 대기 항목을 기존 `WEBSITE_INTAKE_DB_PATH` DB에 함께 저장하고 작업자가 5초마다 처리한다. 실패는 지연 재시도하고 서버 종료 시 작업자 중단 신호를 보낸다. 전송 완료·중단 복구·수신 채팅 변경 동작과 응답 유실 시 중복 가능성은 [website-intake.md](website-intake.md)에 기록했다.
+- 검증: `python -m unittest test_website_telegram test_website_intake test_facility_access test_clarity_report test_static_pages`. 실제 연결 시험은 개인정보 없는 메시지를 검증된 본인 채팅에만 발송한다.
+
 ## 대시보드 시설 3D 뷰어 (2026-10-09)
 
 - 대시보드는 기존 `/facility-3d.html?viewer=dashboard`를 같은 출처 iframe으로 연다. `assets/facility-viewer.js`가 조회 전용 표시·높이·활성 상태와 전체 화면 대체 보기를 연결하며 기존 렌더러와 서버 저장 도면을 재사용한다. 추가 DB·비밀 변수·배포 서비스는 없다.

@@ -24,6 +24,7 @@ import web_search_results
 import support_applications
 import support_projects
 import website_intake
+import website_telegram
 import staff_eval
 import clarity_report
 
@@ -520,6 +521,7 @@ if __name__ == "__main__":
     support_applications.init_db()
     support_projects.init_db()
     website_intake.init_db()
+    website_telegram_stop = website_telegram.start_worker()
     clarity_report.init_db()
     clarity_scheduler_stop = clarity_report.start_scheduler()
     staff_eval.init_db()
@@ -546,6 +548,7 @@ if __name__ == "__main__":
     try:
         server.serve_forever()
     finally:
+        website_telegram_stop.set()
         clarity_scheduler_stop.set()
         scheduler_stop.set()
         news_scheduler_stop.set()

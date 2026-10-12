@@ -11,6 +11,7 @@ import sqlite3
 import time
 import urllib.parse
 import uuid
+import website_telegram
 
 INGEST = '/api/website-intake'
 ADMIN = '/api/support/website-requests'
@@ -43,6 +44,7 @@ def init_db():
         CREATE INDEX IF NOT EXISTS website_requests_recent ON website_requests(created_epoch DESC);
         CREATE INDEX IF NOT EXISTS website_requests_client ON website_requests(client_hash, created_epoch);
         ''')
+        website_telegram.init_db(db)
 
 
 def validate(body):
@@ -109,6 +111,7 @@ def save(body):
         if recent >= 5: raise IntakeError(429, '신청 횟수가 많습니다. 10분 후 다시 시도해 주세요.')
         db.execute('INSERT INTO website_requests(id,kind,environment,created,created_epoch,client_hash,payload,fingerprint,updated) VALUES(?,?,?,?,?,?,?,?,?)',
                    (record_id, kind, environment, now, time.time(), client, payload, fingerprint, now))
+        website_telegram.enqueue(db, record_id, environment)
     return {'id': record_id, 'received': True, 'duplicate': False}
 
 
