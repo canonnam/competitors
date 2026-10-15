@@ -494,6 +494,53 @@ price50.koreacareai = {
   links: [['별도 AI 요양 프로그램 요금 안내', 'https://koreacareplatform.com/membership-pricing/']],
   checked: '2026-10-12'
 };
+// AI recording and daycare ERP features verified against official pages on 2026-10-15.
+d.easy.sources = [
+  ['[4] 이지케어 공식 사이트', 'https://www.easyms.co.kr/'],
+  ['[35] 이지케어 주간보호 ERP · 2026-10-15 확인', 'https://ezcare.easyms.co.kr/index.html?PG=daycare']
+];
+d.easy.facts.find(([label]) => label === '핵심 기능')[1] = '수급자·직원·일정·급여·청구·수납, 재무회계 대행. 주간보호 ERP는 AI 서류 작성 지원·상태 변화 분석·급여제공계획서 생성·평가 누락 점검을 소개';
+d.easy.facts.push(
+  ['AI 서류 작성', '운영 규정·재난 대응 매뉴얼 등 기관 필수 문서의 기관별 작성과 판단 근거 작성을 지원'],
+  ['AI 수급자 관리', '수급자의 상태 변화 기록을 분석해 급여제공계획서를 자동 생성한다고 소개'],
+  ['평가·기록', '프로그램 연간계획의 평가기준 준수 여부 자동 검증과 평소 기록 기반 AI 누락 점검을 안내'],
+  ['AI 회계 출시 예정', 'AI 결의서 초안 생성·잔액/예산/오류 감지·희망이음 자동 등록은 2026년 10월 출시 예정으로 표기. 2026-10-15 현재 실제 출시 완료 여부 미확인'],
+  ['도입 상태', '주간보호 ERP의 공개 기능 소개 확인. AI 회계·희망이음 자동 등록은 2026년 10월 출시 예정이며 제공 중인 기능과 구분'],
+  ['기능 확인일', '2026-10-15 · 주간보호 ERP 공식 소개 기준. 기존 가격 확인일 2026-09-08과 구분']
+);
+d.easy.note += ' 주간보호 ERP는 서류 작성 보조에서 상태 변화 기반 계획서 생성·평가 누락 점검으로 AI 적용 범위를 넓힌다. AI 결의서·희망이음 자동 등록은 공식 안내의 2026년 10월 출시 예정 기능으로, 실제 출시 공지·제공 범위는 후속 확인이 필요하다.';
+d.carehaja = {
+  n: '케어하자',
+  type: 'ERP · 요양시설 AI 음성 기록·기관평가',
+  src: '[34] 케어하자 요양시설 AI ERP 공식 소개',
+  url: 'https://carehaja.com/daycare-home/intro.php',
+  sources: [['[34] 케어하자 공식 소개 · 2026-10-15 확인', 'https://carehaja.com/daycare-home/intro.php']],
+  screenshot: null,
+  facts: [
+    ['운영사', '에이아이코코아(AICOCOA) 표기 · 공식 사이트 하단 법인명은 주식회사 플랫폼뱅크'],
+    ['핵심 메시지', '요양보호사가 말하면 AI가 요양·간호·식단 기록으로 나누고 사람이 확인해 저장'],
+    ['지원 범위', '요양시설(요양원) 전용 AI ERP'],
+    ['핵심 기능', 'AI 음성 기록을 어르신별 요양·간호·식단 급여제공 카드로 분류, 사람 확인 후 저장, 기관평가 143개 기준 대시보드 연계'],
+    ['사용 방식', '마이크로 기록 → AI가 어르신별 요양·간호·식단 카드로 정리 → 사람이 확인하고 기록하기를 눌러 저장. 누락 정보는 되묻는다고 소개'],
+    ['평가·기록', '공식 소개 기준 143개 평가 기준을 직종별로 배정하고 급여제공 기록·일지·점검표와 연결. 빠진 서류·기한을 대시보드와 알림으로 안내'],
+    ['기타 공개 기능', '공단 롱텀 연동, 청구, QR 출퇴근·근무일정, 비급여, 표준약관·전자서명, 희망이음 세입·세출 과목 정리를 소개'],
+    ['도입 상태', '공식 소개·가상 어르신 시연 안내 확인. 실제 기관에서의 정확도·평가 효과·연동 범위는 미검증'],
+    ['고객수', '실제 유료 도입 기관 수 공개 근거 미확인'],
+    ['출시일', '공식 소개에 출시일 미공개. 본 분석 확인일 2026-10-15는 출시일이 아님'],
+    ['직영 기관 운영', '공개 자료에서 미확인'],
+    ['기능 확인일', '2026-10-15 · 공식 소개 기준']
+  ],
+  note: '음성 기록을 급여제공 카드와 기관평가 증빙으로 연결하는 기관 운영 ERP 경쟁사다. 사람이 확인한 뒤 저장하는 단계와 기록→평가 연계가 비교 포인트다. 143개는 자사 소개의 평가 기준 수이며 공단 인증·만점 보장으로 해석하지 않는다. 출시일과 실제 도입 규모는 공개 자료에서 확인하지 못했다.'
+};
+price50.carehaja = {
+  m: '50인 공개 요금 미확인',
+  o: '가입·설치비 및 AI 이용 한도 공개 표기 미확인',
+  u: '공식 소개의 무료로 시작하기는 확인. 50인 기관의 월 사용료·무료 범위·AI 이용 한도는 명시되지 않아 계약 확인 필요.',
+  b: '무료 시작 문구를 영구 무료나 50인 요금 0원으로 환산하지 않음. 공개 단가·부가세·초기 비용 미확인.',
+  v: '공식 소개 확인 · 요금·50인 조건 미확인',
+  s: 'https://carehaja.com/daycare-home/intro.php',
+  checked: '2026-10-15'
+};
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});

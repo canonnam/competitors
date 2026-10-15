@@ -24,6 +24,7 @@ PAGES.update({key: value[1] for key, value in card_knowledge.CARDS.items()})
 METRICS = {"revenue": "운영수입", "cost": "운영비용", "profit": "운영손익(입출금 기준)",
            "cashChange": "자금증감", "financing": "차입·원금상환 순액", "investment": "시설투자 순액"}
 ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어포", "한강시스템"],
+           "carehaja": ["케어하자", "에이아이코코아", "AICOCOA", "플랫폼뱅크"],
            "ecm": ["ecm", "누리뜰"], "angel": ["엔젤시스템", "엔젤"], "allcare": ["올케어"],
            "salary": ["케어샐러리"], "planner": ["케어플래너"], "well": ["웰파트너스"],
            "happy": ["행복커넥트"], "skt": ["누구오팔", "skt"], "maeum": ["마음손"],
