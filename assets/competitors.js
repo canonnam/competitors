@@ -3,8 +3,8 @@
   'use strict';
   const data = window.competitorData;
   const roles = {
-    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja']},
-    assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai']},
+    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja','rachelcare','careverse','seniorlife']},
+    assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai','aidosa','junctionmed']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
     safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank']}
@@ -15,20 +15,39 @@
   const evidenceSources = item => (item.sources || [[item.src, item.url]]).map(([label,url]) => source(url,label)).join('<br>');
   const normalize = value => value.normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g,' ').trim();
   const selected = new Set();
-  const cards = [...document.querySelectorAll('#cards > .card')].map(element => {
+  const recordDate = item => /^\d{4}-\d{2}-\d{2}$/.test(item.updatedAt || '') && Number.isFinite(Date.parse(item.updatedAt)) ? item.updatedAt : '';
+  const dateLabel = item => recordDate(item) ? `업데이트 ${recordDate(item).replaceAll('-', '.')}` : '업데이트일 미기록';
+  const cards = [...document.querySelectorAll('#cards > .card')].map((element, index) => {
     const key = element.querySelector('[data-compare]').dataset.compare;
     element.dataset.key = key;
     element.classList.add(`tone-${roleOf[key]}`);
     element.querySelector('.tag').textContent = roles[roleOf[key]].name;
     element.querySelector('[data-compare]').hidden = false;
+    const updated = document.createElement('p');
+    updated.className = 'card-updated';
+    const date = recordDate(data[key]);
+    updated.innerHTML = date ? `업데이트 <time datetime="${date}">${date.replaceAll('-', '.')}</time>` : '업데이트일 미기록';
+    element.querySelector('.operator').after(updated);
     // Search product facts rather than revenue-source boilerplate.
     const searchable = normalize([data[key].n, ...data[key].facts.flat(), data[key].note, element.querySelector('.pills').textContent].join(' '));
-    return {key, element, searchable};
+    return {key, element, searchable, index};
   });
   const fact = (key, labels) => data[key].facts.find(([label]) => labels.includes(label))?.[1] || '공개 확인 불가';
   const source = (url, label) => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${escape(label)} ↗</a>`;
-  const priceEvidence = price => `${escape(price.checked)} 재확인 · ${escape(price.v)}<br>${source(price.s,'공식 가격 근거')}${(price.links || []).map(([label,url]) => ' · ' + source(url,label)).join('')}`;
+  const priceEvidence = price => `${escape(price.checked)} 재확인 · ${escape(price.v)}<br>${source(price.s,'가격·확인 근거')}${(price.links || []).map(([label,url]) => ' · ' + source(url,label)).join('')}`;
+  function sortCards() {
+    const order = $('sort-order').value;
+    const sorted = [...cards].sort((a, b) => {
+      if (order === 'updated') return recordDate(data[b.key]).localeCompare(recordDate(data[a.key])) || a.index - b.index;
+      if (order === 'name') return data[a.key].n.localeCompare(data[b.key].n, 'ko') || a.index - b.index;
+      return a.index - b.index;
+    });
+    sorted.forEach(card => $('cards').appendChild(card.element));
+    $('sort-description').textContent = order === 'updated' ? '이 분석에 반영한 날짜 기준 · 출시일과 다름'
+      : order === 'name' ? '서비스명 가나다·알파벳순' : '기존 조사 배열 · 시장 순위와 무관';
+  }
   function filterCards() {
+    sortCards();
     const role = $('role-filter').value;
     const terms = normalize($('service-search').value).split(' ').filter(Boolean);
     let visible = 0;
@@ -44,11 +63,13 @@
   function resetFilters() {
     $('service-search').value = '';
     $('role-filter').value = 'all';
+    $('sort-order').value = 'updated';
     filterCards();
     $('service-search').focus();
   }
   $('explorer-controls').hidden = false;
   $('service-search').addEventListener('input', filterCards);
+  $('sort-order').addEventListener('change', filterCards);
   $('role-filter').addEventListener('change', filterCards);
   $('reset-filters').addEventListener('click', resetFilters);
   $('empty-reset').addEventListener('click', resetFilters);
@@ -117,7 +138,7 @@
     const item = data[key], price = item.price50;
     // The dedicated price panel contains the later, explicitly conditioned price research.
     const facts = item.facts.filter(([label]) => label !== '가격');
-    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">근거: ${evidenceSources(item)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,'공식 사이트 열기')}</p>`;
+    $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">${escape(dateLabel(item))} · 이 분석 반영일</p><p class="small">근거: ${evidenceSources(item)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,item.sources && key === 'junctionmed' ? '협약 보도 원문 열기' : '공식 사이트 열기')}</p>`;
     showDialog($('modal'));
     $('modal').scrollTop = 0;
   };
@@ -126,6 +147,7 @@
     const keys = [...selected];
     const rows = [
       ['주된 역할', key => escape(roles[roleOf[key]].name) + `<p>${escape(data[key].type)}</p>`],
+      ['분석 업데이트', key => escape(dateLabel(data[key]))],
       ['운영사', key => escape(fact(key,['운영사']))],
       ['공개 기능', key => escape(fact(key,['핵심 기능','핵심 공개 내용']))],
       ['환수 위험 점검', key => escape(fact(key,['환수 예방 기능']))],

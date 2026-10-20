@@ -24,6 +24,11 @@ PAGES.update({key: value[1] for key, value in card_knowledge.CARDS.items()})
 METRICS = {"revenue": "운영수입", "cost": "운영비용", "profit": "운영손익(입출금 기준)",
            "cashChange": "자금증감", "financing": "차입·원금상환 순액", "investment": "시설투자 순액"}
 ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어포", "한강시스템"],
+           "rachelcare": ["라헬케어", "라헬빌드", "Rachel Care", "SafeWatch", "세이프워치"],
+           "careverse": ["CareVerse", "케어버스"], "aidosa": ["AI도사들"],
+           "seniorlife": ["시니어앤라이프", "디지털케어로그"],
+           "junctionmed": ["정션메드", "케어,원", "CareOne", "마음로그", "MindLog"],
+           "caring": ["케어링", "케어링 인텔리전스", "케어링 모션"],
            "carehaja": ["케어하자", "에이아이코코아", "AICOCOA", "플랫폼뱅크"],
            "ecm": ["ecm", "누리뜰"], "angel": ["엔젤시스템", "엔젤"], "allcare": ["올케어"],
            "salary": ["케어샐러리"], "planner": ["케어플래너"], "well": ["웰파트너스"],
@@ -118,15 +123,16 @@ def competitor_evidence(question, catalog, selected):
             lines.append(f"{row['name']}: {detail}")
         return [evidence("competitors", f"경쟁사 {len(rows)}개 비교 ({'50인 가격' if pricing else '사업·기능'})",
             "서비스에 등록된 비교 자료이며 실시간 견적이 아닙니다. 50인 외 인원 가격은 환산하지 마세요. 과금 기준이 다른 상품은 단순 순위 비교할 수 없습니다.\n" + "\n".join(lines),
-            max(row["price50"]["checked"] for row in rows))]
+            max(row.get("updatedAt") or row["price50"]["checked"] for row in rows))]
     result = []
     for row in rows[:6]:
         price = row["price50"]
         lines = [row["type"], *(f"{key}: {value}" for key, value in row["facts"]), "분석 메모: " + row["note"], "운영사 매출: " + row["revenue"]]
+        lines.append(f"분석 업데이트: {row.get('updatedAt') or '미기록'}; 가격 확인일: {price['checked']}. 출시일과 구분합니다.")
         lines.extend(f"{label}: {price[key]}" for key, label in
                      [("m", "50인 월 요금"), ("o", "초기 비용"), ("u", "적용 조건"), ("b", "산정 근거"), ("v", "검증 범위")])
         lines.append("조사 시점의 정보입니다. 매출은 각 회계연도 운영사 전체 기준이며 해당 서비스 단독 매출과 다릅니다. 가격은 50인 비교 조건에 한정하며 다른 인원·유형으로 임의 환산하지 않습니다.")
-        result.append(evidence("competitors", row["name"] + " 기능·가격", "\n".join(lines), price["checked"]))
+        result.append(evidence("competitors", row["name"] + " 기능·가격", "\n".join(lines), row.get("updatedAt") or price["checked"]))
     return result
 
 

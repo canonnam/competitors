@@ -10,6 +10,7 @@ const context = {window: {}};
 vm.runInNewContext(source, context, {timeout: 2000});
 const items = Object.entries(context.window.competitorData).map(([id, row]) => ({
   id, name: row.n, type: row.type, source: row.src, url: row.url,
+  updatedAt: row.updatedAt || null,
   facts: row.facts, note: row.note, price50: row.price50,
   ...(row.sources ? {sources: row.sources} : {}),
 }));

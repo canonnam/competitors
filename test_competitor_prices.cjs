@@ -35,7 +35,7 @@ test('50 recipients are not silently treated as employees or a smaller plan', ()
 });
 
 test('every record exposes dated evidence and one consistent price to search', () => {
-  assert.equal(Object.keys(data).length, 24);
+  assert.equal(Object.keys(data).length, 29);
   for (const item of Object.values(data)) {
     const price = item.price50;
     assert.match(price.checked, /^2026-\d{2}-\d{2}$/, item.n);
