@@ -904,4 +904,49 @@ d.carefor.note += ' 처방전 AI분석등록은 2026-10-18 FAQ와 연결 매뉴�
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
+// Public target settings, not proof of adoption or identical feature coverage.
+// Classifications have a separate review date from product/news updates.
+const institutionTypes = {
+  facility:'요양시설(요양원)', daycare:'주야간보호', homecare:'방문요양',
+  visiting:'방문목욕·간호', hospital:'요양병원', welfare:'지자체·복지기관',
+  housing:'시니어주거', unknown:'확인 필요'
+};
+const institutionResearch = {
+  easy: [['daycare','homecare'], '방문요양·주간보호 ERP를 구분해 제공한다. 이번 AI 문서·평가 기능 근거는 주간보호 ERP 기준이다.', [['공식 서비스 소개','https://ezcare.easyms.co.kr/index.html?PG=daycare']]],
+  carefor: [['facility','daycare','homecare','visiting'], '시설급여·주야간보호·가정방문(요양·목욕·간호) 프로그램을 구분한다. 처방전 AI 등록은 시설·주야간 매뉴얼 기준이며 모든 급여 유형의 공통 기능으로 단정하지 않는다.'],
+  ecm: [['facility','daycare','homecare'], '시설·주야간보호 데모와 요금표, 방문요양 신청 유형·주야간/방문 통합플랫폼 안내를 확인했다. 지자체 통합돌봄은 준비 중이다.', [['EcM 공식 소개·신청 유형','https://ecm.or.kr/main/intro']]],
+  angel: [['facility','daycare'], '입소시설과 주야간보호 프로그램을 나누고 각각의 사용시설 교육 사례를 공개한다.', [['엔젤시스템 공식 소개','https://www.silverangel.kr/']]],
+  allcare: [['unknown'], '장기요양기관·사회복지시설의 회계 및 회계대행업체 대상 서비스다. 요양원·주야간보호·방문요양별 지원 범위는 추가 확인이 필요하다.'],
+  jipangi: [['unknown'], '장기요양기관 공통 인사·노무·회계 ERP로 소개한다. 요양원·주야간보호·방문요양별 지원 범위는 추가 확인이 필요하다.'],
+  salary: [['homecare','visiting'], '방문요양·방문목욕·방문간호 기관을 명시한다. 시설급여·주야간보호 지원으로 확대 해석하지 않는다.'],
+  planner: [['homecare'], '방문요양 사회복지사·센터장 대상이다. 공식 FAQ도 다른 장기요양기관 유형을 정식 지원 대상으로 안내하지 않는다고 밝힌다.'],
+  well: [['facility','daycare','welfare'], '제품군 전체 기준이다. 노인보호전문기관·사회복지관·요양시설의 기록·정산을 지원하며, 목소리봄은 요양원·주간보호센터의 가족 안내 파트너를 모집한다. 제품별 대상과 기능은 다르다.'],
+  aicareplus: [['facility'], '교육 서비스에 장기요양시설 운영자 교육을 명시한다. 별도 AI 요양 프로그램의 지원 기관과 이 교육 서비스의 대상을 혼용하지 않는다.'],
+  maeum: [['facility'], '공식 ERP 소개에서 요양원 사용 사례를 명시한다. 다른 기관 유형의 지원 여부는 별도 확인이 필요하다.'],
+  yoyangsys: [['facility'], '시설급여 수급자·기록·기관 운영을 관리하는 요양시설 ERP 기준이다.'],
+  hyodol: [['welfare'], '지역사회 어르신 가정에서 사용하는 로봇을 복지기관 등이 도입·관리한다. 가정 내 사용을 방문요양 ERP 지원으로 해석하지 않는다.', [['효돌 연구·복지관 실천 사례','https://www.hyodol.com/license'],['효돌 지역사회 사업 연혁','https://www.hyodol.com/history']]],
+  happy: [['welfare'], '기존 공개자료의 지자체 기반 안부·안전 돌봄 사업 기준이다. 가정에 설치하는 돌봄 기기·관제 서비스이며, 2026-10-20 공식 사이트 재접속은 실패해 현재 세부 공급 범위는 확인이 필요하다.'],
+  skt: [['homecare','welfare'], '공식 보도의 지자체 돌봄 및 아리아케어 방문요양 수급자 가정 연계 사례 기준이다. 2020년 발표이며 기관 ERP 지원이나 현재 공급 범위의 증거로 사용하지 않는다.'],
+  caring: [['facility','daycare','homecare','housing'], '자사 돌봄 사업 기준: 방문요양·주간보호·도심형 요양원·실버타운을 안내한다. 인텔리전스의 외부 기관 판매 범위와 동일하지 않으며, 모션 로봇은 자사 주간보호센터 시범 계획이다.', [['케어링 공식 서비스 유형','https://caring.co.kr/']]],
+  caredoc: [['facility','daycare','homecare','hospital','housing'], '요양원·실버타운·방문요양 운영, 요양병원 간병·시설 솔루션, 주야간보호 창업 제휴를 구분한다. 각 유형에 같은 ERP를 판매한다는 뜻은 아니다.', [['케어닥 사업소개','https://company.caredoc.kr/about/business'],['케어닥 창업·제휴 유형','https://company.caredoc.kr/partnership']]],
+  cleverus: [['facility'], 'Be:Clever의 요양시설 낙상·이상감지 및 서초빌리지·솔밭요양원 적용 사례 기준이다.'],
+  inzinious: [['facility','hospital'], '영남요양병원 사례와 구립용산노인전문요양원 도입 발표 기준이다. 재택용 InCare24(Home)은 실증 단계로 구분한다.'],
+  spacebank: [['facility'], '부천시립요양원·건강누리 의왕시립 노인요양원 구축·시범운영 소개 기준이다. 시립 시설이라도 기관 유형은 요양시설로 분류한다.'],
+  cura: [['facility'], '요양원 전용 AI ERP 소개 기준이다. 기관 유형과 베타·기능별 제공 단계를 구분한다.'],
+  careaigpt: [['facility'], '공식 요양 AI 소개가 요양원 운영·면회·식단 문의와 급여제공기록 작성을 예시로 든다. 다른 유형의 정식 지원 범위는 미확인이다.'],
+  koreacareai: [['unknown'], '요양기관의 원장·임직원·보호자 대상이지만 기관 세부 유형을 명시하지 않는다. 연결된 별도 제품의 지원 범위를 그대로 적용하지 않는다.'],
+  carehaja: [['facility','homecare'], '공식 메뉴에 방문요양과 요양원 프로그램이 있다. 이번 AI 음성 기록·평가 연계 근거는 요양원 프로그램이며, 주야간보호는 준비 중이라 포함하지 않는다.'],
+  rachelcare: [['facility','daycare','homecare'], '공식 소개·도입 상담에 요양원·주야간보호센터·방문요양기관·복합기관을 명시한다. SafeWatch는 개발·검증 중이며 모든 대상 기관에서 제공 중이라는 뜻은 아니다.'],
+  careverse: [['homecare'], '방문요양·재가복지센터의 음성 방문기록과 청구 점검 서비스 기준이다.'],
+  aidosa: [['homecare'], '방문요양 기록지 초안 서비스 기준이다. 시설용 앱은 시제품 단계이므로 요양시설의 제공 중 서비스로 포함하지 않는다.'],
+  seniorlife: [['facility','daycare','homecare','hospital'], '기관 도입 안내에 재가돌봄센터·주야간보호센터·요양원·요양병원을 명시한다. 기관별 계약·권한과 베타 범위를 확인해야 한다.'],
+  junctionmed: [['welfare'], '돌봄로봇 협약의 공공 통합돌봄 사업 공동 추진 계획 기준이다. 실제 도입 기관과 요양원·주야간보호·방문요양별 지원 범위는 미확인이다.']
+};
+Object.entries(d).forEach(([key, item]) => {
+  const [institutions, note, sources] = institutionResearch[key];
+  item.institutions = institutions;
+  item.institutionEvidence = {checked:'2026-10-20', note, sources:sources || item.sources || [[item.src,item.url]]};
+  item.facts.push(['대상 기관', institutions.map(id => institutionTypes[id]).join(' · ')], ['기관별 적용 범위', note]);
+});
+window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;

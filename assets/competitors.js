@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const data = window.competitorData;
+  const institutionTypes = window.competitorInstitutionTypes;
   const roles = {
     operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja','rachelcare','careverse','seniorlife']},
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai','aidosa','junctionmed']},
@@ -28,12 +29,17 @@
     const date = recordDate(data[key]);
     updated.innerHTML = date ? `업데이트 <time datetime="${date}">${date.replaceAll('-', '.')}</time>` : '업데이트일 미기록';
     element.querySelector('.operator').after(updated);
+    const institutions = document.createElement('div');
+    institutions.className = 'card-institutions';
+    institutions.innerHTML = `<span class="institution-label">대상 기관</span>${data[key].institutions.map(id => `<span class="institution-chip">${escape(institutionTypes[id])}</span>`).join('')}`;
+    updated.after(institutions);
     // Search product facts rather than revenue-source boilerplate.
     const searchable = normalize([data[key].n, ...data[key].facts.flat(), data[key].note, element.querySelector('.pills').textContent].join(' '));
     return {key, element, searchable, index};
   });
   const fact = (key, labels) => data[key].facts.find(([label]) => labels.includes(label))?.[1] || '공개 확인 불가';
   const source = (url, label) => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${escape(label)} ↗</a>`;
+  const institutionEvidence = item => `${escape(item.institutionEvidence.checked)} 기관 분류 확인 · ${item.institutionEvidence.sources.map(([label,url]) => source(url,label)).join(' · ')}`;
   const priceEvidence = price => `${escape(price.checked)} 재확인 · ${escape(price.v)}<br>${source(price.s,'가격·확인 근거')}${(price.links || []).map(([label,url]) => ' · ' + source(url,label)).join('')}`;
   function sortCards() {
     const order = $('sort-order').value;
@@ -49,28 +55,37 @@
   function filterCards() {
     sortCards();
     const role = $('role-filter').value;
+    const institution = $('institution-filter').value;
     const terms = normalize($('service-search').value).split(' ').filter(Boolean);
     let visible = 0;
     cards.forEach(card => {
-      const match = (role === 'all' || roleOf[card.key] === role) && terms.every(term => card.searchable.includes(term));
+      const match = (role === 'all' || roleOf[card.key] === role)
+        && (institution === 'all' || data[card.key].institutions.includes(institution))
+        && terms.every(term => card.searchable.includes(term));
       card.element.hidden = !match;
       if (match) visible++;
     });
-    $('result-count').textContent = `${visible} / ${cards.length}개 서비스${role === 'all' ? '' : ' · ' + roles[role].name}`;
+    $('result-count').textContent = `${visible} / ${cards.length}개 서비스${role === 'all' ? '' : ' · ' + roles[role].name}${institution === 'all' ? '' : ' · ' + institutionTypes[institution]}`;
     $('empty-state').hidden = visible !== 0;
     document.querySelectorAll('[data-role]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.role === role)));
   }
   function resetFilters() {
     $('service-search').value = '';
     $('role-filter').value = 'all';
+    $('institution-filter').value = 'all';
     $('sort-order').value = 'updated';
     filterCards();
     $('service-search').focus();
   }
   $('explorer-controls').hidden = false;
+  Object.entries(institutionTypes).forEach(([id, name]) => {
+    const count = cards.filter(card => data[card.key].institutions.includes(id)).length;
+    $('institution-filter').add(new Option(`${name} (${count})`, id));
+  });
   $('service-search').addEventListener('input', filterCards);
   $('sort-order').addEventListener('change', filterCards);
   $('role-filter').addEventListener('change', filterCards);
+  $('institution-filter').addEventListener('change', filterCards);
   $('reset-filters').addEventListener('click', resetFilters);
   $('empty-reset').addEventListener('click', resetFilters);
   document.querySelectorAll('[data-role]').forEach(button => button.addEventListener('click', () => {
@@ -139,6 +154,10 @@
     // The dedicated price panel contains the later, explicitly conditioned price research.
     const facts = item.facts.filter(([label]) => label !== '가격');
     $('sheet').innerHTML = `<span class="tag">${escape(roles[roleOf[key]].name)} · ${escape(item.type)}</span><h2 id="detail-title">${escape(item.n)}</h2><p class="small">${escape(dateLabel(item))} · 이 분석 반영일</p><p class="small">근거: ${evidenceSources(item)}</p><dl class="facts">${facts.map(([label,value]) => `<dt>${escape(label)}</dt><dd>${escape(value)}</dd>`).join('')}</dl><section class="price-panel"><h3>가격과 도입 조건 · 50인 기준 검증</h3><p><strong>${escape(price.m)}</strong></p><p>${escape(price.o)}</p><p class="small">${escape(price.u)}</p><p class="price-basis">${escape(price.b)}</p><p class="small price-evidence">${priceEvidence(price)}</p></section><section class="revenue-detail"><h3>매출과 확인 근거</h3>${$('revenue-'+key).innerHTML}</section><h3>분석 메모</h3><p>${escape(item.note)}</p>${item.screenshot ? `<figure class="service-shot"><figcaption>서비스 화면 · 공식 사이트 캡처 (2026-09-07)</figcaption><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.screenshot)}" alt="${escape(item.n)} 공식 사이트 화면" loading="lazy"></a></figure>` : '<p class="small">공식 서비스 화면 캡처 미수집</p>'}${item.functionShot ? `<figure class="function-shot"><figcaption>공개된 기능 사용 화면 · 공식 원본</figcaption><a href="${escape(item.functionShotSource)}" target="_blank" rel="noopener noreferrer"><img src="${escape(item.functionShot)}" alt="${escape(item.functionShotTitle)}" loading="lazy"></a></figure>` : ''}<p>${source(item.url,item.sources && key === 'junctionmed' ? '협약 보도 원문 열기' : '공식 사이트 열기')}</p>`;
+    const evidence = document.createElement('p');
+    evidence.className = 'small institution-evidence';
+    evidence.innerHTML = institutionEvidence(item);
+    $('sheet').querySelector('.facts').after(evidence);
     showDialog($('modal'));
     $('modal').scrollTop = 0;
   };
@@ -148,6 +167,8 @@
     const rows = [
       ['주된 역할', key => escape(roles[roleOf[key]].name) + `<p>${escape(data[key].type)}</p>`],
       ['분석 업데이트', key => escape(dateLabel(data[key]))],
+      ['대상 기관', key => escape(data[key].institutions.map(id => institutionTypes[id]).join(' · '))],
+      ['기관별 적용 범위', key => escape(data[key].institutionEvidence.note) + `<p>${institutionEvidence(data[key])}</p>`],
       ['운영사', key => escape(fact(key,['운영사']))],
       ['공개 기능', key => escape(fact(key,['핵심 기능','핵심 공개 내용']))],
       ['환수 위험 점검', key => escape(fact(key,['환수 예방 기능']))],

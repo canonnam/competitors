@@ -28,9 +28,9 @@
 <meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
 
 <link rel="stylesheet" href="/assets/site.css">
-<link rel="stylesheet" href="/assets/competitors.css?v=20261020-updates">
-<script src="/assets/competitors-data.js?v=20261020-updates" defer></script>
-<script src="/assets/competitors.js?v=20261020-updates" defer></script>
+<link rel="stylesheet" href="/assets/competitors.css?v=20261020-institutions">
+<script src="/assets/competitors-data.js?v=20261020-institutions" defer></script>
+<script src="/assets/competitors.js?v=20261020-institutions" defer></script>
 <script src="/assets/site.js" defer></script>
 <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261009-clarity" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single"><script src="/assets/ui-help.js?v=20261006-single" defer></script></head>
 <body class="kb-detail competitor-page">
@@ -61,14 +61,16 @@
 <section id="explorer" aria-labelledby="explorer-title">
   <div class="section-title"><div><p class="section-kicker">EXPLORE & COMPARE</p><h2 id="explorer-title">서비스 탐색</h2></div><span class="section-side">2~3개를 골라 나란히 비교하세요</span></div>
   <div class="explorer-toolbar" id="explorer-controls" hidden>
-    <label class="search-field" for="service-search"><span>서비스 검색</span><input id="service-search" type="search" placeholder="서비스명, 운영사, 기능으로 검색" autocomplete="off"></label>
+    <label class="search-field" for="service-search"><span>서비스 검색</span><input id="service-search" type="search" placeholder="서비스명, 운영사, 기관, 기능으로 검색" autocomplete="off"></label>
+    <label class="role-select" for="institution-filter"><span>대상 기관</span><select id="institution-filter" aria-describedby="institution-description"><option value="all">모든 기관</option></select></label>
     <label class="role-select" for="role-filter"><span>업무 역할</span><select id="role-filter"><option value="all">모든 역할</option><option value="operations">기관 운영</option><option value="assist">업무보조·교육</option><option value="monitor">안부·안전 돌봄</option><option value="care">돌봄 운영·매칭</option><option value="safety">시설 낙상·이상감지</option></select></label>
     <label class="role-select" for="sort-order"><span>정렬</span><select id="sort-order"><option value="updated">최근 업데이트순</option><option value="default">기존 순서</option><option value="name">서비스명순</option></select></label>
     <button type="button" class="reset-button" id="reset-filters">초기화</button>
   </div>
+  <p class="institution-description" id="institution-description">공개된 지원·운영 대상을 기준으로 복수 분류했습니다. 기관별 기능·개발 단계·도입 근거는 상세에서 확인하세요.</p>
   <div class="result-row"><p id="result-count" role="status" aria-live="polite" aria-atomic="true">29개 서비스</p><span id="sort-description">이 분석에 반영한 날짜 기준 · 출시일과 다름</span></div>
   <noscript><p class="data-note">검색과 나란히 비교는 JavaScript를 켜면 사용할 수 있습니다. 서비스 요약과 매출 출처는 아래에서 확인할 수 있습니다.</p></noscript>
-  <div class="empty-state" id="empty-state" hidden><strong>조건에 맞는 서비스가 없습니다.</strong><p>검색어를 줄이거나 업무 역할을 바꿔보세요.</p><button type="button" class="secondary-button" id="empty-reset">모든 서비스 보기</button></div>
+  <div class="empty-state" id="empty-state" hidden><strong>조건에 맞는 서비스가 없습니다.</strong><p>검색어를 줄이거나 대상 기관·업무 역할을 바꿔보세요.</p><button type="button" class="secondary-button" id="empty-reset">모든 서비스 보기</button></div>
   <div class="grid" id="cards">
 <div class="card" data-t="ai"><span class="tag ai">시설 낙상·이상감지</span><h3>클레버러스 · Be:Clever</h3><div class="operator">운영사: ㈜클레버러스</div><p class="message">기존 CCTV에서 낙상·침상 이탈을 감지하고 현장 직원에게 알림</p><div class="pills"><span class="pill">CCTV 연동</span><span class="pill">Vision LLM</span><span class="pill">서초빌리지</span><span class="pill">솔밭요양원</span></div><details class="card-revenue"><summary>매출과 출처 확인</summary><div class="revenue-disclosure" id="revenue-cleverus"><b>매출 정보 · 공개 확인 불가</b><span>㈜클레버러스</span><p>공개 자료에서 검증 가능한 해당 서비스의 연간 매출을 확인하지 못했습니다.</p><span class="revenue-sources"><a href="https://www.cleverus-ai.com/solutions/beclever/" target="_blank" rel="noopener noreferrer">공식 제품·도입 근거</a><br>재확인: 2026-09-09</span></div></details><div class="card-actions"><button type="button" class="select-compare" data-compare="cleverus" aria-pressed="false" hidden>+ 비교 담기</button><button type="button" class="detail" onclick="openDetail('cleverus')">상세 보기 →</button></div></div>
 <div class="card" data-t="ai"><span class="tag ai">시설 낙상·이상감지</span><h3>인지니어스 · InCare24</h3><div class="operator">운영사: 인지니어스(Inzinious)</div><p class="message">카메라 없이 레이더로 낙상·침상 이탈과 생체신호 변화를 모니터링</p><div class="pills"><span class="pill">60GHz 레이더</span><span class="pill">호흡·심박</span><span class="pill">영남요양병원</span><span class="pill">간호스테이션</span></div><details class="card-revenue"><summary>매출과 출처 확인</summary><div class="revenue-disclosure" id="revenue-inzinious"><b>매출 정보 · 공개 확인 불가</b><span>인지니어스(Inzinious)</span><p>공개 자료에서 검증 가능한 해당 서비스의 연간 매출을 확인하지 못했습니다.</p><span class="revenue-sources"><a href="https://inzinious.com/" target="_blank" rel="noopener noreferrer">공식 제품·도입 근거</a><br>재확인: 2026-09-09</span></div></details><div class="card-actions"><button type="button" class="select-compare" data-compare="inzinious" aria-pressed="false" hidden>+ 비교 담기</button><button type="button" class="detail" onclick="openDetail('inzinious')">상세 보기 →</button></div></div>
