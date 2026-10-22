@@ -4,6 +4,7 @@
 
 - 기존 competitors/dev 서비스에 `NAVER_ANYANG_CUSTOMER_ID`, `NAVER_ANYANG_ACCESS_LICENSE`, `NAVER_ANYANG_SECRET_KEY`의 기존 연결값을 서버 비밀 변수로 추가한다. 값은 저장소·로그에 기록하지 않는다.
 - 인천 `/data/naver-ads.db`를 유지하고 안양은 `/data/naver-ads-anyang.db`로 격리한다. 선택 변수 `NAVER_ANYANG_ADS_DB_PATH`는 반드시 다른 경로여야 한다. 같은 프로세스의 지점별 작업자가 매일 10:30 KST 전일까지 수집하며 누락분은 시작 시 보충한다.
+- 10/22 배포는 `0686a1a`의 검증된 코드로 기존 서비스에 `railway up . --path-as-root --service 7eb67a26-90fe-4809-b552-b4da4976b4df --environment 6a839bc7-ff57-4811-abdd-cb74b16d97d2 --detach`를 한 번 제출했다. 명시한 프로젝트 디렉터리만 업로드하고 .gitignore를 적용한다. 배포 `4ad2a4a5-02a5-4247-81f0-67b3a73b8a8f` SUCCESS와 코드 해시 일치·두 지점 최초 수집을 확인했다. 이전 자동 배포 대기는 플랫폼에서 REMOVED 처리됐다.
 - 로컬은 기존 `NAVER_ADS_ENV_FILE`과 지점별 DB 경로를 사용하고 `python naver_ads.py --branch anyang --sync`로 한 지점을 검증한다. 검색노출 Computer Use 월·수·금 10:50 일정과 실제 관측 저장은 별도다.
 
 ## 수급자구분 변경이력 (2026-10-22)
