@@ -23,3 +23,11 @@ test('finished plans retain history and stop offering another submission',()=>{
   assert.ok(html.includes('모든 미션을 완료했습니다.'));
   assert.ok(!html.includes('<form'));
 });
+
+test('missions without an external guide still expose progress and editable results',()=>{
+  const html=missions.render({keyword:'질문',mission:{...plan,current:{...plan.current,source:null}}},'openai');
+  assert.match(html,/<details class="aeo-panel"[^>]*><summary>/);
+  assert.ok(!html.includes('aeo-source'));
+  assert.ok(html.includes('name="note"'));
+  assert.ok(html.includes('결과 저장'));
+});

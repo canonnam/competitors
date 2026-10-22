@@ -12,7 +12,6 @@ from competitor_news import KST, connect
 
 VERSION = 'aeo-v1'
 GOOGLE = {'title': 'Google 검색의 AI 기능 안내', 'url': 'https://developers.google.com/search/docs/appearance/ai-features'}
-BING = {'title': 'Bing AI 노출 측정 안내', 'url': 'https://www.bing.com/webmasters/help/ai-performance-9f8e7d6c'}
 REASONS = {'access': '수정 권한 없음', 'website': '공식 페이지 없음', 'information': '자료·사실 확인 필요',
            'time': '시간·인력 부족', 'technical': '방법·기술 지원 필요', 'other': '기타'}
 TRACKS = {'improve': '미언급 개선', 'maintain': '노출 유지·상위 노출 확대', 'verify': '측정·지점 확인', 'foundation': '검색노출 기반 준비'}
@@ -60,7 +59,7 @@ def mission_catalog(item, branch_name):
             'steps': ['위 답변의 확인 시각과 연결·오류 안내를 확인하세요.',
                       f'검색을 켠 AI 서비스에서 “{keyword}”를 질문하고 서비스명·날짜·답변 출처를 기록하세요.',
                       f'답변의 시설이 {branch_name}인지 주소와 공식 안내를 대조하세요. 연결 오류는 운영 담당자에게 확인을 요청하세요.'],
-            'done': '측정 오류 또는 지점 혼동의 확인 결과와 후속 조치를 메모했습니다.', 'source': BING},
+            'done': '측정 오류 또는 지점 혼동의 확인 결과와 후속 조치를 메모했습니다.', 'source': None},
         'access': {'title': '지점별 공개 안내 페이지 한 개 정비하기', 'minutes': 15,
             'why': '검색이 읽을 수 있는 공개 페이지가 있어야 시설 정보를 출처로 연결할 수 있습니다.',
             'steps': [f'공식 홈페이지 또는 블로그에 “더비다요양원 {branch_name} 안내” 페이지 한 개를 정하고 주소를 기록하세요.',
@@ -90,7 +89,7 @@ def mission_catalog(item, branch_name):
             'steps': ['위 실제 답변과 인용 출처에서 더비다를 설명한 내용을 확인하세요.',
                       f'{branch_name}의 주소·서비스·연락처가 현재 사실과 같은지 대조하고, 관리하는 출처의 오래된 내용을 수정하세요.',
                       '답변에 반영된 질문·설명과 유지할 근거를 메모하세요. 한 번의 웹 답변을 모든 고객에게 적용되는 고정 순위로 해석하지 마세요.'],
-            'done': '유지할 내용과 수정·확인한 출처를 기록했습니다.', 'source': BING},
+            'done': '유지할 내용과 수정·확인한 출처를 기록했습니다.', 'source': None},
         'expand': {'title': '연관 질문 한 개까지 답변 넓히기', 'minutes': 30,
             'why': '현재 답변에 부족한 보호자 질문을 보완해 관련 검색에서 발견될 기회를 만듭니다.',
             'steps': [f'“{keyword}”와 관련된 방문 상담·입소 준비·생활 안내 질문 중 한 개를 고르세요.',
@@ -102,7 +101,7 @@ def mission_catalog(item, branch_name):
             'steps': ['게시·수정 후 7일 동안 이 화면의 같은 서비스·질문·지점 기록을 확인하세요. 수집 오류는 미언급 횟수에서 빼세요.',
                       '변경 전후의 언급과 공식 출처 인용 여부를 비교해 메모하세요. 아직 7일이 지나지 않았다면 미완료 사유로 남기세요.',
                       '변화가 없다면 해당 AI 답변이 인용한 출처와 내 안내 글을 대조해 부족한 질문·정보 한 가지를 후속 작업으로 적으세요.'],
-            'done': '관측 기간과 전후 언급·인용 변화, 후속 보완점을 기록했습니다.', 'source': BING},
+            'done': '관측 기간과 전후 언급·인용 변화, 후속 보완점을 기록했습니다.', 'source': None},
     }
 
 

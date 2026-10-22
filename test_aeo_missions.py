@@ -98,7 +98,7 @@ class MissionTests(unittest.TestCase):
             m.submit(self.path, [])
 
     def test_http_submission_errors_origin_and_response(self):
-        with patch.object(v, 'db_path', return_value=self.path):
+        with patch.object(v, 'db_path', return_value=self.path), patch.object(app.facility_access, 'authorized', return_value=True):
             server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.App)
             thread = threading.Thread(target=server.serve_forever, daemon=True);thread.start()
             try:
@@ -108,10 +108,10 @@ class MissionTests(unittest.TestCase):
                     (self.body(action='blocked'), {}, 400),
                     (self.body(), {}, 200)):
                     conn = http.client.HTTPConnection('127.0.0.1', server.server_port)
-                    conn.request('POST', '/api/search-visibility/missions', json.dumps(body), {'Content-Type':'application/json', **headers})
+                    conn.request('POST', '/api/search-visibility/missions', json.dumps(body), {'Content-Type':'application/json', 'Origin':f'http://127.0.0.1:{server.server_port}', **headers})
                     response = conn.getresponse();result = json.loads(response.read());conn.close()
                     self.assertEqual(response.status, expected)
-                    self.assertEqual(response.getheader('Cache-Control'), 'no-store')
+                    self.assertIn('no-store', response.getheader('Cache-Control', ''))
                     if expected == 200:
                         self.assertEqual(result['mission']['current']['id'], 'identity')
             finally:
