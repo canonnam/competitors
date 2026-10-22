@@ -109,7 +109,11 @@
     const rows=filterRows(provider.items,$('visibility-search').value,$('visibility-filter').value);
     $('visibility-count').textContent=`${rows.length} / ${provider.items.length}개`;
     const adCount=provider.items.filter(item=>item.query.source==='ad_account').length,regionalCount=provider.items.filter(item=>item.query.source==='regional').length;
-    $('visibility-keyword-source').textContent=[selectedName()||'전체 지점',adCount?`인천 광고 계정 ON ${adCount}개 · 목록 ${date(current.keyword_source.updated_at)}`:'',regionalCount?`안양 지역 점검 키워드 ${regionalCount}개 · 광고 계정 연동 키워드 아님`:'',current.naver_collection==='Computer Use'?'Computer Use · 실제 검색 화면':'',`최대 ${current.max_pages}페이지 확인`].filter(Boolean).join(' · ');
+    const inventories=(current.branches||[]).filter(b=>!current.selected_branch||b.id===current.selected_branch).map(branch=>{
+      const source=current.keyword_source.branches?.[branch.id],count=provider.items.filter(item=>item.branch===branch.id&&item.query.source==='ad_account').length;
+      return `${branch.name} 광고 ON ${count}개 · ${source?.stale?'목록 갱신 대기':date(source?.updated_at||current.keyword_source.updated_at)}`;
+    });
+    $('visibility-keyword-source').textContent=[selectedName()||'전체 지점',...inventories,regionalCount?`지역 점검 키워드 ${regionalCount}개`:'',current.naver_collection==='Computer Use'?'Computer Use · 실제 검색 화면':'',`최대 ${current.max_pages}페이지 확인`].filter(Boolean).join(' · ');
     $('visibility-keywords').innerHTML=rows.map(item=>{
       const matches=(item.matches||[]),links=[...matches.map(m=>({...m,unconfirmed:false})),...(item.unconfirmed_matches||[]).map(m=>({...m,unconfirmed:true}))].map(m=>`<li>${esc(areaName[m.area])} ${m.page}페이지 ${m.position}번째 · ${m.unconfirmed?'브랜드 노출 · 지점 미확인':m.owned?'공식 주소':'브랜드 언급'}<br><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(m.title)}</a></li>`).join('');
       const cells=[['web'],['place'],['ad','place_ad']].map(areas=>`<td>${tag(matchLabel(item,areas),!fresh(item)||(areas.includes('ad')&&item.ad_coverage_complete===false)?'is-warning':matches.some(m=>areas.includes(m.area))?'':'is-absent')}</td>`).join('');

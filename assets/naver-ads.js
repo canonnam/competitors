@@ -94,6 +94,7 @@
     const creativeTotals = sum(s.creatives), zeroClickCost = sum(s.creatives.filter(row=>!row.clicks)).cost;
     const costChange = s.comparable ? change(t.cost,p.cost) : null;
     $('executive').textContent = t.clicks ? `${s.length}일 동안 ${won(t.cost)}을 사용해 ${number(t.clicks)}회의 클릭을 얻었습니다. 클릭당 비용은 ${won(t.cpc)}이며, 직전 동기간 대비 광고비는 ${delta(costChange)}입니다. 예산 판단은 클릭 단가와 상담 유입을 함께 확인해야 합니다.` : `${s.length}일 동안 기록된 클릭이 없습니다. 노출 ${number(t.impressions)}회, 광고비 ${won(t.cost)}입니다. 잔액과 광고 운영 상태를 확인할 필요가 있습니다.`;
+    if(reportData.restarted_on&&reportData.through<reportData.restarted_on)$('executive').textContent=`${reportData.branch}은 ${reportData.restarted_on} 광고를 재개했습니다. 현재 화면은 재개 전인 ${reportData.through}까지의 실적입니다. 재개일 성과는 다음 날 오전 10:30 수집 후 반영됩니다.`;
     const insights = [
       ['광고비 변화', s.comparable ? `직전 ${won(p.cost)} → 현재 ${won(t.cost)} (${delta(costChange)}). 기간 길이는 동일하지만 운영일 수는 달라질 수 있습니다.` : '직전 동기간 자료가 부족해 광고비 증감 판단을 보류합니다.'],
       ['클릭 유입 변화', `현재 ${number(t.clicks)}회. ${s.comparable ? `직전 동기간 대비 ${delta(change(t.clicks,p.clicks))}.` : '비교 기간 미확보.'} 클릭 증가는 상담 증가와 같은 의미가 아닙니다.`],
@@ -187,13 +188,15 @@
   }
 
   async function load() {
-    $('reload').disabled=true;$('notice').hidden=true;
+    const branch=$('ad-branch').value;
+    $('ad-branch').disabled=true;$('reload').disabled=true;$('notice').hidden=true;
     try {
-      const response=await fetch('/api/naver-ads',{cache:'no-store',signal:AbortSignal.timeout(20000)});
+      const response=await fetch('/api/naver-ads?branch='+encodeURIComponent(branch),{cache:'no-store',signal:AbortSignal.timeout(20000)});
       if(!response.ok)throw new Error('request');
       const data=await response.json();
-      if(!Array.isArray(data.daily))throw new Error('format');
+      if(!Array.isArray(data.daily)||data.branch_id!==branch)throw new Error('format');
       reportData=data;
+      $('ad-branch-name').textContent=data.branch;
       AdKeywords.render(data.keywords);
       if(!data.through || !data.daily.length){$('dashboard').hidden=true;$('freshness').textContent='초기 수집 대기';$('updated').textContent='아직 수집된 지표가 없습니다.';$('notice').textContent='광고 계정 연결과 초기 데이터 수집이 필요합니다.';$('notice').hidden=false;return;}
       $('dashboard').hidden=false;$('download').disabled=false;
@@ -207,7 +210,7 @@
       $('notes').innerHTML=data.notes.map(note=>`<li>${esc(note)}</li>`).join('');
       if($('period').value==='custom' && selected)applyRange();else preset();
     } catch { $('freshness').textContent='불러오기 실패';$('freshness').classList.add('warning');$('notice').textContent=reportData ? '갱신 요청에 실패했습니다. 화면의 이전 보고서를 유지합니다.' : '보고서를 불러오지 못했습니다. 잠시 후 새로고침해주세요.';$('notice').hidden=false; }
-    finally{$('reload').disabled=false;}
+    finally{$('reload').disabled=false;$('ad-branch').disabled=false;}
   }
 
   function activateTab(button) {
@@ -228,15 +231,24 @@
   ['start','end'].forEach(id=>$(id).addEventListener('change',()=>{$('period').value='custom';}));
   $('creative-sort').addEventListener('change',renderCreatives);
   $('reload').addEventListener('click',load);
+  $('ad-branch').addEventListener('change',()=>{
+    reportData=null;selected=null;$('dashboard').hidden=true;$('download').disabled=true;
+    $('ad-branch-name').textContent='더비다요양원 '+$('ad-branch').selectedOptions[0].textContent;
+    $('freshness').textContent='불러오는 중';$('updated').textContent='선택한 지점의 광고 지표를 불러오고 있습니다.';
+    if($('period').value==='custom')$('period').value='30';
+    const url=new URL(location.href);url.searchParams.set('branch',$('ad-branch').value);history.replaceState(null,'',url);load();
+  });
   $('download').addEventListener('click',()=>{
     if(!selected)return;
     const csvCell=value=>{const text=String(value??'');return '"'+(/^[=+@\-]/.test(text)?"'":'')+text.replace(/"/g,'""')+'"';};
-    const header=['날짜','광고 유형','캠페인','노출 수','클릭 수','광고비(원, VAT 포함)','CTR(%)','CPC(원)'];
-    const rows=selected.rows.map(row=>{const m=sum([row]);return [row.date,row.channel,row.title,m.impressions,m.clicks,m.cost,m.ctr,m.cpc];});
+    const header=['지점','날짜','광고 유형','캠페인','노출 수','클릭 수','광고비(원, VAT 포함)','CTR(%)','CPC(원)'];
+    const rows=selected.rows.map(row=>{const m=sum([row]);return [reportData.branch,row.date,row.channel,row.title,m.impressions,m.clicks,m.cost,m.ctr,m.cpc];});
     const content='\uFEFF'+[header,...rows].map(row=>row.map(csvCell).join(',')).join('\r\n');
     const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
-    const link=document.createElement('a');link.href=url;link.download=`더비다_인천_광고_${selected.start}_${selected.end}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const link=document.createElement('a');link.href=url;link.download=`${reportData.branch}_광고_${selected.start}_${selected.end}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
   if(location.hash==='#keywords')activateTab($('tab-keywords'));
+  const initialBranch=new URLSearchParams(location.search).get('branch');
+  if(['incheon','anyang'].includes(initialBranch))$('ad-branch').value=initialBranch;
   load();
 })(globalThis);

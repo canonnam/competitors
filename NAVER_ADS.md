@@ -1,17 +1,29 @@
 # 더비다요양원 네이버 광고분석
 
-`petdev`의 기존 Python/Railway 서비스에 통합되어 있습니다. 메인 카드에서 `/naver-ads.html`로 이동하며 `/api/naver-ads`가 인천점 지표를 제공합니다. 안양점 API는 호출하지 않습니다. 기존 텔레그램 잔액·월간 알림 작업과 독립적입니다.
+`petdev`의 기존 Python/Railway 서비스에 통합되어 있습니다. 메인 카드에서 `/naver-ads.html`로 이동하며 `/api/naver-ads?branch=incheon|anyang`가 지점별 지표를 제공합니다. 기본값은 기존 인천점이며 `branch=all&summary=1`은 지점별 요약 배열을 제공합니다. 기존 텔레그램 잔액·월간 알림 작업과 독립적입니다.
+
+## 안양 광고 재개 반영 (2026-10-22)
+
+- 사용자 요청에 따라 안양점의 조회 가능한 파워링크·플레이스 캠페인, 소재, 키워드 순위를 추가 수집한다. 캠페인·광고그룹·키워드를 변경하는 호출은 없다.
+- 각 지점은 별도 DB와 작업자로 수집한다. 인천 기존 DB·시드·분석 이력은 그대로 유지하고 안양에는 인천 시드/분석 이력을 복제하지 않는다. 한 지점 수집 실패는 다른 지점의 갱신을 막지 않는다.
+- 상세 화면은 지점 선택 및 지점명이 포함된 CSV를 제공하며 홈 대시보드는 두 지점의 최근 14일 추이를 각각 표시한다. 평균 순위 카드도 지점별 상태를 표시한다.
+- 오늘 재개한 광고의 **당일 실적은 다음 날 10:30 수집 후** 반영한다. 수집 전은 대기 상태이며 전일까지 확인된 0 실적과 구분한다.
+- `/api/naver-ad-keywords?branch=all`은 지점별 `branches`와 합계를 제공한다. 검색노출 목록은 두 지점의 현재 ON 키워드를 읽고 기존 활성 지역 키워드를 중복 제거한다. 등록 OFF 키워드는 지역 목록으로 되살리지 않는다. 목록 지연은 `keyword_source.branches[branch].stale`로 지점별 판단한다. 실제 검색노출 측정은 기존 월·수·금 10:50 Computer Use 일정이다.
 
 ## Railway 배포
 
 기존 서비스의 배포 브랜치를 `petdev`로 지정하고 Dockerfile 빌드를 사용합니다. 새 서버나 GitHub Actions 작업은 필요하지 않습니다.
 
-서비스 Variables에 기존 인천점 키 3개를 설정합니다. 값은 Git에 넣지 않습니다.
+서비스 Variables에 지점별 기존 키 3개씩을 설정합니다. 값은 Git에 넣지 않습니다.
 
 ```dotenv
 NAVER_INCHEON_CUSTOMER_ID=<인천점 customer id>
 NAVER_INCHEON_ACCESS_LICENSE=<인천점 액세스 라이선스>
 NAVER_INCHEON_SECRET_KEY=<인천점 비밀키>
+NAVER_ANYANG_CUSTOMER_ID=<안양점 customer id>
+NAVER_ANYANG_ACCESS_LICENSE=<안양점 액세스 라이선스>
+NAVER_ANYANG_SECRET_KEY=<안양점 비밀키>
+NAVER_ANYANG_ADS_DB_PATH=/data/naver-ads-anyang.db
 NAVER_ADS_DB_PATH=/data/naver-ads.db
 NAVER_ADS_SYNC_ENABLED=true
 ```
@@ -35,9 +47,9 @@ FEEDBACK_DB_PATH=/absolute/path/to/local/feedback.db
 PORT=8080
 ```
 
-기존 `.env`에서 `NAVER_INCHEON_*`만 읽습니다. 프로세스 환경변수가 파일보다 우선합니다. 임의의 `.env`를 자동 검색하지 않습니다.
+기존 `.env`에서 `NAVER_INCHEON_*`와 `NAVER_ANYANG_*`를 지점별로 읽습니다. 프로세스 환경변수가 파일보다 우선합니다. 임의의 `.env`를 자동 검색하지 않습니다.
 
-수동 1회 수집: `python naver_ads.py --sync`
+수동 1회 수집: `python naver_ads.py --sync`(인천), `python naver_ads.py --branch anyang --sync`(안양)
 
 초기 자료 재생성: `python naver_ads.py --sync --export-seed data/naver_ads_seed.json.gz`
 
@@ -63,7 +75,7 @@ PORT=8080
 
 ## 키워드 노출순위 (2026-09-08 추가)
 
-- `/ncc/keywords`의 인천점 파워링크 등록 키워드를 조회합니다. `/stats`의 `avgRnk`를 전일까지 최근 7일 구간으로 수집하며, 순위 견적이나 실시간 검색 결과를 사용하지 않습니다.
+- `/ncc/keywords`의 선택 지점 파워링크 등록 키워드를 조회합니다. `/stats`의 `avgRnk`를 전일까지 최근 7일 구간으로 수집하며, 순위 견적이나 실시간 검색 결과를 사용하지 않습니다.
 - 평균 3위 이내를 상위 기준으로 표시합니다. 캠페인·광고그룹·키워드 상태가 모두 `ELIGIBLE`이고 수집이 정상인 경우에만 상태 점이 점멸합니다. 운영 상태 역시 수집 시점의 스냅샷이며 실시간 노출 보장은 아닙니다.
 - `avgRnk`가 0·미제공이거나 노출 수가 0이면 순위는 `null`입니다. 플레이스·자연검색의 키워드 순위와 혼합하지 않습니다. 노출 수가 적은 키워드는 순위 변동성이 클 수 있습니다.
 - 매일 10:30 한국시간에 독립적으로 갱신하며 실패 시 정상 순위를 보존하고 30분 후 재시도합니다. 키워드 수집 실패는 캠페인 지표를 되돌리지 않습니다.

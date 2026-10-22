@@ -25,6 +25,8 @@ KST = timezone(timedelta(hours=9))
 START = date(2025, 2, 1)
 CHANNELS = {"WEB_SITE": "파워링크", "PLACE": "플레이스", "POWER_CONTENTS": "파워컨텐츠"}
 METRICS = ("impressions", "clicks", "cost")
+BRANCHES = {"incheon": "더비다요양원 인천점", "anyang": "더비다요양원 안양점"}
+RESTARTED_ON = {"anyang": "2026-10-22"}  # Operator-confirmed restart; not inferred from zero delivery.
 LOG = logging.getLogger("naver_ads")
 
 
@@ -41,12 +43,24 @@ def load_config():
     return values
 
 
-def configured(config):
-    return all(config.get("NAVER_INCHEON_" + key) for key in ("CUSTOMER_ID", "ACCESS_LICENSE", "SECRET_KEY"))
+def configured(config, branch="incheon"):
+    if branch not in BRANCHES:
+        raise ValueError("Unknown advertising branch")
+    return all(config.get("NAVER_" + branch.upper() + "_" + key) for key in ("CUSTOMER_ID", "ACCESS_LICENSE", "SECRET_KEY"))
 
 
-def db_path():
-    return Path(os.getenv("NAVER_ADS_DB_PATH", "/data/naver-ads.db"))
+def db_path(branch="incheon"):
+    return branch_path(Path(os.getenv("NAVER_ADS_DB_PATH", "/data/naver-ads.db")), branch)
+
+
+def branch_path(incheon_path, branch):
+    if branch not in BRANCHES:
+        raise ValueError("Unknown advertising branch")
+    path = Path(incheon_path)
+    target = path if branch == "incheon" else Path(os.getenv("NAVER_ANYANG_ADS_DB_PATH", str(path.with_name(path.stem + "-anyang" + path.suffix))))
+    if branch != "incheon" and target.resolve() == path.resolve():
+        raise ValueError("Advertising branches require separate databases")
+    return target
 
 
 @contextmanager
@@ -60,7 +74,7 @@ def connect(path):
         db.close()
 
 
-def init_db(path):
+def init_db(path, branch="incheon"):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with connect(path) as db:
@@ -77,7 +91,7 @@ def init_db(path):
             CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         """)
         seed = ROOT / "data" / "naver_ads_seed.json.gz"
-        if not db.execute("SELECT 1 FROM state WHERE key='through'").fetchone() and seed.exists():
+        if branch == "incheon" and not db.execute("SELECT 1 FROM state WHERE key='through'").fetchone() and seed.exists():
             data = json.loads(gzip.decompress(seed.read_bytes()))
             db.executemany("INSERT OR IGNORE INTO entities VALUES (?,?,?,?,?)", data["entities"])
             db.executemany("INSERT OR IGNORE INTO metrics VALUES (?,?,?,?,?)", data["metrics"])
@@ -93,12 +107,14 @@ def set_state(db, **values):
 
 
 class NaverClient:
-    def __init__(self, config):
-        if not configured(config):
-            raise ValueError("Naver Incheon credentials are not configured")
-        self.customer = config["NAVER_INCHEON_CUSTOMER_ID"]
-        self.license = config["NAVER_INCHEON_ACCESS_LICENSE"]
-        self.secret = config["NAVER_INCHEON_SECRET_KEY"]
+    def __init__(self, config, branch="incheon"):
+        if not configured(config, branch):
+            raise ValueError("Naver advertising credentials are not configured")
+        self.branch = branch
+        prefix = "NAVER_" + branch.upper() + "_"
+        self.customer = config[prefix + "CUSTOMER_ID"]
+        self.license = config[prefix + "ACCESS_LICENSE"]
+        self.secret = config[prefix + "SECRET_KEY"]
 
     def get(self, uri, params=None):
         query = "?" + urllib.parse.urlencode(params, doseq=True) if params else ""
@@ -190,7 +206,7 @@ def daily_stats(client, entity_id, start, end):
 def sync(path, client, now=None):
     now = now or datetime.now(KST)
     end = now.astimezone(KST).date() - timedelta(days=1)
-    init_db(path)
+    init_db(path, getattr(client, "branch", "incheon"))
     with connect(path) as db:
         previous = state_dict(db)
         old_ids = {row[0] for row in db.execute("SELECT id FROM entities")}
@@ -289,8 +305,10 @@ def refresh_keywords(path, client, now):
         return False
 
 
-def keyword_report(path, now=None, state=None):
+def keyword_report(path, now=None, state=None, branch="incheon"):
     now = now or datetime.now(KST)
+    if state is None and not Path(path).exists():
+        state = {}
     if state is None:
         with connect(path) as db:
             state = state_dict(db)
@@ -300,12 +318,23 @@ def keyword_report(path, now=None, state=None):
     stale = bool(error) or snapshot.get("through", "") < due_target(now)
     ranked = [row for row in items if row["average_rank"] is not None]
     top = [row for row in ranked if row["average_rank"] <= 3]
-    return {**snapshot, "items": items, "stale": stale, "error": error, "threshold": 3,
+    return {**snapshot, "branch_id": branch, "branch": BRANCHES[branch], "items": items, "stale": stale, "error": error, "threshold": 3,
             "target_date": due_target(now), "next_check": next_run(now),
             "total": len(items), "ranked_count": len(ranked), "top_count": len(top),
             "eligible_top_count": sum(row["eligible"] for row in top),
             "method": "파워링크 등록 키워드 · 전일까지 최근 7일 평균 광고 노출순위 (avgRnk)",
             "source": "https://github.com/naver/searchad-apidoc/wiki/FAQ-stat"}
+
+
+def keyword_reports(path, now=None):
+    reports = [keyword_report(branch_path(path, branch), now, branch=branch) for branch in BRANCHES]
+    timestamps = [r.get("updated_at") for r in reports if r.get("updated_at")]
+    return {"branches": reports, "items": [{**item, "branch_id": r["branch_id"]} for r in reports for item in r["items"]],
+            "updated_at": min(timestamps) if timestamps else None, "stale": any(r["stale"] for r in reports),
+            "error": " · ".join(r["branch"] + ": " + r["error"] for r in reports if r["error"]),
+            "threshold": 3, "total": sum(r["total"] for r in reports),
+            "ranked_count": sum(r["ranked_count"] for r in reports), "top_count": sum(r["top_count"] for r in reports),
+            "eligible_top_count": sum(r["eligible_top_count"] for r in reports), "next_check": next_run(now or datetime.now(KST))}
 
 
 def next_run(now):
@@ -314,8 +343,8 @@ def next_run(now):
     return (scheduled if local < scheduled else scheduled + timedelta(days=1)).isoformat()
 
 
-def run_scheduler(path, config, stop):
-    client = NaverClient(config)
+def run_scheduler(path, config, stop, branch="incheon"):
+    client = NaverClient(config, branch)
     while not stop.is_set():
         now = datetime.now(KST)
         with connect(path) as db:
@@ -339,12 +368,15 @@ def run_scheduler(path, config, stop):
 def start_scheduler(path):
     config = load_config()
     stop = threading.Event()
-    if configured(config) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true":
-        threading.Thread(target=run_scheduler, args=(path, config, stop), name="naver-ads-sync", daemon=True).start()
+    for branch in BRANCHES:
+        target = branch_path(path, branch)
+        init_db(target, branch)
+        if configured(config, branch) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true":
+            threading.Thread(target=run_scheduler, args=(target, config, stop, branch), name="naver-ads-" + branch, daemon=True).start()
     return stop
 
 
-def report(path, now=None, summary=False):
+def report(path, now=None, summary=False, branch="incheon"):
     now = now or datetime.now(KST)
     with connect(path) as db:
         db.execute("BEGIN")
@@ -364,9 +396,9 @@ def report(path, now=None, summary=False):
             FROM metrics m JOIN entities e ON e.id=m.entity_id
             GROUP BY m.day,e.id ORDER BY m.day,e.level,e.id""")]
     config = load_config()
-    enabled = configured(config) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true"
-    result = {"branch": "더비다요양원 인천점", "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),
-            "since": state.get("since"), "through": state.get("through"), "updated_at": state.get("updated_at"),
+    enabled = configured(config, branch) and config.get("NAVER_ADS_SYNC_ENABLED", "true").lower() == "true"
+    result = {"branch_id": branch, "branch": BRANCHES[branch], "branches": [{"id": key, "name": name} for key, name in BRANCHES.items()], "timezone": "Asia/Seoul", "currency": "KRW", "today": now.astimezone(KST).date().isoformat(),
+            "since": state.get("since"), "through": state.get("through"), "updated_at": state.get("updated_at"), "restarted_on": RESTARTED_ON.get(branch),
             "daily": daily,
             "sync": {"enabled": enabled, "next_run": next_run(now) if enabled else None,
                      "stale": state.get("through", "") < due_target(now), "error": state.get("last_error", ""),
@@ -374,8 +406,8 @@ def report(path, now=None, summary=False):
     if summary:
         return {**result, "window_days": 14}
     archive_file = ROOT / "data" / "naver_ads_history.json"
-    archive = json.loads(archive_file.read_text(encoding="utf-8")) if archive_file.exists() else {}
-    return {**result, "history": archive, "keywords": keyword_report(path, now, state),
+    archive = json.loads(archive_file.read_text(encoding="utf-8")) if branch == "incheon" and archive_file.exists() else {}
+    return {**result, "history": archive, "keywords": keyword_report(path, now, state, branch),
             "notes": ["광고비는 부가세 포함이며 CTR·CPC는 합산 지표에서 계산합니다.",
                       "조회 가능한 캠페인 기준입니다. 수집 전에 삭제된 항목은 누락될 수 있습니다.",
                       "소재 합계는 삭제·확장소재 및 집계 반올림으로 캠페인 합계와 다를 수 있습니다.",
@@ -386,16 +418,17 @@ def report(path, now=None, summary=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sync", action="store_true")
+    parser.add_argument("--branch", choices=BRANCHES, default="incheon")
     parser.add_argument("--export-seed", type=Path)
     args = parser.parse_args()
-    path = db_path()
-    init_db(path)
+    path = db_path(args.branch)
+    init_db(path, args.branch)
     if args.sync:
         try:
-            sync(path, NaverClient(load_config()))
+            sync(path, NaverClient(load_config(), args.branch))
         except Exception as exc:
             raise SystemExit(f"Collection failed ({type(exc).__name__}); previous report retained") from None
-        if not refresh_keywords(path, NaverClient(load_config()), datetime.now(KST)):
+        if not refresh_keywords(path, NaverClient(load_config(), args.branch), datetime.now(KST)):
             raise SystemExit("Metrics updated; keyword refresh failed and its last good snapshot was retained")
     if args.export_seed:
         with connect(path) as db:

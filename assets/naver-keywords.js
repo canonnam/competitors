@@ -9,6 +9,7 @@
   }
   function summary(data) {
     if (!data || !data.updated_at) return {tone:'', text:'키워드 순위 수집 대기'};
+    if (data.branches) return {tone:data.stale?'is-warning':data.eligible_top_count>0?'is-top':'',text:data.branches.map(row=>`${row.branch.replace('더비다요양원 ','')}: ${!row.updated_at?'수집 대기':row.stale?'갱신 대기':`평균 3위 이내 ${row.top_count}개`}`).join(' · ')};
     if (data.stale || data.error) return {tone:'is-warning', text:'키워드 순위 갱신 대기 · 이전 집계'};
     if (!data.total) return {tone:'', text:'등록된 파워링크 키워드 없음'};
     return {tone:data.eligible_top_count > 0 ? 'is-top' : '', text:`최근 7일 평균 3위 이내 ${data.top_count}개 · 집행 가능 ${data.eligible_top_count}개`};
@@ -50,9 +51,10 @@
   if($('keyword-cards')) {
     const refresh=async()=>{
       try {
-        const response=await fetch('/api/naver-ad-keywords',{cache:'no-store',signal:AbortSignal.timeout(15000)});
+        const branch=$('ad-branch')?.value||'incheon';
+        const response=await fetch('/api/naver-ad-keywords?branch='+encodeURIComponent(branch),{cache:'no-store',signal:AbortSignal.timeout(15000)});
         if(!response.ok)throw new Error('request');
-        api.render(await response.json());
+        const data=await response.json();if(branch===($('ad-branch')?.value||'incheon')&&!$('ad-branch')?.disabled)api.render(data);
       } catch { if(current)api.render({...current,stale:true,error:'순위 갱신 연결 실패 · 이전 집계'}); }
     };
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){draw();refresh();}});
@@ -62,7 +64,7 @@
   if(home) {
     const refresh=async()=>{
       try {
-        const response=await fetch('/api/naver-ad-keywords',{cache:'no-store',signal:AbortSignal.timeout(15000)});
+        const response=await fetch('/api/naver-ad-keywords?branch=all',{cache:'no-store',signal:AbortSignal.timeout(15000)});
         if(!response.ok)throw new Error('request');
         const data=await response.json(),status=summary(data);
         renderSignal(home,status);

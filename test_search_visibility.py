@@ -1,6 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from html import escape
+import facility_access as access
 import http.client
 import json
 import os
@@ -42,14 +43,35 @@ class VisibilityTests(unittest.TestCase):
         self.config['naver_collection']='server'
         settings_patch=patch.object(v,'settings',return_value=self.config)
         settings_patch.start();self.addCleanup(settings_patch.stop)
-        self.env=patch.dict(os.environ,{'OPENAI_API_KEY':'test-key','GEMINI_API_KEY':'','PERPLEXITY_API_KEY':'','SERPAPI_KEY':''})
+        self.env=patch.dict(os.environ,{'OPENAI_API_KEY':'test-key','GEMINI_API_KEY':'','PERPLEXITY_API_KEY':'','SERPAPI_KEY':'',access.HASH_ENV:access.make_password_hash('unit-test')})
         self.env.start()
+        self.headers={'Cookie':access.COOKIE+'='+access.issue_cookie()}
         self.addCleanup(self.env.stop);self.addCleanup(self.temp.cleanup)
         with v.naver_ads.connect(self.adpath) as db:
             v.naver_ads.set_state(db,keyword_snapshot=json.dumps({'updated_at':NOW.isoformat(),'through':'2026-09-08','items':[
                 {'keyword':QUERY['keyword'],'group':'인천','average_rank':2.5,'eligible':True}]},ensure_ascii=False))
 
     def report(self,now=NOW):return v.report(self.path,self.adpath,now)
+
+    def test_anyang_on_inventory_is_separate_deduplicated_and_off_not_restored(self):
+        branch_path=v.naver_ads.branch_path(self.adpath,'anyang')
+        v.naver_ads.init_db(branch_path,'anyang')
+        keyword=self.config['naver_queries'][0]['keyword']
+        disabled=self.config['naver_queries'][1]['keyword']
+        with v.naver_ads.connect(branch_path) as db:
+            v.naver_ads.set_state(db,keyword_snapshot=json.dumps({'updated_at':NOW.isoformat(),'through':'2026-09-08','items':[
+                {'keyword':keyword,'group':'안양','enabled':True,'eligible':True,'average_rank':None},
+                {'keyword':disabled,'group':'안양','enabled':False,'eligible':False,'average_rank':None}]}))
+        queries,source=v.naver_queries(self.adpath,NOW,self.config,show_stale=True)
+        matches=[q for q in queries if q['keyword']==keyword and q['branch']=='anyang']
+        self.assertEqual(len(matches),1);self.assertEqual(matches[0]['source'],'ad_account')
+        self.assertFalse(any(q['keyword']==disabled and q['branch']=='anyang' for q in queries))
+        self.assertFalse(source['branches']['incheon']['stale']);self.assertFalse(source['branches']['anyang']['stale'])
+        with v.naver_ads.connect(branch_path) as db: v.naver_ads.set_state(db,keyword_error='Anyang refresh failed')
+        queries,source=v.naver_queries(self.adpath,NOW,self.config,show_stale=True)
+        self.assertTrue(source['stale'])
+        self.assertTrue(next(q for q in queries if q['branch']=='anyang' and q['source']=='ad_account')['inventory_stale'])
+        self.assertFalse(next(q for q in queries if q['branch']=='incheon' and q['source']=='ad_account')['inventory_stale'])
 
     def test_actual_pagination_does_not_convert_ad_rank_to_page(self):
         self.config['max_pages']=3
@@ -249,7 +271,7 @@ class VisibilityTests(unittest.TestCase):
         regional=[q for q in queries if q['source']=='regional']
         self.assertEqual(len(regional),12)
         self.assertTrue(all(q['branch']=='anyang' and q['average_ad_rank'] is None and q['eligible'] is None for q in regional))
-        with patch.object(v.naver_ads,'keyword_report',return_value={**inventory,'stale':True}):
+        with patch.object(v.naver_ads,'keyword_report',return_value={**inventory['branches']['incheon'],'stale':True}):
             collectable,_=v.naver_queries(self.adpath,NOW,self.config)
             self.assertEqual(collectable,regional)
             v.sync_provider(self.path,'naver',regional[:1],self.config,NOW,fetcher=lambda _:page('더비다요양원 안양'))
@@ -285,11 +307,11 @@ class VisibilityTests(unittest.TestCase):
             try:
                 for method in ('GET','HEAD'):
                     conn=http.client.HTTPConnection('127.0.0.1',server.server_port)
-                    conn.request(method,'/api/search-visibility?summary=1');res=conn.getresponse();body=res.read()
+                    conn.request(method,'/api/search-visibility?summary=1',headers=self.headers);res=conn.getresponse();body=res.read()
                     self.assertEqual(res.status,200);self.assertEqual(res.getheader('Cache-Control'),'no-store')
                     self.assertNotIn(b'test-key',body);conn.close()
                 for path in ('/search_visibility.py','/data/search_visibility.json'):
-                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port);conn.request('GET',path)
+                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port);conn.request('GET',path,headers=self.headers)
                     res=conn.getresponse();res.read();self.assertEqual(res.status,404);conn.close()
                 collector.assert_not_called()
             finally:server.shutdown();server.server_close();thread.join()

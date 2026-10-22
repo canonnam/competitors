@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import http.client
 from http.server import ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -11,6 +12,7 @@ from unittest.mock import patch
 
 import app
 import naver_ads as ads
+import facility_access as access
 
 
 class FakeClient:
@@ -35,6 +37,9 @@ class ReportTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "ads.db"
+        env = patch.dict(os.environ, {access.HASH_ENV: access.make_password_hash('unit-test')})
+        env.start(); self.addCleanup(env.stop)
+        self.headers = {'Cookie': access.COOKIE + '=' + access.issue_cookie()}
         ads.init_db(self.path)
         with ads.connect(self.path) as db:
             db.execute("DELETE FROM metrics")
@@ -168,15 +173,16 @@ class ReportTests(unittest.TestCase):
 
     def test_http_report_and_private_files_for_get_and_head(self):
         ads.sync(self.path,FakeClient(),self.now)
+        ads.init_db(ads.branch_path(self.path, 'anyang'), 'anyang')
         server=ThreadingHTTPServer(("127.0.0.1",0),app.App)
         threading.Thread(target=server.serve_forever,daemon=True).start()
         try:
             with patch.object(ads,"db_path",return_value=self.path):
                 for method in ("GET","HEAD"):
-                    for path,status in (("/api/naver-ads",200),("/api/naver-ads?summary=1",200),("/api/naver-ad-keywords",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
+                    for path,status in (("/api/naver-ads",200),("/api/naver-ads?summary=1",200),("/api/naver-ads?branch=anyang",200),("/api/naver-ads?branch=all&summary=1",200),("/api/naver-ad-keywords?branch=all",200),("/api/naver-ad-keywords",200),("/naver-ads.html",200),("/",200),("/app.py",404),("/.env",404),("/.git/config",404),("/data/naver_ads_seed.json.gz",404),("/assets/../app.py",404),("/assets/%2e%2e/.env",404),("/assets/",404)):
                         with self.subTest(method=method,path=path):
                             connection=http.client.HTTPConnection("127.0.0.1",server.server_port,timeout=5)
-                            connection.request(method,path)
+                            connection.request(method,path,headers=self.headers)
                             response=connection.getresponse()
                             response.read()
                             connection.close()
@@ -184,6 +190,36 @@ class ReportTests(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_branch_databases_isolate_ids_history_and_collection_failures(self):
+        anyang = ads.branch_path(self.path, 'anyang')
+        ads.init_db(anyang, 'anyang')
+        with ads.connect(anyang) as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM entities').fetchone()[0], 0)
+            self.assertEqual(ads.state_dict(db), {})  # Incheon seed is never imported.
+            db.execute("INSERT INTO entities VALUES ('campaign-1','campaign','파워링크','Anyang',1)")
+            db.execute("INSERT INTO metrics VALUES ('campaign-1','2026-09-07',20,2,100)")
+            ads.set_state(db, since='2025-02-01', through='2026-09-07')
+        ads.sync(self.path, FakeClient(), self.now)
+        other = ads.report(anyang, self.now, branch='anyang')
+        self.assertEqual(other['branch_id'], 'anyang')
+        self.assertEqual(other['history'], {})
+        self.assertEqual(sum(r['cost'] for r in other['daily']), 100)
+        self.assertEqual(sum(r['cost'] for r in ads.report(self.path, self.now)['daily']), 900)
+        with self.assertRaises(RuntimeError): ads.sync(anyang, FakeClient(fail=True), self.now)
+        self.assertEqual(ads.report(anyang, self.now, branch='anyang')['daily'], other['daily'])
+
+    def test_client_uses_only_selected_branch_credentials(self):
+        config = {'NAVER_' + branch.upper() + '_' + key: branch + key
+                  for branch in ads.BRANCHES for key in ('CUSTOMER_ID', 'ACCESS_LICENSE', 'SECRET_KEY')}
+        client = ads.NaverClient(config, 'anyang')
+        self.assertEqual(client.customer, 'anyangCUSTOMER_ID')
+        self.assertEqual(client.license, 'anyangACCESS_LICENSE')
+        self.assertEqual(client.secret, 'anyangSECRET_KEY')
+        with self.assertRaises(ValueError): ads.NaverClient({k:v for k,v in config.items() if 'INCHEON' in k}, 'anyang')
+        with self.assertRaises(ValueError): ads.db_path('../other')
+        with patch.dict(os.environ, {'NAVER_ANYANG_ADS_DB_PATH':str(self.path)}):
+            with self.assertRaises(ValueError): ads.branch_path(self.path, 'anyang')
 
     def test_dashboard_summary_matches_campaign_totals_without_creatives_or_history(self):
         with ads.connect(self.path) as db:

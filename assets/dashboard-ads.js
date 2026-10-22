@@ -42,11 +42,13 @@
     return `<figure class="dash-ad-chart dash-ad-${key}"><figcaption id="dash-ad-${key}-title">${label}<strong>${count(view.total[key])}<span>회</span></strong><small>${view.known===14?'14일 합계':`확인된 ${view.known}일 합계`}</small></figcaption><div class="dash-ad-plot"><div class="dash-ad-y" aria-hidden="true"><span>${count(max)}</span><span>${count(max/2)}</span><span>0</span></div><div class="dash-ad-lines"><svg viewBox="0 0 520 140" preserveAspectRatio="none" role="img" aria-labelledby="dash-ad-${key}-title dash-ad-${key}-desc"><desc id="dash-ad-${key}-desc">${esc(view.start)}부터 ${esc(view.end)}까지 일별 ${label}. 누락된 날짜는 선이 끊기며 정확한 값은 아래 일별 수치 표에서 확인할 수 있습니다.</desc><g class="dash-ad-grid"><path d="M8,8H512 M8,70H512 M8,132H512"/></g><path class="dash-ad-line" d="${pathFor(view.rows,key,max)}"/>${points}</svg><div class="dash-ad-x" aria-hidden="true"><span>${short(view.start)}</span><span>${short(view.rows[6].date)}</span><span>${short(view.end)}</span></div></div></div></figure>`;
   }
   function render(record,expanded=false) {
+    if(record?.data?.branch_reports)return record.data.branch_reports.map(data=>`<section class="dash-ad-branch">${render({data,error:record.error},expanded)}</section>`.replaceAll('dash-ad-impressions-',`dash-ad-${data.branch_id}-impressions-`).replaceAll('dash-ad-clicks-',`dash-ad-${data.branch_id}-clicks-`)).join('');
     if(!record?.data)return `<p class="dash-empty">${record?.error?'광고 추이를 불러오지 못했습니다. 광고 상세에서 다시 확인해주세요.':'노출수·클릭수 추이를 불러오는 중입니다.'}</p>`;
     const data=record.data,view=prepare(data);
     const warning=record.error?'연결 확인 필요 · 이전에 불러온 결과입니다.':data.sync?.stale||data.sync?.error?'갱신 지연 · 저장된 결과 기준입니다.':data.sync?.enabled===false?'자동 갱신 연결 대기 · 저장된 결과 기준입니다.':'';
     const updated=data.updated_at&&Number.isFinite(Date.parse(data.updated_at))?new Date(data.updated_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'확인 기록 없음';
-    const meta=`<p class="dash-meta">${esc(data.branch||'연결된 광고 계정')}${view.start?` · ${esc(view.start)} ~ ${esc(view.end)}`:''}</p>${warning?`<p class="dash-warning">${warning}</p>`:''}`;
+    const restart=data.restarted_on&&data.through<data.restarted_on?`${esc(data.restarted_on)} 광고 재개 · 재개일 실적은 다음 날 10:30 수집 후 반영`:'전일까지 집계 · 당일 실적은 다음 날 10:30 수집 후 반영';
+    const meta=`<p class="dash-meta"><strong>${esc(data.branch||'연결된 광고 계정')}</strong>${view.start?` · ${esc(view.start)} ~ ${esc(view.end)}`:''}</p><p class="dash-meta">${restart}</p>${warning?`<p class="dash-warning">${warning}</p>`:''}`;
     if(!view.known)return meta+'<p class="dash-empty">아직 수집된 노출·클릭 지표가 없습니다.</p>';
     return `${meta}<div class="dash-ad-charts">${figure(view,'impressions','노출수')}${figure(view,'clicks','클릭수')}</div>${view.known<14?`<p class="dash-warning">14일 중 ${view.known}일 확인 · 누락된 날짜는 0으로 집계하지 않습니다.</p>`:''}${view.total.impressions===0&&view.total.clicks===0?'<p class="dash-meta">확인된 기간에 기록된 노출·클릭이 없습니다.</p>':''}<div class="dash-ad-footer"><p class="dash-meta">캠페인 합계 · 그래프별 별도 축 · 수집 ${esc(updated)}</p><details${expanded?' open':''}><summary data-dash-key="ads-values">일별 수치 보기</summary><div class="dash-table-wrap"><table class="dash-branch-table"><caption class="dash-sr-only">네이버 광고 일별 노출수와 클릭수</caption><thead><tr><th scope="col">날짜</th><th scope="col">노출수</th><th scope="col">클릭수</th></tr></thead><tbody>${view.rows.map(row=>`<tr><th scope="row">${esc(row.date)}</th><td>${count(row.impressions)}</td><td>${count(row.clicks)}</td></tr>`).join('')}</tbody></table></div></details></div>`;
   }
@@ -57,9 +59,11 @@
       if(loading||win.document.hidden)return;
       loading=true;
       try {
-        const response=await win.fetch('/api/naver-ads?summary=1',{cache:'no-store',signal:win.AbortSignal.timeout(15000)});
+        const response=await win.fetch('/api/naver-ads?summary=1&branch=all',{cache:'no-store',signal:win.AbortSignal.timeout(15000)});
         if(!response.ok)throw new Error('request');
-        const data=await response.json();prepare(data);dashboard.update('ads',data);
+        const data=await response.json();
+        if(data.branch_reports)data.branch_reports.forEach(prepare);else prepare(data);
+        dashboard.update('ads',data);
       } catch (_) {dashboard.fail('ads');}
       finally {loading=false;}
     }

@@ -1,5 +1,11 @@
 # 더비다 지식 창고 개발 환경
 
+## 안양 광고 수집 (2026-10-22)
+
+- 기존 competitors/dev 서비스에 `NAVER_ANYANG_CUSTOMER_ID`, `NAVER_ANYANG_ACCESS_LICENSE`, `NAVER_ANYANG_SECRET_KEY`의 기존 연결값을 서버 비밀 변수로 추가한다. 값은 저장소·로그에 기록하지 않는다.
+- 인천 `/data/naver-ads.db`를 유지하고 안양은 `/data/naver-ads-anyang.db`로 격리한다. 선택 변수 `NAVER_ANYANG_ADS_DB_PATH`는 반드시 다른 경로여야 한다. 같은 프로세스의 지점별 작업자가 매일 10:30 KST 전일까지 수집하며 누락분은 시작 시 보충한다.
+- 로컬은 기존 `NAVER_ADS_ENV_FILE`과 지점별 DB 경로를 사용하고 `python naver_ads.py --branch anyang --sync`로 한 지점을 검증한다. 검색노출 Computer Use 월·수·금 10:50 일정과 실제 관측 저장은 별도다.
+
 ## 수급자구분 변경이력 (2026-10-22)
 
 - 장애 복구 후 자동 배포가 시작되지 않으면 기존 서비스/환경을 확인하고 검증된 petdev 작업 소스를 `railway up --service 7eb67a26-90fe-4809-b552-b4da4976b4df --environment 6a839bc7-ff57-4811-abdd-cb74b16d97d2 --detach`로 한 번만 제출할 수 있다. `.local` 수집 자료는 .gitignore로 제외하고 `--no-gitignore`를 사용하지 않는다. 동일 배포를 반복 제출하지 않고 배포 ID의 SUCCESS·실행 파일 해시·사이트 로그인 보호를 확인한 뒤 별도 게시 스크립트를 실행한다. GitHub 재연결·권한·시크릿 회전은 별도 승인 없이 하지 않는다. 2026-10-22 복구 배포 ID는 `4dda6e32-947f-48bc-a590-defa26d6e95d`다.

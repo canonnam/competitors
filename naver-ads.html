@@ -31,9 +31,9 @@
   <link rel="stylesheet" href="/assets/naver-ads.css">
   <link rel="stylesheet" href="/assets/site.css">
   <script src="/assets/site.js" defer></script>
-  <script src="/assets/naver-keywords.js" defer></script>
+  <script src="/assets/naver-keywords.js?v=20261022-branches" defer></script>
   <script src="/assets/vendor/chart.umd.min.js" defer></script>
-  <script src="/assets/naver-ads.js?v=20261007-campaigns" defer></script>
+  <script src="/assets/naver-ads.js?v=20261022-branches" defer></script>
 <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261009-clarity" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single"><script src="/assets/ui-help.js?v=20261006-single" defer></script></head>
 <body class="kb-detail">
   <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
@@ -41,13 +41,14 @@
     <section class="kb-page-heading">
       <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">네이버 광고분석</span></nav>
       <div class="kb-heading-row">
-      <div><p class="kb-eyebrow">더비다요양원 · 인천점</p><h1>네이버 광고분석</h1><p class="kb-description">안양점 운영 중단 · 인천점 성과 기준</p></div>
+      <div><p class="kb-eyebrow" id="ad-branch-name">더비다요양원 · 인천점·안양점</p><h1>네이버 광고분석</h1><p class="kb-description">지점별 광고비·노출·클릭·소재 성과</p></div>
       <div class="tools">
         <button id="reload" class="icon-button" type="button" title="최신 보고서 불러오기" aria-label="최신 보고서 불러오기"><img src="/assets/icons/refresh-cw.svg" alt=""></button>
         <button id="download" type="button" disabled><img src="/assets/icons/download.svg" alt="">CSV 다운로드</button>
       </div>
       </div>
     </section>
+    <div class="filters"><label for="ad-branch">광고 지점</label><select id="ad-branch"><option value="incheon">인천점</option><option value="anyang">안양점</option></select><span class="small muted">전일까지의 실적 · 당일 실적은 다음 날 오전 10:30 수집 후 반영</span></div>
     <div class="update-line"><span id="freshness" class="badge">불러오는 중</span><span id="updated" class="muted" role="status">광고 지표를 불러오고 있습니다.</span></div>
     <p id="notice" class="notice" role="status" hidden></p>
     <noscript><p class="notice">분석 화면을 보려면 JavaScript를 활성화해주세요.</p></noscript>

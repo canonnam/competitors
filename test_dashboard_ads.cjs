@@ -38,11 +38,20 @@ test('stale, disconnected and retained results are disclosed and labels escaped'
 test('invalid dates and unknown or negative metrics are rejected, not coerced to zero',()=>{
   for(const invalid of [{daily:null},{...report,through:'2026-02-30'},{...report,daily:[row('2026-09-21',null,1)]},{...report,daily:[row('2026-09-21',100,-1)]}])assert.throws(()=>prepare(invalid));
 });
+test('both branches render separately with unique chart labels and no shared totals',()=>{
+  const html=render({data:{branch_reports:[{...report,branch_id:'incheon'},{...report,branch_id:'anyang',branch:'안양점',daily:[row('2026-09-21',80,7)]}]}});
+  assert.match(html,/인천점/);assert.match(html,/안양점/);
+  assert.equal((html.match(/<svg /g)||[]).length,4);
+  const ids=[...html.matchAll(/ id="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(new Set(ids).size,ids.length);
+  assert.match(html,/dash-ad-anyang-clicks-title/);
+  assert.match(html,/dash-ad-incheon-clicks-title/);
+});
 test('collector reads the summary, prevents duplicate calls and preserves prior data on failure',async()=>{
   let resolve,called=0;
   const updates=[],events={};
   const win={document:{hidden:false,addEventListener(){}},addEventListener:(name,fn)=>events[name]=fn,setInterval(){},AbortSignal:{timeout(){}},fetch:async(url,options)=>{
-    assert.equal(url,'/api/naver-ads?summary=1');assert.equal(options.cache,'no-store');called++;
+    assert.equal(url,'/api/naver-ads?summary=1&branch=all');assert.equal(options.cache,'no-store');called++;
     return new Promise(done=>resolve=done);
   }};
   const collector=start(win,{update:(id,data)=>updates.push({id,data}),fail:id=>updates.push({id,error:true})});

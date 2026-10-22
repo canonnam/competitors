@@ -318,16 +318,26 @@ def keyword_queries(ad_path, now):
 
 
 def naver_queries(ad_path, now, config, show_stale=False):
-    queries, inventory = keyword_queries(ad_path, now)
-    if show_stale and inventory.get('stale'):
-        queries = active_keyword_queries(inventory.get('items', []))
-    combined = {(q['keyword'], 'incheon'): {**q, 'branch': 'incheon', 'source': 'ad_account'} for q in queries}
+    inventories = {}
+    combined = {}
+    registered = set()
+    for branch in naver_ads.BRANCHES:
+        inventory = naver_ads.keyword_report(naver_ads.branch_path(ad_path, branch), now, branch=branch)
+        inventories[branch] = inventory
+        registered.update((row.get('keyword', '').strip(), branch) for row in inventory.get('items', []))
+        queries = active_keyword_queries(inventory.get('items', [])) if inventory.get('updated_at') and (show_stale or not inventory.get('stale')) else []
+        for query in queries:
+            combined[(query['keyword'], branch)] = {**query, 'branch': branch, 'source': 'ad_account', 'inventory_stale': inventory.get('stale', True)}
     for query in config.get('naver_queries', []):
         keyword, branch = query['keyword'].strip(), query['branch']
+        if (keyword, branch) in registered and (keyword, branch) not in combined:
+            continue  # A regional fallback must not restore an OFF or unverified advertising keyword.
         if keyword and query.get('enabled', True) is True:
             combined.setdefault((keyword, branch), {**query, 'keyword': keyword, 'source': 'regional',
                                                     'groups': [], 'average_ad_rank': None, 'eligible': None})
-    return list(combined.values()), inventory
+    dates = [row.get('updated_at') for row in inventories.values() if row.get('updated_at')]
+    return list(combined.values()), {'branches': inventories, 'updated_at': min(dates) if dates else None,
+                                    'stale': any(row.get('stale', True) for row in inventories.values())}
 
 
 def evidence_branch(text, url, config):
@@ -501,7 +511,7 @@ def report(path, ad_path=None, now=None, summary=False):
             state = states.get(check_id(provider, query, config), {})
             fresh = bool(connected and observation and timestamp(observation['observed_at']) >= due_at(now) and not state.get('error')
                          and (provider == 'naver' or observation.get('grounded')))
-            if provider == 'naver' and query['source'] == 'ad_account' and ad_report.get('stale'):
+            if provider == 'naver' and query['source'] == 'ad_account' and query.get('inventory_stale', ad_report.get('stale')):
                 fresh = False
             status = 'ready' if fresh else 'unconfigured' if not connected else 'error' if state.get('error') else 'running' if state.get('running') else 'pending'
             if observation and provider != 'naver' and not observation.get('grounded') and not state.get('error'):
@@ -541,7 +551,9 @@ def report(path, ad_path=None, now=None, summary=False):
             'keyword_source': {'updated_at': ad_report.get('updated_at'), 'stale': ad_report.get('stale'), 'total': len(search_queries),
                                'ad_count': sum(q['source'] == 'ad_account' for q in search_queries),
                                'regional_count': sum(q['source'] == 'regional' for q in search_queries),
-                               'method': '인천 광고 계정 ON 키워드와 안양 지역 점검 키워드'},
+                               'branches': {key: {'updated_at': value.get('updated_at'), 'stale': value.get('stale'), 'error': value.get('error'),
+                                                 'ad_count': sum(q['source'] == 'ad_account' and q['branch'] == key for q in search_queries)} for key, value in ad_report.get('branches', {}).items()},
+                               'method': '인천·안양 광고 계정 ON 키워드와 활성 지역 점검 키워드'},
             'ai_queries': ai_queries, 'web_collection': {'mode': 'browser', 'schedule': SCHEDULE, 'api_collection': False},
             'generated_at': now.isoformat()}
 

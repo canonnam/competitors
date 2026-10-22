@@ -256,10 +256,18 @@ class App(SimpleHTTPRequestHandler):
     def send_ad_report(self, head_only=False):
         try:
             parts = urllib.parse.urlsplit(self.path)
+            params = urllib.parse.parse_qs(parts.query)
+            branch = params.get("branch", ["incheon"])[0]
+            if branch not in {*naver_ads.BRANCHES, "all"}:
+                raise ValueError("Unknown advertising branch")
             if parts.path == "/api/naver-ad-keywords":
-                payload = naver_ads.keyword_report(naver_ads.db_path())
+                payload = naver_ads.keyword_reports(naver_ads.db_path()) if branch == "all" else naver_ads.keyword_report(naver_ads.branch_path(naver_ads.db_path(), branch), branch=branch)
             else:
-                payload = naver_ads.report(naver_ads.db_path(), summary=urllib.parse.parse_qs(parts.query).get("summary") == ["1"])
+                summary = params.get("summary") == ["1"]
+                if branch == "all":
+                    payload = {"branch_reports": [naver_ads.report(naver_ads.branch_path(naver_ads.db_path(), key), summary=summary, branch=key) for key in naver_ads.BRANCHES]}
+                else:
+                    payload = naver_ads.report(naver_ads.branch_path(naver_ads.db_path(), branch), summary=summary, branch=branch)
             status = 200
         except (sqlite3.Error, OSError, ValueError):
             payload = {"error": "광고 보고서를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."}

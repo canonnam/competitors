@@ -137,7 +137,7 @@ def report(path, legacy, config, now, summary=False, inventory_stale=False):
         successes = [r for r in history if r['status'] == 'ready']
         observation = successes[0] if successes else old
         fresh = bool(successes and latest['status'] == 'ready' and timestamp(observation['observed_at']) >= v.due_at(now))
-        if old['query']['source'] == 'ad_account' and inventory_stale:
+        if old['query']['source'] == 'ad_account' and old['query'].get('inventory_stale', inventory_stale):
             fresh = False
         blocked = latest.get('status') == 'blocked'
         item = {**observation, 'query': old['query'], 'status': 'ready' if fresh else 'error' if blocked else 'pending',

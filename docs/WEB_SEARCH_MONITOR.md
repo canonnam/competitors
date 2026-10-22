@@ -32,9 +32,9 @@ API `GET https://app.aivida.tech/api/search-visibility`의 `ai_queries`를 읽�
 ## 네이버 Computer Use 점검
 
 같은 GET 응답의 `providers`에서 `id: naver`의 `items[].query`를 읽는다.
-인천은 광고 계정 ON 키워드만, 안양은 활성화된 지역 점검 키워드만 점검한다.
-현재 19개이지만 개수를 고정하지 않는다. OFF 키워드를 이전 목록에서 복원하지 않는다.
-`keyword_source.stale`이면 광고 키워드의 ON 상태를 확정하지 말고 목록 갱신 실패를 기록한다.
+인천·안양 모두 광고 계정 ON 키워드와 활성 지역 점검 키워드를 점검한다. 등록된 OFF 키워드는 지역 목록에서도 제외하며, 같은 지점·같은 질문은 중복 점검하지 않는다.
+API의 현재 목록을 사용하며 개수를 고정하지 않는다. OFF 키워드를 이전 목록에서 복원하지 않는다.
+`keyword_source.branches[branch].stale`이면 해당 지점 광고 키워드의 ON 상태를 확정하지 말고 목록 갱신 실패를 기록한다. 다른 지점의 정상 목록과 지역 키워드 점검은 계속한다. 지점별 필드가 없는 응답만 `keyword_source.stale`을 사용한다.
 
 - 실제 네이버 검색 화면에서 등록 키워드 그대로 검색한다. `search.naver.com/search.naver?where=nexearch&query=...`로 접속할 수 있다.
 - 기존 로그인 상태를 유지하고 `session_context`에 로그인 여부와 기본 위치 사용 여부를 기록한다. 자동 로그아웃, 쿠키 추출, 계정·위치 설정 변경을 하지 않는다.

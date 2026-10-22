@@ -143,3 +143,5 @@
 @media(max-width:760px) { .dash-columns,.dash-ad-charts { grid-template-columns:1fr; } .dash-panel { padding:16px; } }
 @media(max-width:380px) { .dash-metrics,.dash-shortcut-grid { grid-template-columns:1fr; } .dash-metric { padding:16px; } .dash-request-counts>div { gap:4px; padding:8px 4px; } .dash-request-counts dt { font-size:12px; } .dash-request-counts dd { font-size:16px; } }
 @media print { .dash-shortcuts,.dash-refresh { display:none; } .dash-ad-footer .dash-table-wrap { max-height:none; overflow:visible; } }
+
+.dash-ad-branch + .dash-ad-branch{margin-top:24px;padding-top:20px;border-top:1px solid var(--ui-border)}
