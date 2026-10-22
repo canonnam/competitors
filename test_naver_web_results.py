@@ -36,6 +36,20 @@ class NaverBrowserTests(unittest.TestCase):
     def report(self, now=NOW):
         return v.report(self.path, self.adpath, now)['providers'][0]
 
+    def test_one_stale_branch_does_not_block_another_branch_submission(self):
+        keyword='인천점 ON 키워드'
+        with v.naver_ads.connect(self.adpath) as db:
+            v.naver_ads.set_state(db,keyword_snapshot=json.dumps({'updated_at':NOW.isoformat(),'through':'2026-09-20','items':[
+                {'keyword':keyword,'group':'인천','enabled':True,'eligible':True,'average_rank':2}]}))
+        queries, inventory=v.naver_queries(self.adpath,NOW,v.settings(),show_stale=True)
+        self.assertTrue(inventory['stale'])  # Anyang has not supplied its inventory yet.
+        self.assertFalse(next(q for q in queries if q['keyword']==keyword)['inventory_stale'])
+        body=self.body(keyword=keyword,branch='incheon')
+        body['pages'][0]['url']=v.search_url(keyword)
+        self.assertTrue(n.submit(self.path,body,NOW,self.adpath)['saved'])
+        item=next(i for i in self.report()['items'] if i['keyword']==keyword)
+        self.assertEqual(item['status'],'ready')
+
     def item(self, now=NOW):
         return next(i for i in self.report(now)['items'] if i['keyword'] == self.query['keyword'])
 

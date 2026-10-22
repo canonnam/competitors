@@ -125,7 +125,7 @@ class EnabledKeywordsTests(unittest.TestCase):
                 {'keyword':'중지키워드','group':'OFF','eligible':False,'average_rank':2}]
         for stale in (False, True):
             report = {'updated_at':'2026-09-11','stale':stale,'items':rows}
-            with patch.object(v.naver_ads, 'keyword_report', return_value=report):
+            with patch.object(v.naver_ads, 'keyword_report', side_effect=lambda *args, **kwargs: report if kwargs.get('branch') == 'incheon' else {'items': [], 'stale': True}):
                 queries, _ = v.naver_queries('unused', datetime.now(v.KST), {}, show_stale=True)
                 self.assertEqual(len(queries), 1)
                 self.assertEqual(queries[0]['groups'], ['ON'])

@@ -49,7 +49,7 @@ def submit(path, body, now=None, ad_path=None):
     if status == 'blocked' and body.get('pages'):
         raise ValueError('확인 실패 기록에는 검색 결과를 넣지 마세요.')
     if status == 'ready':
-        if query['source'] == 'ad_account' and inventory.get('stale'):
+        if query['source'] == 'ad_account' and query.get('inventory_stale', inventory.get('stale')):
             raise ValueError('ON 키워드 목록 갱신이 필요합니다. 목록 확인 실패 사유를 기록해주세요.')
         if body.get('complete_search') is not True:
             raise ValueError('정해진 페이지 범위 전체를 확인해주세요.')
