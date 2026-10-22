@@ -2,6 +2,8 @@
 
 ## 수급자구분 변경이력 (2026-10-22)
 
+- 장애 복구 후 자동 배포가 시작되지 않으면 기존 서비스/환경을 확인하고 검증된 petdev 작업 소스를 `railway up --service 7eb67a26-90fe-4809-b552-b4da4976b4df --environment 6a839bc7-ff57-4811-abdd-cb74b16d97d2 --detach`로 한 번만 제출할 수 있다. `.local` 수집 자료는 .gitignore로 제외하고 `--no-gitignore`를 사용하지 않는다. 동일 배포를 반복 제출하지 않고 배포 ID의 SUCCESS·실행 파일 해시·사이트 로그인 보호를 확인한 뒤 별도 게시 스크립트를 실행한다. GitHub 재연결·권한·시크릿 회전은 별도 승인 없이 하지 않는다. 2026-10-22 복구 배포 ID는 `4dda6e32-947f-48bc-a590-defa26d6e95d`다.
+
 - 기존 Python 정적 앱·공통 사이트 로그인·Railway 연결을 유지한다. `recipient_history.py`와 `recipient-history.html`을 Docker에 포함한다. 새 라이브러리·서비스 계정·비밀 변수는 없다.
 - 비공개 `/data/recipient-history`의 월별 JSON과 지점별 실패 기록을 사용한다. 선택 환경 변수 `RECIPIENT_HISTORY_DIR`로 로컬 테스트를 격리한다. 정정 전 자료는 history에 보존한다.
 - GET/HEAD `/api/recipient-history`, `/api/recipient-history/summary`는 기존 로그인 이후만 응답한다. 후자는 이름·개인 연결키·개별 자격을 포함하지 않는다. POST/DELETE는 405다. 파일·API 응답은 기존 no-store 정책을 유지한다.
