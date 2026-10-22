@@ -19,6 +19,7 @@ import facility_projects
 import facility_access
 import liability_insurance
 import resident_movement
+import recipient_history
 import aeo_missions
 import web_search_results
 import support_applications
@@ -105,6 +106,8 @@ class App(SimpleHTTPRequestHandler):
             return
         if resident_movement.handle(self, 'GET'):
             return
+        if recipient_history.handle(self, 'GET'):
+            return
         if facility_projects.handle(self, 'GET') or facility_collection.handle(self, 'GET') or facility_observation.handle(self, 'GET'):
             return
         if support_projects.handle(self, "GET"):
@@ -153,6 +156,8 @@ class App(SimpleHTTPRequestHandler):
         if liability_insurance.handle(self, 'HEAD'):
             return
         if resident_movement.handle(self, 'HEAD'):
+            return
+        if recipient_history.handle(self, 'HEAD'):
             return
         if facility_projects.handle(self, 'HEAD') or facility_collection.handle(self, 'HEAD') or facility_observation.handle(self, 'HEAD'):
             return
@@ -342,6 +347,7 @@ class App(SimpleHTTPRequestHandler):
             self.path = "/index.html"
             path = ROOT / "index.html"
         public_pages.add("liability-insurance.html")
+        public_pages.add("recipient-history.html")
         public_pages.add("clarity-report.html")
         public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
@@ -366,11 +372,15 @@ class App(SimpleHTTPRequestHandler):
     def do_DELETE(self):
         if facility_access.handle(self, 'DELETE'):
             return
+        if recipient_history.handle(self, 'DELETE'):
+            return
         if not (facility_projects.handle(self, 'DELETE') or facility_collection.handle(self, 'DELETE') or facility_observation.handle(self, 'DELETE')):
             self.send_error(405)
 
     def do_POST(self):
         if facility_access.handle(self, 'POST'):
+            return
+        if recipient_history.handle(self, 'POST'):
             return
         if liability_insurance.handle(self, 'POST'):
             return

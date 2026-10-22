@@ -17,7 +17,8 @@
     ads:{title:'네이버 광고 추이',href:'/naver-ads.html'},
     operating:{title:'운영비 분석',href:'/operating-costs.html'},
     residents:{title:'월별 입·퇴소 현황',href:'/'},
-    liability:{title:'배상책임보험 운영 현황',href:'/liability-insurance.html'}
+    liability:{title:'배상책임보험 운영 현황',href:'/liability-insurance.html'},
+    recipients:{title:'수급자구분 변경이력',href:'/recipient-history.html'}
   };
   const state={};
   let redraw=()=>{};
@@ -80,6 +81,7 @@
         <section class="dash-panel dash-operating" aria-labelledby="dashboard-operating-title"><div class="dash-panel-head"><h2 id="dashboard-operating-title">월별 운영손익</h2><a href="/operating-costs.html">운영비 상세 보기</a></div><div data-dash-slot="operating"></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-branches-title"><div class="dash-panel-head"><h2 id="dashboard-branches-title">지점별 상태표</h2><a href="/claim-check.html" aria-label="청구·인건비 상세 보기">상세 보기</a></div><div data-dash-slot="branches"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="branches-time"></span></div></section>
         <section class="dash-panel dash-summary" aria-labelledby="dashboard-requests-title"><div class="dash-panel-head"><h2 id="dashboard-requests-title">상담·무료체험 현황</h2><a href="/website-requests.html">신청 관리</a></div><div data-dash-slot="requests" aria-live="polite"></div><div class="dash-summary-footer"><span class="dash-meta" data-dash-slot="requests-time"></span><button type="button" class="ui-button dash-refresh" data-dash-refresh="requests" aria-label="신청 현황 새로고침">새로고침</button></div></section>
+        <section class="dash-panel dash-recipients-panel" aria-labelledby="dashboard-recipients-title"><div class="dash-panel-head"><h2 id="dashboard-recipients-title">수급자구분 변경이력</h2><a href="/recipient-history.html">변경이력 보기</a></div><div data-ui-help="월별 조회 기준" data-ui-help-target="#dashboard-recipients-title">매월 1일 오전 11시 한국시간에 당월 급여제공월을 조회합니다. 전체 행 수가 아닌 이전·이후 자격이 다른 인원만 자격 변경으로 표시합니다. 자격이 같은 기간 갱신과 이전·후속 자격 미확인은 구분합니다. 조회 이후 월중 변경은 다음 재조회 전까지 반영되지 않습니다.</div><div data-dash-slot="recipients" aria-live="polite"></div></section>
         <section class="dash-panel dash-liability-panel" aria-labelledby="dashboard-liability-title"><div class="dash-panel-head"><h2 id="dashboard-liability-title">배상책임보험 운영 현황</h2><a href="/liability-insurance.html">보험 관리</a></div><div data-dash-slot="liability" aria-live="polite"></div></section>
         <section class="dash-panel dash-ads-panel" aria-labelledby="dashboard-ads-title"><div class="dash-panel-head"><h2 id="dashboard-ads-title">네이버 광고 노출·클릭 추이</h2><a href="/naver-ads.html">광고 상세</a></div><div data-dash-slot="ads"></div></section>
       </div>
@@ -133,6 +135,8 @@
       }).join('')}</tbody></table></div>`:`<p class="dash-empty">${state.claims?.error?'지점별 상태 조회 실패 · 상세 보기에서 확인해주세요.':'청구·인건비 확인 중'}</p>`);
       slot('branches-time',claim?`저장 조회 · 청구 ${esc(oldestDate(branches.map(branch=>branch.checkedAt)))} · 인건비 ${esc(oldestDate(branches.map(branch=>branch.laborCost?.checkedAt)))}`:'');
       const insurance=state.liability;
+      const recipients=state.recipients;
+      slot('recipients',recipients?.error?'<p class="dash-empty">변경이력 조회 연결 실패 · 전용 화면에서 확인해주세요.</p>':recipients?.data&&win.RecipientHistoryUI?win.RecipientHistoryUI.summary(recipients.data):'<p class="dash-empty">변경이력 확인 중</p>');
       slot('liability',insurance?.error?'<p class="dash-empty">보험 현황 조회 실패 · 보험 관리에서 확인해주세요.</p>':insurance?.data&&win.LiabilityUI?`<div class="dash-liability-rows">${insurance.data.branches.map(branch=>`<div class="dash-liability-row">${win.LiabilityUI.branch(branch,3,{summary:true})}</div>`).join('')}</div>`:'<p class="dash-empty">보험 현황 확인 중</p>');
       const request=state.requests,data=request?.data;
       slot('requests',request?.error?'<p class="dash-empty">신청 현황 조회 실패 · 다시 새로고침해주세요.</p>':data?`<p class="dash-meta">운영 사이트 누적 · 개발 사이트 제외</p><dl class="dash-request-counts">${Object.entries({new:'새 접수',contacted:'상담 중',completed:'상담 완료',archived:'보관함'}).map(([key,label])=>`<div${key==='new'&&data.counts[key]>0?' data-status="warning"':''}><dt>${label}</dt><dd>${number(data.counts[key])}<span>건</span></dd></div>`).join('')}</dl>${data.total===0?'<p class="dash-meta">접수된 신청이 없습니다.</p>':''}`:'<p class="dash-empty">신청 현황 확인 중</p>');

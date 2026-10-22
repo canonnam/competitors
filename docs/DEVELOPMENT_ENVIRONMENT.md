@@ -1,5 +1,13 @@
 # 더비다 지식 창고 개발 환경
 
+## 수급자구분 변경이력 (2026-10-22)
+
+- 기존 Python 정적 앱·공통 사이트 로그인·Railway 연결을 유지한다. `recipient_history.py`와 `recipient-history.html`을 Docker에 포함한다. 새 라이브러리·서비스 계정·비밀 변수는 없다.
+- 비공개 `/data/recipient-history`의 월별 JSON과 지점별 실패 기록을 사용한다. 선택 환경 변수 `RECIPIENT_HISTORY_DIR`로 로컬 테스트를 격리한다. 정정 전 자료는 history에 보존한다.
+- GET/HEAD `/api/recipient-history`, `/api/recipient-history/summary`는 기존 로그인 이후만 응답한다. 후자는 이름·개인 연결키·개별 자격을 포함하지 않는다. POST/DELETE는 405다. 파일·API 응답은 기존 no-store 정책을 유지한다.
+- Chrome Computer Use 수집과 기존 Railway SSH 검증·게시만 사용한다. 서버가 인증서·세션을 수집하거나 공단 로그인을 자동 재시도하지 않는다. 매월 1일 11시 KST 당월 스냅샷이며 [실행 절차](../RECIPIENT_HISTORY.md)를 따른다.
+- 검증: `python -X utf8 -m unittest test_recipient_history.py test_ui_consistency.py test_static_pages.py`, `node --test test_recipient_history.cjs test_dashboard.cjs test_navigation.cjs`.
+
 ## 상담신청 텔레그램 알림 (2026-10-12)
 
 - 기존 Python/정적 앱과 Railway `competitors/dev`, `petdev` 배포 경로를 유지한다. `website_telegram.py`를 기존 Docker 이미지에 포함하며 별도 서비스·라이브러리는 추가하지 않는다.

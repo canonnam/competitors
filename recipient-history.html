@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>수급자구분 변경이력 · 더비다 지식 창고</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
+<meta name="description" content="안양점·인천점의 월별 수급자 자격 변경, 기간 갱신과 확인 필요 내역을 조회합니다.">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
+<meta property="og:type" content="website"><meta property="og:locale" content="ko_KR"><meta property="og:site_name" content="더비다 지식 창고">
+<meta property="og:title" content="수급자구분 변경이력 · 더비다 지식 창고"><meta property="og:description" content="지점별 수급자 자격 변경과 기간 갱신을 구분해 확인합니다."><meta property="og:url" content="https://app.aivida.tech/recipient-history.html">
+<meta property="og:image" content="https://app.aivida.tech/assets/brand/og-image.png"><meta property="og:image:secure_url" content="https://app.aivida.tech/assets/brand/og-image.png"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="수급자구분 변경이력 · 더비다 지식 창고"><meta name="twitter:description" content="지점별 수급자 자격 변경과 기간 갱신을 확인합니다."><meta name="twitter:image" content="https://app.aivida.tech/assets/brand/og-image.png"><meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+<link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/recipient-history.css?v=20261022"><link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><link rel="stylesheet" href="/assets/wiki-chat.css">
+<script src="/assets/navigation.js?v=20261022-recipient" defer></script><script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
+<link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single"><script src="/assets/ui-help.js?v=20261006-single" defer></script>
+</head><body data-feedback-page="recipient-history">
+<header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
+<main class="rh-main" id="recipient-history">
+<section class="kb-page-heading"><nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/">홈</a><span aria-hidden="true">/</span><span aria-current="page">수급자구분 변경이력</span></nav><h1>수급자구분 변경이력</h1>
+<div data-ui-help="조회 일정·변경 판단 기준" data-ui-help-target="main h1"><p>매월 1일 오전 11시(한국시간), 당월 급여제공월을 조회합니다. 예: 10월 1일 → 10월. 매월 1일 조회 시점의 결과이며 월중 이후 변경은 재조회 전까지 반영되지 않습니다. 새로고침은 저장된 결과만 읽습니다.</p><p>출처: 롱텀 기타 → 엑셀다운로드 → 수급자구분변경이력. 전체 행 수는 변경 건수가 아닙니다. 같은 수급자의 연속된 이전·이후 자격이 다를 때만 자격 변경으로 분류합니다. 자격이 같으면 기간 갱신, 이전 자격이 없거나 후속 자격이 없는 종료·기간 겹침·단절은 확인 필요입니다. 변경 예정은 실제 조회일 이후 적용되는 내역입니다.</p><p>표는 선택 월의 원본 범위만 대조합니다. 과거 자격이 원본에 없으면 신규 입소인지 자격 변경인지 단정하지 않습니다. 실패·미조회는 0명으로 표시하지 않으며 실패 시 같은 월의 이전 성공 자료를 유지합니다. 이 화면은 자격 판단·청구 제출을 하지 않습니다. 인정관리번호·인증서·비밀번호는 저장하지 않습니다.</p></div></section>
+<div class="rh-controls">
+<label for="rh-month">급여제공월<select id="rh-month" aria-label="급여제공월"><option value="">당월 불러오는 중</option></select></label>
+<label for="rh-branch">지점<select id="rh-branch"><option value="">전체 지점</option><option value="anyang">안양점</option><option value="incheon">인천점</option></select></label>
+<label for="rh-view">보기<select id="rh-view"><option value="events">변경·확인 내역</option><option value="records">원본 자격 이력 전체</option></select></label>
+<button type="button" id="rh-refresh" class="ui-button">저장 결과 새로고침</button></div>
+<p id="rh-error" class="rh-error" role="alert"></p>
+<section id="rh-summary" aria-label="지점별 조회 요약" aria-live="polite"><p class="rh-muted">저장 자료를 불러오는 중입니다.</p></section>
+<section class="rh-results"><h2 id="rh-result-title">해당 월 변경·확인 내역</h2><div id="rh-table" aria-live="polite"></div></section>
+</main>
+<script src="/assets/site.js" defer></script><script src="/assets/recipient-history-ui.js?v=20261022" defer></script><script src="/assets/recipient-history.js?v=20261022" defer></script><script type="module" src="/assets/wiki-chat.js"></script>
+</body></html>

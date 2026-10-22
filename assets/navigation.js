@@ -14,6 +14,7 @@
     {id:'research', title:'자료·AI'}
   ];
   const features = [
+    {id:'recipient-history', category:'operations', title:'수급자구분 변경이력', description:'월별 수급자 자격 변경·기간 갱신·확인 필요 내역', keywords:'롱텀 공단 수급자 구분 변경 자격 일반 감경 기초 의료 적용일 종료일 매월 1일 당월'},
     {id:'liability-insurance', category:'operations', title:'배상책임보험 관리', description:'전체 현원·가입 인원 비교와 증서·만료일 관리', keywords:'안양 인천 배상 책임 보험 현원 가입 증서 만료 갱신 매일'},
     {id:'payroll-insurance', category:'operations', title:'월별 급여·4대보험', description:'직원별 급여·보험료와 직책별 합계', keywords:'사회복지사 간호사 간호조무사 물리치료사 작업치료사 요양보호사 급여대장 인건비 사회보험 매월 10일'},
     {id:'support-projects', category:'support', title:'지원사업 준비·기록', description:'지원 조건·준비 현황·컨소시엄·예산 관리', keywords:'정부 과제 AX 실증밸리 공모 멀티모달'},
@@ -183,6 +184,7 @@
           const text=id=>doc.getElementById(id)?.textContent.trim().replace(/\s+/g,' ')||'';
           let value='';
           if(item.id==='claim-check')value=text('home-claim-status');
+          else if(item.id==='recipient-history')value=text('home-recipient-history-status');
           else if(item.id==='payroll-insurance')value='매월 10일 갱신';
           else if(item.id==='staff-eval')value=text('home-staff-eval-badge')||'테스트 · 요양보호사';
           else if(item.id==='competitor-news')value=text('home-news-update').includes('확인 중')?'뉴스 갱신 중':text('home-news-badge');

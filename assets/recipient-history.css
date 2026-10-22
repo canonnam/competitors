@@ -1,0 +1,17 @@
+.rh-main{max-width:var(--ui-content-width);margin:auto;padding:24px;min-width:0}
+.rh-controls{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:24px 0}
+.rh-controls label{display:grid;gap:8px;font-size:14px;min-width:0}
+.rh-controls select{min-height:var(--ui-control-height);padding:8px 12px;font:inherit;font-size:16px;max-width:100%;border:1px solid var(--ui-border);border-radius:var(--ui-control-radius);background:var(--ui-surface);color:var(--ui-text)}
+.rh-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:12px}
+.rh-branch{min-width:0;padding:20px;border:1px solid var(--ui-border);border-radius:var(--ui-card-radius);background:var(--ui-surface)}
+.rh-branch-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+.rh-branch-head h3{font-size:17px;margin:0}.rh-branch .ui-status{white-space:normal}
+.rh-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0}
+.rh-counts>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-radius:var(--ui-control-radius);padding:12px;background:var(--ui-page)}
+.rh-counts dt{font-size:14px;color:var(--ui-muted)}.rh-counts dd{margin:0;font-size:18px;font-weight:700}
+.rh-muted{color:var(--ui-muted);font-size:14px;line-height:1.7;overflow-wrap:anywhere;margin:8px 0}.rh-error{color:var(--ui-error);font-size:14px;line-height:1.7}
+.rh-results{margin-top:32px}.rh-results h2{font-size:20px}.rh-table-wrap{overflow-x:auto;max-width:100%;margin-top:16px;border:1px solid var(--ui-border);border-radius:var(--ui-control-radius)}
+.rh-table-wrap table{border-collapse:collapse;width:100%;font-size:14px;text-align:left}.rh-table-wrap :is(th,td){padding:12px;border-bottom:1px solid var(--ui-border);white-space:nowrap}.rh-table-wrap th{background:var(--ui-page)}.rh-table-wrap caption{text-align:left;padding:12px;color:var(--ui-muted)}
+.dash-recipients-panel{grid-column:1/-1}.dash-recipients-panel .rh-branch{padding:16px}
+@media(max-width:760px){.rh-main{padding:16px}.rh-branches{grid-template-columns:1fr}.rh-controls{gap:12px}.rh-branch{padding:16px}}
+@media print{.rh-controls{display:none}.rh-table-wrap{overflow:visible}.rh-table-wrap :is(th,td){white-space:normal}}

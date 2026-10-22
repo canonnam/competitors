@@ -12,6 +12,7 @@ import json
 import re
 
 CARDS = {
+    'recipient_history': ('수급자구분 변경이력', '/recipient-history.html'),
     'liability_insurance': ('배상책임보험 관리', '/liability-insurance.html'),
     'payroll_insurance': ('월별 급여·4대보험', '/payroll-insurance.html'),
     'payroll': ('급여 계산·근로계약서', '/payroll.html'),
@@ -29,6 +30,7 @@ CARDS = {
     'facility_3d': ('시설 3D 지도', '/facility-3d.html'),
 }
 ALIASES = {
+    'recipient_history': ('수급자구분', '수급자변경이력', '자격변경', '수급자자격', '수급자변경'),
     'liability_insurance': ('배상책임보험', '보험가입인원', '보험증서', '보험만료', '배상보험'),
     'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
     'payroll': ('급여계산', '급여계산기', '근로계약', '통상임금', '통상시급', '주휴시간', '주주야야', '연장수당', '야간수당'),
@@ -354,6 +356,12 @@ def nearby(question):
 
 
 def retrieve(kind, question, now):
+    if kind == 'recipient_history':
+        from service_knowledge import evidence
+        return [evidence(kind, '수급자구분 변경이력 안내',
+            '매월 1일 오전 11시 한국시간에 롱텀 기타 → 엑셀다운로드 → 수급자구분변경이력에서 당월 급여제공월을 조회합니다. '
+            '이전·이후 자격이 다른 변경과 자격은 같은 기간 갱신을 구분합니다. 이전 자격 미확인·기간 종료·겹침은 확인 필요로 표시합니다. '
+            '인정관리번호·인증서·비밀번호를 저장하지 않으며 실제 수급자 이름·자격은 채팅에 제공하지 않습니다. 로그인된 전용 화면에서 확인해주세요.')]
     if kind == 'liability_insurance':
         from service_knowledge import evidence
         return [evidence(kind, '배상책임보험 관리 안내',
@@ -385,6 +393,7 @@ def status():
     from service_knowledge import ROOT
     import agency_news, naver_ads, search_visibility, reputation_watch, claim_check
     paths = {'payroll': [ROOT / 'payroll.html', ROOT / 'assets/contracts/templates.json'],
+             'recipient_history': [ROOT / 'recipient-history.html'],
              'liability_insurance': [ROOT / 'liability-insurance.html'],
              'payroll_insurance': [ROOT / 'payroll-insurance.html'],
              'ai_hub': [ROOT / 'ai-hub-data.html'], 'claim_check': [claim_check.data_path()],
