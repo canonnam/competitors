@@ -162,3 +162,7 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - 관리 POST `/api/support/staff-eval/delete`, `/restore`에 `{id}`를 전달한다. 기존 동일 출처 검사와 직접 관리 접근 방식을 유지한다. GET 목록의 `view=active|deleted` 기본값은 `active`다. 삭제는 응시 쿠키 해제와 링크 차단을 포함하며, 복구는 기존 답변·점수·상태·만료를 유지한다.
 - `assets/ui-help.js`는 명시된 설명 노드를 제목 옆 툴팁으로 옮기고 인쇄 시 원래 위치로 복원한다. 지원사업의 동적 탭도 관찰하며 기존 별도 툴팁 구현은 변경하지 않는다. HTML의 새 CSS/JS 조회 버전으로 브라우저 캐시를 갱신한다.
 - 검증: `python -m unittest test_ui_consistency.py test_static_pages.py test_claim_check.py test_staff_eval.py test_support_projects.py test_payroll.PayrollRouteTests.test_payroll_assets_and_no_personal_data_submission`; `node --test test_ui_help.cjs test_staff_eval_voice.cjs test_navigation.cjs test_payroll.cjs test_operating_math.cjs test_naver_ads_math.cjs test_nearby_facilities.cjs test_statistics.cjs test_search_visibility.cjs test_reputation_watch.cjs test_claim_check.cjs`.
+
+## 검색 콘텐츠 품질 기록 (2026-10-22)
+
+기존 search-visibility SQLite의 content_quality_events에 지점별 검증 결과를 추가 저장한다. 기존 인증을 통과한 동일 출처 POST /api/search-visibility/content-quality 또는 record_content_quality WebMCP로 등록하며 GET /api/search-visibility의 AI items[].content_quality에 최신 지점 기록을 연결한다. 측정값은 변경하지 않는다. 추가 환경 변수·외부 서비스·새 DB 파일은 없다. 관리 폴더 QUALITY_PUBLISH.md와 publish_quality.py에 인증된 Railway CLI 대체 게시 절차를 기록한다.

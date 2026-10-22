@@ -33,6 +33,9 @@ def init_db(path):
                 reason_code TEXT NOT NULL, reason TEXT NOT NULL, note TEXT NOT NULL,
                 evidence_url TEXT NOT NULL, created_at TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS aeo_plan_events ON aeo_events(plan_id,id);
+            CREATE TABLE IF NOT EXISTS content_quality_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, request_id TEXT NOT NULL UNIQUE,
+                branch TEXT NOT NULL, checked_at TEXT NOT NULL, payload TEXT NOT NULL);
         ''')
 
 
@@ -148,6 +151,66 @@ def attach(path, providers, branches):
             if provider['kind'] == 'ai':
                 for item in provider['items']:
                     item['mission'] = view(db, provider['id'], item, names.get(item.get('branch'), '해당 지점'))
+                    row = db.execute('SELECT payload FROM content_quality_events WHERE branch=? ORDER BY checked_at DESC,id DESC LIMIT 1', (item.get('branch'),)).fetchone()
+                    item['content_quality'] = json.loads(row['payload']) if row else None
+
+
+def submit_quality(path, body, now=None):
+    """Append a verified branch content report without changing search observations."""
+    from urllib.parse import urlsplit
+    now = now or datetime.now(KST)
+    if not isinstance(body, dict) or body.get('branch') not in {'incheon', 'anyang'}:
+        raise ValueError('지점을 확인해주세요.')
+    allowed = {'request_id', 'branch', 'checked_at', 'status', 'summary', 'completed', 'next_tasks', 'approvals'}
+    if set(body) != allowed:
+        raise ValueError('콘텐츠 관리 기록 항목을 확인해주세요.')
+    try:
+        uuid.UUID(body['request_id'])
+        checked = datetime.fromisoformat(body['checked_at'])
+        if checked.tzinfo is None or (checked - now).total_seconds() > 300:
+            raise ValueError()
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise ValueError('요청 번호와 실제 확인 시각을 확인해주세요.') from exc
+    if body['status'] not in {'checked', 'updated', 'needs_approval', 'blocked'}:
+        raise ValueError('관리 상태를 확인해주세요.')
+    def plain(value, limit):
+        return isinstance(value, str) and bool(value.strip()) and len(value) <= limit
+    if not plain(body['summary'], 500):
+        raise ValueError('점검 요약이 필요합니다.')
+    for key in ('next_tasks', 'approvals'):
+        if not isinstance(body[key], list) or len(body[key]) > 10 or not all(plain(v, 500) for v in body[key]):
+            raise ValueError('다음 작업과 승인 대기를 확인해주세요.')
+    if body['status'] == 'needs_approval' and not body['approvals']:
+        raise ValueError('승인할 내용을 기록해주세요.')
+    if not isinstance(body['completed'], list) or len(body['completed']) > 20:
+        raise ValueError('완료 기록을 확인해주세요.')
+    for entry in body['completed']:
+        if not isinstance(entry, dict) or set(entry) != {'note', 'url', 'verified_at'} or not plain(entry['note'], 500):
+            raise ValueError('완료 내용과 공개 검증 근거가 필요합니다.')
+        try:
+            url = urlsplit(entry['url'])
+            verified = datetime.fromisoformat(entry['verified_at'])
+            if url.scheme != 'https' or url.username or url.password or url.hostname not in {'www.thevida.co.kr', 'thevida.co.kr', 'blog.naver.com'} or verified.tzinfo is None or verified > checked:
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise ValueError('완료 기록은 공식 공개 주소와 실제 검증 시각이 필요합니다.') from exc
+    if body['status'] == 'updated' and not body['completed']:
+        raise ValueError('수정 완료 근거가 필요합니다.')
+    normalized = {**body, 'checked_at': checked.astimezone(KST).isoformat()}
+    payload = json.dumps(normalized, ensure_ascii=False, sort_keys=True)
+    init_db(path)
+    with connect(path) as db:
+        db.execute('BEGIN IMMEDIATE')
+        old = db.execute('SELECT payload FROM content_quality_events WHERE request_id=?', (body['request_id'],)).fetchone()
+        if old:
+            if old['payload'] != payload:
+                raise Conflict('같은 요청 번호에 다른 기록이 있습니다.')
+            return json.loads(old['payload'])
+        latest = db.execute('SELECT checked_at FROM content_quality_events WHERE branch=? ORDER BY checked_at DESC LIMIT 1', (body['branch'],)).fetchone()
+        if latest and normalized['checked_at'] < latest['checked_at']:
+            raise Conflict('더 최신인 관리 기록이 있습니다.')
+        db.execute('INSERT INTO content_quality_events(request_id,branch,checked_at,payload) VALUES(?,?,?,?)', (body['request_id'],body['branch'],normalized['checked_at'],payload))
+    return normalized
 
 
 def submit(path, body):

@@ -1,33 +1,19 @@
-const test=require('node:test');
-const assert=require('node:assert/strict');
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const missions=require('./assets/aeo-missions.js');
-const plan={id:'test-plan',track_label:'미언급 개선',revision:0,completed:0,total:2,history:[],reason_options:{access:'권한 없음'},roadmap:[{id:'access',title:'공개 페이지 확인'}],current:{id:'access',title:'공개 페이지 확인',minutes:15,why:'공개 정보 확인',steps:['정보 확인'],done:'확인 결과 기록',source:{title:'공식 안내',url:'https://example.com'}}};
-test('mission form offers explicit completion and a required reason for blocked work',()=>{
-  const html=missions.render({keyword:'인천 요양원 추천',branch:'incheon',mission:plan},'openai');
-  assert.match(html,/name="action" value="complete" required/);
-  assert.match(html,/name="action" value="blocked" required/);
-  assert.match(html,/name="reason"/);
-  assert.match(html,/진행 중 · 공개 페이지 확인/);
-  assert.match(html,/0 \/ 2단계 완료/);
+const q={checked_at:new Date().toISOString(),status:'checked',summary:'실제 점검',completed:[],next_tasks:['사이트맵 확인'],approvals:[]};
+test('records are read-only and missing records never imply completion',()=>{
+ const missing=missions.render({branch:'incheon',keyword:'추천'},'chatgpt_web');
+ assert.match(missing,/점검 기록 대기/);assert.ok(!missing.includes('<form'));
+ const html=missions.render({branch:'incheon',keyword:'추천',content_quality:q},'chatgpt_web');
+ assert.match(html,/점검 완료/);assert.match(html,/사이트맵 확인/);assert.ok(!html.includes('완료했습니다'));
 });
-test('stored reasons, work notes and links are rendered without executable content',()=>{
-  const unsafe='<img src=x onerror=alert(1)>';
-  const html=missions.render({keyword:unsafe,branch:'incheon',mission:{...plan,history:[{title:unsafe,action:'blocked',reason_code:'access',reason:unsafe,note:unsafe,evidence_url:'javascript:alert(1)',created_at:'2026-09-11'}],current:{...plan.current,blocker:{reason:unsafe},retry:'권한 요청 초안 작성'}}},'openai');
-  assert.ok(!html.includes('<img'));
-  assert.ok(html.includes('&lt;img'));
-  assert.ok(!html.includes('javascript:'));
-  assert.ok(html.includes('권한 요청 초안 작성'));
+test('old records retain their dates and unsafe content is escaped',()=>{
+ const html=missions.render({branch:'anyang',keyword:'추천',content_quality:{...q,checked_at:'2020-01-01T00:00:00+09:00',summary:'<img src=x>',completed:[{note:'<script>',url:'javascript:alert(1)',verified_at:q.checked_at}]}},'gemini_web');
+ assert.match(html,/갱신 대기/);assert.ok(!html.includes('<img'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('javascript:'));
 });
-test('finished plans retain history and stop offering another submission',()=>{
-  const html=missions.render({keyword:'질문',mission:{...plan,completed:2,current:null}},'openai');
-  assert.ok(html.includes('모든 미션을 완료했습니다.'));
-  assert.ok(!html.includes('<form'));
-});
-
-test('missions without an external guide still expose progress and editable results',()=>{
-  const html=missions.render({keyword:'질문',mission:{...plan,current:{...plan.current,source:null}}},'openai');
-  assert.match(html,/<details class="aeo-panel"[^>]*><summary>/);
-  assert.ok(!html.includes('aeo-source'));
-  assert.ok(html.includes('name="note"'));
-  assert.ok(html.includes('결과 저장'));
+test('removing manual UI preserves automated observation and quality tools',()=>{
+ const names=[];const context={document:{modelContext:{registerTool:t=>names.push(t.name)}}};
+ vm.runInNewContext(fs.readFileSync('./assets/web-search-results.js','utf8'),context);
+ assert.equal(context.WebSearchResults.render({},'chatgpt_web'),'');
+ assert.deepEqual(names.sort(),['record_content_quality','record_naver_web_observation','record_web_search_observation'].sort());
 });

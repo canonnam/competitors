@@ -1,23 +1,17 @@
 (function(root){
   'use strict';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const drafts=new Map(),contexts=new Map(),pending=new Set();
-  function render(item,provider){
-    const key=provider+'-'+item.branch+'-'+encodeURIComponent(item.keyword),draft=drafts.get(key)||{};
-    contexts.set(key,{provider,keyword:item.keyword,branch:item.branch});
-    return `<div class="web-result-actions"><button type="button" data-copy-question="${esc(item.keyword)}">질문 복사</button><a href="${provider==='chatgpt_web'?'https://chatgpt.com/':'https://gemini.google.com/app'}" target="_blank" rel="noopener noreferrer">웹 서비스 열기 ↗</a><span class="web-copy-status" role="status"></span></div><details class="web-result-entry"${draft.status?' open':''}><summary>웹에서 확인한 결과 직접 등록</summary><p>같은 질문을 새 대화로 검색하고, 답변과 표시된 장소 카드를 확인하세요. 월·수·금 자동 점검 결과도 이곳에 함께 기록됩니다.</p><form data-web-result="${esc(key)}"><fieldset><legend>실제 웹 확인 기록</legend>
-      <label>확인 결과<select name="status" required><option value="ready"${draft.status!=='blocked'?' selected':''}>웹 검색 결과 확인</option><option value="blocked"${draft.status==='blocked'?' selected':''}>로그인·접근 제한 등 확인 불가</option></select></label>
-      <label>확인 시각 (한국시간)<input type="datetime-local" name="observed_at" required value="${esc(draft.observed_at||new Date(Date.now()+9*3600000).toISOString().slice(0,16))}"></label>
-      <div class="web-result-success"${draft.status==='blocked'?' hidden':''}><label>웹 답변 전체와 장소 카드 내용<textarea name="answer" rows="6" maxlength="50000"${draft.status==='blocked'?'':' required'} placeholder="웹 화면에서 확인한 답변 원문과 장소 카드의 시설명·지역을 붙여넣으세요.">${esc(draft.answer)}</textarea></label><label>검색 환경<input name="session_context" maxlength="300"${draft.status==='blocked'?'':' required'} value="${esc(draft.session_context)}" placeholder="예: 비로그인 · 새 대화 · 브라우저 기본 위치"></label><label>화면의 모드·모델 (선택)<input name="model" maxlength="100" value="${esc(draft.model)}" placeholder="예: Flash-Lite / 표시되지 않음"></label>
-      <label class="web-confirm"><input type="checkbox" name="search_confirmed"${draft.search_confirmed?' checked':''}${draft.status==='blocked'?'':' required'}> 웹 검색 근거 또는 지도·장소 카드가 실제로 표시되었습니다.</label><label class="web-confirm"><input type="checkbox" name="complete_answer"${draft.complete_answer?' checked':''}${draft.status==='blocked'?'':' required'}> 생성 완료된 전체 답변을 확인했습니다.</label><label class="web-confirm"><input type="checkbox" name="places"${draft.places?' checked':''}> 지도·장소 카드도 확인했습니다.</label></div>
-      <div class="web-result-blocked"${draft.status==='blocked'?'':' hidden'}><label>확인하지 못한 이유<textarea name="reason" rows="2" maxlength="1500"${draft.status==='blocked'?' required':''}>${esc(draft.reason)}</textarea></label></div>
-      <label>대화·공유 주소 (선택)<input type="url" name="conversation_url" maxlength="2000" value="${esc(draft.conversation_url)}"></label><label>답변의 출처 주소 (선택·한 줄에 하나)<textarea name="sources" rows="2" placeholder="https://" maxlength="60000">${esc(draft.sources)}</textarea></label><button type="submit">웹 결과 저장</button></fieldset><p class="web-save-status" role="status"></p></form></details>`;
-  }
-  root.WebSearchResults={render,isEditing:()=>typeof document!=='undefined'&&(pending.size>0||Boolean(document.activeElement?.closest('.web-result-entry form')))};
-  if(typeof module!=='undefined'&&module.exports)module.exports={render};
+  // Keep automated observation tools independent of the removed manual-entry UI.
+  root.WebSearchResults={render:()=>'',isEditing:()=>false};
+  if(typeof module!=='undefined'&&module.exports)module.exports=root.WebSearchResults;
   if(typeof document==='undefined')return;
   const modelContext=document.modelContext||navigator.modelContext;
   if(modelContext?.registerTool){
+    try{modelContext.registerTool({name:'record_content_quality',description:'Save a verified branch-level website/blog quality report. Record actual checks or publicly verified fixes, next tasks and explicit approval needs. Do not infer indexing or change search observations. No credentials or private blog statistics.',inputSchema:{type:'object',additionalProperties:false,required:['request_id','branch','checked_at','status','summary','completed','next_tasks','approvals'],properties:{request_id:{type:'string'},branch:{type:'string',enum:['incheon','anyang']},checked_at:{type:'string'},status:{type:'string',enum:['checked','updated','needs_approval','blocked']},summary:{type:'string'},completed:{type:'array',items:{type:'object',additionalProperties:false,required:['note','url','verified_at'],properties:{note:{type:'string'},url:{type:'string'},verified_at:{type:'string'}}}},next_tasks:{type:'array',items:{type:'string'}},approvals:{type:'array',items:{type:'string'}}}},annotations:{readOnlyHint:false},execute:async input=>{
+      const response=await fetch('/api/search-visibility/content-quality',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:AbortSignal.timeout(20000)});
+      const result=await response.json();if(!response.ok)throw new Error(result.error||'콘텐츠 관리 기록 저장 실패');
+      document.dispatchEvent(new CustomEvent('web-result-saved'));
+      return {content:[{type:'text',text:JSON.stringify(result)}]};
+    }});}catch{}
     const naverProperties={provider:{type:'string',enum:['naver']},keyword:{type:'string'},branch:{type:'string',enum:['incheon','anyang']},request_id:{type:'string'},observed_at:{type:'string'},status:{type:'string',enum:['ready','blocked']},capture_method:{type:'string',enum:['browser']},session_context:{type:'string'},reason:{type:'string'},complete_search:{type:'boolean'},pages:{type:'array',items:{type:'object',properties:{page:{type:'integer'},url:{type:'string'},text:{type:'string'},has_next:{type:'boolean'},results:{type:'array',items:{type:'object',properties:{area:{type:'string',enum:['web','place','ad','place_ad']},position:{type:'integer'},title:{type:'string'},url:{type:'string'},snippet:{type:'string'}},required:['area','position','title','url'],additionalProperties:false}}},required:['page','url','text','has_next','results'],additionalProperties:false}}};
     try{modelContext.registerTool({name:'record_naver_web_observation',description:'Save one registered Naver keyword observed with Computer Use. Record the visible search-results body (exclude account header and private data), actual page URL and all brand/owned-site matching entries by area. Positions must use the complete area list, not just brand matches. The results list may be empty only when no brand/owned-site entry appears. Separate ads from organic results; never click ads. Visit pages 1 through the dashboard max_pages, or stop when no next page exists. Do not mark a partial range complete. Record blocked with the concrete reason when access or required pages cannot be verified. Use the current ON keywords and enabled regional keywords. This stores shared dashboard data.',inputSchema:{type:'object',properties:naverProperties,required:['provider','keyword','branch','request_id','observed_at','status','capture_method','session_context'],additionalProperties:false},annotations:{readOnlyHint:false},execute:async input=>{
       const response=await fetch('/api/search-visibility/web-results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:AbortSignal.timeout(20000)});
@@ -41,17 +35,4 @@
       return {content:[{type:'text',text:JSON.stringify(result)}]};
     }});}catch{}
   }
-  document.addEventListener('click',async e=>{const button=e.target.closest('[data-copy-question]');if(!button)return;const status=button.parentElement.querySelector('.web-copy-status');try{await navigator.clipboard.writeText(button.dataset.copyQuestion);status.textContent='질문을 복사했습니다.';}catch{status.textContent='질문 제목을 직접 복사해주세요.';}});
-  const remember=form=>{drafts.set(form.dataset.webResult,Object.fromEntries(new FormData(form)));};
-  document.addEventListener('input',e=>{const form=e.target.closest('form[data-web-result]');if(form){delete form.dataset.requestId;remember(form);}});
-  document.addEventListener('change',e=>{const form=e.target.closest('form[data-web-result]');if(!form)return;delete form.dataset.requestId;remember(form);const blocked=form.elements.status.value==='blocked';form.querySelector('.web-result-success').hidden=blocked;form.querySelector('.web-result-blocked').hidden=!blocked;for(const name of ['answer','session_context','search_confirmed','complete_answer'])form.elements[name].required=!blocked;form.elements.reason.required=blocked;});
-  document.addEventListener('submit',async e=>{
-    const form=e.target.closest('form[data-web-result]');if(!form)return;e.preventDefault();const key=form.dataset.webResult;if(pending.has(key))return;
-    remember(form);const values=drafts.get(key),status=form.querySelector('.web-save-status');
-    const body={...values,...contexts.get(key),request_id:(form.dataset.requestId ||= crypto.randomUUID()),capture_method:'manual',observed_at:values.observed_at+':00+09:00',search_confirmed:values.search_confirmed==='on',complete_answer:values.complete_answer==='on',surfaces:values.places?['answer','places']:['answer'],sources:(values.sources||'').split(/\n/).map(url=>url.trim()).filter(Boolean).map(url=>({url,title:url}))};
-    pending.add(key);form.querySelector('fieldset').disabled=true;status.textContent='저장 중…';
-    try{const response=await fetch('/api/search-visibility/web-results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw new Error(result.error||'저장 실패');drafts.delete(key);pending.delete(key);status.textContent='웹 결과를 저장했습니다.';document.dispatchEvent(new CustomEvent('web-result-saved'));}
-    catch(error){status.textContent=error.name==='TimeoutError'?'응답이 늦습니다. 새로고침으로 저장 여부를 확인해주세요.':error.message||'연결을 확인해주세요.';}
-    finally{pending.delete(key);form.querySelector('fieldset').disabled=false;}
-  });
 })(globalThis);
