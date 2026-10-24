@@ -61,6 +61,31 @@ class WebResultsTests(unittest.TestCase):
             self.assertEqual(v.sync_provider(self.path,provider,[self.query],self.config,NOW), [])
         self.assertFalse(hasattr(v,'collect_ai'))
 
+    def test_official_website_citation_is_reclassified_without_rewriting_capture(self):
+        legacy = {**self.config, 'owned_urls': ['https://blog.naver.com/vida25']}
+        body = self.body(sources=[{'url':'https://www.thevida.co.kr/locations/incheon', 'title':'인천점 안내'}])
+        with patch.object(v, 'settings', return_value=legacy):
+            w.submit(self.path, body, NOW)
+        with v.connect(self.path) as db:
+            before = db.execute('SELECT payload FROM web_search_observations').fetchone()[0]
+        self.assertFalse(json.loads(before)['owned_cited'])
+        item = self.item()
+        self.assertTrue(item['owned_cited'])
+        self.assertFalse(item['owned_cited_at_capture'])
+        self.assertEqual(item['request_id'], body['request_id'])
+        self.assertEqual(item['answer'], body['answer'])
+        self.assertEqual(item['citations'], body['sources'])
+        with v.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT payload FROM web_search_observations').fetchone()[0], before)
+        with patch.object(v, 'settings', return_value=legacy):
+            self.assertFalse(self.item()['owned_cited'])
+
+    def test_official_website_ownership_does_not_accept_lookalike_hosts(self):
+        self.assertTrue(v.is_owned('https://thevida.co.kr/locations/anyang', self.config))
+        for url in ('https://www.thevida.co.kr.evil.test/', 'https://not-thevida.co.kr/',
+                    'https://example.com/?url=https://www.thevida.co.kr/'):
+            self.assertFalse(v.is_owned(url, self.config), url)
+
     def test_failure_preserves_previous_answer_without_claiming_absence(self):
         w.submit(self.path,self.body(),NOW)
         later = NOW+timedelta(hours=1)
@@ -119,8 +144,8 @@ class WebResultsTests(unittest.TestCase):
         self.assertEqual(self.item()['mission']['completed'],1)
         self.assertEqual(self.item()['mission']['current']['id'],'identity')
 
-    def test_http_record_submission_and_foreign_origin_rejection(self):
-        with patch.object(v,'db_path',return_value=self.path):
+    def test_authenticated_http_record_submission_and_foreign_origin_rejection(self):
+        with patch.object(v,'db_path',return_value=self.path), patch('facility_access.authorized',return_value=True):
             server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
             thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
             try:

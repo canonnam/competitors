@@ -2,7 +2,7 @@
   "brand": "더비다요양원",
   "naver_collection": "browser",
   "aliases": ["더비다요양원", "더비다 요양원"],
-  "owned_urls": ["https://blog.naver.com/vida25"],
+  "owned_urls": ["https://blog.naver.com/vida25", "https://www.thevida.co.kr/"],
   "place_ids": ["1671277974", "2000549036"],
   "branches": [
     {"id": "incheon", "name": "인천점", "city": "Incheon", "place_ids": ["1671277974"], "location_terms": ["인천", "미추홀", "숭의동"]},

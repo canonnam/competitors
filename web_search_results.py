@@ -117,6 +117,10 @@ def reports(path, queries, config, now, summary=False):
                     'error': latest.get('reason', '') if latest.get('status') == 'blocked' else '',
                     'last_attempt': latest.get('observed_at'), 'service_url': metadata['url'],
                     'history': [{'at': r['observed_at'], 'mentioned': r['mentioned']} for r in successes[:30]]}
+            if observation:
+                item['owned_cited_at_capture'] = observation.get('owned_cited', False)
+                item['owned_cited'] = any(v.is_owned(c.get('url'), config)
+                                          for c in observation.get('citations', []))
             branch_result = v.branch_observation(observation, query['branch'], config)
             branch_result['history'] = [{'at': r['observed_at'], 'mentioned': v.branch_observation(r, query['branch'], config)['mentioned']} for r in successes[:30]]
             item['branch_result'] = branch_result
