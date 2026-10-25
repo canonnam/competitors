@@ -1,6 +1,8 @@
 """Bank export boundaries, independent controls, immutable originals, and private HTTP."""
 from datetime import datetime
 import hashlib
+import base64
+import gzip
 import http.client
 from http.server import ThreadingHTTPServer
 import io
@@ -153,6 +155,30 @@ class BankTest(unittest.TestCase):
             model.save(RAW, 'incheon', '2026-09', '2026-10-25T15:00:00+09:00', False)
         with self.assertRaises(ValueError):
             model.save(RAW, 'incheon', '2026-09', '2026-09-29T15:00:00+09:00', True)
+
+    def test_chunked_transport_checks_whole_payload_before_import(self):
+        payload = {'month':'2026-09', 'branch':'incheon', 'collectedAt':'2026-10-25T15:00:00+09:00', 'fullExport':True, 'file':base64.b64encode(RAW).decode()}
+        packed = base64.b64encode(gzip.compress(model.encoded(payload))).decode()
+        upload_id = model.digest(packed.encode())
+        midpoint = len(packed) // 2
+        model.stage_chunk(upload_id, 0, packed[:midpoint])
+        with self.assertRaises(FileNotFoundError):
+            model.staged_payload(upload_id, 2)
+        self.assertIsNone(model.load('2026-09', 'incheon'))
+        model.stage_chunk(upload_id, 1, packed[midpoint:])
+        value = model.staged_payload(upload_id, 2)
+        with patch.object(model, 'now', return_value=datetime(2026, 10, 25, 16, tzinfo=model.KST)):
+            result = model.import_payload(value, 'incheon')
+        self.assertEqual(result['sha256'], hashlib.sha256(RAW).hexdigest())
+        model.stage_chunk(upload_id, 1, 'AAAA')
+        with self.assertRaises(ValueError):
+            model.staged_payload(upload_id, 2)
+        self.assertEqual(model.original('2026-09', 'incheon'), RAW)
+
+    def test_staging_rejects_path_traversal_and_unbounded_chunks(self):
+        for upload_id, part, chunk in (('../file', 0, 'AAAA'), ('a'*64, -1, 'AAAA'), ('a'*64, 0, 'A'*6001), ('a'*64, 0, '$(command)')):
+            with self.assertRaises(ValueError):
+                model.stage_chunk(upload_id, part, chunk)
 
     def test_http_requires_existing_site_login_and_download_is_exact(self):
         import app

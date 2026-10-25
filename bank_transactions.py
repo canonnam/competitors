@@ -190,6 +190,41 @@ def save_failure(selected, branch):
     return {'month': selected, 'branch': branch, 'failed': True}
 
 
+def staging(upload_id):
+    if not isinstance(upload_id, str) or not re.fullmatch('[0-9a-f]{64}', upload_id):
+        raise ValueError('전송 식별자를 확인해주세요.')
+    return root() / '.incoming' / upload_id
+
+
+def stage_chunk(upload_id, part, chunk):
+    folder = staging(upload_id)
+    if type(part) is not int or not 0 <= part < 4000 or not isinstance(chunk, str) or not re.fullmatch('[A-Za-z0-9+/=]{1,6000}', chunk):
+        raise ValueError('전송 조각을 확인해주세요.')
+    atomic(folder / f'{part:04d}', chunk.encode('ascii'))
+    return {'uploadId': upload_id, 'part': part}
+
+
+def staged_payload(upload_id, parts):
+    folder = staging(upload_id)
+    if type(parts) is not int or not 1 <= parts <= 4000:
+        raise ValueError('전송 조각 수를 확인해주세요.')
+    packed = b''.join((folder / f'{part:04d}').read_bytes() for part in range(parts))
+    if digest(packed) != upload_id:
+        raise ValueError('전체 전송 해시가 일치하지 않습니다.')
+    return packed
+
+
+def import_payload(packed, branch):
+    with gzip.GzipFile(fileobj=io.BytesIO(base64.b64decode(packed, validate=True))) as stream:
+        raw = stream.read(14_000_001)
+    if len(raw) > 14_000_000:
+        raise ValueError('파일 크기를 확인해주세요.')
+    value = json.loads(raw)
+    if set(value) != {'month', 'branch', 'collectedAt', 'fullExport', 'file'} or value['branch'] != branch:
+        raise ValueError('수집 형식을 확인해주세요.')
+    return save(base64.b64decode(value['file'], validate=True), branch, value['month'], value['collectedAt'], value['fullExport'] is True)
+
+
 def original(selected, branch):
     value = load(selected, branch)
     if not value:
@@ -264,22 +299,31 @@ def main():
     group.add_argument('--import-gzip-base64')
     group.add_argument('--verify')
     group.add_argument('--failure')
+    group.add_argument('--stage-chunk')
+    group.add_argument('--finish-upload', action='store_true')
+    parser.add_argument('--upload-id')
+    parser.add_argument('--part', type=int)
+    parser.add_argument('--parts', type=int)
     parser.add_argument('--branch', choices=BRANCHES, required=True)
     args = parser.parse_args()
-    if args.failure:
+    if args.stage_chunk:
+        result = stage_chunk(args.upload_id, args.part, args.stage_chunk)
+    elif args.finish_upload:
+        result = import_payload(staged_payload(args.upload_id, args.parts), args.branch)
+        folder = staging(args.upload_id)
+        for part in range(args.parts):
+            (folder / f'{part:04d}').unlink(missing_ok=True)
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+    elif args.failure:
         result = save_failure(args.failure, args.branch)
     elif args.verify:
         item = load(month(args.verify), args.branch)
         result = {'month': args.verify, 'branch': args.branch, 'sha256': digest(original(args.verify, args.branch)), 'count': item['count'], 'status': item['status']}
     else:
-        with gzip.GzipFile(fileobj=io.BytesIO(base64.b64decode(args.import_gzip_base64, validate=True))) as stream:
-            raw = stream.read(14_000_001)
-        if len(raw) > 14_000_000:
-            raise ValueError('파일 크기를 확인해주세요.')
-        value = json.loads(raw)
-        if set(value) != {'month', 'branch', 'collectedAt', 'fullExport', 'file'} or value['branch'] != args.branch:
-            raise ValueError('수집 형식을 확인해주세요.')
-        result = save(base64.b64decode(value['file'], validate=True), args.branch, value['month'], value['collectedAt'], value['fullExport'] is True)
+        result = import_payload(args.import_gzip_base64, args.branch)
     print(json.dumps(result, ensure_ascii=False))
 
 

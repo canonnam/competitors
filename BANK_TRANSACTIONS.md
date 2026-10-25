@@ -11,6 +11,8 @@
 5. 조회 완료 후 **전체엑셀다운로드**를 사용한다. 현재 화면 다운로드와 구분한다. 두 지점은 순서대로 로그인·다운로드·로그아웃한다. 원본을 편집하거나 합계 행을 삭제하지 않는다.
 6. 배포된 최신 소스에서 아래 스크립트로 지점별 원본을 검증·게시한다. 다운로드 이벤트/파일 수정시각을 실제 수집 시각으로 기록하며 데이터 기준월과 구분한다. 실제 수집 파일은 `.local/` 또는 Git 밖에만 둔다.
 
+로컬 Python의 읽기 의존성은 requirements.txt 또는 이 작업 폴더의 `.local/deps`에서 사용한다. 현재 PC의 `xlrd==2.0.2`는 `.local/deps`에 있으며 게시 스크립트가 해당 경로를 읽는다. Windows npm 설치에서는 CMD의 8,191자 제한을 피하도록 같은 공식 설치 폴더의 `railway.exe`를 직접 실행한다. 23,000자를 넘는 압축 전송은 6,000자 조각으로 전송하며 전체 전송 해시가 일치한 뒤에만 원자적으로 반영한다. `--chunked`로 작은 파일도 같은 경로를 검증할 수 있다. 조각 누락·변조는 기존 성공 자료에 영향을 주지 않는다.
+
 ```powershell
 python scripts/publish_bank_transactions.py <원본.xls> --month YYYY-MM --branch incheon --full-export --publish
 python scripts/publish_bank_transactions.py <원본.xls> --month YYYY-MM --branch anyang --full-export --publish
