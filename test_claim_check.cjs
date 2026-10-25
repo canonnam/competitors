@@ -37,9 +37,9 @@ async function render(laborCost, laborHistory = []) {
   const escaped = await render({...base, annualRatio: '<img src=x>'});
   assert.doesNotMatch(escaped.sections[0].html, /<img/);
   assert.match(verified.sections[0].html, /금액 미수집/);
-  const amounts = {status: 'verified', checkedAt: base.checkedAt, reflectedCost: '89801260', reflectedAddition: '3714100', unreflectedCost: '0', unreflectedAddition: '12345678901234567890'};
+  const amounts = {status: 'verified', checkedAt: base.checkedAt, reflectedCost: '12345678', reflectedAddition: '2345678', unreflectedCost: '0', unreflectedAddition: '12345678901234567890'};
   const collected = await render({...base, amounts});
-  for (const amount of ['89,801,260원', '3,714,100원', '0원', '12,345,678,901,234,567,890원']) assert.ok(collected.sections[0].html.includes(amount));
+  for (const amount of ['12,345,678원', '2,345,678원', '0원', '12,345,678,901,234,567,890원']) assert.ok(collected.sections[0].html.includes(amount));
   assert.match(collected.sections[0].html, /② 반영 금액/);
   assert.match(collected.sections[0].html, /③ 미반영 금액/);
   const amountsFailed = await render({...base, amounts: {status: 'query_failed', lastQueryFailureAt: base.checkedAt}});
