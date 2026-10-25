@@ -9,6 +9,16 @@ from scripts import publish_claim_check
 
 
 class PublishVerificationTests(unittest.TestCase):
+    def test_historical_read_uses_same_month_in_http_and_authenticated_fallback(self):
+        report = {"benefitMonth": "2026-08", "branches": []}
+        error = urllib.error.HTTPError(publish_claim_check.URL, 401, "Unauthorized", {}, io.BytesIO(b'{"code":"site_locked"}'))
+        result = subprocess.CompletedProcess([], 0, json.dumps(report), "")
+        with patch.object(publish_claim_check.urllib.request, "urlopen", side_effect=error) as http, \
+                patch.object(publish_claim_check.subprocess, "run", return_value=result) as ssh:
+            self.assertEqual(publish_claim_check.read_published("railway", "2026-08"), report)
+        self.assertEqual(http.call_args.args[0], publish_claim_check.URL + "?benefitMonth=2026-08")
+        self.assertEqual(ssh.call_args.args[0][-2:], ["--benefit-month", "2026-08"])
+
     def test_password_protected_site_is_verified_through_existing_railway_login(self):
         report = {"benefitMonth": "2026-09", "branches": []}
         error = urllib.error.HTTPError(

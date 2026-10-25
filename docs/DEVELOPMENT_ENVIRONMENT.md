@@ -1,5 +1,11 @@
 # 더비다 지식 창고 개발 환경
 
+## 월별 청구 누적 (2026-10-25)
+
+- 같은 `/data/claim-check.json`에 `claimHistory[급여제공월][지점]`을 추가한다. 기존 현재월 자료는 원래 시각으로 자동 보존하고 이후 정기 게시에서도 월별 자료를 누적한다. 원본 파일·인건비 이력·전체 사이트 인증은 유지한다.
+- GET/HEAD `/api/claim-check?benefitMonth=YYYY-MM`은 선택 월을 읽기만 한다. 기본 API는 계속 현재 정기 대상월이다. 잘못된 형식·중복 파라미터·미래 월은 400이며 기존 no-store와 서버 비밀번호 보호를 유지한다.
+- 게시 스크립트의 `--claim-history` 형식은 `months[].benefitMonth`와 `months[].branches[]`다. 같은 월의 성공 결과를 실패로 덮어쓰지 않으며 현재 대상월·기존 인건비·조회하지 않은 지점의 불변을 대조한다. 서버 CLI는 읽기용 `--benefit-month`, 게시용 `--import-claim-history-base64`를 지원한다.
+
 ## 운영비 은행 거래내역 (2026-10-25)
 
 - 기존 Python/정적 앱·공통 사이트 인증·Railway petdev 배포를 유지한다. `bank_transactions.py`, `bank-transactions.html`을 Docker에 추가하며 원본 BIFF XLS 읽기에 `xlrd==2.0.2`를 사용한다. 서버에서 은행 로그인을 수행하거나 은행 비밀번호를 저장하지 않는다.

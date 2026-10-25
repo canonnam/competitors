@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import app
 import claim_check as claims
-from scripts.publish_claim_check import verify_published, verify_history_published
+from scripts.publish_claim_check import verify_published, verify_history_published, verify_claim_archive_published
 
 NOW = datetime(2026, 9, 10, 14, tzinfo=claims.KST)
 
@@ -68,7 +68,7 @@ class ClaimCheckTests(unittest.TestCase):
         self.assertEqual(result["missing"][0]["recipientType"], "의료")
 
     def test_non_review_status_and_extra_non_review_claim_require_check(self):
-        for status in ("접수", "지급", "반송", "청구취소"):
+        for status in ("접수", "반송", "청구취소", "심사중", "지급완료"):
             payload = sample()
             payload["branches"][0]["claims"][2]["processingStatus"] = status
             self.assertFalse(self.result(payload)["allAccepted"])
@@ -77,6 +77,16 @@ class ClaimCheckTests(unittest.TestCase):
         extra["processingStatus"] = "반송"
         payload["branches"][0]["claims"].append(extra)
         self.assertFalse(self.result(payload)["allAccepted"])
+
+    def test_review_and_paid_statuses_both_count_as_accepted(self):
+        for statuses in (("지급", "지급", "지급"), ("심사", "지급", "심사")):
+            payload = sample()
+            for branch in payload["branches"]:
+                for claim, status in zip(branch["claims"], statuses):
+                    claim["processingStatus"] = status
+            result = self.result(payload)
+            self.assertTrue(result["allAccepted"])
+            self.assertEqual([c["processingStatus"] for c in result["branches"][0]["claims"]], list(statuses))
 
     def test_unrelated_allowances_do_not_affect_required_three(self):
         payload = sample()
@@ -241,6 +251,18 @@ class ClaimCheckTests(unittest.TestCase):
                         self.assertTrue(json.loads(body)["allAccepted"])
                     else:
                         self.assertEqual(body, b"")
+                    conn.close()
+                for query, expected in (("?benefitMonth=2026-07", 200), ("?benefitMonth=2026-09", 400),
+                                        ("?benefitMonth=2026-08&benefitMonth=2026-07", 400),
+                                        ("?benefitMonth=bad", 400), ("?benefitMonth=", 400), ("?benefitMonth=0000-01", 400)):
+                    conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
+                    conn.request("GET", "/api/claim-check" + query)
+                    response = conn.getresponse()
+                    body = response.read()
+                    self.assertEqual(response.status, expected)
+                    self.assertIn("no-store", response.getheader("Cache-Control"))
+                    if expected == 200:
+                        self.assertEqual(json.loads(body)["benefitMonth"], "2026-07")
                     conn.close()
                 self.path.write_text("{bad-json", encoding="utf-8")
                 conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
@@ -461,7 +483,7 @@ class ClaimCheckTests(unittest.TestCase):
         result = claims.report(self.path, later)
         self.assertFalse(result["allAccepted"])
         self.assertEqual(len(result["branches"][0]["laborHistory"]), 2)
-        self.assertIsNone(result["branches"][0]["laborCost"]["annualRatio"])
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "61.00")
         # Historical backfills are still possible when the stored claim month is old.
         july["checkedAt"] = later.isoformat()
         july["amounts"]["checkedAt"] = later.isoformat()
@@ -480,6 +502,71 @@ class ClaimCheckTests(unittest.TestCase):
             mutate(incoming)
             with self.assertRaises(ValueError):
                 claims.save_labor_history(incoming, self.path, NOW)
+
+    def test_claim_archive_survives_rollover_without_reusing_old_completion(self):
+        original = sample()
+        self.result(original)
+        claims.save_labor_costs(labor_sample(), self.path, NOW)
+        later = datetime(2026, 10, 6, tzinfo=claims.KST)
+        incoming = {"benefitMonth": "2026-09", "branches": [
+            {"id": ident, "institutionNumber": number, "checkedAt": later.isoformat(), "querySucceeded": False, "claims": []}
+            for ident, (_, number) in claims.BRANCHES.items()]}
+        claims.save(incoming, self.path, later)
+        current = claims.report(self.path, later)
+        past = claims.report(self.path, later, benefit_month="2026-08")
+        self.assertFalse(current["allAccepted"])
+        self.assertTrue(past["allAccepted"])
+        self.assertEqual(past["currentBenefitMonth"], "2026-09")
+        self.assertEqual(past["availableMonths"], ["2026-09", "2026-08"])
+        self.assertEqual(past["branches"][0]["claims"], original["branches"][0]["claims"])
+        self.assertEqual(past["branches"][0]["checkedAt"], NOW.isoformat())
+        self.assertEqual(past["branches"][0]["laborCost"]["benefitMonth"], "2026-07")
+        self.assertEqual(past["branches"][0]["laborCost"]["annualRatio"], "63.20")
+        self.assertIsNone(current["branches"][0]["laborCost"]["annualRatio"])
+
+    def test_partial_claim_backfill_preserves_current_month_labor_and_failed_requery(self):
+        self.result(sample())
+        claims.save_labor_costs(labor_sample(), self.path, NOW)
+        before = claims.report(self.path, NOW)
+        past = copy.deepcopy(sample()["branches"][0])
+        for claim in past["claims"]:
+            claim.update(benefitMonth="2026-07", submittedOn="2026-08-07", processingStatus="지급")
+        payload = {"months": [{"benefitMonth": "2026-07", "branches": [past]}]}
+        claims.save_claim_archive(payload, self.path, NOW)
+        reports = {"2026-07": claims.report(self.path, NOW, benefit_month="2026-07")}
+        current = claims.report(self.path, NOW)
+        verify_claim_archive_published(payload, reports, before, current)
+        self.assertEqual(current["branches"], before["branches"])
+        self.assertEqual(reports["2026-07"]["branches"][0]["status"], "accepted")
+        self.assertEqual(reports["2026-07"]["branches"][1]["status"], "check")
+        self.assertIsNone(reports["2026-07"]["branches"][0]["laborCost"]["annualRatio"])
+        later = NOW + timedelta(hours=1)
+        failed = copy.deepcopy(payload)
+        failed["months"][0]["branches"][0].update(checkedAt=later.isoformat(), querySucceeded=False, claims=[])
+        claims.save_claim_archive(failed, self.path, later)
+        report = claims.report(self.path, later, benefit_month="2026-07")
+        self.assertEqual(report["branches"][0]["checkedAt"], NOW.isoformat())
+        self.assertEqual(report["branches"][0]["lastQueryFailureAt"], later.isoformat())
+        self.assertEqual(report["branches"][0]["claims"], past["claims"])
+        verify_claim_archive_published(failed, {"2026-07": report})
+        with self.assertRaises(ValueError):
+            stale = copy.deepcopy(failed)
+            stale["months"][0]["branches"][0]["checkedAt"] = NOW.isoformat()
+            claims.save_claim_archive(stale, self.path, later)
+
+    def test_claim_archive_rejects_future_month_wrong_institution_duplicates_and_private_fields(self):
+        self.result(sample())
+        base = {"months": [{"benefitMonth": "2026-08", "branches": sample()["branches"]}]}
+        for mutate in (
+                lambda p: p["months"][0].update(benefitMonth="2026-09"),
+                lambda p: p["months"][0]["branches"][0].update(institutionNumber="12817700685"),
+                lambda p: p["months"].append(copy.deepcopy(p["months"][0])),
+                lambda p: p["months"][0]["branches"].append(copy.deepcopy(p["months"][0]["branches"][0])),
+                lambda p: p["months"][0]["branches"][0]["claims"][0].update(patientName="private")):
+            payload = copy.deepcopy(base)
+            mutate(payload)
+            with self.assertRaises(ValueError):
+                claims.save_claim_archive(payload, self.path, NOW)
 
 
 if __name__ == "__main__":

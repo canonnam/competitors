@@ -3,18 +3,28 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('assets/claim-check.js', 'utf8');
 
-async function render(laborCost, laborHistory = []) {
+async function render(laborCost, laborHistory = [], periodSelection = false) {
   const sections = [{html: '', insertAdjacentHTML(_, html) { this.html += html; }}, {html: '', insertAdjacentHTML(_, html) { this.html += html; }}];
   const nodes = Object.fromEntries(['claim-period', 'claim-deadline', 'claim-due-state', 'claim-sync', 'claim-refresh'].map(id => [id, {textContent: '', addEventListener() {}}]));
   nodes['claim-branches'] = {innerHTML: '', querySelectorAll: () => sections};
+  const handlers = {};
+  const requests = [];
+  if (periodSelection) {
+    nodes['claim-month'] = {value: '', innerHTML: '', addEventListener(type, fn) {handlers[type] = fn;}};
+    nodes['claim-history-note'] = {textContent: '', hidden: true};
+  }
   const branch = {name: '안양점', status: 'accepted', label: '접수 완료', message: '필수 3개 항목 심사', checkedAt: '2026-09-10T13:52:10+09:00', claims: [], missing: [], laborCost, laborHistory};
   vm.runInNewContext(source, {
-    document: {getElementById: id => nodes[id] || null, addEventListener() {}},
-    fetch: async () => ({ok: true, json: async () => ({benefitMonth: '2026-08', deadline: '2026-09-10', allAccepted: true, branches: [branch, {...branch, name: '인천점'}]})}),
+    document: {getElementById: id => nodes[id] || null, addEventListener(type, fn) {handlers[type] = fn;}},
+    fetch: async url => {
+      requests.push(url);
+      const month = periodSelection ? (url.includes('?') ? url.split('=')[1] : '2026-09') : '2026-08';
+      return {ok: true, json: async () => ({benefitMonth: month, currentBenefitMonth: '2026-09', availableMonths: ['2026-09','2026-08'], deadline: month === '2026-08' ? '2026-09-10' : '2026-10-10', allAccepted: true, branches: [branch, {...branch, name: '인천점'}]})};
+    },
     AbortSignal: {timeout() {}}, Intl, Date, setInterval() {},
   });
   await new Promise(setImmediate);
-  return {sections, nodes};
+  return {sections, nodes, handlers, requests};
 }
 
 (async () => {
@@ -59,5 +69,18 @@ async function render(laborCost, laborHistory = []) {
   assert.match(history.sections[0].html, /2026년 8월 조회 기준/);
   assert.match(history.sections[0].html, /2026년 9월 조회 기준/);
   assert.match(history.sections[0].html, /123원/);
+  const periods = await render(base, [], true);
+  assert.equal(periods.nodes['claim-month'].value, '2026-09');
+  assert.equal(periods.nodes['claim-history-note'].hidden, true);
+  periods.nodes['claim-month'].value = '2026-08';
+  periods.handlers.change();
+  await new Promise(setImmediate);
+  assert.equal(periods.requests.at(-1), '/api/claim-check?benefitMonth=2026-08');
+  assert.equal(periods.nodes['claim-history-note'].hidden, false);
+  assert.match(periods.nodes['claim-history-note'].textContent, /이번 정기 점검 대상은 2026년 9월/);
+  assert.match(periods.nodes['claim-period'].textContent, /2026년 8월/);
+  periods.handlers.visibilitychange();
+  await new Promise(setImmediate);
+  assert.equal(periods.requests.at(-1), '/api/claim-check?benefitMonth=2026-08');
   console.log('Claim ratio and four amount rendering passed, including exact zero, large integers, missing, retained and failed values.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

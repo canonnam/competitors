@@ -206,7 +206,18 @@ class App(SimpleHTTPRequestHandler):
 
     def send_claim_check(self, head_only=False):
         try:
-            payload, status = claim_check.report(), 200
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query, keep_blank_values=True)
+            months = query.get("benefitMonth", [])
+            invalid_month = len(months) > 1 or (months and (not re.fullmatch(r"[0-9]{4}-(?:0[1-9]|1[0-2])", months[0]) or months[0] > claim_check.period()[0]))
+            if months and not invalid_month:
+                try:
+                    claim_check.following_month(months[0])
+                except ValueError:
+                    invalid_month = True
+            if invalid_month:
+                payload, status = {"error": "급여제공월을 확인해주세요."}, 400
+            else:
+                payload, status = claim_check.report(benefit_month=months[0] if months else None), 200
         except (OSError, ValueError, TypeError, KeyError):
             payload, status = {"error": "청구 점검 결과를 불러오지 못했습니다."}, 503
         raw = json.dumps(payload, ensure_ascii=False).encode()

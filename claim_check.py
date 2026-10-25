@@ -12,6 +12,7 @@ import tempfile
 
 KST = timezone(timedelta(hours=9))
 BRANCHES = {"anyang": ("안양점", "14117000625"), "incheon": ("인천점", "12817700685")}
+ACCEPTED_STATUSES = {"심사", "지급"}
 REQUIRED_CLAIMS = (("노인요양시설(개정법)", "일반"), ("노인요양시설(개정법)", "의료"), ("장기근속장려금", "일반"))
 # The owner's operating benchmark; do not carry it into another year without confirmation.
 LABOR_BENCHMARKS = {2026: "62.5"}
@@ -140,9 +141,70 @@ def merge_labor(incoming, previous):
     return result
 
 
+def validate_claim_branch(branch, month, now):
+    exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"}, {"lastQueryFailureAt", "laborCost"})
+    ident = branch["id"]
+    if ident not in BRANCHES or branch["institutionNumber"] != BRANCHES[ident][1]:
+        raise ValueError("지점과 기관 기호가 일치하지 않습니다.")
+    if "laborCost" in branch:
+        validate_labor(branch["laborCost"], month, now)
+    if timestamp(branch["checkedAt"]) > now + timedelta(minutes=5):
+        raise ValueError("확인 시각이 현재보다 늦습니다.")
+    if type(branch["querySucceeded"]) is not bool:
+        raise ValueError("조회 성공 여부가 필요합니다.")
+    if "lastQueryFailureAt" in branch:
+        failed_at = timestamp(branch["lastQueryFailureAt"])
+        if not branch["querySucceeded"] or not timestamp(branch["checkedAt"]) <= failed_at <= now + timedelta(minutes=5):
+            raise ValueError("재조회 실패 시각을 확인해주세요.")
+    if not isinstance(branch["claims"], list) or len(branch["claims"]) > 100:
+        raise ValueError("청구 목록 형식이 올바르지 않습니다.")
+    if not branch["querySucceeded"] and branch["claims"]:
+        raise ValueError("조회 실패 시 청구 상태를 추정하지 마세요.")
+    for claim in branch["claims"]:
+        exact_keys(claim, {"benefitMonth", "benefitType", "recipientType", "claimType", "submittedOn", "processingStatus"})
+        if claim["benefitMonth"] != month:
+            raise ValueError("다른 급여제공월의 청구가 포함되었습니다.")
+        for key in ("benefitType", "recipientType", "claimType", "processingStatus"):
+            if not isinstance(claim[key], str) or not 1 <= len(claim[key].strip()) <= 40:
+                raise ValueError("청구 항목의 내용을 확인해주세요.")
+            claim[key] = claim[key].strip()
+        if claim["submittedOn"] is not None:
+            datetime.strptime(claim["submittedOn"], "%Y-%m-%d")
+    return branch
+
+
+def claim_record(branch):
+    return copy.deepcopy({key: value for key, value in branch.items() if key != "laborCost"})
+
+
+def validate_claim_archive(archive, now):
+    if not isinstance(archive, dict) or len(archive) > 1200:
+        raise ValueError("월별 청구 이력 형식을 확인해주세요.")
+    for month, branches in archive.items():
+        following_month(month)
+        if month > period(now)[0] or not isinstance(branches, dict) or not branches or set(branches) - set(BRANCHES):
+            raise ValueError("청구 이력의 급여제공월·지점을 확인해주세요.")
+        for ident, branch in branches.items():
+            if branch.get("id") != ident or "laborCost" in branch:
+                raise ValueError("청구 이력의 지점과 저장 항목을 확인해주세요.")
+            validate_claim_branch(branch, month, now)
+    return archive
+
+
+def merge_claim_archive(previous, incoming):
+    result = copy.deepcopy(previous)
+    for month, branches in incoming.items():
+        for ident, branch in branches.items():
+            prior = result.setdefault(month, {}).get(ident)
+            result[month][ident] = merge_verified_query(branch, prior)
+    return result
+
+
 def validate(payload, now=None, require_current=True):
     now = now or now_kst()
-    exact_keys(payload, {"benefitMonth", "branches"}, {"laborHistory"})
+    exact_keys(payload, {"benefitMonth", "branches"}, {"laborHistory", "claimHistory"})
+    if "claimHistory" in payload:
+        validate_claim_archive(payload["claimHistory"], now)
     if "laborHistory" in payload:
         validate_labor_history(payload["laborHistory"], now)
     month = payload["benefitMonth"]
@@ -155,35 +217,10 @@ def validate(payload, now=None, require_current=True):
         raise ValueError("두 지점의 점검 결과가 필요합니다.")
     seen = set()
     for branch in branches:
-        exact_keys(branch, {"id", "institutionNumber", "checkedAt", "querySucceeded", "claims"}, {"lastQueryFailureAt", "laborCost"})
-        ident = branch["id"]
-        if ident not in BRANCHES or ident in seen or branch["institutionNumber"] != BRANCHES[ident][1]:
-            raise ValueError("지점과 기관 기호가 일치하지 않습니다.")
-        seen.add(ident)
-        if "laborCost" in branch:
-            validate_labor(branch["laborCost"], month, now)
-        if timestamp(branch["checkedAt"]) > now + timedelta(minutes=5):
-            raise ValueError("확인 시각이 현재보다 늦습니다.")
-        if type(branch["querySucceeded"]) is not bool:
-            raise ValueError("조회 성공 여부가 필요합니다.")
-        if "lastQueryFailureAt" in branch:
-            failed_at = timestamp(branch["lastQueryFailureAt"])
-            if not branch["querySucceeded"] or not timestamp(branch["checkedAt"]) <= failed_at <= now + timedelta(minutes=5):
-                raise ValueError("재조회 실패 시각을 확인해주세요.")
-        if not isinstance(branch["claims"], list) or len(branch["claims"]) > 100:
-            raise ValueError("청구 목록 형식이 올바르지 않습니다.")
-        if not branch["querySucceeded"] and branch["claims"]:
-            raise ValueError("조회 실패 시 청구 상태를 추정하지 마세요.")
-        for claim in branch["claims"]:
-            exact_keys(claim, {"benefitMonth", "benefitType", "recipientType", "claimType", "submittedOn", "processingStatus"})
-            if claim["benefitMonth"] != month:
-                raise ValueError("다른 급여제공월의 청구가 포함되었습니다.")
-            for key in ("benefitType", "recipientType", "claimType", "processingStatus"):
-                if not isinstance(claim[key], str) or not 1 <= len(claim[key].strip()) <= 40:
-                    raise ValueError("청구 항목의 내용을 확인해주세요.")
-                claim[key] = claim[key].strip()
-            if claim["submittedOn"] is not None:
-                datetime.strptime(claim["submittedOn"], "%Y-%m-%d")
+        validate_claim_branch(branch, month, now)
+        if branch["id"] in seen:
+            raise ValueError("지점 결과가 중복되었습니다.")
+        seen.add(branch["id"])
     return payload
 
 
@@ -194,6 +231,9 @@ def save(payload, path=None, now=None, require_current=True):
     path = Path(path or data_path())
     if path.exists():
         old = validate(json.loads(path.read_text(encoding="utf-8")), now, require_current=False)
+        archive = merge_claim_archive(old.get("claimHistory", {}),
+                                      {old["benefitMonth"]: {b["id"]: claim_record(b) for b in old["branches"]}})
+        payload["claimHistory"] = merge_claim_archive(archive, payload.get("claimHistory", {}))
         history = copy.deepcopy(old.get("laborHistory", {}))
         for ident, months in payload.get("laborHistory", {}).items():
             for month, labor in months.items():
@@ -230,6 +270,8 @@ def save(payload, path=None, now=None, require_current=True):
             labor = branch["laborCost"]
             months = payload.setdefault("laborHistory", {}).setdefault(branch["id"], {})
             months[labor["benefitMonth"]] = merge_labor(labor, months.get(labor["benefitMonth"]))
+    payload["claimHistory"] = merge_claim_archive(payload.get("claimHistory", {}),
+                                                 {payload["benefitMonth"]: {b["id"]: claim_record(b) for b in payload["branches"]}})
     validate(payload, now, require_current=require_current)
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as output:
@@ -309,6 +351,46 @@ def save_labor_history(payload, path=None, now=None):
     save(current, path, now, require_current=False)
 
 
+def validate_claim_archive_payload(payload, now=None):
+    now = now or now_kst()
+    exact_keys(payload, {"months"})
+    if not isinstance(payload["months"], list) or not 1 <= len(payload["months"]) <= 24:
+        raise ValueError("수집한 청구 급여제공월이 필요합니다.")
+    archive = {}
+    for entry in payload["months"]:
+        exact_keys(entry, {"benefitMonth", "branches"})
+        month = entry["benefitMonth"]
+        if month in archive or not isinstance(entry["branches"], list) or not 1 <= len(entry["branches"]) <= 2:
+            raise ValueError("청구 이력의 중복 월 또는 지점을 확인해주세요.")
+        branches = {b["id"]: b for b in entry["branches"]}
+        if len(branches) != len(entry["branches"]):
+            raise ValueError("같은 지점의 청구 결과가 중복되었습니다.")
+        archive[month] = branches
+    validate_claim_archive(archive, now)
+    return payload
+
+
+def save_claim_archive(payload, path=None, now=None):
+    now = now or now_kst()
+    payload = validate_claim_archive_payload(payload, now)
+    path = Path(path or data_path())
+    current = validate(json.loads(path.read_text(encoding="utf-8")), now, require_current=False)
+    archive = merge_claim_archive(current.get("claimHistory", {}),
+                                 {current["benefitMonth"]: {b["id"]: claim_record(b) for b in current["branches"]}})
+    incoming = {entry["benefitMonth"]: {b["id"]: b for b in entry["branches"]} for entry in payload["months"]}
+    current["claimHistory"] = merge_claim_archive(archive, incoming)
+    for entry in payload["months"]:
+        if entry["benefitMonth"] == current["benefitMonth"]:
+            for branch in entry["branches"]:
+                for index, previous in enumerate(current["branches"]):
+                    if branch["id"] == previous["id"]:
+                        updated = merge_verified_query(branch, claim_record(previous))
+                        if "laborCost" in previous:
+                            updated["laborCost"] = previous["laborCost"]
+                        current["branches"][index] = updated
+    save(current, path, now, require_current=False)
+
+
 def labor_report(labor, labor_month, labor_year):
     labor_verified = bool(labor and labor["querySucceeded"])
     amounts = labor.get("amounts") if labor else None
@@ -327,28 +409,38 @@ def labor_report(labor, labor_month, labor_year):
             "benchmarkRatio": benchmark, "assessment": assessment, "amounts": amounts_result}
 
 
-def report(path=None, now=None):
+def report(path=None, now=None, benefit_month=None):
     now = now or now_kst()
-    month, deadline = period(now)
+    current_month, _ = period(now)
+    month = benefit_month or current_month
+    following_month(month)
+    if month > current_month:
+        raise ValueError("미래 급여제공월을 조회할 수 없습니다.")
+    deadline = datetime.strptime(following_month(month) + "-10", "%Y-%m-%d").date()
     path = Path(path or data_path())
     stored = {}
     history = {}
+    archive = {}
+    payload = None
     if path.exists():
         payload = validate(json.loads(path.read_text(encoding="utf-8")), now, require_current=False)
         history = payload.get("laborHistory", {})
-        if payload["benefitMonth"] == month:
-            stored = {b["id"]: b for b in payload["branches"]}
+        archive = merge_claim_archive(payload.get("claimHistory", {}),
+                                      {payload["benefitMonth"]: {b["id"]: claim_record(b) for b in payload["branches"]}})
+        stored = archive.get(month, {})
     results = []
     labor_month, labor_year = labor_period(month)
     for ident, (name, _) in BRANCHES.items():
         entry = stored.get(ident)
-        labor = entry.get("laborCost") if entry else None
+        labor = history.get(ident, {}).get(labor_month)
+        if labor is None and payload and payload["benefitMonth"] == month:
+            labor = next((b.get("laborCost") for b in payload["branches"] if b["id"] == ident), None)
         labor_result = labor_report(labor, labor_month, labor_year)
         claims = [c for c in entry["claims"] if (c["benefitType"], c["recipientType"]) in REQUIRED_CLAIMS] if entry else []
         missing = [{"benefitType": kind, "recipientType": recipient} for kind, recipient in REQUIRED_CLAIMS
                    if not any((c["benefitType"], c["recipientType"]) == (kind, recipient) for c in claims)]
         accepted = bool(entry and entry["querySucceeded"] and not missing
-                        and all(c["processingStatus"] == "심사" for c in claims))
+                        and all(c["processingStatus"] in ACCEPTED_STATUSES for c in claims))
         if not entry:
             message = "이번 급여제공월의 청구 상태를 확인해야 합니다."
         elif not entry["querySucceeded"]:
@@ -356,9 +448,9 @@ def report(path=None, now=None):
         elif missing:
             message = f"필수 청구 항목 {len(missing)}개가 확인되지 않았습니다."
         elif accepted:
-            message = "필수 청구 3개 항목이 모두 있고, 처리상태도 모두 심사입니다."
+            message = "필수 청구 3개 항목이 모두 있고, 처리상태도 모두 심사 또는 지급입니다."
         else:
-            message = "심사 이외의 처리상태가 있어 확인이 필요합니다."
+            message = "심사·지급 이외의 처리상태가 있어 확인이 필요합니다."
         results.append({"id": ident, "name": name, "status": "accepted" if accepted else "check",
                         "label": "접수 완료" if accepted else "점검", "message": message,
                         "checkedAt": entry["checkedAt"] if entry and entry["querySucceeded"] else None,
@@ -370,7 +462,8 @@ def report(path=None, now=None):
     all_accepted = all(b["status"] == "accepted" for b in results)
     all_labor = all(b["laborCost"]["status"] == "verified" for b in results)
     all_amounts = all(b["laborCost"]["amounts"]["status"] == "verified" for b in results)
-    return {"benefitMonth": month, "deadline": deadline.isoformat(),
+    return {"benefitMonth": month, "currentBenefitMonth": current_month,
+            "availableMonths": sorted(set(archive) | {current_month}, reverse=True), "deadline": deadline.isoformat(),
             "daysUntilDeadline": (deadline - now.astimezone(KST).date()).days,
             "generatedAt": now.astimezone(KST).isoformat(), "branches": results,
             "allAccepted": all_accepted, "allLaborCostsVerified": all_labor,
@@ -383,8 +476,13 @@ if __name__ == "__main__":
     parser.add_argument("--import-base64", help="Validated, credential-free check result")
     parser.add_argument("--import-labor-base64", help="Update labor ratios without changing claim results")
     parser.add_argument("--import-labor-history-base64", help="Backfill verified labor months without changing claims")
+    parser.add_argument("--import-claim-history-base64", help="Backfill claim months without changing the current target month")
+    parser.add_argument("--benefit-month", help="Read a stored historical claim month")
     args = parser.parse_args()
-    if args.import_labor_history_base64:
+    if args.import_claim_history_base64:
+        save_claim_archive(json.loads(base64.b64decode(args.import_claim_history_base64, validate=True)))
+        print("월별 청구 이력 저장 완료")
+    elif args.import_labor_history_base64:
         save_labor_history(json.loads(base64.b64decode(args.import_labor_history_base64, validate=True)))
         print("월별 인건비 이력 저장 완료")
     elif args.import_labor_base64:
@@ -394,4 +492,4 @@ if __name__ == "__main__":
         save(json.loads(base64.b64decode(args.import_base64, validate=True)))
         print("점검 결과 저장 완료")
     else:
-        print(json.dumps(report(), ensure_ascii=False))
+        print(json.dumps(report(benefit_month=args.benefit_month), ensure_ascii=False))

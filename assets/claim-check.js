@@ -2,6 +2,7 @@
   'use strict';
   const home = document.getElementById('home-claim-status');
   const grid = document.getElementById('claim-branches');
+  const monthSelect = document.getElementById('claim-month');
   if (!home && !grid) return;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const monthText = month => `${month.slice(0,4)}년 ${Number(month.slice(5))}월`;
@@ -27,13 +28,15 @@
     return `<section class="claim-labor" aria-label="${escape(branch.name)} 인건비 비율"><div class="claim-labor-heading"><h3>${escape(labor.year)}년 연간 인건비 비율</h3><span class="ui-status"${status ? ` data-status="${status}"` : ''}>${label}</span></div><p class="claim-labor-value">${verified ? `${escape(labor.annualRatio)}<span>%</span>` : '미확인'}</p><p class="claim-labor-meta">조회 급여제공월 · ${escape(monthText(labor.benefitMonth))}<br>종사자인건비 지출내역 신고 · 16번 연간비율</p><p class="claim-labor-meta">${labor.benchmarkRatio ? `운영 기준 · ${escape(labor.benchmarkRatio)}% 초과 시 안정` : '해당 연도의 운영 기준을 확인해야 합니다.'}</p><p class="claim-labor-meta">${verified ? `비율 확인 · ${escape(dateText(labor.checkedAt))}` : '공단 연결 후 비율 확인이 필요합니다.'}</p>${labor.lastQueryFailureAt ? `<p class="claim-query-note">${escape(dateText(labor.lastQueryFailureAt))} 인건비 조회 실패${verified ? ' · 이전에 확인한 비율을 유지합니다.' : ''}</p>` : ''}${laborAmounts(labor)}</section>`;
   };
   let loading = false;
+  let selectedMonth = '';
   async function refresh() {
     if (loading) return;
     loading = true;
     const button = document.getElementById('claim-refresh');
     if (button) button.disabled = true;
+    if (monthSelect) monthSelect.disabled = true;
     try {
-      const response = await fetch('/api/claim-check', {cache:'no-store',signal:AbortSignal.timeout(15000)});
+      const response = await fetch('/api/claim-check' + (selectedMonth ? `?benefitMonth=${encodeURIComponent(selectedMonth)}` : ''), {cache:'no-store',signal:AbortSignal.timeout(15000)});
       if (!response.ok) throw new Error('request');
       const data = await response.json();
       if (!Array.isArray(data.branches) || data.branches.length !== 2) throw new Error('format');
@@ -46,6 +49,17 @@
         window.HomeDashboard?.update('claims',data);
       }
       if (grid) {
+        if (monthSelect) {
+          const months = data.availableMonths || [data.benefitMonth];
+          monthSelect.innerHTML = months.map(month=>`<option value="${escape(month)}">${escape(monthText(month))}${month === data.currentBenefitMonth ? ' · 이번 점검' : ''}</option>`).join('');
+          monthSelect.value = data.benefitMonth;
+        }
+        const historyNote = document.getElementById('claim-history-note');
+        if (historyNote) {
+          const historical = Boolean(data.currentBenefitMonth && data.benefitMonth !== data.currentBenefitMonth);
+          historyNote.hidden = !historical;
+          historyNote.textContent = historical ? `과거 급여제공분의 저장 결과입니다. 이번 정기 점검 대상은 ${monthText(data.currentBenefitMonth)}입니다.` : '';
+        }
         document.getElementById('claim-period').textContent = `${monthText(data.benefitMonth)} 급여제공분`;
         document.getElementById('claim-deadline').textContent = `${data.deadline.replaceAll('-','. ')} 청구 마감`;
         document.getElementById('claim-due-state').textContent = data.allAccepted ? '두 지점 접수 완료' : data.daysUntilDeadline === 0 ? '오늘 마감 · 점검 필요' : data.daysUntilDeadline < 0 ? '마감일 경과 · 점검 필요' : `마감까지 ${data.daysUntilDeadline}일`;
@@ -68,9 +82,11 @@
     } finally {
       loading = false;
       if (button) button.disabled = false;
+      if (monthSelect) monthSelect.disabled = false;
     }
   }
   document.getElementById('claim-refresh')?.addEventListener('click', refresh);
+  monthSelect?.addEventListener('change', () => {selectedMonth = monthSelect.value; refresh();});
   document.addEventListener('visibilitychange', () => {if (!document.hidden) refresh();});
   setInterval(() => {if (!document.hidden) refresh();}, 300000);
   refresh();
