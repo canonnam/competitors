@@ -1,5 +1,13 @@
 # 더비다 지식 창고 개발 환경
 
+## 운영비 은행 거래내역 (2026-10-25)
+
+- 기존 Python/정적 앱·공통 사이트 인증·Railway petdev 배포를 유지한다. `bank_transactions.py`, `bank-transactions.html`을 Docker에 추가하며 원본 BIFF XLS 읽기에 `xlrd==2.0.2`를 사용한다. 서버에서 은행 로그인을 수행하거나 은행 비밀번호를 저장하지 않는다.
+- Chrome PC 예약 수집이 월 1일 09:00 KST 전월분 전체 원본을 다운로드한다. 실행 절차와 실패 복구는 [BANK_TRANSACTIONS.md](../BANK_TRANSACTIONS.md)를 따른다. 서버 스케줄러로 은행 접속을 가장하지 않는다.
+- 원본은 `/data/bank-transactions/files/<sha256>.xls`, 월·지점별 검증 자료와 실패 이력은 `/data/bank-transactions/`에 저장한다. 정정 전 메타데이터는 history에, 과거 원본은 내용 해시로 보존한다. 선택 변수 `BANK_TRANSACTIONS_DIR`로 로컬 자료를 `.local/`에 격리한다. 파일·개인 거래를 Git/이미지에 포함하지 않는다.
+- GET/HEAD 조회·다운로드 API는 기존 로그인 이후만 응답하고 no-store를 유지한다. HTTP POST/DELETE는 405다. 기존 Railway SSH 인증의 게시 스크립트가 원본 파일을 보내고 게시·재조회 해시/건수/상태를 대조한다. 새 인증 수단·비밀 변수는 없다.
+- 검증: `python -X utf8 -m unittest test_bank_transactions.py test_ui_consistency.py test_static_pages.py test_facility_access.py`; `node --check assets/bank-transactions.js`; `node --test test_navigation.cjs`.
+
 ## 인건비 반영·미반영 금액과 과거 조회월 (2026-10-25)
 
 - 기존 `/data/claim-check.json`에 지점별 `laborCost.amounts`와 지점·조회월별 `laborHistory`를 추가한다. 새 DB·환경 변수·인증 수단은 없다. 구형 비율 자료는 유효하며 금액을 미수집으로 표시한다.
