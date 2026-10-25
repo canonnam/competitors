@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import app
 import claim_check as claims
-from scripts.publish_claim_check import verify_published
+from scripts.publish_claim_check import verify_published, verify_history_published
 
 NOW = datetime(2026, 9, 10, 14, tzinfo=claims.KST)
 
@@ -28,7 +28,10 @@ def labor_sample(ratio="63.20", moment=NOW):
     return {"benefitMonth": "2026-08", "branches": [
         {"id": ident, "institutionNumber": number, "laborCost": {
             "benefitMonth": "2026-07", "year": 2026, "checkedAt": moment.isoformat(),
-            "querySucceeded": ratio is not None, "annualRatio": ratio}}
+            "querySucceeded": ratio is not None, "annualRatio": ratio,
+            "amounts": {"checkedAt": moment.isoformat(), "querySucceeded": ratio is not None,
+                        **{key: str(index * 1000) if ratio is not None else None
+                           for index, key in enumerate(claims.LABOR_AMOUNT_FIELDS)}}}}
         for ident, (_, number) in claims.BRANCHES.items()]}
 
 
@@ -224,14 +227,15 @@ class ClaimCheckTests(unittest.TestCase):
         worker = threading.Thread(target=server.serve_forever, daemon=True)
         worker.start()
         try:
-            with patch.object(claims, "data_path", return_value=self.path), patch.object(claims, "now_kst", return_value=NOW):
+            with patch.object(claims, "data_path", return_value=self.path), patch.object(claims, "now_kst", return_value=NOW), \
+                    patch.object(app.facility_access, "authorized", return_value=True):
                 self.result(sample())
                 for method in ("GET", "HEAD"):
                     conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
                     conn.request(method, "/api/claim-check")
                     response = conn.getresponse()
                     self.assertEqual(response.status, 200)
-                    self.assertEqual(response.getheader("Cache-Control"), "no-store")
+                    self.assertIn("no-store", response.getheader("Cache-Control"))
                     body = response.read()
                     if method == "GET":
                         self.assertTrue(json.loads(body)["allAccepted"])
@@ -342,6 +346,140 @@ class ClaimCheckTests(unittest.TestCase):
         claims.save_labor_costs(labor_sample("64.00", later), self.path, later)
         with self.assertRaises(ValueError):
             claims.save_labor_costs(labor_sample(), self.path, later)
+
+    def test_existing_ratios_without_amounts_stay_valid_but_need_amount_collection(self):
+        self.result(sample())
+        payload = labor_sample()
+        for branch in payload["branches"]:
+            del branch["laborCost"]["amounts"]
+        claims.save_labor_costs(payload, self.path, NOW)
+        result = claims.report(self.path, NOW)
+        self.assertTrue(result["allAccepted"])
+        self.assertTrue(result["allLaborCostsVerified"])
+        self.assertFalse(result["allLaborAmountsVerified"])
+        self.assertFalse(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["laborCost"]["amounts"]["status"], "unqueried")
+        self.assertIsNone(result["branches"][0]["laborCost"]["amounts"]["reflectedCost"])
+
+    def test_four_amounts_are_exact_separate_by_branch_and_verified_after_publish(self):
+        self.result(sample())
+        payload = labor_sample()
+        payload["branches"][1]["laborCost"]["amounts"]["reflectedCost"] = "12345678901234567890"
+        claims.save_labor_costs(payload, self.path, NOW)
+        result = claims.report(self.path, NOW)
+        self.assertTrue(result["allLaborAmountsVerified"])
+        self.assertTrue(result["allChecksComplete"])
+        self.assertEqual(result["branches"][0]["laborCost"]["amounts"]["reflectedCost"], "0")
+        self.assertEqual(result["branches"][1]["laborCost"]["amounts"]["reflectedCost"], "12345678901234567890")
+        verify_published(payload, result, labor_only=True)
+        for field in claims.LABOR_AMOUNT_FIELDS:
+            wrong = copy.deepcopy(result)
+            wrong["branches"][0]["laborCost"]["amounts"][field] = "999"
+            with self.assertRaises(RuntimeError):
+                verify_published(payload, wrong, labor_only=True)
+        next_month = claims.report(self.path, datetime(2026, 10, 6, tzinfo=claims.KST))
+        self.assertIsNone(next_month["branches"][1]["laborCost"]["amounts"]["reflectedCost"])
+
+    def test_amounts_merge_independently_from_ratio_and_preserve_original_time(self):
+        self.result(sample())
+        original = labor_sample()
+        claims.save_labor_costs(original, self.path, NOW)
+        later = NOW + timedelta(hours=1)
+        incoming = labor_sample("64.00", later)
+        for branch in incoming["branches"]:
+            branch["laborCost"]["amounts"].update(querySucceeded=False, **{key: None for key in claims.LABOR_AMOUNT_FIELDS})
+        claims.save_labor_costs(incoming, self.path, later)
+        result = claims.report(self.path, later)
+        amounts = result["branches"][0]["laborCost"]["amounts"]
+        self.assertEqual(amounts["checkedAt"], NOW.isoformat())
+        self.assertEqual(amounts["lastQueryFailureAt"], later.isoformat())
+        self.assertEqual(amounts["reflectedAddition"], "1000")
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "64.00")
+        self.assertTrue(result["allChecksComplete"])
+        verify_published(incoming, result, labor_only=True)
+        still_later = later + timedelta(hours=1)
+        recovered = labor_sample(None, still_later)
+        for branch in recovered["branches"]:
+            branch["laborCost"]["amounts"].update(querySucceeded=True, **{key: "5" for key in claims.LABOR_AMOUNT_FIELDS})
+        claims.save_labor_costs(recovered, self.path, still_later)
+        result = claims.report(self.path, still_later)
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "64.00")
+        self.assertEqual(result["branches"][0]["laborCost"]["checkedAt"], later.isoformat())
+        self.assertEqual(result["branches"][0]["laborCost"]["amounts"]["reflectedCost"], "5")
+        self.assertIsNone(result["branches"][0]["laborCost"]["amounts"]["lastQueryFailureAt"])
+        ratio_only = labor_sample("65", still_later)
+        for branch in ratio_only["branches"]:
+            del branch["laborCost"]["amounts"]
+        claims.save_labor_costs(ratio_only, self.path, still_later)
+        self.assertEqual(claims.report(self.path, still_later)["branches"][0]["laborCost"]["amounts"]["reflectedCost"], "5")
+        with self.assertRaises(ValueError):
+            stale = labor_sample("65", still_later)
+            stale["branches"][0]["laborCost"]["amounts"] = original["branches"][0]["laborCost"]["amounts"]
+            claims.save_labor_costs(stale, self.path, still_later)
+
+    def test_missing_or_failed_amounts_are_not_zero_and_invalid_amounts_rejected(self):
+        self.result(sample())
+        failed = labor_sample(None)
+        claims.save_labor_costs(failed, self.path, NOW)
+        amounts = claims.report(self.path, NOW)["branches"][0]["laborCost"]["amounts"]
+        self.assertEqual(amounts["status"], "query_failed")
+        self.assertTrue(all(amounts[key] is None for key in claims.LABOR_AMOUNT_FIELDS))
+        for value in (0, -1, "-1", "1.0", "1,000", "100원", "", "00", "NaN", "9" * 21, None):
+            incoming = labor_sample()
+            incoming["branches"][0]["laborCost"]["amounts"]["reflectedCost"] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                claims.save_labor_costs(incoming, self.path, NOW)
+        for change in ({"privateValue": "secret"}, {"querySucceeded": False}, {"checkedAt": (NOW + timedelta(hours=1)).isoformat()}):
+            incoming = labor_sample()
+            incoming["branches"][0]["laborCost"]["amounts"].update(change)
+            with self.assertRaises(ValueError):
+                claims.save_labor_costs(incoming, self.path, NOW)
+        incoming = labor_sample()
+        del incoming["branches"][0]["laborCost"]["amounts"]["unreflectedAddition"]
+        with self.assertRaises(ValueError):
+            claims.save_labor_costs(incoming, self.path, NOW)
+
+    def test_historical_months_are_separate_and_survive_claim_rollover(self):
+        self.result(sample())
+        before = claims.report(self.path, NOW)
+        july = labor_sample()["branches"][0]["laborCost"]
+        august = copy.deepcopy(july)
+        august.update(benefitMonth="2026-08", annualRatio="61.00")
+        payload = {"branches": [{"id": "anyang", "institutionNumber": "14117000625", "laborCosts": [july, august]}]}
+        claims.save_labor_history(payload, self.path, NOW)
+        result = claims.report(self.path, NOW)
+        verify_history_published(payload, result, before)
+        self.assertEqual([r["benefitMonth"] for r in result["branches"][0]["laborHistory"]], ["2026-08", "2026-07"])
+        self.assertEqual(result["branches"][0]["laborCost"]["benefitMonth"], "2026-07")
+        self.assertEqual(result["branches"][0]["laborCost"]["annualRatio"], "63.20")
+        later = datetime(2026, 10, 6, tzinfo=claims.KST)
+        incoming = sample()
+        incoming["benefitMonth"] = "2026-09"
+        for branch in incoming["branches"]:
+            branch.update(checkedAt=later.isoformat(), querySucceeded=False, claims=[])
+        claims.save(incoming, self.path, later)
+        result = claims.report(self.path, later)
+        self.assertFalse(result["allAccepted"])
+        self.assertEqual(len(result["branches"][0]["laborHistory"]), 2)
+        self.assertIsNone(result["branches"][0]["laborCost"]["annualRatio"])
+        # Historical backfills are still possible when the stored claim month is old.
+        july["checkedAt"] = later.isoformat()
+        july["amounts"]["checkedAt"] = later.isoformat()
+        claims.save_labor_history({"branches": [{"id": "anyang", "institutionNumber": "14117000625", "laborCosts": [july]}]}, self.path, later)
+        verify_history_published({"branches": [{"id": "anyang", "institutionNumber": "14117000625", "laborCosts": [july]}]}, claims.report(self.path, later), result)
+
+    def test_history_rejects_wrong_institution_future_duplicate_and_missing_amount_values(self):
+        self.result(sample())
+        base = {"branches": [{"id": "anyang", "institutionNumber": "14117000625", "laborCosts": [labor_sample()["branches"][0]["laborCost"]]}]}
+        for mutate in (
+                lambda p: p["branches"][0].update(institutionNumber="12817700685"),
+                lambda p: p["branches"][0]["laborCosts"][0].update(benefitMonth="2026-09"),
+                lambda p: p["branches"][0]["laborCosts"].append(copy.deepcopy(p["branches"][0]["laborCosts"][0])),
+                lambda p: p["branches"][0]["laborCosts"][0]["amounts"].pop("reflectedCost")):
+            incoming = copy.deepcopy(base)
+            mutate(incoming)
+            with self.assertRaises(ValueError):
+                claims.save_labor_history(incoming, self.path, NOW)
 
 
 if __name__ == "__main__":

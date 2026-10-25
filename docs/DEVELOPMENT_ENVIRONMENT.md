@@ -1,5 +1,11 @@
 # 더비다 지식 창고 개발 환경
 
+## 인건비 반영·미반영 금액과 과거 조회월 (2026-10-25)
+
+- 기존 `/data/claim-check.json`에 지점별 `laborCost.amounts`와 지점·조회월별 `laborHistory`를 추가한다. 새 DB·환경 변수·인증 수단은 없다. 구형 비율 자료는 유효하며 금액을 미수집으로 표시한다.
+- `scripts/publish_claim_check.py --labor-only`는 현재 인건비 조회월의 비율·네 금액을 함께 저장한다. `--labor-history`는 `branches[].laborCosts[]` 형식의 실제 과거 조회월을 병합하고 청구 목록·상태·확인 시각의 불변을 게시 후 대조한다. HTTP `site_locked`일 때 기존 Railway 인증으로 같은 보고서를 확인한다.
+- 비율·금액은 각자의 성공/실패 시각과 값을 보존하고 미래 월·추정 금액·잘못된 기관·개인정보 필드를 거부한다. `allChecksComplete`는 두 지점 청구·비율·금액 완료를 뜻하며 운영 기준 미달과 수집 완료는 독립적이다.
+
 ## 안양 광고 수집 (2026-10-22)
 
 - 기존 competitors/dev 서비스에 `NAVER_ANYANG_CUSTOMER_ID`, `NAVER_ANYANG_ACCESS_LICENSE`, `NAVER_ANYANG_SECRET_KEY`의 기존 연결값을 서버 비밀 변수로 추가한다. 값은 저장소·로그에 기록하지 않는다.
