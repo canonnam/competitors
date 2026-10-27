@@ -901,6 +901,93 @@ d.carefor.facts.push(
 d.carefor.sources.push(['처방전 AI분석등록 매뉴얼 본문', 'https://docs.google.com/document/d/1x4J1zwASwWf9JYENdBHpjOvcUyLVjW-manmwHNW_8rs/edit']);
 d.carefor.note += ' 처방전 AI분석등록은 2026-10-18 FAQ와 연결 매뉴얼 본문으로 확인했다. 파일·모바일 사진에서 약품 정보를 추출하고 사람이 원본과 확인한 뒤 저장하는 흐름이며 실제 인식 정확도는 미검증이다.';
 
+// 방문요양 ERP and care-record patent notice, checked 2026-10-27.
+// 케어로그 is not 시니어앤라이프의 AI 디지털케어로그.
+Object.assign(d, {
+  caremanager: {
+    n: '케어매니저',
+    type: 'ERP · 방문요양 전용',
+    src: '케어매니저 공식 사이트 · 2026-10-27 확인',
+    url: 'https://www.care-m.co.kr/',
+    sources: [
+      ['케어매니저 공식 사이트', 'https://www.care-m.co.kr/'],
+      ['AI 회계', 'https://www.care-m.co.kr/main/accounting'],
+      ['주요 기능', 'https://www.care-m.co.kr/main/features'],
+      ['이투뉴스 · 2025-01-20', 'http://www.e2news.com/news/articleView.html?idxno=316452'],
+      ['롱텀인포 비교 · 같은 사업자 하단', 'https://longterminfo.co.kr/bbs_detail.php?bbs_num=1&tb=board_comparison']
+    ],
+    screenshot: null,
+    updatedAt: '2026-10-27',
+    facts: [
+      ['운영사', '실버시트 · 대표 김백년 · 대구광역시 달서구 와룡로 11, 2층. 하단 상호명 실버시트, 사업자 569-01-01785, 통신판매 2020-대구달성-0486. 개인정보 수집 표에는 (주)실버시트라고 적혀 있어 법인 여부는 단정하지 않음'],
+      ['핵심 메시지', '방문요양기관 업무관리 프로그램'],
+      ['지원 범위', '방문요양. 가입 상담의 기관 유형에 방문요양·방문목욕·방문간호가 있고 요양시설은 없음'],
+      ['핵심 기능', '일정·급여·본인부담금·평가 준비와 롱텀 연동. 스마트폰에서 일정을 바꾸면 변경 내용이 롱텀에 자동 등록된다고 주요 기능에 안내'],
+      ['급여·수납', '급여 계산·명세서·급여대장 생성, 본인부담금 명세서 카카오 발송과 CMS 수납을 주요 기능에서 안내'],
+      ['고객수', '홈페이지의 “2,289개 기관이 사용 중”은 자사 표기. 기준일과 유료 여부 미확인. 기관 수로 매출을 추정하지 않음'],
+      ['가입 제한', '공식 홈은 지역 경쟁력을 위한 25% 가입 제한을 안내. 이투뉴스 2025-01-20은 특정 지역구 방문요양기관의 25%만 가입할 수 있다고 보도'],
+      ['AI 회계', '통장 거래를 자동 수집하고, 기관별로 학습한 AI가 계정을 맞춰 결의서를 만들며, 희망이음에 원클릭으로 등록. 예산서·결산서 자동 생성도 회계 페이지에 안내'],
+      ['AI 회계 가격', '월 결제금액에 33,000원(이전 표기)과 22,000원(현재 표기), 33% 할인 배지. 문구는 “월회비 + 22,000원 결제”, “연계된 대행사 등록 시 이용금액 0원”. 오픈 이벤트 1년 무료체험이며 무료 기간에는 결제하지 않는다고 안내. 부가세 포함 여부와 기본 ERP 구독료는 미확인'],
+      ['AI 케봇', '24시간 사용법·급여 세팅·운영 문의·오류 질문에 답한다고 주요 기능에 안내. 회의록·제공기록지 자동 작성은 홈페이지 고객 후기. 출시일 미확인. “업계 최초”는 자사 표기'],
+      ['문자 보정 AI', '공식 사이트의 부가 도구. 원문을 선택한 스타일로 다듬고 발송 전 확인을 안내'],
+      ['비교 글의 한계', '롱텀인포 비교글(게시 2026-05-13)의 하단 대표·주소·사업자번호가 실버시트와 같다. 독립된 제3자 비교로 사용하지 않음'],
+      ['출시일', '미확인. 이투뉴스 보도일 2025-01-20은 출시일이 아님'],
+      ['직영 기관 운영', '확인 필요'],
+      ['기능 확인일', '2026-10-27 · 공식 페이지·이투뉴스 기준']
+    ],
+    note: '시설이 아니라 방문요양을 겨냥한 ERP다. AI 회계와 희망이음 연동은 이지케어의 AI 결의서·희망이음 자동 등록(2026년 10월 출시 예정)과 직접 겹치므로, 더비다 회계·결의서 자동화의 범위와 가격을 볼 때 참고한다. 월 2.2만~3.3만 원과 1년 무료는 회계 화면의 표기이며 운영사 매출이 아니다. 2,289개 기관은 자사 표기다.'
+  },
+  carelogue: {
+    n: '케어로그',
+    type: 'AI 업무보조 · 요양보호 기록',
+    src: '케어로그 특허 등록결정 공지 · 2026-10-27 확인',
+    url: 'https://www.carelogue.co.kr/21/?bmode=view&idx=168426433',
+    sources: [
+      ['케어로그 특허 등록결정 공지', 'https://www.carelogue.co.kr/21/?bmode=view&idx=168426433']
+    ],
+    screenshot: null,
+    updatedAt: '2026-10-27',
+    facts: [
+      ['운영사', 'CareLogue Inc. · CEO Sungho Yoo · 서울 성북구 월곡로 5나길(영문 표기, 상세 번지 미확인). 사업자 316-81-30107, 통신판매 2023-Seoul Seongbuk-0785. 한글 법인명과 대표 한글 표기는 이 페이지에서 미확인'],
+      ['경쟁 구분', '시니어앤라이프의 AI 디지털케어로그와 다른 서비스'],
+      ['핵심 기능', '「요양보호일지 자동생성 시스템」 특허 등록결정. 출원 제10-2023-0081657호 외 1건. 등록번호와 나머지 출원번호는 이 공지에 없음'],
+      ['사용 방식', '요양보호사가 음성 또는 사진으로 입력하면 AI가 일지를 작성. 공지는 음성·사진·영상·활동 데이터로 비정형 기록을 인식한다고 적음'],
+      ['이상 징후', '감정·활동·섭취 음식 데이터에서 이상 징후와 감정 변화를 보여주고, 보호자와 관계자가 공유'],
+      ['도입 상태', '자사 AI 돌봄 플랫폼에 적용할 예정. 적용 완료와 도입 기관 수는 이 공지에서 미확인'],
+      ['공지 게시일', '화면 본문의 게시일 표기는 확인하지 못함. 페이지 메타데이터의 datePublished는 2025-10-29, dateModified는 2025-11-13. 화면 게시일과 같은지는 단정하지 않음'],
+      ['출시일', '미확인'],
+      ['고객수', '공개 자료에서 미확인'],
+      ['직영 기관 운영', '확인 필요'],
+      ['기능 확인일', '2026-10-27 · 특허 공지 기준']
+    ],
+    note: '음성으로 기록을 자동 작성하는 영역은 케어하자, 정션메드 등과 겹친다. 특허 등록결정이 있으므로 비슷한 기능을 만들 때는 청구범위를 확인해야 한다. 이 공지는 등록결정 통지이며 등록번호는 없고, 자사 플랫폼 적용은 예정이다. 시니어앤라이프의 AI 디지털케어로그와 합치지 않는다.'
+  }
+});
+Object.assign(price50, {
+  caremanager: {
+    m: 'AI 회계 화면 월 22,000원(현재 표기)·33,000원(이전 표기) · 50인 ERP 요금 산정 불가',
+    o: '오픈 이벤트 1년 무료체험 · 무료 기간에는 결제하지 않는다고 안내. ERP 가입·설치비 미확인',
+    u: '회계 페이지의 월 결제금액이다. 33% 할인 배지, 현재 22,000원, 이전 표기 33,000원. “월회비 + 22,000원 결제”, 연계 대행사 등록 시 이용금액 0원. 부가세·기본 ERP 구독료·수급자 50명 적용은 미확인. 1년 무료는 오픈 이벤트이며 영구 무료가 아님.',
+    b: '공식 회계 페이지의 표시 금액만 기록. 22,000원 또는 33,000원을 수급자 50명의 월 ERP 요금이나 연간 매출로 환산하지 않음.',
+    v: '공식 회계 페이지 확인 · 50인·부가세 미확인',
+    s: 'https://www.care-m.co.kr/main/accounting',
+    links: [
+      ['공식 사이트', 'https://www.care-m.co.kr/'],
+      ['주요 기능', 'https://www.care-m.co.kr/main/features']
+    ],
+    checked: '2026-10-27'
+  },
+  carelogue: {
+    m: '50인 공개 요금 미확인',
+    o: '가입·설치비·AI 이용 한도 확인 필요',
+    u: '특허 공지에서 50인 기관 요금과 부가세·이용 조건을 확인하지 못함.',
+    b: '공개 단가가 없어 50인 월 요금을 임의 계산하지 않음.',
+    v: '특허 공지 확인 · 가격 미공개',
+    s: 'https://www.carelogue.co.kr/21/?bmode=view&idx=168426433',
+    checked: '2026-10-27'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -940,7 +1027,9 @@ const institutionResearch = {
   careverse: [['homecare'], '방문요양·재가복지센터의 음성 방문기록과 청구 점검 서비스 기준이다.'],
   aidosa: [['homecare'], '방문요양 기록지 초안 서비스 기준이다. 시설용 앱은 시제품 단계이므로 요양시설의 제공 중 서비스로 포함하지 않는다.'],
   seniorlife: [['facility','daycare','homecare','hospital'], '기관 도입 안내에 재가돌봄센터·주야간보호센터·요양원·요양병원을 명시한다. 기관별 계약·권한과 베타 범위를 확인해야 한다.'],
-  junctionmed: [['welfare'], '돌봄로봇 협약의 공공 통합돌봄 사업 공동 추진 계획 기준이다. 실제 도입 기관과 요양원·주야간보호·방문요양별 지원 범위는 미확인이다.']
+  junctionmed: [['welfare'], '돌봄로봇 협약의 공공 통합돌봄 사업 공동 추진 계획 기준이다. 실제 도입 기관과 요양원·주야간보호·방문요양별 지원 범위는 미확인이다.'],
+  caremanager: [['homecare','visiting'], '공식 소개는 방문요양기관 업무관리 프로그램이다. 가입 상담의 기관 유형에 방문요양·방문목욕·방문간호가 있고 요양시설은 없다.', [['케어매니저 공식 사이트','https://www.care-m.co.kr/'], ['주요 기능','https://www.care-m.co.kr/main/features']]],
+  carelogue: [['unknown'], '요양보호일지 자동생성 공지이며 요양원·주야간보호·방문요양 중 현재 제공 유형은 밝히지 않는다. 자사 플랫폼 적용은 예정이다.', [['케어로그 특허 등록결정 공지','https://www.carelogue.co.kr/21/?bmode=view&idx=168426433']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -948,5 +1037,6 @@ Object.entries(d).forEach(([key, item]) => {
   item.institutionEvidence = {checked:'2026-10-20', note, sources:sources || item.sources || [[item.src,item.url]]};
   item.facts.push(['대상 기관', institutions.map(id => institutionTypes[id]).join(' · ')], ['기관별 적용 범위', note]);
 });
+for (const key of ['caremanager', 'carelogue']) d[key].institutionEvidence.checked = '2026-10-27';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;
