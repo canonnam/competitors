@@ -28,6 +28,7 @@ ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어�
            "careverse": ["CareVerse", "케어버스"], "aidosa": ["AI도사들"],
            "seniorlife": ["시니어앤라이프", "디지털케어로그"],
            "caremanager": ["케어매니저", "실버시트"],
+           "kairn": ["케언", "Kairn", "kairn"],
            "carelogue": ["CareLogue", "요양보호일지 자동생성"],
            "junctionmed": ["정션메드", "케어,원", "CareOne", "마음로그", "MindLog"],
            "caring": ["케어링", "케어링 인텔리전스", "케어링 모션"],

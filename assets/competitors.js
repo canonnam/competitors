@@ -4,7 +4,7 @@
   const data = window.competitorData;
   const institutionTypes = window.competitorInstitutionTypes;
   const roles = {
-    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja','rachelcare','careverse','seniorlife','caremanager']},
+    operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja','rachelcare','careverse','seniorlife','caremanager','kairn']},
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai','aidosa','junctionmed','carelogue']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
