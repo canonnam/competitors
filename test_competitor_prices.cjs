@@ -35,7 +35,11 @@ test('50 recipients are not silently treated as employees or a smaller plan', ()
 });
 
 test('every record exposes dated evidence and one consistent price to search', () => {
-  assert.equal(Object.keys(data).length, 32);
+  assert.equal(Object.keys(data).length, 33);
+  assert.match(data.ecm.price50.o, /2,200,000원/);
+  assert.match(data.ecm.price50.o, /부가세 별도/);
+  assert.equal(data.navi.price50.m, '월 6,900원 (부가세 포함)');
+  assert.match(data.navi.price50.u, /방문요양 수급자 50명/);
   for (const item of Object.values(data)) {
     const price = item.price50;
     assert.match(price.checked, /^2026-\d{2}-\d{2}$/, item.n);
