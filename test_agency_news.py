@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from html import escape
 import http.client
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -11,6 +12,7 @@ from unittest.mock import patch
 
 import app
 import agency_news as news
+import facility_access
 
 NOW = datetime(2026, 9, 8, 18, tzinfo=news.KST)
 NHIS = news.SOURCES[0]
@@ -156,9 +158,22 @@ class AgencyNewsTests(unittest.TestCase):
         server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         try:
-            with patch.object(news,'db_path',return_value=self.path):
+            with patch.object(news,'db_path',return_value=self.path), patch.dict(os.environ, {
+                    facility_access.HASH_ENV: facility_access.make_password_hash('agency-news-test'),
+                    'SITE_ACCESS_DB_PATH': str(Path(self.temp.name) / 'access.db'),
+                    'RAILWAY_ENVIRONMENT_ID': ''}):
+                conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5)
+                conn.request('GET','/api/agency-news')
+                response=conn.getresponse();response.read();conn.close()
+                self.assertEqual(response.status,401)
+                conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5)
+                conn.request('POST',facility_access.PREFIX+'session',json.dumps({'password':'agency-news-test'}),
+                             {'Content-Type':'application/json','Origin':f'http://127.0.0.1:{server.server_port}'})
+                response=conn.getresponse();response.read();conn.close()
+                self.assertEqual(response.status,200)
+                cookie=response.headers['Set-Cookie'].split(';')[0]
                 for method,route in [('GET','/api/agency-news'),('GET','/api/agency-news?summary=1'),('HEAD','/api/agency-news')]:
-                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request(method,route)
+                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request(method,route,headers={'Cookie':cookie})
                     response=conn.getresponse();raw=response.read();conn.close()
                     self.assertEqual(response.status,200);self.assertEqual(response.headers['Cache-Control'],'no-store')
                     self.assertIn('noindex',response.headers['X-Robots-Tag'])
@@ -166,7 +181,7 @@ class AgencyNewsTests(unittest.TestCase):
                     else:
                         body=json.loads(raw);self.assertEqual(len(body['sources']),11);self.assertEqual('items' in body,'summary' not in route)
                 for route in ['/agency_news.py','/data/agency_news_sources.json','/business_support.py','/iris_support.py','/data/company_support_profile.json']:
-                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request('GET',route)
+                    conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request('GET',route,headers={'Cookie':cookie})
                     response=conn.getresponse();response.read();conn.close();self.assertEqual(response.status,404)
         finally:server.shutdown();server.server_close();thread.join(5)
 

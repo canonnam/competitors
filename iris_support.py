@@ -92,11 +92,23 @@ def parse_detail(html):
         if label is not None and value is not None:
             fields[label.text()] = value.text()
     body = next((node.text() for node in root.all('div') if node.has_class('se-contents')), '')
-    if not fields.get('공고명') or not fields.get('접수기간') or not body:
+    contents = next((node for node in root.all('div') if node.has_class('tb_contents')), None)
+    if not body and contents is not None:
+        plain = contents.text()
+        if plain not in ('공고문', '■ 공고문'):
+            body = plain
+    attachments = [link for group in root.all('ul') if group.has_class('add_file')
+                   for link in group.all('a') if link.has_class('file_down') and link.text()
+                   and link.attrs.get('href', '').startswith('javascript:f_bsnsAncm_downloadAtchFile(')]
+    # Some valid notices publish only HWP/HWPX attachments. Do not confuse them
+    # with an error page, or invent the contents of the unparsed attachments.
+    attachment_only = not body and contents is not None and bool(attachments)
+    if not fields.get('공고명') or not fields.get('접수기간') or not (body or attachment_only):
         raise ValueError('Incomplete IRIS announcement detail')
     return {'title': fields['공고명'], 'application_period': fields['접수기간'],
             'overview': body, 'department': fields.get('소관부처', ''),
-            'operator': fields.get('전문기관', '')}
+            'operator': fields.get('전문기관', ''),
+            'body_status': 'attachment_only' if attachment_only else 'inline'}
 
 
 def deadline_at(period, body):
@@ -144,6 +156,10 @@ def assess(row, detail, now):
     candidate['application_status'] = period_status(
         {**row, **candidate, 'application_period': detail['application_period']}, now)
     candidate['checks'].insert(0, '통합 공고에 분야가 여러 개일 수 있습니다. 해당 과제의 RFP와 주관·공동연구기관 자격을 따로 확인하세요.')
+    if detail.get('body_status') == 'attachment_only':
+        candidate.update(body_status='attachment_only', match_basis='IRIS 공고명 · 첨부 본문 미확인',
+                         recommendation='검토 후보 · 첨부 본문 확인 필요')
+        candidate['checks'].insert(0, '본문이 첨부파일로만 제공됩니다. 첨부 공고문의 지원 내용·자격·제한을 직접 확인해야 합니다.')
     return candidate
 
 
@@ -165,7 +181,7 @@ def collect(source, seen, now, list_fetcher=fetch_page, detail_fetcher=fetch_htm
             row.update(match, application_period=detail['application_period'],
                        withdrawn=False, collected_at=now.isoformat(), first_seen_at=now.isoformat())
             selected[row['id']] = row
-        elif row['id'] in seen or row.get('collected_at'):
+        elif detail.get('body_status') != 'attachment_only' and (row['id'] in seen or row.get('collected_at')):
             row.update(withdrawn=True, application_period=detail['application_period'],
                        collected_at=now.isoformat())
             selected[row['id']] = row

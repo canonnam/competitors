@@ -45,6 +45,47 @@ def page(identity='023937', title=TITLE):
 
 
 class IrisSupportTests(unittest.TestCase):
+    def test_attachment_only_notice_does_not_abort_source_or_invent_body(self):
+        html = DETAIL[:DETAIL.index('<div class="tb_contents">')] + '''
+        <div class="tb_contents">■ 공고문</div>
+        <ul class="add_file"><li><a class="file_down"
+          href="javascript:f_bsnsAncm_downloadAtchFile('group','file','notice.hwpx','12');">공고.hwpx</a></li></ul>'''
+        detail = iris_support.parse_detail(html)
+        self.assertEqual(detail['body_status'], 'attachment_only')
+        self.assertEqual(detail['overview'], '')
+        items, scanned = iris_support.collect(
+            SOURCE, {}, NOW, list_fetcher=lambda _: page(), detail_fetcher=lambda _: html)
+        self.assertEqual(set(scanned), {'iris:023937'})
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['body_status'], 'attachment_only')
+        self.assertIn('첨부 본문 미확인', items[0]['match_basis'])
+        self.assertIn('첨부 본문 확인 필요', items[0]['recommendation'])
+        self.assertEqual(items[0]['benefit'], '')
+        self.assertIsNone(items[0]['deadline_at'])
+        # Missing attachment text is not grounds for withdrawing a prior match.
+        unrelated = html.replace(TITLE.replace('&', '&amp;'), '운영지원 안내')
+        old_page = page(title='운영지원 안내')
+        items, scanned = iris_support.collect(
+            SOURCE, {'iris:023937': 'old-signature'}, NOW,
+            list_fetcher=lambda _: old_page, detail_fetcher=lambda _: unrelated)
+        self.assertEqual(items, [])
+        self.assertEqual(set(scanned), {'iris:023937'})
+
+    def test_empty_or_error_detail_still_fails_without_real_attachment_markup(self):
+        metadata = DETAIL[:DETAIL.index('<div class="tb_contents">')]
+        for html in [metadata, metadata + '<div class="tb_contents">■ 공고문</div>',
+                     metadata + '<div class="tb_contents">■ 공고문</div><ul class="add_file"><a class="file_down" href="/login">첨부</a></ul>',
+                     '<div class="tb_contents">■ 공고문</div><ul class="add_file"><a class="file_down" href="javascript:f_bsnsAncm_downloadAtchFile(1)">첨부</a></ul>']:
+            with self.subTest(html=html), self.assertRaises(ValueError):
+                iris_support.parse_detail(html)
+
+    def test_plain_notice_body_is_read_without_editor_wrapper(self):
+        html = DETAIL.replace('<div class="se-contents">', '').replace('</div></div>', '</div>')
+        detail = iris_support.parse_detail(html)
+        self.assertEqual(detail['body_status'], 'inline')
+        self.assertIn('AX 기술 실증', detail['overview'])
+        self.assertEqual(iris_support.assess({'title': TITLE}, detail, NOW)['deadline_at'], '2026-09-30T15:00:00+09:00')
+
     def test_public_list_and_detail_accept_ax_call_with_energy_subproject(self):
         rows, pages = iris_support.parse_page(page(), 1, SOURCE)
         self.assertEqual(pages, 1)
