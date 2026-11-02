@@ -85,6 +85,8 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | 행복커넥트 | [공식 AI 돌봄 소개](https://www.aicare.biz/) | 기관 계약 단가 미확인. 5,500만원은 수의계약 한도이며 상품 가격이 아님 |
 | SKT 인공지능 돌봄 | [공식 장기요양 B2B 발표](https://news.sktelecom.com/122025) | 2020년 자료에 현재 50인 계약 요금 없음 |
 | 케어닥 SHOS | [공식 SHOS 소개](https://company.caredoc.kr/senior-housing-solution) | 도입 문의형, 50인 구성별 단가 미확인 |
+| WellCare AI | [실증 FAQ](https://kwellcareai.com/pilot/faq/) (2026-11-02) | 7개월 무상 실증. 2027년 SaaS 유료 전환은 협의이고 50인 월 요금은 없음. 의료기기·통신비는 기관 부담 |
+| AI빌딩넷 by ixi – 웰니스노트 | [LG 보도자료](https://www.lg.co.kr/media/release/30473) (2026-08-20), [한국일보](https://www.hankookilbo.com/news/article/A2026110109190000297) (2026-11-01) | 시범 보도에 50인 계약 요금 없음 |
 
 ## 재검증 방법
 
