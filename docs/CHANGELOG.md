@@ -1,5 +1,9 @@
 # 더비다 지식 창고 변경 기록
 
+## 2026-11-03 · 후원·재능기부 배포 파일
+
+- Railway 이미지의 `COPY` 목록에 `support-resources.html`이 없어 인증 뒤에도 404가 났다. `app.py`의 공개 페이지는 모두 Dockerfile에 복사되도록 맞추고, 빠진 페이지가 다시 생기지 않게 검사한다. `data/support_resources.json`은 기존 `COPY data`에 포함된다.
+
 ## 2026-11-03 · 후원·재능기부 목록
 
 - 정책·지원사업에 요양원용 후원·재능기부 목록을 추가했다. 페이지는 `/support-resources.html`, 데이터는 `data/support_resources.json`이다. 추가·중복 병합 규칙은 `data/SUPPORT_RESOURCES.md`에 적었다.

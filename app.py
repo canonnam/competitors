@@ -31,6 +31,18 @@ import staff_eval
 import clarity_report
 
 ROOT = Path(__file__).resolve().parent
+# Every name here must also be COPY'd into the image. See test_static_pages.py.
+PUBLIC_PAGES = frozenset({
+    "website-requests.html", "support-prep.html", "payroll.html", "claim-check.html",
+    "index.html", "competitors.html", "competitor-uiux.html", "competitor-news.html",
+    "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html",
+    "reputation-watch.html", "operating-costs.html", "borrowing-status.html",
+    "nearby-facilities.html", "statistics.html", "knowledge.html",
+    "facility-acquisition.html", "facility-3d.html", "liability-insurance.html",
+    "recipient-history.html", "bank-transactions.html", "clarity-report.html",
+    "support-projects.html", "support-share.html", "payroll-insurance.html",
+    "staff-eval.html", "staff-eval-session.html", "trend.html", "support-resources.html",
+})
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
 MAX_BODY = 12_000
 RATE_LIMIT_SECONDS = 30
@@ -366,16 +378,10 @@ class App(SimpleHTTPRequestHandler):
     def send_head(self):
         # Only public pages/assets are served; never source, local env or report DBs.
         path = Path(self.translate_path(self.path)).resolve()
-        public_pages = {"website-requests.html", "support-prep.html", "payroll.html", "claim-check.html", "index.html", "competitors.html", "competitor-uiux.html", "competitor-news.html", "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html", "reputation-watch.html", "operating-costs.html", "borrowing-status.html", "nearby-facilities.html", "statistics.html", "knowledge.html", "facility-acquisition.html", "facility-3d.html"}
         if path == ROOT:
             self.path = "/index.html"
             path = ROOT / "index.html"
-        public_pages.add("liability-insurance.html")
-        public_pages.add("recipient-history.html")
-        public_pages.add("bank-transactions.html")
-        public_pages.add("clarity-report.html")
-        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html', 'trend.html', 'support-resources.html'})
-        allowed_page = path.parent == ROOT and path.name in public_pages
+        allowed_page = path.parent == ROOT and path.name in PUBLIC_PAGES
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
         # Local PDF/OCR binary resources are public only inside their vendor folders.

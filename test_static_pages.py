@@ -16,6 +16,22 @@ class StaticPageDeploymentTests(unittest.TestCase):
         bundled = {name for group in copied_files for name in group.split()}
         self.assertTrue(linked_pages <= bundled, f"Deployment image omits: {sorted(linked_pages - bundled)}")
 
+    def test_dockerfile_copies_every_public_page(self):
+        source = (ROOT / "app.py").read_text(encoding="utf-8")
+        declared = re.search(r"PUBLIC_PAGES = frozenset\(\{(.*?)\}\)", source, re.S)
+        self.assertIsNotNone(declared, "app.py must declare PUBLIC_PAGES")
+        pages = set(re.findall(r'"([^"]+\.html)"', declared.group(1)))
+        self.assertGreaterEqual(len(pages), 30)
+        dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+        copied_files = set(re.findall(r"COPY\s+(.+?)\s+/app/?", dockerfile))
+        bundled = {name for group in copied_files for name in group.split()}
+        missing = sorted(pages - bundled)
+        self.assertEqual(missing, [], f"Deployment image omits public pages: {missing}")
+        for page in pages:
+            self.assertTrue((ROOT / page).is_file(), page)
+        self.assertIn("support-resources.html", pages)
+        self.assertIn("COPY data /app/data", dockerfile)
+
     def test_every_competitor_card_shows_a_revenue_disclosure(self):
         report = (ROOT / "competitors.html").read_text(encoding="utf-8")
         cards = re.findall(r'<div class="card"\s+data-t="(?:erp|ai)">', report)
