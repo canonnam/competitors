@@ -19,7 +19,9 @@ wraps with row growth; vertical merges and signing blocks are kept together.
 Additional wage items and special terms use an appendix. Blank inputs remain blank.
 Fixed terms offer one year, two years, or a custom end date. Presets end on the
 day before the anniversary, with leap-day rollover handled in UTC.
-New and reset forms default to a fixed one-year term. Probation is opt-in: its
+New and reset forms default to a fixed one-year term. Contract start and document
+dates default to today's date in Asia/Seoul on page load and on confirmed reset;
+both dates remain editable. Probation is opt-in: its
 fields are hidden and disabled until checked, and unchecked contracts print
 "수습기간 없음" without wage-reduction or probationary cancellation clauses. Draft probation values remain
 in browser memory when toggled off, but never enter the generated contract.

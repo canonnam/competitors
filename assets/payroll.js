@@ -91,6 +91,12 @@
     get('endDate').readOnly=fixed&&years!=='custom';
     if(fixed&&years!=='custom')get('endDate').value=PayrollCore.contractEndDate(get('startDate').value,years);
   }
+  function setDefaultDates(){
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    const part=type=>parts.find(item=>item.type===type).value;
+    const today=`${part('year')}-${part('month')}-${part('day')}`;
+    for(const name of ['startDate','documentDate'])get(name).value=today;
+  }
   function syncOptionalFields(){
     const probation=get('useProbation').checked,customJob=get('job').value==='custom';
     $('probation-fields').hidden=!probation;$('probation-fields').disabled=!probation;
@@ -223,11 +229,11 @@
   get('residentNumber').addEventListener('blur',()=>{const digits=get('residentNumber').value.replace(/-/g,'');if(/^\d{13}$/.test(digits)){get('residentNumber').value=`${digits.slice(0,6)}-${digits.slice(6)}`;update();}});
   $('add-day').onclick=()=>{if(pattern.length<42){pattern.push('D');get('preset').value='custom';renderPattern();renderShifts();update();}};
   $('add-allowance').onclick=()=>{if(extras.length<15){extras.push({name:'',amount:'',ordinary:true});renderExtras();update();}};
-  $('clear-form').onclick=()=>{if(!window.confirm('입력한 계약정보를 초기화할까요?'))return;form.reset();pattern=['D','D','N','N','O','O'];shifts=defaultShifts();extras=defaultExtras();renderPattern();renderShifts();renderExtras();setSystem();update();refreshClauses();};
+  $('clear-form').onclick=()=>{if(!window.confirm('입력한 계약정보를 초기화할까요?'))return;form.reset();setDefaultDates();pattern=['D','D','N','N','O','O'];shifts=defaultShifts();extras=defaultExtras();renderPattern();renderShifts();renderExtras();setSystem();update();refreshClauses();};
   $('preview-contract').onclick=()=>generate(true);$('download-contract').onclick=()=>generate(false);$('close-preview').onclick=()=>$('preview-dialog').close();
   async function refreshClauses(){
     try{const r=await fetch('/assets/contracts/templates.json');if(!r.ok)return;const templates=await r.json();const selected=templates[get('template').value];$('clauses-text').textContent=selected.cells.filter(c=>c.c===2&&c.cols>5&&c.text).map(c=>c.text).join('\n\n');}catch{$('clauses-text').textContent='문구를 불러오지 못했습니다.';}
   }
-  renderPattern();renderShifts();renderExtras();update();refreshClauses();
+  setDefaultDates();renderPattern();renderShifts();renderExtras();update();refreshClauses();
   window.addEventListener('pagehide',()=>{if(lastURL)URL.revokeObjectURL(lastURL);});
 })();
