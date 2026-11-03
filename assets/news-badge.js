@@ -21,6 +21,7 @@
   function publish(){const state=counts();subscribers.forEach(callback=>callback(state));}
   function subscribe(callback){subscribers.add(callback);callback(counts());return ()=>subscribers.delete(callback);}
   function createTracker(feed,storage) {
+    // This browser only. The site password is shared, so seen state is not an account and is not stored on the server.
     const key='vida-news-seen-v1:'+feed;
     let memory=new Set();
     function read() {

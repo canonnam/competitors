@@ -181,8 +181,15 @@
   function filterItems(items, {type = '', includeClosed = true} = {}) {
     return items.filter(item => (!type || item.type === type) && (includeClosed || !item.closed));
   }
+  function itemIds(data) {
+    return prepareItems(data).map(item => item.id);
+  }
   function freshIds(data, today) {
     return prepareItems(data, today).filter(item => item.fresh).map(item => item.id);
+  }
+  function visitUnseen(ids, seenBefore) {
+    const seen = new Set(Array.isArray(seenBefore) ? seenBefore.filter(id => typeof id === 'string' && id) : []);
+    return (ids || []).filter(id => !seen.has(id));
   }
   function homeMeta(data, today) {
     const items = prepareItems(data, today);
@@ -199,22 +206,23 @@
     const homeBadge = $('home-support-resources-new');
     const detail = !!grid;
     if (!detail && !homeMetaNode && !homeBadge) return;
-    const tracker = win.NewsBadge?.create('support-resources', {detail:false, seenLabel:'후원·재능기부'});
+    const tracker = win.NewsBadge?.create('support-resources', {badge: homeBadge || undefined, detail, seenLabel:'후원·재능기부 페이지'});
     let loaded = null;
-    function paintHomeBadge(count) {
-      if (!homeBadge) return;
-      homeBadge.hidden = count === 0;
-      const label = '최근 7일 이내 신규 ' + count + '건';
-      homeBadge.title = count ? label : '';
-      homeBadge.setAttribute('aria-label', count ? label : '최근 7일 이내 신규 없음');
+    let acknowledged = null;
+    function readSeen() {
+      try {
+        const saved = JSON.parse(win.localStorage.getItem('vida-news-seen-v1:support-resources') || '[]');
+        return new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && id) : []);
+      } catch {
+        return new Set();
+      }
     }
     function sync(data) {
       loaded = data;
-      const today = seoulToday();
-      const ids = freshIds(data, today);
+      const ids = itemIds(data);
+      if (detail && acknowledged === null) acknowledged = readSeen();
       tracker?.update(ids);
-      paintHomeBadge(ids.length);
-      if (homeMetaNode) homeMetaNode.textContent = homeMeta(data, today);
+      if (homeMetaNode) homeMetaNode.textContent = homeMeta(data, seoulToday());
     }
     const status = $('support-status');
     const toolbar = $('support-toolbar');
@@ -253,9 +261,12 @@
       const head = el('div', 'support-card-head');
       const title = el('h2');
       title.append(el('span', 'support-title', item.title || '제목 없음'));
-      if (item.fresh) title.append(el('span', 'news-new-mark', 'N'));
-      const freshMark = title.querySelector('.news-new-mark');
-      if (freshMark) freshMark.setAttribute('aria-label', '최근 7일 이내 수집');
+      if (detail && acknowledged && !acknowledged.has(item.id)) {
+        const mark = el('span', 'news-new-mark', 'N');
+        mark.title = '이 브라우저에서 아직 확인하지 않은 항목';
+        mark.setAttribute('aria-label', '확인하지 않은 항목');
+        title.append(mark);
+      }
       head.append(title);
       if (item.type) head.append(el('span', 'ui-status', item.type));
       card.append(head);
@@ -322,6 +333,7 @@
       }).then(data => {
         if (detail) {
           items = prepareItems(data, today);
+          if (acknowledged === null) acknowledged = readSeen();
           ready = true;
           if (updated) {
             if (dateOk(data.updated)) {
@@ -346,5 +358,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, FRESH_DAYS, prepareItems, filterItems, deadlineLabel, scheduleText, freshIds, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, FRESH_DAYS, prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });

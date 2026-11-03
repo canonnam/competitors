@@ -57,9 +57,9 @@
     }
     return [...new Set(ids)];
   }
-  function supportResourceIds(data, today) {
+  function supportResourceIds(data) {
     const api = globalThis.SupportResources;
-    return api ? api.freshIds(data, today) : [];
+    return api ? api.itemIds(data) : [];
   }
   const key = 'vida-navigation-v1';
   const ids = new Set(features.map(item => item.id));

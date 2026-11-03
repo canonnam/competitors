@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const {
-  prepareItems, filterItems, deadlineLabel, scheduleText, freshIds, homeMeta, safeHref, canonicalUrl, seoulToday
+  prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, homeMeta, safeHref, canonicalUrl, seoulToday
 } = require('./assets/support-resources.js');
 const {features, matchFeatures, supportResourceIds} = require('./assets/navigation.js');
 
@@ -65,7 +65,8 @@ test('the 2026-11-03 collection keeps the eight supplied notices', () => {
   assert.equal(new Set(rows.map(entry => canonicalUrl(entry.url))).size, 8);
   assert.ok(rows.every(entry => safeHref(entry.url)));
   assert.equal(homeMeta(stored, TODAY), '최근 수집 2026. 11. 03 · 8건');
-  assert.deepEqual(supportResourceIds(stored, TODAY), freshIds(stored, TODAY));
+  assert.deepEqual(supportResourceIds(stored), itemIds(stored));
+  assert.deepEqual(itemIds(stored), rows.map(entry => entry.id));
   assert.equal(homeMeta({items: []}, TODAY), '아직 등록된 항목이 없어요');
   const page = fs.readFileSync('support-resources.html', 'utf8');
   assert.match(page, /아직 등록된 항목이 없어요\. 평일마다 새 항목이 추가됩니다\./);
@@ -109,12 +110,15 @@ test('collected dates lead, closed notices sink, and deadlines keep D-day labels
   assert.deepEqual(open.map(entry => entry.collectedDate), [...open.map(entry => entry.collectedDate)].sort((a, b) => b.localeCompare(a)));
 });
 
-test('a seven day collection window marks items and matches the shared menu ids', () => {
+test('menu identities are every merged notice and this visit still lists unseen ids', () => {
   const items = prepareItems(sample, TODAY);
-  assert.deepEqual(items.filter(entry => entry.fresh).map(entry => entry.id), ['performance', 'script', 'today', 'past']);
+  assert.deepEqual(new Set(itemIds(sample)), new Set(items.map(entry => entry.id)));
+  assert.deepEqual(supportResourceIds(sample), itemIds(sample));
+  assert.ok(supportResourceIds(sample).includes('older'));
   assert.equal(items.find(entry => entry.id === 'older').fresh, false);
-  assert.equal(items.find(entry => entry.id === 'today').fresh, true);
-  assert.deepEqual(supportResourceIds(sample, TODAY), freshIds(sample, TODAY));
+  assert.deepEqual(items.filter(entry => entry.fresh).map(entry => entry.id), ['performance', 'script', 'today', 'past']);
+  assert.deepEqual(visitUnseen(itemIds(sample), ['performance', 'script']), itemIds(sample).filter(id => id !== 'performance' && id !== 'script'));
+  assert.deepEqual(visitUnseen(['a'], ['a']), []);
   assert.equal(homeMeta(sample, TODAY), '최근 수집 2026. 11. 03 · 6건');
   assert.equal(seoulToday(new Date('2026-11-02T15:30:00Z')), '2026-11-03');
   assert.equal(seoulToday(new Date('2026-11-02T14:30:00Z')), '2026-11-02');
@@ -145,7 +149,7 @@ test('home, menu and cache keys expose the support resource list', () => {
   const home = fs.readFileSync('index.html', 'utf8');
   assert.match(home, /<div class="card-heading"><h2>후원·재능기부<\/h2><span id="home-support-resources-new" class="news-new-mark"/);
   assert.match(home, /id="home-support-resources-meta" class="meta">최근 수집 확인 중/);
-  assert.ok(home.includes('/assets/support-resources.js?v=20261103-support8'));
+  assert.ok(home.includes('/assets/support-resources.js?v=20261104-seen'));
   assert.ok(home.indexOf('/assets/news-badge.js') < home.indexOf('/assets/support-resources.js'));
   assert.ok(home.indexOf('/assets/support-resources.js') < home.indexOf('/assets/navigation.js'));
   for (const file of fs.readdirSync('.').filter(name => name.endsWith('.html'))) {
@@ -156,7 +160,42 @@ test('home, menu and cache keys expose the support resource list', () => {
     }
     assert.equal((html.match(/\/assets\/support-resources\.js/g) || []).length, 1, file);
     assert.ok(html.indexOf('/assets/support-resources.js') < html.indexOf('/assets/navigation.js'), file);
-    assert.ok(html.includes('/assets/navigation.js?v=20261103-support8'), file);
-    assert.ok(html.includes('/assets/news-badge.js?v=20261103-support8'), file);
+    assert.ok(html.includes('/assets/navigation.js?v=20261104-seen'), file);
+    assert.ok(html.includes('/assets/news-badge.js?v=20261104-seen'), file);
   }
+});
+
+test('confirming support notices clears only that browser and a new id returns', () => {
+  const vm = require('node:vm');
+  function memory() {const values=new Map();return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};}
+  function boot(saved) {
+    const listeners={};
+    const context={localStorage:saved,document:{hidden:false},addEventListener(name,fn){(listeners[name]??=[]).push(fn);}};
+    vm.runInNewContext(fs.readFileSync('assets/news-badge.js','utf8'), context);
+    return {context, listeners};
+  }
+  const ids = itemIds(stored);
+  const browserA = memory();
+  const first = boot(browserA);
+  const badge={hidden:true,title:'',setAttribute(){}};
+  const home=first.context.NewsBadge.create('support-resources',{badge,seenLabel:'후원·재능기부 페이지'});
+  home.update(ids);
+  assert.equal(badge.hidden, false);
+  assert.equal(first.context.NewsBadge.counts()['support-resources'], ids.length);
+  const browserB = memory();
+  const other = boot(browserB);
+  other.context.NewsBadge.create('support-resources',{}).update(ids);
+  assert.equal(other.context.NewsBadge.counts()['support-resources'], ids.length);
+  first.context.NewsBadge.create('support-resources',{detail:true}).update(ids);
+  home.update(ids);
+  assert.equal(badge.hidden, true);
+  assert.equal(first.context.NewsBadge.counts()['support-resources'], 0);
+  assert.equal(other.context.NewsBadge.counts()['support-resources'], ids.length);
+  const added = ids.concat(['new-notice']);
+  home.update(added);
+  assert.equal(badge.hidden, false);
+  assert.equal(first.context.NewsBadge.counts()['support-resources'], 1);
+  assert.deepEqual(visitUnseen(added, JSON.parse(browserA.getItem('vida-news-seen-v1:support-resources'))), ['new-notice']);
+  other.context.NewsBadge.create('support-resources',{}).update(added);
+  assert.equal(other.context.NewsBadge.counts()['support-resources'], added.length);
 });
