@@ -38,12 +38,42 @@
       return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : '';
     } catch { return ''; }
   }
+  function articleIds(data) {
+    const ids = [];
+    for (const idea of (data && data.ideas) || []) {
+      const ideaId = typeof idea.id === 'string' ? idea.id : '';
+      if (!ideaId) continue;
+      for (const article of idea.articles || []) {
+        if (!article || typeof article !== 'object') continue;
+        const date = typeof article.date === 'string' ? article.date : '';
+        const url = typeof article.url === 'string' ? article.url : '';
+        if (!dateOk(date) || !url) continue;
+        ids.push(ideaId + '\n' + date + '\n' + url);
+      }
+    }
+    return [...new Set(ids)];
+  }
+  function homeMeta(data) {
+    const ideas = prepareIdeas(data);
+    const latest = ideas.reduce((max, idea) => idea.lastDate > max ? idea.lastDate : max, '');
+    const shown = dateOk(latest) ? `${latest.slice(0, 4)}. ${latest.slice(5, 7)}. ${latest.slice(8, 10)}` : '확인 중';
+    return `최근 기사 ${shown} · 아이디어 ${ideas.length}개`;
+  }
   function mount(win) {
     const doc = win.document;
     const $ = id => doc.getElementById(id);
     const grid = $('trend-grid');
     const dialog = $('trend-dialog');
-    if (!grid || !dialog) return;
+    const homeMetaNode = $('home-trend-meta');
+    const detail = !!(grid && dialog);
+    if (!detail && !homeMetaNode && !$('home-trend-new')) return;
+    const tracker = win.NewsBadge?.create('trend', {badge:$('home-trend-new') || undefined, detail, seenLabel:'트렌드 페이지'});
+    let loaded = null;
+    function sync(data) {
+      loaded = data;
+      if (homeMetaNode) homeMetaNode.textContent = homeMeta(data);
+      tracker?.update(articleIds(data));
+    }
     const status = $('trend-status');
     const search = $('trend-search');
     const tags = $('trend-tags');
@@ -133,35 +163,46 @@
       empty.hidden = !ready || visible.length > 0;
       tags.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String((button.textContent === '전체' && !tag) || button.textContent === tag)));
     }
-    closeButton.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('click', event => {
-      if (event.target !== dialog) return;
-      const rect = dialog.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-    });
-    dialog.addEventListener('close', () => {
-      if (lastFocus && lastFocus.isConnected) lastFocus.focus();
-      else search.focus();
-    });
-    search.addEventListener('input', render);
-    $('trend-reset').addEventListener('click', () => { search.value = ''; tag = ''; render(); search.focus(); });
-    status.textContent = '아이디어를 불러오는 중';
-    win.fetch('/data/trend_ideas.json', {cache:'no-store'}).then(response => {
-      if (!response.ok) throw new Error('load');
-      return response.json();
-    }).then(data => {
-      ideas = prepareIdeas(data);
-      ready = true;
-      if (updated && data.updated) {
-        updated.dateTime = data.updated;
-        updated.textContent = data.updated;
-      }
-      status.textContent = '';
-      renderTags();
-      render();
-    }).catch(() => {
-      status.textContent = '아이디어를 불러오지 못했습니다. 잠시 후 다시 열어 주세요.';
-    });
+    if (detail) {
+      closeButton.addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', event => {
+        if (event.target !== dialog) return;
+        const rect = dialog.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+      });
+      dialog.addEventListener('close', () => {
+        if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+        else search.focus();
+      });
+      search.addEventListener('input', render);
+      $('trend-reset').addEventListener('click', () => { search.value = ''; tag = ''; render(); search.focus(); });
+      status.textContent = '아이디어를 불러오는 중';
+    }
+    function refresh() {
+      return win.fetch('/data/trend_ideas.json', {cache:'no-store'}).then(response => {
+        if (!response.ok) throw new Error('load');
+        return response.json();
+      }).then(data => {
+        if (detail) {
+          ideas = prepareIdeas(data);
+          ready = true;
+          if (updated && data.updated) {
+            updated.dateTime = data.updated;
+            updated.textContent = data.updated;
+          }
+          status.textContent = '';
+          renderTags();
+          render();
+        }
+        sync(data);
+      }).catch(() => {
+        if (detail && !ready) status.textContent = '아이디어를 불러오지 못했습니다. 잠시 후 다시 열어 주세요.';
+        if (homeMetaNode && !loaded) homeMetaNode.textContent = '최근 기사 연결 확인 필요';
+      });
+    }
+    refresh();
+    doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
+    win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, mount};
+  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, homeMeta, mount};
 });

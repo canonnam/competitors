@@ -40,6 +40,22 @@
     {id:'statistics', category:'research', title:'통계자료', description:'통계 문서와 표·그래프 책갈피', keywords:'입소 상담 돌봄 품질 직원 근무환경 연구'},
     {id:'trend', category:'research', title:'트렌드', description:'요양 트렌드에서 고른 시설 프로그램·홍보 아이디어', keywords:'트렌드 요양트렌드 시설아이디어 프로그램 행사 상장 가족소통'}
   ].map(item => ({...item, href:'/' + item.id + '.html'}));
+  function trendArticleIds(data) {
+    const dateOk = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+    const ids = [];
+    for (const idea of (data && data.ideas) || []) {
+      const ideaId = typeof idea.id === 'string' ? idea.id : '';
+      if (!ideaId) continue;
+      for (const article of idea.articles || []) {
+        if (!article || typeof article !== 'object') continue;
+        const date = typeof article.date === 'string' ? article.date : '';
+        const url = typeof article.url === 'string' ? article.url : '';
+        if (!dateOk(date) || !url) continue;
+        ids.push(ideaId + '\n' + date + '\n' + url);
+      }
+    }
+    return [...new Set(ids)];
+  }
   const key = 'vida-navigation-v1';
   const ids = new Set(features.map(item => item.id));
   const cleanIds = value => Array.isArray(value) ? [...new Set(value.filter(id => ids.has(id)))].slice(0, features.length) : [];
@@ -96,7 +112,7 @@
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
     const icon=(id)=>{const mark=el('span','kb-menu-icon');mark.style.setProperty('--kb-icon','url("/assets/icons/line/'+id+'.svg")');mark.setAttribute('aria-hidden','true');return mark;};
-    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch'};
+    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch',trend:'trend'};
     let newsCounts=win.NewsBadge?.counts()||{};
     function countFor(id){
       const members=id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
@@ -194,6 +210,7 @@
           else if(item.id==='naver-ads')value=text('home-keyword-status');
           else if(item.id==='search-visibility')value=/불가|실패|확인 필요/.test(text('home-visibility-status'))?'검색노출 확인 필요':text('home-visibility-next').replace(/\s*\(한국시간\)/,'');
           else if(item.id==='reputation-watch'){const state=text('home-reputation-status');value=/찾지 못했습니다/.test(state)?'부정적 언급 후보 없음':state;}
+          else if(item.id==='trend'){const meta=text('home-trend-meta');value=meta==='최근 기사 확인 중'?'':meta;}
           summary.textContent=value;summary.title=value;summary.hidden=!value;
           summary.classList.toggle('is-warning',/필요|실패|지연|불가/.test(value));
         }
@@ -265,12 +282,12 @@
     // Home collectors already fetch these feeds. On other pages load only missing summaries,
     // without acknowledging them as read; the actual feed page owns acknowledgement.
     if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
-      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch']].filter(([,id])=>current?.id!==id);
-      const trackers=feeds.map(([feed,id])=>({id,tracker:win.NewsBadge.create(feed,{detail:false})}));
+      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch'],['trend','trend']].filter(([,id])=>current?.id!==id);
+      const trackers=feeds.map(([feed,id])=>({feed,id,tracker:win.NewsBadge.create(feed,{detail:false})}));
       let loading=false;
-      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({id,tracker})=>{const response=await win.fetch('/api/'+id+'?summary=1',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(response.ok)tracker.update((await response.json()).article_ids);}));}finally{loading=false;}};
+      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({feed,id,tracker})=>{const response=await win.fetch(feed==='trend'?'/data/trend_ideas.json':'/api/'+id+'?summary=1',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)return;const data=await response.json();tracker.update(feed==='trend'?trendArticleIds(data):data.article_ids);}));}finally{loading=false;}};
       refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
     }
   }
-  return {features,categories,matchFeatures,createPreferences,mount};
+  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds};
 });

@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {prepareIdeas, filterIdeas, effectiveDate, safeHref} = require('./assets/trend.js');
+const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, homeMeta} = require('./assets/trend.js');
+const {trendArticleIds} = require('./assets/navigation.js');
 
 const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
 const ideas = prepareIdeas(data);
@@ -38,6 +39,32 @@ test('a newer article on an old idea moves that card first', () => {
   ]};
   assert.equal(prepareIdeas(sample)[0].id, 'old');
   assert.equal(prepareIdeas(sample)[0].lastDate, '2026-11-03');
+});
+
+test('article identities follow each idea article and match the menu loader', () => {
+  const ids = articleIds(data);
+  assert.equal(ids.length, 84);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(trendArticleIds(data), ids);
+  const sample = {ideas: [
+    {id:'old', articles:[{date:'2026-11-03', url:'https://example.com/new'}, {date:'2020-01-01', url:'https://example.com/old'}]},
+    {id:'recent', articles:[{date:'2026-10-01', url:'https://example.com/old'}]},
+    {id:'', articles:[{date:'2026-11-03', url:'https://example.com/skip'}]},
+    {id:'broken', articles:[null, {date:'어제', url:'https://example.com/bad'}, {date:'2026-01-02'}]}
+  ]};
+  assert.deepEqual(articleIds(sample), [
+    'old\n2026-11-03\nhttps://example.com/new',
+    'old\n2020-01-01\nhttps://example.com/old',
+    'recent\n2026-10-01\nhttps://example.com/old'
+  ]);
+  assert.deepEqual(trendArticleIds(sample), articleIds(sample));
+  assert.equal(homeMeta(data), '최근 기사 2026. 11. 01 · 아이디어 48개');
+  const html = fs.readFileSync('index.html', 'utf8');
+  assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
+  assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
+  assert.ok(html.includes('/assets/trend.js?v=20261103-trendn'));
+  assert.ok(html.indexOf('/assets/news-badge.js') < html.indexOf('/assets/trend.js'));
+  assert.ok(html.indexOf('/assets/trend.js') < html.indexOf('/assets/navigation.js'));
 });
 
 test('tag and search filters narrow the same sorted list', () => {

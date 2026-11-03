@@ -38,6 +38,28 @@ test('only a successfully displayed visible detail page acknowledges a collectio
   detail.update(['a','b']);listeners.pageshow.forEach(fn=>fn());assert.equal(badge.hidden,true);
 });
 
+test('trend unread counts stay on the shared menu until that page is read',()=>{
+  const saved=storage(),listeners={},context={localStorage:saved,document:{hidden:false},addEventListener(name,fn){(listeners[name]??=[]).push(fn);}};
+  vm.runInNewContext(fs.readFileSync('assets/news-badge.js','utf8'),context);
+  const badge={hidden:true,title:'',setAttribute(){}};
+  const home=context.NewsBadge.create('trend',{badge,seenLabel:'트렌드 페이지'});
+  home.update(['idea\n2026-11-01\nhttps://example.com/a']);
+  assert.equal(badge.hidden,false);
+  assert.match(badge.title,/트렌드 페이지를 확인하면/);
+  assert.equal(context.NewsBadge.counts().trend,1);
+  context.document.hidden=true;
+  context.NewsBadge.create('trend',{detail:true}).update(['idea\n2026-11-01\nhttps://example.com/a']);
+  assert.equal(context.NewsBadge.counts().trend,1);
+  context.document.hidden=false;
+  context.NewsBadge.create('trend',{detail:true}).update(['idea\n2026-11-01\nhttps://example.com/a','idea\n2026-11-03\nhttps://example.com/b']);
+  assert.equal(context.NewsBadge.counts().trend,0);
+  home.update(['idea\n2026-11-01\nhttps://example.com/a','idea\n2026-11-03\nhttps://example.com/b']);
+  assert.equal(badge.hidden,true);
+  home.update(['idea\n2026-11-01\nhttps://example.com/a','idea\n2026-11-03\nhttps://example.com/b','idea\n2026-11-04\nhttps://example.com/c']);
+  assert.equal(badge.hidden,false);
+  assert.equal(context.NewsBadge.counts().trend,1);
+});
+
 test('shared menu counts survive navigation and clear only the feed successfully read',()=>{
   const saved=storage(),listeners={},context={localStorage:saved,document:{hidden:false},addEventListener(name,fn){(listeners[name]??=[]).push(fn);}};
   vm.runInNewContext(fs.readFileSync('assets/news-badge.js','utf8'),context);
