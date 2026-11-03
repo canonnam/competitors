@@ -1,0 +1,25 @@
+/* Trend idea cards. Shared tokens and the feature dialog supply color, type, and modal chrome. */
+.trend-toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin:0 0 16px; }
+.trend-search { flex:1 1 240px; min-width:0; display:grid; gap:6px; font-size:14px; font-weight:700; }
+.trend-search input { width:100%; min-width:0; box-sizing:border-box; }
+.trend-tags { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+.trend-count { margin:0 0 12px; color:var(--ui-muted); font-size:14px; }
+.trend-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; align-items:stretch; }
+.trend-card { display:flex; flex-direction:column; gap:8px; min-width:0; height:100%; box-sizing:border-box; padding:16px; border:1px solid var(--ui-border); border-radius:var(--ui-card-radius); background:var(--ui-surface); color:var(--ui-text); text-align:left; text-decoration:none; cursor:pointer; font:inherit; }
+button.trend-card { width:100%; }
+.trend-card:hover { background:var(--ui-hover); }
+.trend-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.trend-card h2 { flex:1; min-width:0; margin:0; font-size:18px; line-height:1.45; font-weight:800; overflow-wrap:anywhere; }
+.trend-card .ui-status { flex:none; white-space:nowrap; background:var(--ui-status-bg); color:var(--ui-muted); border-radius:var(--ui-status-radius); padding:3px 8px; font-size:12px; font-weight:600; line-height:1.5; }
+.trend-card p { margin:0; color:var(--ui-muted); font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
+.trend-meta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin-top:auto; color:var(--ui-muted); font-size:12px; line-height:1.5; }
+.trend-tag-list { display:flex; flex-wrap:wrap; gap:6px; }
+.trend-empty { margin:8px 0 0; color:var(--ui-muted); }
+.trend-empty[hidden] { display:none; }
+.trend-articles { list-style:none; margin:0; padding:0; }
+.trend-articles li { padding:12px 0; border-top:1px solid var(--ui-border); }
+.trend-articles a { font-weight:700; overflow-wrap:anywhere; }
+.trend-article-meta { display:block; margin-top:4px; color:var(--ui-muted); font-size:13px; line-height:1.5; }
+@media (max-width:700px) {
+  .trend-grid { grid-template-columns:1fr; }
+}
