@@ -3,6 +3,14 @@
   const validIds=ids=>Array.isArray(ids)&&ids.every(id=>typeof id==='string'&&id.length>0);
   const feeds=['competitor','agency','reputation','trend'], latest=new Map(), trackers=new Map(), subscribers=new Set();
   const currentKey=feed=>'vida-news-current-v1:'+feed;
+  const koreaDay=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'});
+  function collectedToday(item,now=Date.now()) {
+    const value=item?.first_seen_at||item?.collected_at;
+    if(!value)return false;
+    const collected=new Date(value),today=new Date(now);
+    return Number.isFinite(collected.getTime())&&Number.isFinite(today.getTime())
+      &&koreaDay.format(collected)===koreaDay.format(today);
+  }
   function storage(){try{return root.localStorage;}catch{return undefined;}}
   function trackerFor(feed){if(!trackers.has(feed))trackers.set(feed,createTracker(feed,storage()));return trackers.get(feed);}
   function currentIds(feed){
@@ -53,6 +61,6 @@
     }};
   }
   if(typeof root.addEventListener==='function')root.addEventListener('storage',event=>{if(event.key===null||event.key?.startsWith('vida-news-'))publish();});
-  root.NewsBadge={create,createTracker,counts,subscribe};
-  if(typeof module!=='undefined'&&module.exports)module.exports={create,createTracker,counts,subscribe};
+  root.NewsBadge={create,createTracker,counts,subscribe,collectedToday};
+  if(typeof module!=='undefined'&&module.exports)module.exports={create,createTracker,counts,subscribe,collectedToday};
 })(globalThis);

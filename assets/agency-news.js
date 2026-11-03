@@ -11,7 +11,7 @@
   function safeUrl(value) {
     try {
       const url = new URL(value);
-      return url.protocol === 'https:' && ['www.longtermcare.or.kr','www.mohw.go.kr','www.bizinfo.go.kr','www.iris.go.kr'].includes(url.host) && !url.username && !url.password ? url.href : '';
+      return url.protocol === 'https:' && ['www.longtermcare.or.kr','www.mohw.go.kr','www.bizinfo.go.kr','www.iris.go.kr','www.incheon.go.kr','www.anyang.go.kr'].includes(url.host) && !url.username && !url.password ? url.href : '';
     } catch { return ''; }
   }
   function unreadSupport(data, readIds) {
@@ -126,6 +126,10 @@
       const article=make('article','agency-item'), meta=make('div','agency-item-meta');
       const time=make('time','',item.published_at);time.dateTime=item.published_at;
       meta.append(time,make('span','',item.agency+' · '+item.source));
+      if(root.NewsBadge?.collectedToday(item)) {
+        const mark=make('span','news-new-mark','N');
+        mark.title='오늘 처음 수집한 글 (한국시간)';mark.setAttribute('aria-label',mark.title);meta.append(mark);
+      }
       if(item.pinned)meta.append(make('span','agency-pin','게시판 공지'));
       if(item.kind==='support') {
         article.classList.add('support-item');
