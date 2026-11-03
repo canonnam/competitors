@@ -374,7 +374,7 @@ class App(SimpleHTTPRequestHandler):
         public_pages.add("recipient-history.html")
         public_pages.add("bank-transactions.html")
         public_pages.add("clarity-report.html")
-        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html', 'trend.html'})
+        public_pages.update({'support-projects.html', 'support-share.html', 'payroll-insurance.html', 'staff-eval.html', 'staff-eval-session.html', 'trend.html', 'support-resources.html'})
         allowed_page = path.parent == ROOT and path.name in public_pages
         allowed_root_asset = path.parent == ROOT and path.name in {"robots.txt", "favicon.ico"}
         allowed_asset = path.is_relative_to(ROOT / "assets") and path.suffix.lower() in {".css", ".js", ".mjs", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".woff2"}
@@ -390,7 +390,8 @@ class App(SimpleHTTPRequestHandler):
             "templates.json", "NanumGothic-Regular.ttf", "NanumGothic-Bold.ttf",
         })
         allowed_trend_data = path == ROOT / "data" / "trend_ideas.json"
-        if not (allowed_page or allowed_root_asset or allowed_asset or allowed_trend_data) or not path.is_file():
+        allowed_support_data = path == ROOT / "data" / "support_resources.json"
+        if not (allowed_page or allowed_root_asset or allowed_asset or allowed_trend_data or allowed_support_data) or not path.is_file():
             self.send_error(404)
             return None
         return super().send_head()

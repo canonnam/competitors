@@ -29,6 +29,7 @@
     {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 화면 비교와 실입력 사용성 테스트', keywords:'UIUX UX 사용성 화면비교 UXTEST 실입력 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},
     {id:'competitor-news', category:'market', title:'경쟁사 및 요양원 뉴스', description:'업계 소식과 사건·안전·정책 기사', keywords:'경쟁 뉴스 낙상 제도 사고'},
     {id:'agency-news', category:'support', title:'건보공단·복지부 뉴스·지원사업', description:'공공기관 소식과 지원사업 공고', keywords:'정부 정책 공모 장기요양 제도'},
+    {id:'support-resources', category:'support', title:'후원·재능기부', description:'요양원에서 신청할 수 있는 재능기부·후원품·무료공연·체험', keywords:'재능기부 자원봉사 후원 후원품 물품 무료공연 문화프로그램 체험 기부 봉사 요양원'},
     {id:'ai-hub-data', category:'research', title:'AI 허브 활용데이터', description:'요양원 ERP와 연결할 데이터셋·활용안', keywords:'AI Hub 인공지능 연구 건강 간호'},
     {id:'naver-ads', category:'marketing', title:'네이버 광고분석', description:'월별 광고 추이와 소재별 성과', keywords:'마케팅 파워링크 플레이스 광고비 인천'},
     {id:'clarity-report', category:'marketing', title:'홈페이지 방문·상담 분석', description:'방문 흐름·전화 클릭·상담 완료와 개선 후보', keywords:'Clarity 클라리티 홈페이지 방문자 유입 스크롤 이벤트 보고서 인천 안양 전화 전환'},
@@ -55,6 +56,10 @@
       }
     }
     return [...new Set(ids)];
+  }
+  function supportResourceIds(data, today) {
+    const api = globalThis.SupportResources;
+    return api ? api.freshIds(data, today) : [];
   }
   const key = 'vida-navigation-v1';
   const ids = new Set(features.map(item => item.id));
@@ -112,7 +117,7 @@
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
     const icon=(id)=>{const mark=el('span','kb-menu-icon');mark.style.setProperty('--kb-icon','url("/assets/icons/line/'+id+'.svg")');mark.setAttribute('aria-hidden','true');return mark;};
-    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch',trend:'trend'};
+    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch',trend:'trend','support-resources':'support-resources'};
     let newsCounts=win.NewsBadge?.counts()||{};
     function countFor(id){
       const members=id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
@@ -211,6 +216,7 @@
           else if(item.id==='search-visibility')value=/불가|실패|확인 필요/.test(text('home-visibility-status'))?'검색노출 확인 필요':text('home-visibility-next').replace(/\s*\(한국시간\)/,'');
           else if(item.id==='reputation-watch'){const state=text('home-reputation-status');value=/찾지 못했습니다/.test(state)?'부정적 언급 후보 없음':state;}
           else if(item.id==='trend'){const meta=text('home-trend-meta');value=meta==='최근 기사 확인 중'?'':meta;}
+          else if(item.id==='support-resources'){const meta=text('home-support-resources-meta');value=meta==='최근 수집 확인 중'?'':meta;}
           summary.textContent=value;summary.title=value;summary.hidden=!value;
           summary.classList.toggle('is-warning',/필요|실패|지연|불가/.test(value));
         }
@@ -282,12 +288,12 @@
     // Home collectors already fetch these feeds. On other pages load only missing summaries,
     // without acknowledging them as read; the actual feed page owns acknowledgement.
     if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
-      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch'],['trend','trend']].filter(([,id])=>current?.id!==id);
+      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch'],['trend','trend'],['support-resources','support-resources']].filter(([,id])=>current?.id!==id);
       const trackers=feeds.map(([feed,id])=>({feed,id,tracker:win.NewsBadge.create(feed,{detail:false})}));
       let loading=false;
-      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({feed,id,tracker})=>{const response=await win.fetch(feed==='trend'?'/data/trend_ideas.json':'/api/'+id+'?summary=1',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)return;const data=await response.json();tracker.update(feed==='trend'?trendArticleIds(data):data.article_ids);}));}finally{loading=false;}};
+      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({feed,id,tracker})=>{const path=feed==='trend'?'/data/trend_ideas.json':feed==='support-resources'?'/data/support_resources.json':'/api/'+id+'?summary=1';const response=await win.fetch(path,{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)return;const data=await response.json();const ids=feed==='trend'?trendArticleIds(data):feed==='support-resources'?supportResourceIds(data):data.article_ids;tracker.update(ids);}));}finally{loading=false;}};
       refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
     }
   }
-  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds};
+  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds};
 });

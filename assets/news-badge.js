@@ -1,7 +1,7 @@
 (function(root) {
   'use strict';
   const validIds=ids=>Array.isArray(ids)&&ids.every(id=>typeof id==='string'&&id.length>0);
-  const feeds=['competitor','agency','reputation','trend'], latest=new Map(), trackers=new Map(), subscribers=new Set();
+  const feeds=['competitor','agency','reputation','trend','support-resources'], latest=new Map(), trackers=new Map(), subscribers=new Set();
   const currentKey=feed=>'vida-news-current-v1:'+feed;
   function storage(){try{return root.localStorage;}catch{return undefined;}}
   function trackerFor(feed){if(!trackers.has(feed))trackers.set(feed,createTracker(feed,storage()));return trackers.get(feed);}
