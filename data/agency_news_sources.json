@@ -9,5 +9,8 @@
   {"id":"mohw_0027","agency":"보건복지부","name":"보도자료","board":"0027","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027"},
   {"id":"mohw_0003","agency":"보건복지부","name":"공지사항","board":"0003","kind":"mohw","url":"https://www.mohw.go.kr/board.es?mid=a10501010100&bid=0003"},
   {"id":"bizinfo","agency":"기업마당","name":"정부 지원사업 공고","board":"bizinfo","kind":"bizinfo","url":"https://www.bizinfo.go.kr/sii/siia/selectSIIA200View.do"},
-  {"id":"iris","agency":"IRIS","name":"국가 연구개발 사업공고","board":"iris","kind":"iris","url":"https://www.iris.go.kr/contents/retrieveBsnsAncmBtinSituListView.do"}
+  {"id":"iris","agency":"IRIS","name":"국가 연구개발 사업공고","board":"iris","kind":"iris","url":"https://www.iris.go.kr/contents/retrieveBsnsAncmBtinSituListView.do"},
+  {"id":"incheon_notice","agency":"인천광역시","name":"요양·돌봄 새소식","board":"IC010101","kind":"incheon","url":"https://www.incheon.go.kr/IC010101"},
+  {"id":"anyang_notice","agency":"안양시","name":"요양·돌봄 새소식","board":"62","kind":"anyang","url":"https://www.anyang.go.kr/main/selectBbsNttList.do?bbsNo=62&key=259"},
+  {"id":"anyang_health","agency":"안양시","name":"보건소 요양 관련 공지","board":"108","kind":"anyang","url":"https://www.anyang.go.kr/health/selectBbsNttList.do?bbsNo=108&key=1369"}
 ]

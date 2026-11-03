@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import ssl
 import threading
 import urllib.parse
 import urllib.request
@@ -24,7 +25,9 @@ BOOTSTRAP_PAGES = 2
 MAX_BYTES = 2_000_000
 LOG = logging.getLogger('agency_news')
 SYNC_LOCK = threading.Lock()
-ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr', 'www.iris.go.kr'}
+ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr', 'www.iris.go.kr',
+                 'www.incheon.go.kr', 'www.anyang.go.kr'}
+CITY_KINDS = {'incheon', 'anyang'}
 
 
 class Node:
@@ -92,7 +95,14 @@ class BoardRedirect(urllib.request.HTTPRedirectHandler):
 def fetch_html(url):
     request = urllib.request.Request(checked_url(url), headers={
         'User-Agent': 'TheVidaKnowledgeBase/1.0 (daily public board reader)', 'Accept': 'text/html'})
-    with urllib.request.build_opener(BoardRedirect()).open(request, timeout=20) as response:
+    handlers = [BoardRedirect()]
+    if urllib.parse.urlsplit(url).netloc == 'www.anyang.go.kr':
+        # The city's TLS endpoint needs OpenSSL's standard cipher set. Keep
+        # certificate/hostname verification and the default TLS minimum intact.
+        context = ssl.create_default_context()
+        context.set_ciphers('DEFAULT')
+        handlers.append(urllib.request.HTTPSHandler(context=context))
+    with urllib.request.build_opener(*handlers).open(request, timeout=20) as response:
         raw = response.read(MAX_BYTES+1)
         charset = response.headers.get_content_charset() or 'utf-8'
     if len(raw) > MAX_BYTES:
@@ -101,7 +111,7 @@ def fetch_html(url):
 
 
 def listing_url(source):
-    if source['kind'] == 'mohw':
+    if source['kind'] == 'mohw' or source['kind'] in CITY_KINDS:
         return source['url']
     return 'https://www.longtermcare.or.kr/npbs/cms/board/board/Board.jsp?' + urllib.parse.urlencode({
         'communityKey': source['board'], 'act': 'LIST', 'pageNum': 1, 'pageSize': 10})
@@ -116,12 +126,25 @@ def valid_post_url(href, source, base):
             raise ValueError('Unexpected NHIS post link')
         post_id = query.get('boardId', [''])[0]
         keep = {'communityKey': source['board'], 'boardId': post_id, 'act': 'VIEW'}
-    else:
+    elif source['kind'] == 'mohw':
         if parsed.netloc != 'www.mohw.go.kr' or parsed.path != '/board.es' or query.get('bid') != [source['board']] or query.get('act') != ['view']:
             raise ValueError('Unexpected MOHW post link')
         post_id = query.get('list_no', [''])[0]
         keep = {'mid': urllib.parse.parse_qs(urllib.parse.urlsplit(source['url']).query)['mid'][0],
                 'bid': source['board'], 'act': 'view', 'list_no': post_id}
+    elif source['kind'] == 'incheon':
+        if parsed.netloc != 'www.incheon.go.kr' or parsed.path != '/' + source['board'] + '/view':
+            raise ValueError('Unexpected Incheon post link')
+        post_id = query.get('nttNo', [''])[0]
+        keep = {'nttNo': post_id}
+    elif source['kind'] == 'anyang':
+        listing = urllib.parse.urlsplit(source['url'])
+        if parsed.netloc != 'www.anyang.go.kr' or parsed.path != listing.path.replace('List.do', 'View.do') or query.get('bbsNo') != [source['board']]:
+            raise ValueError('Unexpected Anyang post link')
+        post_id = query.get('nttNo', [''])[0]
+        keep = {'key': urllib.parse.parse_qs(listing.query)['key'][0], 'bbsNo': source['board'], 'nttNo': post_id}
+    else:
+        raise ValueError('Unknown public board')
     if not post_id.isdigit():
         raise ValueError('Missing post identifier')
     return source['id'] + ':' + post_id, urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(keep), ''))
@@ -180,6 +203,90 @@ def mohw_detail(html):
     return heading.text(), content.text()
 
 
+def city_search_url(source, keyword):
+    parsed = urllib.parse.urlsplit(source['url'])
+    query = dict(urllib.parse.parse_qsl(parsed.query))
+    if source['kind'] == 'incheon':
+        query.update(srchKey='srchSj', srchWord=keyword, curPage='1')
+    else:
+        query.update(searchCnd='SJ', searchKrwd=keyword, pageIndex='1')
+    return urllib.parse.urlunsplit(parsed._replace(query=urllib.parse.urlencode(query)))
+
+
+def parse_city_list(html, source, base):
+    root = Document(html).root
+    board = next((table for table in root.all('table')
+                  if table.has_class('p-table') or any('제목' in caption.text() for caption in table.all('caption'))), None)
+    if board is None:
+        raise ValueError('Missing city notice table; previous records retained')
+    rows = []
+    for row in board.all('tr'):
+        cells = list(row.all('td'))
+        link = next((a for a in row.all('a') if 'nttNo=' in a.attrs.get('href', '')), None)
+        if link is None:
+            if cells and not any(text in row.text() for text in ('게시물이 없습니다', '검색된 결과가 없습니다', '등록된 글이 없습니다')):
+                raise ValueError('Incomplete city notice row')
+            continue
+        identity, url = valid_post_url(link.attrs['href'], source, base)
+        day_index = next((i for i, cell in enumerate(cells) if re.fullmatch(r'\d{4}[.-]\d{2}[.-]\d{2}', cell.text())), None)
+        if day_index is None or not link.text():
+            raise ValueError('Missing city notice date or title')
+        published = date.fromisoformat(cells[day_index].text().replace('.', '-')).isoformat()
+        department = cells[day_index-1].text() if source['kind'] == 'incheon' else (cells[2].text() if len(cells) > 2 else '')
+        rows.append({'id': identity, 'url': url, 'title': link.text(), 'published_at': published,
+                     'pinned': cells[0].text() == '공지', 'department': department,
+                     'source_id': source['id'], 'source': source['name'], 'agency': source['agency']})
+    empty_text = board.text() + ' ' + ' '.join(node.text() for node in root.all() if node.has_class('p-empty'))
+    if not rows and not any(text in empty_text for text in ('게시물이 없습니다', '검색된 결과가 없습니다', '등록된 글이 없습니다')):
+        raise ValueError('Unrecognized empty city notice table')
+    parsed_base = urllib.parse.urlsplit(base)
+    query = urllib.parse.parse_qs(parsed_base.query)
+    page_key = 'curPage' if source['kind'] == 'incheon' else 'pageIndex'
+    next_page = str(int(query.get(page_key, ['1'])[0]) + 1)
+    for link in root.all('a'):
+        parsed = urllib.parse.urlsplit(urllib.parse.urljoin(base, link.attrs.get('href', '')))
+        params = urllib.parse.parse_qs(parsed.query)
+        # Keep the search term and board fixed when following pagination.
+        if (parsed.netloc == parsed_base.netloc and parsed.path == parsed_base.path
+                and params.get(page_key) == [next_page]
+                and all(params.get(key) == values for key, values in query.items() if key != page_key)):
+            return rows, checked_url(urllib.parse.urlunsplit(parsed))
+    return rows, None
+
+
+def collect_city(source, seen, now, fetcher, stop=None):
+    selected, scanned = {}, {}
+    cutoff = (now - timedelta(days=365)).date().isoformat()
+    for keyword in ('요양', '돌봄', '사회복지시설'):
+        url = city_search_url(source, keyword)
+        for page in range(1, MAX_PAGES+1):
+            if stop and stop.is_set():
+                raise InterruptedError()
+            rows, following = parse_city_list(fetcher(url), source, url)
+            reached_seen = any(not row['pinned'] and row['id'] in seen for row in rows)
+            for row in rows:
+                if row['published_at'] > now.date().isoformat() or row['id'] in scanned:
+                    continue
+                signature = fingerprint(row)
+                scanned[row['id']] = signature
+                if seen.get(row['id']) == signature or (not seen and row['published_at'] < cutoff and not row['pinned']):
+                    continue
+                # City-wide boards also contain unrelated childcare and hospital notices.
+                if not matches(row['title'], ('요양원', '장기요양', '노인요양', '요양시설', '요양보호사',
+                                              '요양요원', '노인의료복지시설', '통합돌봄', '의료요양', '사회복지시설')):
+                    continue
+                topics, basis = relevance(row['title'], '', source)
+                if topics:
+                    row.update(topics=topics, match_basis=basis, collected_at=now.isoformat())
+                    selected[row['id']] = row
+            if not following or (not seen and (page >= BOOTSTRAP_PAGES or all(row['published_at'] < cutoff for row in rows if not row['pinned']))) or (seen and reached_seen):
+                break
+            url = following
+        else:
+            raise ValueError('City pagination limit reached; retry required')
+    return list(selected.values()), scanned
+
+
 CARE_TERMS = ('장기요양', '노인요양', '요양원', '요양시설', '노인의료복지시설', '시설급여', '재가급여',
               '요양보호사', '통합돌봄', '노인돌봄', '지역돌봄', '방문요양', '방문간호', '주야간보호',
               '치매', '고령친화', '복지용구', '노인학대', '사회복지시설', '요양병원')
@@ -225,6 +332,8 @@ def fingerprint(item):
 
 
 def collect(source, seen, now, fetcher=fetch_html, stop=None):
+    if source['kind'] in CITY_KINDS:
+        return collect_city(source, seen, now, fetcher, stop)
     if source['kind'] == 'bizinfo':
         import business_support
         return business_support.collect(source, seen, now, fetcher, stop)
@@ -355,9 +464,11 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
                                     'recommendation': '추천 제외 · 현재 기준 미충족',
                                     'reasons': ['현재 회사 조건·추천 기준 또는 접수기간에 해당하지 않아 추천에서 제외했습니다.'],
                                     'checks': ['소재지, 사업 분야와 신청 조건은 원문에서 확인해주세요.']}
-                        if exists and item.get('kind') == 'support':
+                        if exists:
                             previous = json.loads(exists[0])
                             item['first_seen_at'] = previous.get('first_seen_at', previous['collected_at'])
+                        else:
+                            item['first_seen_at'] = item.get('first_seen_at', item['collected_at'])
                         added += int(not exists)
                         db.execute('INSERT OR REPLACE INTO articles VALUES(?,?,?)',
                                    (item['id'], item['published_at'], json.dumps(item, ensure_ascii=False)))

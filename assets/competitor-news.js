@@ -104,6 +104,11 @@
       const dateLine = make('div', 'date');
       const time = make('time', '', date(item.published_at));
       time.dateTime = item.published_at; dateLine.append(time);
+      if (root.NewsBadge?.collectedToday(item)) {
+        const mark = make('span', 'news-new-mark', 'N');
+        mark.title = '오늘 처음 수집한 글 (한국시간)'; mark.setAttribute('aria-label', mark.title);
+        dateLine.append(' ', mark);
+      }
       article.append(dateLine, make('h2', '', item.title));
       if (item.reviewed && item.summary) article.append(make('p', '', item.summary));
       const labels = make('div', 'labels');

@@ -34,6 +34,25 @@ def entry(identity, title='장기요양기관 평가 안내', pinned=False, day=
     return (str(identity), title, day, pinned)
 
 
+def city_page(source, entries, base=None, following=None):
+    rows = []
+    for identity, title, day, pinned in entries:
+        href = ('/' + source['board'] + '/view?nttNo=' + identity if source['kind'] == 'incheon'
+                else './selectBbsNttView.do?bbsNo=' + source['board'] + '&nttNo=' + identity)
+        middle = '<td>복지</td>' if source['kind'] == 'incheon' else ''
+        rows.append(f'<tr><td>{"공지" if pinned else identity}</td>{middle}<td class="p-subject"><a href="{escape(href)}">{escape(title)}</a></td>'
+                    f'<td>노인복지과</td>' + ('' if source['kind'] == 'incheon' else '<td>파일</td>') + f'<td>{day}</td><td>10</td></tr>')
+    html = '<table class="p-table"><caption>새소식 목록 - 번호, 제목, 작성일</caption><tbody>' + ''.join(rows) + '</tbody></table>'
+    if not entries:
+        html += '<div class="p-empty">등록된 게시물이 없습니다.</div>'
+    if following:
+        parsed = news.urllib.parse.urlsplit(base)
+        query = dict(news.urllib.parse.parse_qsl(parsed.query))
+        query['curPage' if source['kind'] == 'incheon' else 'pageIndex'] = str(following)
+        html += '<a href="' + escape(news.urllib.parse.urlunsplit(parsed._replace(query=news.urllib.parse.urlencode(query)))) + '">다음</a>'
+    return html
+
+
 class AgencyNewsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -46,10 +65,10 @@ class AgencyNewsTests(unittest.TestCase):
             return news.states(db)
 
     def test_requested_nine_sources_and_distinct_board_identifiers(self):
-        self.assertEqual(len(news.SOURCES), 11)
-        self.assertEqual({s['board'] for s in news.SOURCES}, {'B0152','B0153','B0045','B0010','B0017','B0018','B0019','0027','0003','bizinfo','iris'})
+        self.assertEqual(len(news.SOURCES), 14)
+        self.assertEqual({s['board'] for s in news.SOURCES}, {'B0152','B0153','B0045','B0010','B0017','B0018','B0019','0027','0003','bizinfo','iris','IC010101','62','108'})
         self.assertIn('/npbs/e/d/320/nped320m01.web', news.SOURCES[1]['url'])
-        self.assertEqual(len({s['id'] for s in news.SOURCES}), 11)
+        self.assertEqual(len({s['id'] for s in news.SOURCES}), 14)
 
     def test_nhis_self_closing_title_cells_pins_and_next_page(self):
         raw = nhis_page([entry(100, pinned=True), entry(99)], 2)
@@ -89,6 +108,64 @@ class AgencyNewsTests(unittest.TestCase):
         for url in ['http://www.mohw.go.kr/', 'https://127.0.0.1/', 'https://www.mohw.go.kr.evil.test/', 'https://user@www.mohw.go.kr/']:
             with self.assertRaises(ValueError): news.checked_url(url)
 
+    def test_city_tables_dates_canonical_links_and_verified_empty_results(self):
+        for source in [s for s in news.SOURCES if s['kind'] in news.CITY_KINDS]:
+            with self.subTest(source=source['id']):
+                base = news.city_search_url(source, '요양')
+                raw = city_page(source, [entry(7, '요양시설 감염 예방 공지')], base, 2)
+                rows, following = news.parse_city_list(raw, source, base)
+                self.assertEqual(rows[0]['title'], '요양시설 감염 예방 공지')
+                self.assertEqual(rows[0]['published_at'], '2026-09-08')
+                self.assertNotIn('searchKrwd', rows[0]['url'])
+                self.assertTrue(following)
+                self.assertEqual(news.parse_city_list(city_page(source, []), source, base), ([], None))
+                for broken in ['<html>점검 중</html>', raw.replace('2026-09-08', '2026-99-08'),
+                               raw.replace('nttNo=7', 'nttNo=bad'), '<table class="p-table"><caption>제목</caption></table>']:
+                    with self.assertRaises(ValueError):
+                        news.parse_city_list(broken, source, base)
+                if source['kind'] == 'anyang':
+                    with self.assertRaises(ValueError):
+                        news.parse_city_list(raw.replace('bbsNo='+source['board'], 'bbsNo=999'), source, base)
+                with self.assertRaises(ValueError):
+                    news.valid_post_url('https://www.anyang.go.kr.evil.test/view?nttNo=7', source, base)
+
+    def test_city_searches_deduplicate_relevant_notices_and_skip_unrelated_care(self):
+        source = next(s for s in news.SOURCES if s['kind'] == 'incheon')
+        rows = [entry(1,'요양시설 교육',day='2026-01-01'), entry(2,'아이돌봄서비스 모집'),
+                entry(3,'요양병원 채용 공고'), entry(4,'사회복지시설 안전점검'),
+                entry(5,'장기요양요원 지원'), entry(6,'요양원 옛 소식',day='2020-01-01')]
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return city_page(source, rows)
+        selected, scanned = news.collect(source, {}, NOW, fetch)
+        self.assertEqual({item['id'] for item in selected}, {source['id']+':'+str(i) for i in (1,4,5)})
+        self.assertEqual(len(scanned), 6)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual({news.urllib.parse.parse_qs(news.urllib.parse.urlsplit(url).query)['srchWord'][0] for url in calls}, {'요양','돌봄','사회복지시설'})
+
+    def test_city_pagination_does_not_stop_at_seen_pinned_notice(self):
+        source = next(s for s in news.SOURCES if s['id'] == 'anyang_notice')
+        seen = {source['id']+':1':'old', source['id']+':9':'old'}
+        pages = {1:[entry(9,pinned=True),entry(4)], 2:[entry(3)], 3:[entry(2),entry(1)]}
+        calls = []
+        def fetch(url):
+            query = news.urllib.parse.parse_qs(news.urllib.parse.urlsplit(url).query)
+            page = int(query['pageIndex'][0]);calls.append(page)
+            return city_page(source,pages[page],url,page+1 if page < 3 else None)
+        selected, scanned = news.collect(source, seen, NOW, fetch)
+        self.assertEqual(calls,[1,2,3]*3)
+        self.assertIn(source['id']+':2', {item['id'] for item in selected})
+
+    def test_city_failure_preserves_archive_and_successful_watermark(self):
+        source = next(s for s in news.SOURCES if s['id'] == 'anyang_notice')
+        news.sync(self.path, NOW, lambda _:city_page(source,[entry(1)]),[source])
+        before = self.state()[source['id']]['last_success']
+        news.sync(self.path, NOW+timedelta(days=1), lambda _:'<html>점검 중</html>',[source])
+        self.assertEqual(self.state()[source['id']]['last_success'],before)
+        self.assertTrue(self.state()[source['id']]['error'])
+        self.assertEqual(news.report(self.path,NOW)['total'],1)
+
     def test_restart_deduplicates_posts_and_preserves_old_records(self):
         first = news.sync(self.path, NOW, lambda _: nhis_page([entry(1)]), [NHIS])
         news.init_db(self.path)
@@ -118,10 +195,17 @@ class AgencyNewsTests(unittest.TestCase):
 
     def test_changed_title_refreshes_existing_post_without_duplicate(self):
         news.sync(self.path, NOW, lambda _: nhis_page([entry(1)]), [NHIS])
-        news.sync(self.path, NOW, lambda _: nhis_page([entry(1,'수정된 평가 안내')]), [NHIS])
+        # Also exercise legacy rows that predate first_seen_at.
+        with news.connect(self.path) as db:
+            row = db.execute('SELECT payload FROM articles').fetchone()
+            item = json.loads(row[0]); item.pop('first_seen_at')
+            db.execute('UPDATE articles SET payload=?', (json.dumps(item),))
+        news.sync(self.path, NOW+timedelta(days=1), lambda _: nhis_page([entry(1,'수정된 평가 안내')]), [NHIS])
         report = news.report(self.path, NOW)
         self.assertEqual(report['total'], 1)
         self.assertEqual(report['items'][0]['title'], '수정된 평가 안내')
+        self.assertEqual(report['items'][0]['first_seen_at'], NOW.isoformat())
+        self.assertEqual(report['items'][0]['collected_at'], (NOW+timedelta(days=1)).isoformat())
         self.assertEqual(report['article_ids'], ['nhis_B0152:1'])
         self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], report['article_ids'])
 
@@ -179,7 +263,7 @@ class AgencyNewsTests(unittest.TestCase):
                     self.assertIn('noindex',response.headers['X-Robots-Tag'])
                     if method=='HEAD':self.assertEqual(raw,b'')
                     else:
-                        body=json.loads(raw);self.assertEqual(len(body['sources']),11);self.assertEqual('items' in body,'summary' not in route)
+                        body=json.loads(raw);self.assertEqual(len(body['sources']),14);self.assertEqual('items' in body,'summary' not in route)
                 for route in ['/agency_news.py','/data/agency_news_sources.json','/business_support.py','/iris_support.py','/data/company_support_profile.json']:
                     conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5);conn.request('GET',route,headers={'Cookie':cookie})
                     response=conn.getresponse();response.read();conn.close();self.assertEqual(response.status,404)

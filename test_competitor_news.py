@@ -4,6 +4,7 @@ from email.utils import format_datetime
 from html import escape
 import http.client
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -12,6 +13,7 @@ from unittest.mock import patch
 
 import app
 import competitor_news as news
+import facility_access
 
 NOW = datetime(2026, 9, 8, 18, tzinfo=news.KST)
 SEED_COUNT = len(json.loads((news.ROOT / 'data/competitor_news_seed.json').read_text(encoding='utf-8')))
@@ -257,10 +259,22 @@ class NewsEndpointTests(unittest.TestCase):
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
-                with patch.object(news, 'db_path', return_value=path):
+                with patch.object(news, 'db_path', return_value=path), patch.dict(os.environ, {
+                        facility_access.HASH_ENV: facility_access.make_password_hash('competitor-news-test'),
+                        'SITE_ACCESS_DB_PATH': str(Path(tmp) / 'access.db'), 'RAILWAY_ENVIRONMENT_ID': ''}):
+                    conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=5)
+                    conn.request('GET', '/api/competitor-news')
+                    response = conn.getresponse(); response.read(); conn.close()
+                    self.assertEqual(response.status, 401)
+                    conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=5)
+                    conn.request('POST', facility_access.PREFIX+'session', json.dumps({'password':'competitor-news-test'}),
+                                 {'Content-Type':'application/json','Origin':f'http://127.0.0.1:{server.server_port}'})
+                    response = conn.getresponse(); response.read(); conn.close()
+                    self.assertEqual(response.status, 200)
+                    cookie = response.headers['Set-Cookie'].split(';')[0]
                     for method, route in [('GET', '/api/competitor-news'), ('HEAD', '/api/competitor-news'), ('GET', '/api/competitor-news?summary=1')]:
                         conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=5)
-                        conn.request(method, route)
+                        conn.request(method, route, headers={'Cookie':cookie})
                         response = conn.getresponse(); raw = response.read()
                         self.assertEqual(response.status, 200)
                         self.assertEqual(response.headers['Cache-Control'], 'no-store')
@@ -274,7 +288,7 @@ class NewsEndpointTests(unittest.TestCase):
                         conn.close()
                     for route in ['/competitor_news.py', '/data/news_targets.json', '/data/competitor_news_seed.json']:
                         conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=5)
-                        conn.request('GET', route)
+                        conn.request('GET', route, headers={'Cookie':cookie})
                         response = conn.getresponse(); response.read()
                         self.assertEqual(response.status, 404)
                         conn.close()

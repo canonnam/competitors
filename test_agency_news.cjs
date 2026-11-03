@@ -23,10 +23,12 @@ test('badge reports incomplete, failed, disabled and overdue checks accurately',
 });
 
 test('links can only open the requested official domains',()=>{
-  for(const value of ['javascript:alert(1)','https://example.com','https://www.mohw.go.kr.evil.test/','https://user@www.mohw.go.kr/'])assert.equal(safeUrl(value),'');
+  for(const value of ['javascript:alert(1)','https://example.com','https://www.mohw.go.kr.evil.test/','https://user@www.mohw.go.kr/','https://www.anyang.go.kr.evil.test/','http://www.incheon.go.kr/'])assert.equal(safeUrl(value),'');
   assert.equal(safeUrl('https://www.mohw.go.kr/board.es?bid=0027'),'https://www.mohw.go.kr/board.es?bid=0027');
   assert.ok(safeUrl('https://www.bizinfo.go.kr/sii/siia/selectSIIA200View.do'));
   assert.ok(safeUrl('https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=023937&ancmPrg='));
+  assert.ok(safeUrl('https://www.incheon.go.kr/IC010101/view?nttNo=2046320'));
+  assert.ok(safeUrl('https://www.anyang.go.kr/main/selectBbsNttView.do?bbsNo=62&key=259&nttNo=461659'));
 });
 
 test('support alerts ignore read and expired items and preserve public news filtering',()=>{

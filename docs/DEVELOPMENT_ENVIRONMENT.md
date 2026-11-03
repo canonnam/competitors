@@ -186,3 +186,10 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 ## 검색 콘텐츠 품질 기록 (2026-10-22)
 
 기존 search-visibility SQLite의 content_quality_events에 지점별 검증 결과를 추가 저장한다. 기존 인증을 통과한 동일 출처 POST /api/search-visibility/content-quality 또는 record_content_quality WebMCP로 등록하며 GET /api/search-visibility의 AI items[].content_quality에 최신 지점 기록을 연결한다. 측정값은 변경하지 않는다. 추가 환경 변수·외부 서비스·새 DB 파일은 없다. 관리 폴더 QUALITY_PUBLISH.md와 publish_quality.py에 인증된 Railway CLI 대체 게시 절차를 기록한다.
+
+
+## 지자체 요양 공지 수집 (2026-11-03)
+
+- 기존 `agency_news.py`에 인천시 새소식·안양시 새소식/보건소 3개 출처를 추가한다. 새 모듈·DB·환경 변수 없이 동일 `/data/agency-news.db`와 매일 09:10 KST 스케줄을 사용한다. 출처별 요청 실패는 이전 자료를 보존한다.
+- 안양시 HTTPS에만 `ssl.create_default_context()`와 OpenSSL `DEFAULT` cipher 집합을 사용한다. 인증서 검증·호스트 검증·최소 TLS 버전을 낮추지 않는다.
+- 공공기관 글 재수집 시 `first_seen_at`을 보존한다. 기존 자료의 `collected_at`을 최초 기록으로 승계하고 기존 DB 스키마는 변경하지 않는다.

@@ -2,8 +2,19 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const {createTracker}=require('./assets/news-badge.js');
+const {createTracker,collectedToday}=require('./assets/news-badge.js');
 function storage() {const data=new Map();return {getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)};}
+
+test('today collection uses Korean midnight and the original collection rather than publication or edits',()=>{
+  const now=Date.parse('2026-11-03T00:00:00+09:00');
+  assert.equal(collectedToday({collected_at:'2026-11-02T15:00:00Z',published_at:'2025-01-01'},now),true);
+  assert.equal(collectedToday({collected_at:'2026-11-02T14:59:59Z',published_at:'2026-11-03'},now),false);
+  assert.equal(collectedToday({collected_at:'2026-11-03T00:00:00+09:00',first_seen_at:'2026-11-02T09:10:00+09:00'},now),false);
+  assert.equal(collectedToday({collected_at:'2026-11-03T00:00:00+09:00'},Date.parse('2026-11-04T00:00:00+09:00')),false);
+  for(const item of [{},{collected_at:'invalid'},null])assert.equal(collectedToday(item,now),false);
+  const tracker=createTracker('agency',storage());tracker.mark(['today']);
+  assert.equal(collectedToday({id:'today',collected_at:'2026-11-03T00:00:00+09:00'},now),true);
+});
 
 test('N follows unseen identities, survives reload and keeps feeds independent',()=>{
   const saved=storage(), news=createTracker('competitor',saved), agency=createTracker('agency',saved);
