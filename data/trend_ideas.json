@@ -1,0 +1,1168 @@
+{
+  "updated": "2026-11-03",
+  "ideas": [
+    {
+      "id": "municipal-vs-private-compare",
+      "title": "시립·민간 비교안내",
+      "summary": "시립 요양원 입소 접수 일정과 민간 시설의 즉시 상담·입소 가능 여부를 나란히 정리한 비교 안내를 소식지에 올리는 방식",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "인천시장 SNS 시립 요양원 접수 홍보",
+          "source": "아주경제",
+          "date": "2026-11-01",
+          "url": "https://www.ajunews.com/view/20261101150942794",
+          "verified": "ok"
+        },
+        {
+          "title": "인천시립 치매요양원 11/5 입소 접수",
+          "source": "인천시",
+          "date": "2026-10-29",
+          "url": "https://www.incheon.go.kr/IC010205/view?curPage=1&repSeq=DOM_0000000015854011",
+          "verified": "ok"
+        },
+        {
+          "title": "인천시립 치매요양원 개원·접수 보도",
+          "source": "뉴스1",
+          "date": "2026-10-29",
+          "url": "https://www.news1.kr/local/incheon/6335841",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-01"
+    },
+    {
+      "id": "weekly-menu-board",
+      "title": "주간 식단표 공개",
+      "summary": "주간 식단표를 미리 홈페이지에 올리고 절기·추석 특식을 한 줄로 명시하는 방식",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "제주도립노인요양원 11월 월간 프로그램표",
+          "source": "제주도립노인요양원",
+          "date": "2026-10-30",
+          "url": "https://www.jejusenior.or.kr/bbs/board.php?bo_table=monthly_pm",
+          "verified": "ok",
+          "date_basis": "briefing"
+        },
+        {
+          "title": "국민건강보험 서울요양원 주간식단",
+          "source": "서울요양원",
+          "date": "2026-09-29",
+          "url": "https://www.xn--2i4bo5fgwadewe.kr/sgcf/service/WeeklyMenus/0001/",
+          "verified": "ok",
+          "date_basis": "briefing"
+        },
+        {
+          "title": "에덴노인전문요양센터 주간식단 9/28~10/4",
+          "source": "에덴노인전문요양센터",
+          "date": "2026-09-28",
+          "url": "https://edencenter.or.kr/bbs/board.php?bo_table=menu4_5&wr_id=271",
+          "verified": "ok"
+        },
+        {
+          "title": "강화정신요양원 주간식단·추석절기특식",
+          "source": "강화정신요양원",
+          "date": "2026-09-18",
+          "url": "http://www.kanghwa.or.kr/bbs/board.php?bo_table=food&wr_id=488",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-10-30"
+    },
+    {
+      "id": "monthly-guardian-meeting",
+      "title": "월례 보호자 모임",
+      "summary": "매달 같은 형식으로 보호자 자조모임을 공지하고 여는 고정 콘텐츠",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "광양공립노인전문요양병원 월례 보호자 자조모임",
+          "source": "광양공립",
+          "date": "2026-10-30",
+          "url": "http://www.gyh.co.kr/bbs/rwdboard",
+          "verified": "blocked",
+          "date_basis": "briefing"
+        }
+      ],
+      "last_date": "2026-10-30"
+    },
+    {
+      "id": "home-vs-facility-guide",
+      "title": "집돌봄·요양원 비교",
+      "summary": "재가 한도와 야간·응급·인력 차이를 정리한 ‘집 돌봄 vs 요양원’ 비교 소식지",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "연합뉴스 재가 한도 상향",
+          "source": "연합뉴스",
+          "date": "2026-10-30",
+          "url": "https://www.yna.co.kr/view/AKR20261030093500530",
+          "verified": "ok"
+        },
+        {
+          "title": "쿠키뉴스 재가 한도·보험료율",
+          "source": "쿠키뉴스",
+          "date": "2026-10-30",
+          "url": "https://www.kukinews.com/article/view/kuk202610300050",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-30"
+    },
+    {
+      "id": "resident-award-certificate",
+      "title": "어르신 상장 드리기",
+      "summary": "어르신마다 다른 이름의 상장을 드리고 작은 변화를 보호자에게 전하는 저비용 칭찬 프로그램",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "요양뉴스 우수시설탐방 상장 사례",
+          "source": "요양뉴스",
+          "date": "2026-10-28",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-28"
+    },
+    {
+      "id": "small-change-report",
+      "title": "작은 변화 리포트",
+      "summary": "매달 어르신별 변화 한 줄과 사진 한 장을 보호자에게 보내고 동의받은 사례만 소식지에 올리는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양뉴스 우수시설탐방 작은 변화·상장",
+          "source": "요양뉴스",
+          "date": "2026-10-28",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-28"
+    },
+    {
+      "id": "fire-evac-share",
+      "title": "야간 대피 공개",
+      "summary": "야간 화재 대피 훈련 장면과 지점별 대피 동선을 보호자 공지·홈페이지에 공개하는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "세종소방본부 도심형 요양원 야간 대피 점검",
+          "source": "뉴스핌",
+          "date": "2026-10-28",
+          "url": "https://newspim.com/news/view/20261028001442",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-28"
+    },
+    {
+      "id": "evening-family-concert",
+      "title": "저녁 가족 음악회",
+      "summary": "평일 저녁에 로비에서 실내악 공연을 열어 퇴근한 가족도 올 수 있게 하는 가족 초청 음악회",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "괴산군립치매전담요양원 가을밤 음악회",
+          "source": "한국사회복지저널",
+          "date": "2026-10-27",
+          "url": "https://www.ksw-news.com/news/articleView.html?idxno=3052842",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-27"
+    },
+    {
+      "id": "night-staffing-card",
+      "title": "야간 인력 공개",
+      "summary": "야간 근무 인원·대체인력 운영·근속 기간을 카드뉴스나 첫 화면에 숫자로 공개하는 신뢰 메시지",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "인천 요양보호사 처우·대체인력 이슈",
+          "source": "경기일보",
+          "date": "2026-10-27",
+          "url": "https://www.kyeonggi.com/article/20261026580663",
+          "verified": "ok"
+        },
+        {
+          "title": "요양뉴스 2.1명당 1명 vs 실제 근무인원",
+          "source": "요양뉴스",
+          "date": "2026-09-22",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24397",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-27"
+    },
+    {
+      "id": "medication-check-line",
+      "title": "복약 점검 한줄",
+      "summary": "시설 소개란에 촉탁의·간호 인력의 정기 복약 점검을 한 줄로 밝혀 약물 관리 신뢰를 보여주는 방식",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "국감 요양시설 다약제 지적",
+          "source": "의학신문",
+          "date": "2026-10-27",
+          "url": "https://www.bosa.co.kr/news/articleView.html?idxno=3014911",
+          "verified": "ok"
+        },
+        {
+          "title": "이데일리 다약제·포털 조정 보도",
+          "source": "이데일리",
+          "date": "2026-10-27",
+          "url": "https://www.edaily.co.kr/News/Read?mediaCodeNo=257&newsId=03571926645617184",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-27"
+    },
+    {
+      "id": "coffee-cart-event",
+      "title": "커피차 깜짝 이벤트",
+      "summary": "가족·직원을 위해 커피차를 불러 부담 없이 여는 소규모 이벤트",
+      "tags": [
+        "프로그램",
+        "직원사기",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "효성요양병원 커피차 이벤트 공지",
+          "source": "효성요양병원",
+          "date": "2026-10-26",
+          "url": "http://www.hshospi.com/news/notice/read/A2901.P73/",
+          "verified": "blocked"
+        },
+        {
+          "title": "커피차 깜짝 이벤트",
+          "source": "효성요양병원",
+          "date": "2026-10-26",
+          "url": "http://www.hshospi.com/news/notice/read/A2901.P1/",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-26"
+    },
+    {
+      "id": "resident-runway-show",
+      "title": "어르신 런웨이쇼",
+      "summary": "보호자를 초청해 어르신이 테마 의상을 입고 무대에 서는 패션쇼·가족사진관 행사",
+      "tags": [
+        "프로그램",
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "대구 내부모요양재활타운 런웨이 스타 패션쇼",
+          "source": "매일신문",
+          "date": "2026-10-26",
+          "url": "https://www.imaeil.com/page/view/2026102616490824388",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-26"
+    },
+    {
+      "id": "safety-numbers-first-screen",
+      "title": "숫자로 보는 안전",
+      "summary": "인력 배치 비율·낙상 예방 설비·협력병원 거리·야간 인원을 홈·플레이스 첫 화면에 숫자로 정리하는 홍보",
+      "tags": [
+        "홍보",
+        "환경"
+      ],
+      "articles": [
+        {
+          "title": "벨포레스트 용인 안전·인력 숫자 홍보",
+          "source": "조선비즈",
+          "date": "2026-10-26",
+          "url": "https://biz.chosun.com/science-chosun/bio/2026/10/26/3A3SA5FEVFAWBFR5LUZNQ7XWKU/",
+          "verified": "ok"
+        },
+        {
+          "title": "KB광교빌리지 낙상예방 침대·생활공간",
+          "source": "데일리안",
+          "date": "2026-10-20",
+          "url": "https://www.dailian.co.kr/news/view/1703262",
+          "verified": "ok"
+        },
+        {
+          "title": "하나케어센터 인력 수치 전면 홍보",
+          "source": "글로벌에픽",
+          "date": "2026-10-12",
+          "url": "https://www.globalepic.co.kr/view.php?ud=2026101209163899787cc35ccc5c_29",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-26"
+    },
+    {
+      "id": "hospital-visit-partnership",
+      "title": "분기 병원 방문",
+      "summary": "인근 안과·치과 등과 협약해 의료진이 분기마다 시설을 방문하고 일정을 홈·플레이스에 공개하는 방식",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "빌리지 평촌 요양원 서울수안과 협약",
+          "source": "비욘드포스트",
+          "date": "2026-10-23",
+          "url": "http://www.beyondpost.co.kr/view.php?ud=2026102309353038086cf2d78c68_30",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-10-23"
+    },
+    {
+      "id": "dignity-safety-pledge",
+      "title": "존엄·안전 약속문",
+      "summary": "어르신과 종사자가 존엄·안전 권리선언문을 함께 낭독하고 인생네컷·장기자랑을 곁들이는 합동 행사",
+      "tags": [
+        "프로그램",
+        "직원사기"
+      ],
+      "articles": [
+        {
+          "title": "당진 장기요양기관 한마음 축제",
+          "source": "당진신문",
+          "date": "2026-10-22",
+          "url": "https://www.idjnews.kr/news/articleView.html?idxno=303441",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-22"
+    },
+    {
+      "id": "monthly-home-letter",
+      "title": "월간 가정통신문",
+      "summary": "매달 급여제공기록지·건강 상태·개별 활동사진·다음 달 일정표를 묶어 보호자에게 보내는 소통",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "MTN 스마트장기요양 앱 급여제공기록지 안내",
+          "source": "MTN",
+          "date": "2026-10-22",
+          "url": "https://news.mtn.co.kr/article/2026102207341717053",
+          "verified": "ok"
+        },
+        {
+          "title": "부평행복마지 10월 가정통신문",
+          "source": "부평행복마지",
+          "date": "2026-09-28",
+          "url": "http://www.hbmj.kr/p/notice/282",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-10-22"
+    },
+    {
+      "id": "emergency-protocol-page",
+      "title": "응급 시 이렇게",
+      "summary": "야간 보고 순서·119 연락 기준·가까운 병원까지 걸리는 시간을 홈·플레이스에 사실대로 올리는 안내",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "시흥시의회 응급상황 대응 간담회",
+          "source": "중앙뉴스타임스",
+          "date": "2026-10-22",
+          "url": "https://www.jnewstimes.com/news/article.html?no=765869",
+          "verified": "ok"
+        },
+        {
+          "title": "KB광교빌리지 현장기사 응급·병원 연계",
+          "source": "데일리안",
+          "date": "2026-10-20",
+          "url": "https://www.dailian.co.kr/news/view/1703262",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-22"
+    },
+    {
+      "id": "care-record-app-guide",
+      "title": "돌봄기록 앱 안내",
+      "summary": "보호자도 스마트장기요양 앱에서 급여제공기록지를 직접 볼 수 있다는 안내와 조회 방법을 블로그·가정통신문에 올리는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "MTN 스마트장기요양 앱 급여제공기록지 안내",
+          "source": "MTN",
+          "date": "2026-10-22",
+          "url": "https://news.mtn.co.kr/article/2026102207341717053",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-22"
+    },
+    {
+      "id": "guardian-story-radio",
+      "title": "보호자 사연 라디오",
+      "summary": "보호자가 보낸 사연과 신청곡을 사회복지사가 방송처럼 읽어 드리는 분기 프로그램",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "원주부승요양원 보이는 부승라디오",
+          "source": "강원지방신문",
+          "date": "2026-10-21",
+          "url": "http://www.gwunion.co.kr/news/articleView.html?idxno=28133",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-10-21"
+    },
+    {
+      "id": "infection-season-guide",
+      "title": "감염 시즌 안내",
+      "summary": "독감·코로나 접종 현황·면회 수칙·확진 시 보호자 연락 순서를 담은 감염 시즌 안내를 보호자에게 보내는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양뉴스 감염안전돌봄인증 후속",
+          "source": "요양뉴스",
+          "date": "2026-10-21",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24451",
+          "verified": "ok"
+        },
+        {
+          "title": "부산 감염안전돌봄인증 현판 전달",
+          "source": "뉴스핌",
+          "date": "2026-10-20",
+          "url": "https://newspim.com/news/view/20261020000040",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-21"
+    },
+    {
+      "id": "facility-vs-hospital-guide",
+      "title": "요양원·병원 비교글",
+      "summary": "요양원과 요양병원의 차이를 정리하고 감염관리·인력·비용 안내를 함께 담은 보호자용 비교 콘텐츠",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "세계비즈 웰에이징 페어",
+          "source": "세계비즈",
+          "date": "2026-10-21",
+          "url": "https://m.segyebiz.com/newsView/20261021513145",
+          "verified": "ok"
+        },
+        {
+          "title": "웰에이징 페어 요양병원·시설 비교 부스",
+          "source": "헬스경향",
+          "date": "2026-10-18",
+          "url": "https://www.k-health.com/news/articleView.html?idxno=101735",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-21"
+    },
+    {
+      "id": "birthday-letter-party",
+      "title": "생신 편지 잔치",
+      "summary": "자녀가 쓴 축하 편지를 어르신께 읽어 드리거나 짧은 영상을 틀어 드리는 생신잔치 방식",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "클래상스요양원 10·11월 생신잔치 공지",
+          "source": "클래상스요양원",
+          "date": "2026-10-19",
+          "url": "https://classance9241-mo4.imweb.me/mnlzny8o/?bmode=view&idx=175171197",
+          "verified": "ok"
+        },
+        {
+          "title": "구립서초노인요양센터 가족사랑 생신잔치",
+          "source": "서초앨범",
+          "date": "2026-10-16",
+          "url": "https://sc9988.or.kr/bbs/board.php?bo_table=0504&wr_id=1358",
+          "verified": "ok"
+        },
+        {
+          "title": "예천실버요양원 보호자 초청 10월 생신잔치",
+          "source": "예천e희망뉴스",
+          "date": "2026-10-16",
+          "url": "http://www.ycehn.net/news/articleView.html?idxno=24104",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-10-19"
+    },
+    {
+      "id": "director-direct-consult",
+      "title": "시설장 직접 상담",
+      "summary": "시설장이 첫 상담을 직접 하고 당일 결정을 강요하지 않는다는 점을 첫 화면에 거는 상담 방식",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "KB골든라이프케어 광교빌리지 원장 인터뷰",
+          "source": "데일리안",
+          "date": "2026-10-19",
+          "url": "https://www.dailian.co.kr/news/view/1702524",
+          "verified": "ok"
+        },
+        {
+          "title": "케어링 경력 사회복지사 첫 상담",
+          "source": "동행일보",
+          "date": "2026-10-19",
+          "url": "https://www.dhilbo.co.kr/news/articleView.html?idxno=2070",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-19"
+    },
+    {
+      "id": "portrait-consent-note",
+      "title": "초상권 동의 문구",
+      "summary": "행사 사진 하단에 초상권 사용 동의서를 받았다는 문구를 고정해 두는 사진 공개 원칙",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "클래상스요양원 생신잔치·초상권 동의 문구",
+          "source": "클래상스요양원",
+          "date": "2026-10-19",
+          "url": "https://classance9241-mo4.imweb.me/mnlzny8o/?bmode=view&idx=175171197",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-19"
+    },
+    {
+      "id": "guardian-faq-sheet",
+      "title": "상담 다섯 질문 답",
+      "summary": "대체 인력·사고 연락·정산·기록 공유 등 보호자가 물을 질문에 대한 답을 한 장으로 정리해 상담에 쓰는 방식",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "지수포스트 보호자용 기관 선택 가이드",
+          "source": "지수포스트",
+          "date": "2026-10-18",
+          "url": "https://jisupost.com/posts/687",
+          "verified": "ok"
+        },
+        {
+          "title": "더널리임팩트 자녀 중심 홈페이지 가이드",
+          "source": "더널리임팩트",
+          "date": "2026-10-03",
+          "url": "https://thenullyimpact.com/homepage/care/",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-18"
+    },
+    {
+      "id": "garden-party-openday",
+      "title": "가든파티 오픈데이",
+      "summary": "가족과 점심·장수사진·공연을 열고 ‘상담·계약 요구 없음’을 명시한 뒤 연도별 행사 기록을 쌓는 오픈데이",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "더청춘 가든파티 행사 페이지",
+          "source": "더청춘",
+          "date": "2026-10-17",
+          "url": "https://youthdc.com/garden-party",
+          "verified": "ok",
+          "date_basis": "briefing"
+        },
+        {
+          "title": "10월 17일(토) 더청춘 가든파티에 가족분들을 초대합니다",
+          "source": "더청춘",
+          "date": "2026-10-12",
+          "url": "https://youthdc.com/notices/77e275c6-5a8f-4456-abba-83ab368f7fcb",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-17"
+    },
+    {
+      "id": "halloween-family-party",
+      "title": "할로윈 가족파티",
+      "summary": "손주와 트릭 오어 트릿·포토부스·가면 만들기를 함께하는 계절 가족 행사",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "연꽃노인요양원 마녀 가면 만들기",
+          "source": "연꽃노인요양원",
+          "date": "2026-10-16",
+          "url": "http://care.lotusflower.or.kr/page02_05/23253",
+          "verified": "blocked",
+          "date_basis": "briefing"
+        },
+        {
+          "title": "라우어 시니어타운 할로윈파티",
+          "source": "아시아경제",
+          "date": "2026-10-14",
+          "url": "https://www.asiae.co.kr/article/2026101413174374049",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-16"
+    },
+    {
+      "id": "family-market-bazaar",
+      "title": "가족 참여 장터",
+      "summary": "행사용 화폐로 장을 보고 가족사진·이·미용·게임을 함께하는 보호자·주민 초청 장터·바자회",
+      "tags": [
+        "프로그램",
+        "가족소통",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "청양군노인요양원 가족 참여형 청양장터",
+          "source": "중도일보",
+          "date": "2026-10-15",
+          "url": "https://www.joongdo.co.kr/web/view.php?key=20261015010003952",
+          "verified": "ok"
+        },
+        {
+          "title": "청양군노인요양원 가족과 함께하는 장터",
+          "source": "충남일보",
+          "date": "2026-10-14",
+          "url": "http://www.chungnamilbo.co.kr/news/articleView.html?idxno=914792",
+          "verified": "blocked"
+        },
+        {
+          "title": "강화 바다의별요양원 기적의 마켓 바자회",
+          "source": "한국뉴스",
+          "date": "2026-10-04",
+          "url": "https://www.24news.kr/news/articleView.html?idxno=310111",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-15"
+    },
+    {
+      "id": "four-promises-with-proof",
+      "title": "네 가지 약속·근거",
+      "summary": "아프지 않도록·외롭지 않도록 등 네 가지 약속마다 야간 인원·응급 연락·식단·생활 사진 같은 근거를 붙이는 홍보",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "케어링 스테이 진심에 머물다 네 가지 약속",
+          "source": "한경매거진",
+          "date": "2026-10-15",
+          "url": "https://magazine.hankyung.com/business/article/202610153543b",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-15"
+    },
+    {
+      "id": "family-outing",
+      "title": "보호자 동반 나들이",
+      "summary": "리프트 차량으로 어르신과 보호자를 가까운 공원·박물관에 모시고 다녀와 후기를 올리는 소규모 외출",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "구립송파노인요양센터 보호자 동반 가을 나들이",
+          "source": "국제뉴스",
+          "date": "2026-10-14",
+          "url": "https://www.gukjenews.com/news/articleView.html?idxno=3721910",
+          "verified": "ok"
+        },
+        {
+          "title": "화순 평안애요양원 가을 소풍",
+          "source": "웰페어뉴스",
+          "date": "2026-10-08",
+          "url": "https://www.welfarenews.net/news/articleView.html?idxno=211978",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-14"
+    },
+    {
+      "id": "weekly-condition-note",
+      "title": "주간 컨디션 한줄",
+      "summary": "주 1회 보호자에게 그날 컨디션·작은 변화 한 줄과 필요 시 진료 연계를 영업 톤 없이 보내는 방식",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "마리아데이케어 탐방기 따로 또 같이",
+          "source": "요양뉴스",
+          "date": "2026-10-14",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24414",
+          "verified": "ok"
+        },
+        {
+          "title": "라온데이케어센터 식사사진·상태 정기 공유",
+          "source": "요양뉴스",
+          "date": "2026-10-07",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24409",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-14"
+    },
+    {
+      "id": "shorts-best-moment",
+      "title": "보여주고 싶은 순간",
+      "summary": "15~60초 숏츠로 ‘이번 주 가장 보여주고 싶은 순간’을 만들어 보호자 채널로 공유하는 영상 홍보",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "케어링 영상 공모 아시아경제",
+          "source": "아시아경제",
+          "date": "2026-10-12",
+          "url": "https://www.asiae.co.kr/article/2026101208411328855",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-12"
+    },
+    {
+      "id": "barrier-free-transport-info",
+      "title": "배리어프리 교통안내",
+      "summary": "공단·홈페이지에 배리어프리 교통 정보를 정확히 올려 보호자 문의를 늘리는 정보 공개",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "행복복지센터 탐방기 배리어프리 교통",
+          "source": "요양뉴스",
+          "date": "2026-10-12",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24413",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-12"
+    },
+    {
+      "id": "daily-lunch-photo",
+      "title": "매일 점심 사진",
+      "summary": "날짜가 찍힌 점심 식사 사진을 홈·블로그·카톡에 올려 식사 투명성을 보여주는 운영 포맷",
+      "tags": [
+        "프로그램",
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "아름다운요양원 점심식단 사진 게시판",
+          "source": "아름다운요양원",
+          "date": "2026-10-08",
+          "url": "https://beautifulcare.co.kr/mealpics/",
+          "verified": "ok",
+          "date_basis": "briefing"
+        }
+      ],
+      "last_date": "2026-10-08"
+    },
+    {
+      "id": "weekly-floor-album",
+      "title": "주간 층별 앨범",
+      "summary": "‘○월 ○주차 ○층’으로 생활 사진을 묶고 미동의 모자이크 고지를 상단에 두는 갤러리 포맷",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "과천시립요양원 주간 층별 앨범",
+          "source": "과천시립요양원",
+          "date": "2026-10-08",
+          "url": "https://www.gcsy.or.kr/default/customer/customer_3.php?sub=05&tit=05",
+          "verified": "ok",
+          "date_basis": "briefing"
+        }
+      ],
+      "last_date": "2026-10-08"
+    },
+    {
+      "id": "food-cost-transparency",
+      "title": "식재료비 공개",
+      "summary": "식재료비 사용내역 요약과 이번 주 점심 사진을 매달 블로그·카톡에 올려 급식 투명성을 보여주는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "복지부 장기요양기관 급식관리 기준",
+          "source": "연합뉴스",
+          "date": "2026-10-06",
+          "url": "https://www.yna.co.kr/view/AKR20261006072600530",
+          "verified": "ok"
+        },
+        {
+          "title": "식사재료비 공개 관련",
+          "source": "뉴시스",
+          "date": "2026-10-06",
+          "url": "https://www.newsis.com/view/NISX20261006_0003815284",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-06"
+    },
+    {
+      "id": "hiring-safety-leaflet",
+      "title": "안심 채용 안내문",
+      "summary": "채용 시 범죄경력 조회·자체 검증·인권교육 주기·CCTV 즉시 열람을 한 장으로 정리한 보호자용 안심 안내문",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "SBS 학대 요양보호사 재취업 허점 단독",
+          "source": "SBS",
+          "date": "2026-10-06",
+          "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008785534",
+          "verified": "ok"
+        },
+        {
+          "title": "다온노인복지센터 존엄케어 탐방",
+          "source": "요양뉴스",
+          "date": "2026-10-05",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24402",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-06"
+    },
+    {
+      "id": "external-performance-invite",
+      "title": "외부 공연 유치",
+      "summary": "어린이 동요·예술 딜리버리 등 외부 단체 위문공연을 유치해 보도자료와 사진 콘텐츠를 함께 얻는 방식",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "무지개언덕요양원 어린이 동요 위문공연",
+          "source": "스페셜타임스",
+          "date": "2026-10-06",
+          "url": "https://www.specialtimes.co.kr/news/articleView.html?idxno=471057",
+          "verified": "ok"
+        },
+        {
+          "title": "경기아트센터 예술 딜리버리 과천시립",
+          "source": "경기일보",
+          "date": "2026-10-05",
+          "url": "https://www.kyeonggi.com/article/20261005580322",
+          "verified": "ok"
+        },
+        {
+          "title": "구로 온보듬 치매극복의 날 음악회",
+          "source": "뉴스로",
+          "date": "2026-09-30",
+          "url": "https://www.newsro.kr/articles/1898486",
+          "verified": "ok"
+        },
+        {
+          "title": "증평노인전문요양원, 어르신 위한 ‘사랑이란 이름을 더하여’ 음악회 개최",
+          "source": "PBS중앙방송",
+          "date": "2026-09-17",
+          "url": "http://www.pbsnews.kr/142364",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-06"
+    },
+    {
+      "id": "elders-day-community",
+      "title": "경로당 초청 공연",
+      "summary": "노인의 날 등에 인근 경로당을 초청해 짧은 공연·기념 선물·특별식을 여는 커뮤니티 감사 행사",
+      "tags": [
+        "프로그램",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "홍천 너브내 어부바 축제",
+          "source": "홍천신문",
+          "date": "2026-10-02",
+          "url": "http://www.hcsinmoon.co.kr/news/articleView.html?idxno=88756",
+          "verified": "blocked"
+        },
+        {
+          "title": "구립해송요양원 노인의 날 경로당 초청",
+          "source": "포커스인천",
+          "date": "2026-09-30",
+          "url": "http://www.focusincheon.com/news/articleView.html?idxno=10407",
+          "verified": "blocked"
+        },
+        {
+          "title": "우리들요양원 문화공연·노래자랑",
+          "source": "광양경제신문",
+          "date": "2026-09-30",
+          "url": "https://www.genews.co.kr/news/articleView.html?idxno=501062",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-02"
+    },
+    {
+      "id": "facility-small-renovation-pr",
+      "title": "작은 환경 개선 PR",
+      "summary": "공기청정기·면회실·산책로·바닥재 같은 생활 환경 개선을 비포·애프터로 짧게 알리는 홍보",
+      "tags": [
+        "환경",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "구립용산노인전문요양원 바닥재·창호 교체",
+          "source": "건강다이제스트",
+          "date": "2026-10-02",
+          "url": "https://www.ikunkang.com/news/articleView.html?idxno=51625",
+          "verified": "ok"
+        },
+        {
+          "title": "해피누리요양원 리뉴얼 재개원",
+          "source": "알파비즈",
+          "date": "2026-09-22",
+          "url": "https://www.alphabiz.co.kr/news/articleView.html?idxno=190186",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-02"
+    },
+    {
+      "id": "menu-consult-phone",
+      "title": "식단표 상담 안내",
+      "summary": "주간 식단표 위에 입소 상담 전화를 고정해 두는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "행복요양원(남양주) 9월 5주 식단",
+          "source": "행복요양원",
+          "date": "2026-09-25",
+          "url": "https://xn--pn3bm1ngwa5gz68d.kr/%ec%a3%bc%ea%b0%84%ec%8b%9d%eb%8b%a8%ec%95%88%eb%82%b4/",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-25"
+    },
+    {
+      "id": "reminiscence-album",
+      "title": "회상·오감 앨범",
+      "summary": "계절·개천절 소재의 회상·오감 활동을 사진 앨범과 지역 해시태그·상담 안내로 올리는 포맷",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "장수요양원 가을 인지·오감 프로그램",
+          "source": "장수요양원",
+          "date": "2026-09-23",
+          "url": "https://jangsooyoyang.com/",
+          "verified": "ok",
+          "date_basis": "briefing"
+        },
+        {
+          "title": "장수요양원 엿장수·단군신화 회상 앨범",
+          "source": "장수요양원",
+          "date": "2026-09-16",
+          "url": "https://jangsooyoyang.com/album_board/3194",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-23"
+    },
+    {
+      "id": "holiday-folk-festival",
+      "title": "민속명절 한마당",
+      "summary": "입소자 응원·댄스·게스트·경품을 묶은 고제작 명절 원내 공연 행사",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "성북 삼선·장위실버 민속명절 한마당",
+          "source": "bnt뉴스",
+          "date": "2026-09-23",
+          "url": "https://www.bntnews.co.kr/article/view/bnt202609230262",
+          "verified": "ok"
+        },
+        {
+          "title": "충주시립 한가위맞이 행사",
+          "source": "중도일보",
+          "date": "2026-09-23",
+          "url": "https://www.joongdo.co.kr/web/view.php?key=20260923010007774",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-23"
+    },
+    {
+      "id": "dual-diet-menu",
+      "title": "일반·연하식 이중표",
+      "summary": "일반식과 연하도움식(다진·죽) 식단표를 나란히 올려 임상 식사 케어를 드러내는 방식",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "시립강동실버케어 일반식·연하도움식 이중 식단표",
+          "source": "시립강동실버케어",
+          "date": "2026-09-22",
+          "url": "https://kangcare.cafe24.com/bbs/board.php?bo_table=0603",
+          "verified": "ok",
+          "date_basis": "briefing"
+        }
+      ],
+      "last_date": "2026-09-22"
+    },
+    {
+      "id": "holiday-cooking-class",
+      "title": "명절 음식 만들기",
+      "summary": "외부 봉사단·셰프와 함께 동그랑땡·전 등 명절 음식을 만들고 특식으로 이어가는 참여형 명절 행사",
+      "tags": [
+        "프로그램",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "영종 해송요양원×파라다이스 추석 음식 만들기",
+          "source": "영종뉴스",
+          "date": "2026-09-18",
+          "url": "http://www.yeongjong.co.kr/news/articleView.html?idxno=20976",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-09-18"
+    },
+    {
+      "id": "wedding-photo-reminiscence",
+      "title": "추억 웨딩사진",
+      "summary": "어르신 추억의 웨딩 드레스·메이크업·촬영을 스토리로 담아 회상 포토 이벤트로 쓰는 방식",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "화정요양원 추억의 웨딩사진",
+          "source": "경기포커스",
+          "date": "2026-09-17",
+          "url": "https://www.ggfocus.co.kr/news/articleView.html?idxno=523822",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-17"
+    },
+    {
+      "id": "healing-farm-program",
+      "title": "치유농업·산림치유",
+      "summary": "국화 치유농업이나 찾아가는 산림치유처럼 꽃·향·촉감 회상 프로그램을 여는 방식",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "메디케어 국화 치유농업",
+          "source": "코리아비즈데일리",
+          "date": "2026-09-12",
+          "url": "https://www.koreabizdaily.co.kr/news/466748",
+          "verified": "ok"
+        },
+        {
+          "title": "숲요양원 찾아가는 산림치유",
+          "source": "연합뉴스",
+          "date": "2026-09-08",
+          "url": "https://www.yna.co.kr/view/AKR20260908102200063",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-12"
+    },
+    {
+      "id": "special-outing-support",
+      "title": "나들이 지원 신청",
+      "summary": "저소득 어르신 나들이·고향 방문·가족사진 비용 지원 사업에 신청해 결과보고 사진·영상으로 연재하는 방식",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "우양재단 어르신의 아주 특별한 나들이",
+          "source": "평택시사회복지협의회",
+          "date": "2026-09-07",
+          "url": "https://ptcsw.or.kr/bbs/board.php?bo_table=news&wr_id=734",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-09-07"
+    }
+  ]
+}

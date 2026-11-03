@@ -24,6 +24,7 @@ CARDS = {
     'reputation': ('더비다요양원 평판 점검', '/reputation-watch.html'),
     'nearby': ('주변 영업처 지도', '/nearby-facilities.html'),
     'statistics': ('통계자료', '/statistics.html'),
+    'trend': ('트렌드', '/trend.html'),
     'competitor_uiux': ('경쟁사 UIUX 분석', '/competitor-uiux.html'),
     'staff_eval': ('종사자 평가', '/staff-eval.html'),
     'facility_acquisition': ('요양원 인수·개설', '/facility-acquisition.html'),
@@ -42,6 +43,7 @@ ALIASES = {
     'reputation': ('평판', '부정적언급', '부정언급', '불만', '악성리뷰'),
     'nearby': ('영업처', '주변', '인근', '가까운', '연락처', '전화번호', '지도'),
     'statistics': ('통계', '책갈피', '조사자료', '보건사회연구원', '실태조사', '신체억제대', '학대판정'),
+    'trend': ('트렌드', '요양트렌드', '시설아이디어'),
     'competitor_uiux': ('uiux', '화면비교', 'ux비교', 'ui비교', '사용성비교'),
     'staff_eval': ('종사자평가', '요양보호사평가', '지침숙지', '상황판단평가'),
     'facility_acquisition': ('요양원인수', '요양원매입', '시설인수', '시설개설', '지정심사', '컨설팅제출서류', '허가절차', '건물도면', '인수체크리스트'),
@@ -312,6 +314,32 @@ def static_page(kind, question):
     return result
 
 
+def trends(question):
+    from service_knowledge import ROOT, evidence, safe_url
+    data = json.loads((ROOT / 'data' / 'trend_ideas.json').read_text(encoding='utf-8'))
+
+    def last(idea):
+        dates = [article.get('date', '') for article in idea.get('articles', []) if re.fullmatch(r'\d{4}-\d{2}-\d{2}', article.get('date', '') or '')]
+        return max(dates) if dates else (idea.get('last_date') or '')
+
+    rows = sorted(data.get('ideas', []), key=last, reverse=True)
+    picked = ranked(question, rows, lambda idea: ' '.join([idea.get('title', ''), idea.get('summary', ''), *idea.get('tags', [])]), 6)
+    updated = data.get('updated', '')
+    result = [evidence('trend', '요양 트렌드 아이디어',
+        f"요양 트렌드 수집 브리핑에서 고른 시설 아이디어 {len(rows)}개입니다. 최근 반영일 {updated}. 정책·수가 소식은 포함하지 않았고, 기사 날짜가 최신인 아이디어가 앞에 옵니다.",
+        updated)]
+    for idea in picked:
+        articles = sorted(idea.get('articles', []), key=lambda article: article.get('date', ''), reverse=True)
+        url = safe_url(articles[0].get('url')) if len(articles) == 1 else None
+        result.append(evidence('trend', idea.get('title', ''), dump({
+            '설명': idea.get('summary', ''),
+            '태그': idea.get('tags', []),
+            '최근기사일': last(idea),
+            '관련기사': [fields(article, 'title source date url verified') for article in articles[:8]],
+        }), last(idea), url=url))
+    return result
+
+
 def statistics(question):
     from service_knowledge import ROOT, load_json, evidence, safe_url
     data = load_json('statistics_knowledge.json')
@@ -382,6 +410,8 @@ def retrieve(kind, question, now):
         return static_page(kind, question)
     if kind == 'statistics':
         return statistics(question)
+    if kind == 'trend':
+        return trends(question)
     if kind == 'nearby':
         return nearby(question)
     data = saved_report(kind, now)
@@ -401,6 +431,7 @@ def status():
              'search_visibility': [search_visibility.db_path(), naver_ads.db_path()],
              'reputation': [reputation_watch.db_path()], 'nearby': [ROOT / 'data/nearby_facilities.json'],
              'statistics': [ROOT / 'data/statistics_knowledge.json'],
+             'trend': [ROOT / 'data/trend_ideas.json'],
              'competitor_uiux': [ROOT / 'competitor-uiux.html'],
              'facility_acquisition': [ROOT / 'facility-acquisition.html'],
              'facility_3d': [ROOT / 'facility-3d.html'],

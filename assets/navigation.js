@@ -37,7 +37,8 @@
     {id:'operating-costs', category:'operations', title:'운영비 분석', description:'지점별 월별 수입·비용과 자금 흐름', keywords:'안양 인천 손익 매출 지출 회계'},
     {id:'borrowing-status', category:'operations', title:'차입금 현황', description:'차입금·원금상환·기타차입 거래를 지점·월별로 집계', keywords:'차입 대출 금융기관차입금 기타차입금 원금상환 원금상환금 대여 상환 회계 자금흐름'},
     {id:'nearby-facilities', category:'marketing', title:'주변 영업처 지도', description:'지점 주변 기관의 거리와 연락처', keywords:'안양 인천 요양병원 경로당 주야간보호 영업'},
-    {id:'statistics', category:'research', title:'통계자료', description:'통계 문서와 표·그래프 책갈피', keywords:'입소 상담 돌봄 품질 직원 근무환경 연구'}
+    {id:'statistics', category:'research', title:'통계자료', description:'통계 문서와 표·그래프 책갈피', keywords:'입소 상담 돌봄 품질 직원 근무환경 연구'},
+    {id:'trend', category:'research', title:'트렌드', description:'요양 트렌드에서 고른 시설 프로그램·홍보 아이디어', keywords:'트렌드 요양트렌드 시설아이디어 프로그램 행사 상장 가족소통'}
   ].map(item => ({...item, href:'/' + item.id + '.html'}));
   const key = 'vida-navigation-v1';
   const ids = new Set(features.map(item => item.id));

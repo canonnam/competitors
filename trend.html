@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>트렌드 | 더비다 지식 창고</title>
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="theme-color" content="#1f63dc">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" sizes="180x180">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="더비다 지식 창고">
+  <meta property="og:title" content="트렌드 | 더비다 지식 창고">
+  <meta property="og:description" content="장기요양 운영과 돌봄 기술, 데이터를 함께 살펴보는 더비다의 지식 창고입니다.">
+  <meta property="og:url" content="https://competitors-dev.up.railway.app/trend.html">
+  <meta property="og:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+  <meta property="og:image:secure_url" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="트렌드 | 더비다 지식 창고">
+  <meta name="twitter:description" content="장기요양 운영과 돌봄 기술, 데이터를 함께 살펴보는 더비다의 지식 창고입니다.">
+  <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
+  <meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
+  <link rel="stylesheet" href="/assets/trend.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/trend.js" defer></script>
+  <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
+  <script src="/assets/news-badge.js?v=20260917-clay2" defer></script>
+  <script src="/assets/navigation.js?v=20261103-trend" defer></script>
+  <link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single">
+</head>
+<body class="kb-detail" data-feedback-page="trend">
+  <header class="kb-header"><div class="kb-header-inner"><a class="kb-brand" href="/">더비다 지식 창고</a><nav class="kb-actions" aria-label="공통 메뉴"><span class="kb-site-links"><a class="kb-site-link" href="https://www.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="홈페이지 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/line/website.svg)" aria-hidden="true"></span><span>홈페이지</span></a><a class="kb-site-link" href="https://admin.thevida.co.kr/" target="_blank" rel="noopener noreferrer" aria-label="관리자 (새 탭)"><span class="kb-menu-icon" style="--kb-icon:url(/assets/icons/settings.svg)" aria-hidden="true"></span><span>관리자</span></a></span><button class="kb-feedback-button" type="button" onclick="openFeedback()">개선요청</button></nav></div></header>
+  <main>
+    <section class="kb-page-heading">
+      <nav class="kb-breadcrumb" aria-label="메뉴 경로"><a href="/?category=research">자료·AI</a><span aria-hidden="true">/</span><span aria-current="page">트렌드</span></nav>
+      <p class="kb-eyebrow">자료·AI</p>
+      <h1>트렌드</h1>
+      <p class="kb-description">요양 트렌드 수집 브리핑에서 시설이 프로그램·행사·가족소통·홍보로 참고할 아이디어만 골랐습니다. 최근 반영일 <time id="trend-updated" datetime="2026-11-03">2026-11-03</time>.</p>
+    </section>
+    <p id="trend-status" role="status"></p>
+    <div class="trend-toolbar">
+      <label class="trend-search" for="trend-search">아이디어 검색
+        <input id="trend-search" type="search" placeholder="상장, 식단, 보호자" autocomplete="off">
+      </label>
+    </div>
+    <div class="trend-tags" id="trend-tags" role="group" aria-label="태그"></div>
+    <p id="trend-count" class="trend-count" role="status"></p>
+    <div class="trend-grid" id="trend-grid"></div>
+    <div class="trend-empty" id="trend-empty" hidden>
+      <p>표시할 아이디어가 없습니다. 검색어나 태그를 바꿔 보세요.</p>
+      <button class="ui-button" id="trend-reset" type="button">전체 아이디어 보기</button>
+    </div>
+    <noscript><p>아이디어 카드는 자바스크립트를 켜면 볼 수 있습니다.</p></noscript>
+  </main>
+  <dialog class="kb-feature-dialog" id="trend-dialog" aria-labelledby="trend-dialog-title">
+    <div class="kb-feature-dialog-head">
+      <h2 id="trend-dialog-title"></h2>
+      <button class="kb-control" id="trend-dialog-close" type="button">닫기</button>
+    </div>
+    <p id="trend-dialog-summary"></p>
+    <ul class="trend-articles" id="trend-dialog-list" aria-label="관련 기사"></ul>
+  </dialog>
+</body>
+</html>
