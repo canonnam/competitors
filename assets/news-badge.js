@@ -1,7 +1,7 @@
 (function(root) {
   'use strict';
   const validIds=ids=>Array.isArray(ids)&&ids.every(id=>typeof id==='string'&&id.length>0);
-  const feeds=['competitor','agency','reputation'], latest=new Map(), trackers=new Map(), subscribers=new Set();
+  const feeds=['competitor','agency','reputation','trend'], latest=new Map(), trackers=new Map(), subscribers=new Set();
   const currentKey=feed=>'vida-news-current-v1:'+feed;
   function storage(){try{return root.localStorage;}catch{return undefined;}}
   function trackerFor(feed){if(!trackers.has(feed))trackers.set(feed,createTracker(feed,storage()));return trackers.get(feed);}
@@ -29,14 +29,14 @@
       }
     };
   }
-  function create(feed,{badge,detail=false}) {
+  function create(feed,{badge,detail=false,seenLabel='뉴스 페이지'}={}) {
     const tracker=trackerFor(feed);
     let current=[];
     function draw() {
       const count=tracker.unread(current);
       if(badge){
         badge.hidden=count===0;
-        badge.title=`새로 수집된 글 ${count}건 · 뉴스 페이지를 확인하면 표시가 사라집니다`;
+        badge.title=`새로 수집된 글 ${count}건 · ${seenLabel}를 확인하면 표시가 사라집니다`;
         badge.setAttribute('aria-label',`새로 수집된 글 ${count}건`);
       }
       publish();
