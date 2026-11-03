@@ -19,6 +19,17 @@ wraps with row growth; vertical merges and signing blocks are kept together.
 Additional wage items and special terms use an appendix. Blank inputs remain blank.
 Fixed terms offer one year, two years, or a custom end date. Presets end on the
 day before the anniversary, with leap-day rollover handled in UTC.
+New and reset forms default to a fixed one-year term. Probation is opt-in: its
+fields are hidden and disabled until checked, and unchecked contracts print
+"수습기간 없음" without wage-reduction or probationary cancellation clauses. Draft probation values remain
+in browser memory when toggled off, but never enter the generated contract.
+The occupation selector follows the nursing-facility roles in the official
+[staffing standard](https://www.law.go.kr/법령별표서식/(노인복지법시행규칙,별표4))
+and includes an auxiliary driver role and a custom entry. Selecting a care worker
+applies the day/day/night/night/off/off schedule; other listed roles apply the
+office five-day schedule as an editable default, not a statutory assignment.
+Occupation selection also updates the template and cycle. Manual schedule
+changes preserve the selected occupation and custom duties.
 PDF line breaking removes empty paragraphs and whitespace-only wrapped lines.
 Row heights fit their actual content, preserving merged cells and table borders.
 Contract titles use a light gray background; section labels, identity labels and

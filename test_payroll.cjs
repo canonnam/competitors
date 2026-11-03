@@ -53,6 +53,16 @@ const fields={template:'care-cycle',organization:'검증기관',representative:'
 function model(key,filled=false){const s=key==='care-cycle'?cycle:weekly;return {fields:{...fields,template:key,...(filled?{employee:'검증용 직원',term:'fixed',startDate:'2026-09-11',endDate:core.contractEndDate('2026-09-11',2),documentDate:'2026-09-11'}:{})},schedule:s,workText:core.workText(s),result:core.calculate({...s,basis:'gross',amount:filled?2420000:'',overtimeOrdinary:true,nightOrdinary:true,extras:[{name:'식대',amount:40000,ordinary:true}]})};}
 for(const key of Object.keys(templates)){const c=pdf.content(model(key),templates[key]);assert.equal(c.values.C7,'');assert.equal(c.values.I7,'');assert.equal(c.values.C21,'');assert(!JSON.stringify(c).includes('undefined'));assert(c.values.B17.includes('사전에 기관의 승인을'));assert(c.values.B18.includes('이에 동의함'));}
 for(const key of Object.keys(templates)){const c=pdf.content(model(key,true),templates[key]);assert.equal(c.values.E11,'2028.09.10');assert.equal(c.values.E22,'고정연장수당');assert.equal(c.values.E23,'고정야간수당');assert(c.values.I22.includes('통상임금 포함'));assert(c.values.I23.includes('통상임금 포함'));}
+for(const key of Object.keys(templates)){
+ const sample=model(key,true);Object.assign(sample.fields,{job:'사회복지사',probationMonths:'3',probationReduction:'10',useProbation:false});
+ const without=pdf.content(sample,templates[key]);
+ assert.equal(without.values.B13,'수습기간 없음');assert.equal(without.values.B14,'');assert.equal(without.values.D13,'');assert.equal(without.values.F13,'');
+ assert(without.values.G10.startsWith('사회복지사('));
+ sample.fields.useProbation=true;
+ const withProbation=pdf.content(sample,templates[key]);
+ assert.equal(withProbation.values.B13,'입사일로부터 3개월');assert(withProbation.values.F13.includes('10% 감액'));assert(withProbation.values.B14.includes('해당기간 중'));
+ sample.fields.probationReduction='0';assert(pdf.content(sample,templates[key]).values.F13.includes('0% 감액'));
+}
 assert(!/\d{6}-\d{7}|VLOOKUP|#N\/A/.test(JSON.stringify(templates)));
 assert.equal(pdf.sealPath({branch:'incheon'}),'/assets/contracts/seal-incheon.png');
 assert.equal(pdf.sealPath({branch:'anyang',includeSeal:true}),'/assets/contracts/seal-anyang.png');

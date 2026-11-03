@@ -74,7 +74,9 @@
   }
   function fieldValues(){
     const fields=Object.fromEntries(new FormData(form));
-    for(const key of ['includeFlexibleClause','overtimeOrdinary','nightOrdinary'])fields[key]=get(key).checked;
+    for(const key of ['includeFlexibleClause','overtimeOrdinary','nightOrdinary','useProbation'])fields[key]=get(key).checked;
+    if(!fields.useProbation){fields.probationMonths='';fields.probationReduction='';}
+    if(fields.job==='custom')fields.job=get('customJob').value.trim();
     fields.includeSeal=!get('includeSeal').disabled&&get('includeSeal').checked;
     return fields;
   }
@@ -88,6 +90,19 @@
     $('term-years-field').hidden=!fixed;$('end-date-field').hidden=!fixed;
     get('endDate').readOnly=fixed&&years!=='custom';
     if(fixed&&years!=='custom')get('endDate').value=PayrollCore.contractEndDate(get('startDate').value,years);
+  }
+  function syncOptionalFields(){
+    const probation=get('useProbation').checked,customJob=get('job').value==='custom';
+    $('probation-fields').hidden=!probation;$('probation-fields').disabled=!probation;
+    get('useProbation').setAttribute('aria-expanded',String(probation));
+    $('custom-job-field').hidden=!customJob;get('customJob').disabled=!customJob;
+  }
+  function applyPreset(preset){
+    get('preset').value=preset;
+    if(preset==='custom')return;
+    get('template').value=preset;get('scheduleMode').value=preset==='care-cycle'?'cycle':'weekly';
+    pattern=preset==='care-cycle'?['D','D','N','N','O','O']:['D','D','D','D','D','O','O'];
+    renderPattern();renderShifts();refreshClauses();
   }
   function schedule(){return {mode:get('scheduleMode').value,pattern:pattern.slice(),shifts:structuredClone(shifts),weeklyPaidHours:get('weeklyPaidHours').value};}
   function inputErrors(f){
@@ -119,7 +134,7 @@
   }
   function invalidate(){revision++;model=null;if(lastURL){URL.revokeObjectURL(lastURL);lastURL=null;$('pdf-preview').removeAttribute('src');}$('pdf-status').textContent='';}
   function update(){
-    invalidate();syncSeal();$('input-errors').hidden=true;
+    invalidate();syncSeal();syncOptionalFields();$('input-errors').hidden=true;
     const manual=get('basis').value==='manual';$('manual-pay').hidden=!manual;$('auto-pay').hidden=manual;
     for(const key of ['manualOvertime','manualNight'])get(key).readOnly=!manual;
     $('amount-label').firstChild.textContent=get('basis').value==='hourly'?'통상시급 (원)':'월 급여 총액 (세전·원)';
@@ -197,14 +212,8 @@
   form.addEventListener('change',event=>{
     const name=event.target.name;
     if(name==='branch'&&branches[event.target.value])for(const [k,v] of Object.entries(branches[event.target.value]))get(k).value=v;
-    if(name==='preset'){
-      const p=event.target.value;
-      if(p!=='custom'){
-        get('template').value=p;get('scheduleMode').value=p==='care-cycle'?'cycle':'weekly';pattern=p==='care-cycle'?['D','D','N','N','O','O']:['D','D','D','D','D','O','O'];
-        if(['요양보호사','사무직',''].includes(get('job').value))get('job').value=p==='office'?'사무직':'요양보호사';
-        renderPattern();renderShifts();refreshClauses();
-      }
-    }
+    if(name==='job'&&event.target.value!=='custom')applyPreset(event.target.value==='요양보호사'?'care-cycle':'office');
+    if(name==='preset')applyPreset(event.target.value);
     if(name==='scheduleMode'){get('preset').value='custom';if(event.target.value==='weekly')pattern=['D','D','D','D','D','O','O'];renderPattern();renderShifts();}
     if(name==='workingSystem')setSystem();
     if(name==='includeFlexibleClause'){get('workingSystem').value=event.target.checked?'flexible':'standard';setSystem();}

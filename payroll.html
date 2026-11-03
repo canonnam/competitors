@@ -22,8 +22,8 @@
   <script src="/assets/payroll-core.js" defer></script>
   <script src="/assets/vendor/pdf-lib-1.17.1.min.js" defer></script>
   <script src="/assets/vendor/fontkit-1.1.1.umd.min.js" defer></script>
-  <script src="/assets/contract-pdf.js?v=20260914-style" defer></script>
-  <script src="/assets/payroll.js?v=20260912-seals" defer></script>
+  <script src="/assets/contract-pdf.js?v=20261103-options" defer></script>
+  <script src="/assets/payroll.js?v=20261103-options" defer></script>
   <script src="/assets/site.js" defer></script>
 <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1"><script src="/assets/news-badge.js?v=20260917-clay2" defer></script><script src="/assets/navigation.js?v=20261009-clarity" defer></script><link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single"><script src="/assets/ui-help.js?v=20261006-single" defer></script></head>
 <body class="kb-detail payroll-page" data-feedback-page="payroll">
@@ -38,11 +38,11 @@
       </section>
       <section class="form-section" aria-labelledby="employee-title">
         <h2 id="employee-title">직원 정보</h2>
-        <div class="fields"><label>성명<input name="employee" maxlength="40"></label><label>주민등록번호<input name="residentNumber" inputmode="numeric" maxlength="14" placeholder="000000-0000000" autocomplete="off"></label><label>연락처<input name="phone" inputmode="tel" maxlength="24"></label><label>직종·담당업무<input name="job" maxlength="80" value="요양보호사"></label><label class="wide">직원 주소<input name="employeeAddress" maxlength="160"></label></div>
+        <div class="fields"><label>성명<input name="employee" maxlength="40"></label><label>주민등록번호<input name="residentNumber" inputmode="numeric" maxlength="14" placeholder="000000-0000000" autocomplete="off"></label><label>연락처<input name="phone" inputmode="tel" maxlength="24"></label><label>직종·담당업무<select name="job"><option value="요양보호사" selected>요양보호사</option><option value="시설장">시설장</option><option value="사무국장">사무국장</option><option value="사회복지사">사회복지사</option><option value="간호사">간호사</option><option value="간호조무사">간호조무사</option><option value="물리치료사">물리치료사</option><option value="작업치료사">작업치료사</option><option value="사무원">사무원</option><option value="영양사">영양사</option><option value="조리원">조리원</option><option value="위생원">위생원</option><option value="관리인">관리인</option><option value="보조원(운전원)">보조원(운전원)</option><option value="의사">의사</option><option value="custom">기타 · 직접 입력</option></select></label><label id="custom-job-field" class="wide" hidden>직종·담당업무 직접 입력<input name="customJob" maxlength="80" disabled></label><label class="wide">직원 주소<input name="employeeAddress" maxlength="160"></label></div>
       </section>
       <section class="form-section" aria-labelledby="term-title">
         <h2 id="term-title">계약 조건</h2>
-        <div class="fields"><label>계약 시작일<input name="startDate" type="date"></label><label>계약 형태<select name="term"><option value="indefinite">기간의 정함 없음</option><option value="fixed">기간제</option></select></label><label id="term-years-field" hidden>계약기간<select name="termYears"><option value="1">1년</option><option value="2">2년</option><option value="custom">직접 지정</option></select></label><label id="end-date-field" hidden>계약 종료일<input name="endDate" type="date"></label><label>작성일<input name="documentDate" type="date"></label><label>수습기간 (개월)<input name="probationMonths" type="number" min="0" max="12" step="1" placeholder="미기재"></label><label>수습기간 급여 감액률 (%)<input name="probationReduction" type="number" min="0" max="100" step="1" placeholder="미기재"></label></div>
+        <div class="fields"><label>계약 시작일<input name="startDate" type="date"></label><label>계약 형태<select name="term"><option value="fixed" selected>기간의 정함 있음</option><option value="indefinite">기간의 정함 없음</option></select></label><label id="term-years-field">계약기간<select name="termYears"><option value="1">1년</option><option value="2">2년</option><option value="custom">직접 지정</option></select></label><label id="end-date-field">계약 종료일<input name="endDate" type="date"></label><label>작성일<input name="documentDate" type="date"></label><label class="check wide"><input name="useProbation" type="checkbox" aria-controls="probation-fields" aria-expanded="false">수습기간 사용</label><fieldset id="probation-fields" class="fields wide" hidden disabled><legend class="sr-only">수습기간 조건</legend><label>수습기간 (개월)<input name="probationMonths" type="number" min="0" max="12" step="1" placeholder="미기재"></label><label>수습기간 급여 감액률 (%)<input name="probationReduction" type="number" min="0" max="100" step="1" placeholder="미기재"></label></fieldset></div>
       </section>
       <section class="form-section" aria-labelledby="schedule-title">
         <h2 id="schedule-title">근무 조건</h2>

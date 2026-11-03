@@ -23,6 +23,7 @@
       F13: `수습기간중의 급여는 ${f.probationReduction || '     '}% 감액할 수 있다.\n단, 최저임금법의 적용을 받는다.`,
       B15: model.workText, C21: won(result.total), C22: result.hourly == null ? '' : decimal(result.hourly),
     });
+    if(f.useProbation===false){values.B13='수습기간 없음';values.B14='';values.D13='';values.F13='';}
     if (!day) values.B18 = `2. “을”은 기관의 경영상 필요에 따른 연장·야간·휴일근로에 동의하며, 근로시간, 휴게시간, 휴일 규정 등을 확인하고 임금의 구성항목 및 금액을 확인하고 이에 동의함\n${f.employee || '                    '}      (서명)`;
     if (cycle && f.includeFlexibleClause) values.B15 = values.B15.replace('휴게시간을 변경할 수 있다.)', '휴게시간을 변경할 수 있으며, 취업규칙에 따라 탄력적근무제를 실시한다.)');
     const time = result.hours;
