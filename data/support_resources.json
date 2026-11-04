@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "items": [
     {
       "id": "happygiver-donghaeng-2026",
@@ -129,6 +129,72 @@
       "contact": "02-6335-0100",
       "url": "https://withgf.org/bbs/board.php?bo_table=B01&wr_id=561",
       "collected_date": "2026-11-03"
+    },
+    {
+      "id": "munhwabapsang-2026",
+      "title": "문화밥상 – 찾아가는 공연·문화프로그램 기관 공모",
+      "org": "슬기로운사회적협동조합",
+      "type": "무료공연·문화",
+      "summary": "조이 챔버오케스트라 찾아가는 공연(11~12월 중 토요일 오전 10시, 8명, 60분, 기관 내 공간), 리코더 음악여행(인천 복지시설 대상), 아코디언 이야기. 모두 60분, 참여자에 어르신 포함",
+      "target": "인천·경기 지역 복지시설 및 관련 기관·단체",
+      "region": "인천·경기",
+      "apply_start": null,
+      "deadline": "2026-11-10",
+      "deadline_note": "모집 마감, 11/20 선정 발표(개별 통보)",
+      "how_to_apply": "기관공모신청서(hwp) 작성 후 제출",
+      "contact": "010-6311-1801, abccab@naver.com",
+      "url": "https://www.bokji.net/not/biz/01_01.bokji?BOARDIDX=33197",
+      "collected_date": "2026-11-04"
+    },
+    {
+      "id": "handon-kimchi-2026",
+      "title": "2026 한돈 김장 나눔 캠페인",
+      "org": "한돈자조금관리위원회",
+      "type": "후원품",
+      "summary": "수육용 한돈 1인당 250g, 약 400곳·총 5톤 지원, 배송 11/10~12/6. 원문에 '노인' 명시 없음",
+      "target": "장애인·아동 등 복지대상자 10인 이상 상시 거주 사회복지시설, 김장 나눔 행사 비영리단체. 원문에 '노인' 명시 없음",
+      "region": "전국",
+      "apply_start": "2026-10-23",
+      "deadline": "2026-11-05",
+      "deadline_note": "(목)",
+      "how_to_apply": "한돈닷컴 공지사항의 온라인 신청서",
+      "contact": "원문 미기재",
+      "url": "https://www.yna.co.kr/view/AKR20261023069600030",
+      "collected_date": "2026-11-04",
+      "sources": [
+        {
+          "id": "handon-kimchi-2026-official",
+          "title": "2026 한돈 김장 나눔 캠페인",
+          "org": "한돈자조금관리위원회",
+          "url": "https://porkboard.han-don.com/board/notices/7020",
+          "collected_date": "2026-11-04"
+        }
+      ]
+    },
+    {
+      "id": "coad-autodoor",
+      "title": "코아드 '함께 여는 자동문' 무상 설치 사회공헌",
+      "org": "코아드",
+      "type": "후원품",
+      "summary": "매월 1곳 선정, 임직원 방문 설치, 전액 무상. 매월 25일 전후 이메일 발표",
+      "target": "장애인·노약자·아동 등 취약계층이 이용하는 공공·민간 시설",
+      "region": "전국",
+      "apply_start": null,
+      "deadline": null,
+      "deadline_note": "상시접수(공식 페이지 미기재, 서울시복지재단 WISH 게시물 기준 상시접수, 매월 10일 접수 사연 검토)",
+      "how_to_apply": "https://coaddoor.com/about/csr/apply (현장사진, 사업자등록증 또는 고유번호증)",
+      "contact": "원문 미기재",
+      "url": "https://coaddoor.com/about/csr",
+      "collected_date": "2026-11-04",
+      "sources": [
+        {
+          "id": "coad-autodoor-wish",
+          "title": "코아드 '함께 여는 자동문' 무상 설치 사회공헌",
+          "org": "코아드",
+          "url": "https://wish.welfare.seoul.kr/swflmsfront/board/boardr.do?bmno=10017&opno=0&bno=111371",
+          "collected_date": "2026-11-04"
+        }
+      ]
     }
   ]
 }
