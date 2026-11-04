@@ -8,10 +8,12 @@ const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
 const ideas = prepareIdeas(data);
 
 test('merged trend ideas stay newest-first and keep blocked links', () => {
-  assert.equal(data.updated, '2026-11-03');
-  assert.equal(ideas.length, 48);
-  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 84);
+  assert.equal(data.updated, '2026-11-04');
+  assert.equal(ideas.length, 53);
+  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 89);
   assert.equal(ideas.filter(idea => idea.articles.length >= 2).length, 27);
+  assert.equal(ideas[0].id, 'nursing-staff-share');
+  assert.equal(ideas[0].lastDate, '2026-11-03');
   assert.deepEqual(ideas.map(idea => idea.lastDate), [...ideas.map(idea => idea.lastDate)].sort((a, b) => b.localeCompare(a)));
   for (const idea of ideas) {
     assert.equal(idea.lastDate, effectiveDate(idea));
@@ -43,7 +45,7 @@ test('a newer article on an old idea moves that card first', () => {
 
 test('article identities follow each idea article and match the menu loader', () => {
   const ids = articleIds(data);
-  assert.equal(ids.length, 84);
+  assert.equal(ids.length, 89);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(trendArticleIds(data), ids);
   const sample = {ideas: [
@@ -58,7 +60,7 @@ test('article identities follow each idea article and match the menu loader', ()
     'recent\n2026-10-01\nhttps://example.com/old'
   ]);
   assert.deepEqual(trendArticleIds(sample), articleIds(sample));
-  assert.equal(homeMeta(data), '최근 기사 2026. 11. 01 · 아이디어 48개');
+  assert.equal(homeMeta(data), '최근 기사 2026. 11. 03 · 아이디어 53개');
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
