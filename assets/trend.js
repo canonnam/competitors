@@ -38,20 +38,25 @@
       return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : '';
     } catch { return ''; }
   }
-  function articleIds(data) {
+  function ideaArticleIds(idea) {
+    const ideaId = idea && typeof idea.id === 'string' ? idea.id : '';
+    if (!ideaId) return [];
     const ids = [];
-    for (const idea of (data && data.ideas) || []) {
-      const ideaId = typeof idea.id === 'string' ? idea.id : '';
-      if (!ideaId) continue;
-      for (const article of idea.articles || []) {
-        if (!article || typeof article !== 'object') continue;
-        const date = typeof article.date === 'string' ? article.date : '';
-        const url = typeof article.url === 'string' ? article.url : '';
-        if (!dateOk(date) || !url) continue;
-        ids.push(ideaId + '\n' + date + '\n' + url);
-      }
+    for (const article of idea.articles || []) {
+      if (!article || typeof article !== 'object') continue;
+      const date = typeof article.date === 'string' ? article.date : '';
+      const url = typeof article.url === 'string' ? article.url : '';
+      if (!dateOk(date) || !url) continue;
+      ids.push(ideaId + '\n' + date + '\n' + url);
     }
     return [...new Set(ids)];
+  }
+  function articleIds(data) {
+    return [...new Set(((data && data.ideas) || []).flatMap(ideaArticleIds))];
+  }
+  function unseenIdeaIds(ideas, seenBefore) {
+    const seen = new Set(Array.isArray(seenBefore) ? seenBefore.filter(id => typeof id === 'string' && id) : []);
+    return (ideas || []).filter(idea => ideaArticleIds(idea).some(id => !seen.has(id))).map(idea => idea.id);
   }
   function homeMeta(data) {
     const ideas = prepareIdeas(data);
@@ -69,8 +74,18 @@
     if (!detail && !homeMetaNode && !$('home-trend-new')) return;
     const tracker = win.NewsBadge?.create('trend', {badge:$('home-trend-new') || undefined, detail, seenLabel:'트렌드 페이지'});
     let loaded = null;
+    let acknowledged = null;
+    function readSeen() {
+      try {
+        const saved = JSON.parse(win.localStorage.getItem('vida-news-seen-v1:trend') || '[]');
+        return new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && id) : []);
+      } catch {
+        return new Set();
+      }
+    }
     function sync(data) {
       loaded = data;
+      if (detail && acknowledged === null) acknowledged = readSeen();
       if (homeMetaNode) homeMetaNode.textContent = homeMeta(data);
       tracker?.update(articleIds(data));
     }
@@ -107,7 +122,15 @@
     }
     function fillCard(card, idea) {
       const head = el('div', 'trend-card-head');
-      head.append(el('h2', '', idea.title));
+      const title = el('h2');
+      title.append(el('span', 'trend-title', idea.title));
+      if (detail && acknowledged && ideaArticleIds(idea).some(id => !acknowledged.has(id))) {
+        const mark = el('span', 'news-new-mark', 'N');
+        mark.title = '이 브라우저에서 아직 확인하지 않은 기사';
+        mark.setAttribute('aria-label', '확인하지 않은 기사');
+        title.append(mark);
+      }
+      head.append(title);
       if (idea.articles.length >= 2) head.append(el('span', 'ui-status', '관련 기사 ' + idea.articles.length));
       const summary = el('p', '', idea.summary);
       const meta = el('p', 'trend-meta');
@@ -185,6 +208,7 @@
       }).then(data => {
         if (detail) {
           ideas = prepareIdeas(data);
+          if (acknowledged === null) acknowledged = readSeen();
           ready = true;
           if (updated && data.updated) {
             updated.dateTime = data.updated;
@@ -204,5 +228,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, homeMeta, mount};
+  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, homeMeta, mount};
 });
