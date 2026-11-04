@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, homeMeta} = require('./assets/trend.js');
+const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, homeMeta} = require('./assets/trend.js');
 const {trendArticleIds} = require('./assets/navigation.js');
 
 const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
@@ -64,9 +64,27 @@ test('article identities follow each idea article and match the menu loader', ()
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
-  assert.ok(html.includes('/assets/trend.js?v=20261103-trendn'));
+  assert.ok(html.includes('/assets/trend.js?v=20261104-cardn'));
   assert.ok(html.indexOf('/assets/news-badge.js') < html.indexOf('/assets/trend.js'));
   assert.ok(html.indexOf('/assets/trend.js') < html.indexOf('/assets/navigation.js'));
+});
+
+test('a trend card is new only while one of its articles is unseen at page open', () => {
+  const ideas = prepareIdeas(data);
+  assert.equal(unseenIdeaIds(ideas, []).length, ideas.filter(idea => ideaArticleIds(idea).length).length);
+  const seen = articleIds(data);
+  assert.deepEqual(unseenIdeaIds(ideas, seen), []);
+  const withoutNursing = seen.filter(id => !id.startsWith('nursing-staff-share\n'));
+  assert.deepEqual(unseenIdeaIds(ideas, withoutNursing), ['nursing-staff-share']);
+  const merged = prepareIdeas({ideas: [
+    {id:'old', title:'예전', summary:'예전 방식', tags:['프로그램'], last_date:'2020-01-01', articles:[
+      {title:'기존', source:'예', date:'2020-01-01', url:'https://example.com/old', verified:'ok'},
+      {title:'새 기사', source:'예', date:'2026-11-04', url:'https://example.com/new', verified:'ok'}
+    ]}
+  ]});
+  assert.equal(merged[0].lastDate, '2026-11-04');
+  assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0]).slice(1)), ['old']);
+  assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0])), []);
 });
 
 test('tag and search filters narrow the same sorted list', () => {

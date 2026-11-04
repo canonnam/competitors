@@ -9,7 +9,9 @@
 button.trend-card { width:100%; }
 .trend-card:hover { background:var(--ui-hover); }
 .trend-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-.trend-card h2 { flex:1; min-width:0; margin:0; font-size:18px; line-height:1.45; font-weight:800; overflow-wrap:anywhere; }
+.trend-card h2 { display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0; margin:0; font-size:18px; line-height:1.45; font-weight:800; }
+.trend-title { flex:1; min-width:0; overflow-wrap:anywhere; }
+.trend-card h2 .news-new-mark { margin-top:3px; }
 .trend-card .ui-status { flex:none; white-space:nowrap; background:var(--ui-status-bg); color:var(--ui-muted); border-radius:var(--ui-status-radius); padding:3px 8px; font-size:12px; font-weight:600; line-height:1.5; }
 .trend-card p { margin:0; color:var(--ui-muted); font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
 .trend-meta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin-top:auto; color:var(--ui-muted); font-size:12px; line-height:1.5; }
