@@ -1,6 +1,24 @@
 {
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "ideas": [
+    {
+      "id": "nursing-staff-share",
+      "title": "간호인력 공개",
+      "summary": "간호사 비중과 진료비 수치를 인용해 우리 시설의 간호 인력 구성을 보여주는 콘텐츠를 올리는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "최저임금 올렸더니 요양원 '간호사'가 사라졌다",
+          "source": "대한경제",
+          "date": "2026-11-03",
+          "url": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202611031511509330464",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-03"
+    },
     {
       "id": "municipal-vs-private-compare",
       "title": "시립·민간 비교안내",
@@ -178,6 +196,25 @@
       "last_date": "2026-10-28"
     },
     {
+      "id": "csat-cheer-letter",
+      "title": "수능 응원 손편지",
+      "summary": "어르신들이 수험생에게 간식과 손편지를 전하는 세대 교류 행사를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "영양 어르신들이 고3 수험생에게 전한 특별한 응원…간식에 손편지까지",
+          "source": "경북일보",
+          "date": "2026-10-28",
+          "url": "https://www.kyongbuk.co.kr/news/articleView.html?idxno=4088764",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-28"
+    },
+    {
       "id": "evening-family-concert",
       "title": "저녁 가족 음악회",
       "summary": "평일 저녁에 로비에서 실내악 공연을 열어 퇴근한 가족도 올 수 있게 하는 가족 초청 음악회",
@@ -347,6 +384,25 @@
       "last_date": "2026-10-23"
     },
     {
+      "id": "family-singing-contest",
+      "title": "가족 가요제",
+      "summary": "입소 어르신과 가족이 팀이 되어 함께 노래하는 가요제를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "천태종복지재단 산하 시설 동향",
+          "source": "금강신문",
+          "date": "2026-10-23",
+          "url": "https://www.ggbn.co.kr/news/articleView.html?idxno=59265",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-23"
+    },
+    {
       "id": "dignity-safety-pledge",
       "title": "존엄·안전 약속문",
       "summary": "어르신과 종사자가 존엄·안전 권리선언문을 함께 낭독하고 인생네컷·장기자랑을 곁들이는 합동 행사",
@@ -436,6 +492,25 @@
       "last_date": "2026-10-22"
     },
     {
+      "id": "chrysanthemum-festival",
+      "title": "국화 축제",
+      "summary": "어르신들이 키운 국화를 전시하고 주민을 초청해 공연과 함께 늦가을 축제를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "시온복지센터, 어르신이 가꾼 국화꽃으로 '가을잔치' 연다",
+          "source": "영주시민신문",
+          "date": "2026-10-22",
+          "url": "http://www.yjinews.com/news/articleView.html?idxno=92751",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-22"
+    },
+    {
       "id": "guardian-story-radio",
       "title": "보호자 사연 라디오",
       "summary": "보호자가 보낸 사연과 신청곡을 사회복지사가 방송처럼 읽어 드리는 분기 프로그램",
@@ -500,6 +575,25 @@
           "source": "헬스경향",
           "date": "2026-10-18",
           "url": "https://www.k-health.com/news/articleView.html?idxno=101735",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-10-21"
+    },
+    {
+      "id": "dementia-family-cinema",
+      "title": "치매가족 시네마",
+      "summary": "치매 가족이 영화를 함께 본 뒤 원장 토크로 공감대를 만드는 행사를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "치매가족 위한 마음공감 시네마와 토크콘서트",
+          "source": "인천진",
+          "date": "2026-10-21",
+          "url": "https://incheonzine.com/6164",
           "verified": "ok"
         }
       ],
