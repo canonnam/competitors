@@ -141,7 +141,7 @@ class EnabledKeywordsTests(unittest.TestCase):
         with patch.object(v.naver_ads, 'keyword_report', return_value=report):
             self.assertEqual(v.naver_queries('unused', datetime.now(v.KST), {}, show_stale=True)[0], [])
         self.assertFalse(v.naver_ads.switched_on({'status':'ELIGIBLE','userLock':True}))
-        self.assertFalse(v.naver_ads.switched_on({'status':'PAUSED','userLock':False}))
+        self.assertTrue(v.naver_ads.switched_on({'status':'PAUSED','userLock':False}))
         self.assertFalse(v.naver_ads.switched_on({}))
         self.assertTrue(v.naver_ads.switched_on({'status':'PENDING','userLock':False}))
 

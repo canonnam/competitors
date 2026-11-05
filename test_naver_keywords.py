@@ -14,17 +14,19 @@ class KeywordClient:
         self.count = count
         self.campaign_status = 'ELIGIBLE'
         self.group_status = 'ELIGIBLE'
+        self.campaign_controls = {}
+        self.group_controls = {}
         self.bad_stats = None
 
     def get(self, uri, params=None):
         self.calls.append((uri, params))
         if uri == '/ncc/campaigns':
-            return [{'nccCampaignId':'c', 'campaignTp':'WEB_SITE', 'status':self.campaign_status, 'name':'Powerlink'},
+            return [{'nccCampaignId':'c', 'campaignTp':'WEB_SITE', 'status':self.campaign_status, 'name':'Powerlink', **self.campaign_controls},
                     {'nccCampaignId':'place', 'campaignTp':'PLACE'}]
         if uri == '/ncc/adgroups':
             if params['nccCampaignId'] == 'place':
                 raise AssertionError('Place is not a registered keyword ranking')
-            return [{'nccAdgroupId':'g', 'status':self.group_status, 'name':'Group'}]
+            return [{'nccAdgroupId':'g', 'status':self.group_status, 'name':'Group', **self.group_controls}]
         if uri == '/ncc/keywords':
             return [{'nccKeywordId':f'k{i}', 'keyword':f'Keyword {i}', 'status':'ELIGIBLE', 'userLock':i==1} for i in range(self.count)]
         if self.bad_stats is not None:
@@ -66,6 +68,27 @@ class KeywordTests(unittest.TestCase):
             self.assertEqual(params['timeIncrement'],'allDays')
             self.assertEqual(json.loads(params['timeRange']),{'since':'2026-09-01','until':'2026-09-07'})
             self.assertEqual(json.loads(params['fields']),['impCnt','clkCnt','salesAmt','avgRnk'])
+
+    def test_budget_paused_parents_keep_on_keywords_without_delivery_signal(self):
+        import search_visibility as visibility
+
+        client = KeywordClient()
+        client.campaign_status = client.group_status = 'PAUSED'
+        client.campaign_controls = {'userLock':False, 'statusReason':'CAMPAIGN_LIMITED_BY_BUDGET'}
+        client.group_controls = {'userLock':False, 'statusReason':'CAMPAIGN_LIMITED_BY_BUDGET'}
+        ads.sync_keywords(self.path, client, self.now)
+        result = ads.keyword_report(self.path, self.now)
+        self.assertEqual([row['enabled'] for row in result['items']], [True, False, True, True])
+        self.assertFalse(any(row['eligible'] for row in result['items']))
+        self.assertEqual(result['eligible_top_count'], 0)
+        self.assertEqual([q['keyword'] for q in visibility.active_keyword_queries(result['items'])],
+                         ['Keyword 0', 'Keyword 2', 'Keyword 3'])
+
+        for controls in (client.campaign_controls, client.group_controls):
+            controls['userLock'] = True
+            ads.sync_keywords(self.path, client, self.now)
+            self.assertEqual(visibility.active_keyword_queries(ads.keyword_report(self.path, self.now)['items']), [])
+            controls['userLock'] = False
 
     def test_failed_rank_collection_keeps_metrics_and_snapshot(self):
         client = KeywordClient()

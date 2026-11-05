@@ -240,7 +240,8 @@ def delivery_eligible(entity):
 def switched_on(entity):
     if 'userLock' not in entity:
         return entity.get('status') == 'ELIGIBLE'
-    return str(entity.get('userLock', False)).lower() not in {'true', '1', 'y'} and entity.get('status') != 'PAUSED'
+    # PAUSED includes budget limits; userLock is the advertiser's ON/OFF switch.
+    return str(entity['userLock']).lower() not in {'true', '1', 'y'}
 
 
 def sync_keywords(path, client, now=None):
