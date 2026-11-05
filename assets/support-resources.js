@@ -204,6 +204,17 @@
   function filterItems(items, {type = '', site = '', includeClosed = true} = {}) {
     return items.filter(item => (!type || item.type === type) && appliesToSite(item, site) && (includeClosed || !item.closed));
   }
+  function selectionForCopy(matched, selectedIds) {
+    const chosen = (matched || []).filter(item => selectedIds && selectedIds.has(item.id));
+    return chosen.length ? chosen : (matched || []);
+  }
+  function copyBlocks(items) {
+    return (items || []).map(item => {
+      const title = text(item.title) || '제목 없음';
+      const href = safeHref(item.url) || text(item.url) || '원문 미기재';
+      return title + '\n' + href;
+    }).join('\n\n');
+  }
   function itemIds(data) {
     return prepareItems(data).map(item => item.id);
   }
@@ -264,6 +275,11 @@
     let ready = false;
     let shown = PAGE_SIZE;
     const more = $('support-more');
+    const copyButton = $('support-copy');
+    const copyStatus = $('support-copy-status');
+    const selectedHint = $('support-selected');
+    const selected = new Set();
+    let copyTimer = 0;
     const el = (tagName, className, textValue) => {
       const node = doc.createElement(tagName);
       if (className) node.className = className;
@@ -296,6 +312,21 @@
         button.addEventListener('click', () => { selectedSite = item.id; render({reset:true}); });
         siteFilters.append(button);
       });
+    }
+    function chosenIn(matched) {
+      return matched.filter(item => selected.has(item.id));
+    }
+    function updateCopyHint(matched) {
+      const count = chosenIn(matched).length;
+      if (!selectedHint) return;
+      selectedHint.hidden = count === 0;
+      selectedHint.textContent = count ? count + '개 선택' : '';
+    }
+    function showCopyStatus(message) {
+      if (!copyStatus) return;
+      copyStatus.textContent = message;
+      win.clearTimeout(copyTimer);
+      copyTimer = win.setTimeout(() => { copyStatus.textContent = ''; }, 2000);
     }
     function fillCard(card, item) {
       const head = el('div', 'support-card-head');
@@ -340,17 +371,30 @@
       count.textContent = '항목 ' + matched.length + '건';
       count.hidden = items.length === 0;
       grid.replaceChildren();
+      updateCopyHint(matched);
       page.items.forEach(item => {
         const href = safeHref(item.url);
-        const card = href ? el('a', 'support-card') : el('article', 'support-card');
+        const card = el('article', 'support-card' + (item.closed ? ' is-closed' : ''));
+        const pick = el('label', 'support-select');
+        const box = el('input');
+        box.type = 'checkbox';
+        box.checked = selected.has(item.id);
+        box.setAttribute('aria-label', (item.title || '항목') + ' 선택');
+        box.addEventListener('change', () => {
+          if (box.checked) selected.add(item.id);
+          else selected.delete(item.id);
+          updateCopyHint(matched);
+        });
+        pick.append(box);
+        const body = href ? el('a', 'support-card-body') : el('div', 'support-card-body');
         if (href) {
-          card.href = href;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
-          card.title = '원문을 새 탭에서 엽니다';
+          body.href = href;
+          body.target = '_blank';
+          body.rel = 'noopener noreferrer';
+          body.title = '원문을 새 탭에서 엽니다';
         }
-        if (item.closed) card.classList.add('is-closed');
-        fillCard(card, item);
+        fillCard(body, item);
+        card.append(pick, body);
         grid.append(card);
       });
       if (more) {
@@ -380,6 +424,34 @@
         includeClosedInput.checked = true;
         render({reset:true});
         types.querySelector('button')?.focus();
+      });
+      function copyNow(payload) {
+        const area = el('textarea');
+        area.value = payload;
+        area.setAttribute('readonly', '');
+        area.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0';
+        doc.body.append(area);
+        area.focus();
+        area.select();
+        area.setSelectionRange(0, area.value.length);
+        let ok = false;
+        try { ok = doc.execCommand('copy'); } catch { ok = false; }
+        area.remove();
+        return ok;
+      }
+      copyButton?.addEventListener('click', () => {
+        const matched = filterItems(items, {type:selectedType, site:selectedSite, includeClosed});
+        const picked = selectionForCopy(matched, selected);
+        if (!picked.length) { showCopyStatus('복사할 항목이 없습니다'); return; }
+        const payload = copyBlocks(picked);
+        const done = message => showCopyStatus(message);
+        if (copyNow(payload)) { done(picked.length + '건 복사됨'); return; }
+        const clipboard = win.navigator.clipboard;
+        if (clipboard && win.isSecureContext) {
+          clipboard.writeText(payload).then(() => done(picked.length + '건 복사됨'), () => done('복사하지 못했습니다'));
+          return;
+        }
+        done('복사하지 못했습니다');
       });
       more?.addEventListener('click', () => {
         const before = grid.children.length;
@@ -424,5 +496,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, selectionForCopy, copyBlocks, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });

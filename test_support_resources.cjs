@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const {
-  prepareItems, filterItems, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, seoulToday
+  prepareItems, filterItems, selectionForCopy, copyBlocks, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, seoulToday
 } = require('./assets/support-resources.js');
 const {features, matchFeatures, supportResourceIds} = require('./assets/navigation.js');
 
@@ -185,7 +185,8 @@ test('home, menu and cache keys expose the support resource list', () => {
   const home = fs.readFileSync('index.html', 'utf8');
   assert.match(home, /<div class="card-heading"><h2>후원·재능기부<\/h2><span id="home-support-resources-new" class="news-new-mark"/);
   assert.match(home, /id="home-support-resources-meta" class="meta">최근 수집 확인 중/);
-  assert.ok(home.includes('/assets/support-resources.js?v=20261105-sites'));
+  assert.ok(home.includes('/assets/support-resources.js?v=20261105-copy'));
+  assert.ok(fs.readFileSync('support-resources.html', 'utf8').includes('id="support-copy"'));
   assert.ok(home.indexOf('/assets/news-badge.js') < home.indexOf('/assets/support-resources.js'));
   assert.ok(home.indexOf('/assets/support-resources.js') < home.indexOf('/assets/navigation.js'));
   for (const file of fs.readdirSync('.').filter(name => name.endsWith('.html'))) {
@@ -262,4 +263,12 @@ test('more button pages the filtered support list and a filter starts over', () 
   assert.ok(typedPage.items.every(item => item.type === items[0].type));
   assert.deepEqual(visitUnseen(itemIds(stored), []), itemIds(stored));
   assert.ok(fs.readFileSync('support-resources.html', 'utf8').includes('id="support-more"'));
+  const sampleRows = [{id:'a', title:'문화밥상', url:'https://example.com/a'}, {id:'b', title:'한돈', url:'https://example.com/b'}];
+  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set())), '문화밥상\nhttps://example.com/a\n\n한돈\nhttps://example.com/b');
+  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set(['b']))), '한돈\nhttps://example.com/b');
+  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set(['gone']))), copyBlocks(sampleRows));
+  const visible = filterItems(prepareItems(stored, '2026-11-05'), {site:'안양'});
+  const page = paginate(visible, PAGE_SIZE);
+  assert.equal(copyBlocks(selectionForCopy(visible, new Set())).split('\n\n').length, visible.length);
+  assert.ok(page.shown <= visible.length);
 });

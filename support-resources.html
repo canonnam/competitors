@@ -26,12 +26,12 @@
   <meta name="twitter:description" content="장기요양 운영과 돌봄 기술, 데이터를 함께 살펴보는 더비다의 지식 창고입니다.">
   <meta name="twitter:image" content="https://competitors-dev.up.railway.app/assets/brand/og-image.png">
   <meta name="twitter:image:alt" content="펼친 책과 더비다 지식 창고 로고">
-  <link rel="stylesheet" href="/assets/support-resources.css?v=20261105-sites">
+  <link rel="stylesheet" href="/assets/support-resources.css?v=20261105-copy">
   <link rel="stylesheet" href="/assets/site.css">
   <script src="/assets/site.js" defer></script>
   <link rel="stylesheet" href="/assets/navigation.css?v=20260917-ui1">
   <script src="/assets/news-badge.js?v=20261104-seen" defer></script>
-  <script src="/assets/support-resources.js?v=20261105-sites" defer></script>
+  <script src="/assets/support-resources.js?v=20261105-copy" defer></script>
   <script src="/assets/navigation.js?v=20261104-seen" defer></script>
   <link rel="stylesheet" href="/assets/ui-foundation.css?v=20261006-single">
 </head>
@@ -46,7 +46,14 @@
     </section>
     <p id="support-status" role="status"></p>
     <div class="support-toolbar" id="support-toolbar">
-      <div class="support-types" id="support-types" role="group" aria-label="유형"></div>
+      <div class="support-filter-row">
+        <div class="support-types" id="support-types" role="group" aria-label="유형"></div>
+        <div class="support-copy">
+          <span id="support-selected" class="support-selected" hidden></span>
+          <span id="support-copy-status" class="support-copy-status" role="status"></span>
+          <button class="ui-button support-copy-button" id="support-copy" type="button" aria-label="제목과 주소 복사"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>
       <div class="support-types" id="support-sites" role="group" aria-label="적용 지점"></div>
       <label class="support-closed" for="support-include-closed"><input id="support-include-closed" type="checkbox" checked> 마감 포함</label>
     </div>
