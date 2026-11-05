@@ -1,6 +1,24 @@
 {
-  "updated": "2026-11-04",
+  "updated": "2026-11-05",
   "ideas": [
+    {
+      "id": "dementia-unit-opening-pr",
+      "title": "치매전담 개원 홍보",
+      "summary": "유니트형 공간, 스마트태그 실종 예방, 치매안심마을 연계를 묶어 치매전담 시설 개원을 알리는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "춘천 첫 시립 치매전담형 요양원 '평안한 뜰' 개원",
+          "source": "파이낸셜뉴스",
+          "date": "2026-11-04",
+          "url": "https://www.fnnews.com/news/202611041659379165",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-04"
+    },
     {
       "id": "nursing-staff-share",
       "title": "간호인력 공개",
@@ -18,6 +36,51 @@
         }
       ],
       "last_date": "2026-11-03"
+    },
+    {
+      "id": "csat-cheer-letter",
+      "title": "수능 응원 손편지",
+      "summary": "어르신과 청소년이 수험생에게 간식 꾸러미·손편지·응원 영상을 전하는 세대 교류 행사를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "지역연계"
+      ],
+      "articles": [
+        {
+          "title": "옥천군노인복지관, 선배시민·청소년 함께 수능 응원",
+          "source": "금강일보",
+          "date": "2026-11-02",
+          "url": "https://www.ggilbo.com/news/articleView.html?idxno=1190423",
+          "verified": "ok"
+        },
+        {
+          "title": "영양 어르신들이 고3 수험생에게 전한 특별한 응원…간식에 손편지까지",
+          "source": "경북일보",
+          "date": "2026-10-28",
+          "url": "https://www.kyongbuk.co.kr/news/articleView.html?idxno=4088764",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-02"
+    },
+    {
+      "id": "kimchi-guardian-party",
+      "title": "김장·수육 파티",
+      "summary": "시설에서 김장을 한 뒤 보호자를 초청해 수육과 함께 먹는 연례행사를 여는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
+          "source": "케어런츠",
+          "date": "2026-11-02",
+          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-02"
     },
     {
       "id": "municipal-vs-private-compare",
@@ -190,25 +253,6 @@
           "source": "뉴스핌",
           "date": "2026-10-28",
           "url": "https://newspim.com/news/view/20261028001442",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-28"
-    },
-    {
-      "id": "csat-cheer-letter",
-      "title": "수능 응원 손편지",
-      "summary": "어르신들이 수험생에게 간식과 손편지를 전하는 세대 교류 행사를 여는 아이디어",
-      "tags": [
-        "프로그램",
-        "지역연계"
-      ],
-      "articles": [
-        {
-          "title": "영양 어르신들이 고3 수험생에게 전한 특별한 응원…간식에 손편지까지",
-          "source": "경북일보",
-          "date": "2026-10-28",
-          "url": "https://www.kyongbuk.co.kr/news/articleView.html?idxno=4088764",
           "verified": "ok"
         }
       ],
