@@ -16,7 +16,10 @@
       "how_to_apply": "구글폼 https://forms.gle/GjJyUSZ6nF5MNM4C8",
       "contact": "070-4432-5155",
       "url": "https://www.happygiver.or.kr/client/sub2/sub2_news3_view.asp?Idx=132&page=1",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "전국"
+      ]
     },
     {
       "id": "anyang-city-choir",
@@ -32,7 +35,10 @@
       "how_to_apply": "홈페이지 신청서 다운로드 후 신청",
       "contact": "031-8045-2796",
       "url": "https://www.anyang.go.kr/acc/contents.do?key=2163",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "안양"
+      ]
     },
     {
       "id": "ggac-welfare-performance",
@@ -48,7 +54,10 @@
       "how_to_apply": "경기아트센터 홈페이지 온라인 신청",
       "contact": "031-230-3200",
       "url": "https://www.ggac.or.kr/ggac/M0000119/content/view.do",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "안양"
+      ]
     },
     {
       "id": "kepco-happy-share",
@@ -64,7 +73,10 @@
       "how_to_apply": "한전아트센터 '행복한 공연나눔 신청'",
       "contact": "02-3456-5092~3",
       "url": "https://www.kepco.co.kr/art/customer/happyshare/introduce/conts.do",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "전국"
+      ]
     },
     {
       "id": "anyang-volunteer-1365",
@@ -80,7 +92,10 @@
       "how_to_apply": "등록신청서류 팩스/이메일 → 서류·현장심사 → 관리자교육",
       "contact": "031-8045-2487, 1365ayv@hanmail.net",
       "url": "https://www.anyang1365.or.kr/volunteer/sub02.asp",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "안양"
+      ]
     },
     {
       "id": "anyang-foodbank",
@@ -96,7 +111,10 @@
       "how_to_apply": "각 푸드뱅크 문의",
       "contact": "031-386-9957 / 031-442-8488 / 031-442-1365",
       "url": "https://anyang.go.kr/main/contents.do?key=627",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "안양"
+      ]
     },
     {
       "id": "gf-sponsor-activity",
@@ -112,7 +130,10 @@
       "how_to_apply": "지파운데이션 사업신청 게시판",
       "contact": "02-6335-0100",
       "url": "https://withgf.org/bbs/board.php?bo_table=B01&wr_id=561",
-      "collected_date": "2026-11-03"
+      "collected_date": "2026-11-03",
+      "sites": [
+        "전국"
+      ]
     },
     {
       "id": "munhwabapsang-2026",
@@ -128,7 +149,11 @@
       "how_to_apply": "기관공모신청서(hwp) 작성 후 제출",
       "contact": "010-6311-1801, abccab@naver.com",
       "url": "https://www.bokji.net/not/biz/01_01.bokji?BOARDIDX=33197",
-      "collected_date": "2026-11-04"
+      "collected_date": "2026-11-04",
+      "sites": [
+        "인천",
+        "안양"
+      ]
     },
     {
       "id": "handon-kimchi-2026",
@@ -153,6 +178,9 @@
           "url": "https://porkboard.han-don.com/board/notices/7020",
           "collected_date": "2026-11-04"
         }
+      ],
+      "sites": [
+        "전국"
       ]
     },
     {
@@ -178,6 +206,9 @@
           "url": "https://wish.welfare.seoul.kr/swflmsfront/board/boardr.do?bmno=10017&opno=0&bno=111371",
           "collected_date": "2026-11-04"
         }
+      ],
+      "sites": [
+        "전국"
       ]
     },
     {
@@ -194,7 +225,10 @@
       "how_to_apply": "온라인 신청",
       "contact": "원문 미기재",
       "url": "https://learning.anyang.go.kr/ay_network/supporters/donate.asp",
-      "collected_date": "2026-11-05"
+      "collected_date": "2026-11-05",
+      "sites": [
+        "안양"
+      ]
     }
   ]
 }

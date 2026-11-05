@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const {
-  prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, seoulToday
+  prepareItems, filterItems, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, seoulToday
 } = require('./assets/support-resources.js');
 const {features, matchFeatures, supportResourceIds} = require('./assets/navigation.js');
 
@@ -62,6 +62,26 @@ test('the stored notices keep both collection days without merging duplicates', 
   assert.equal(rows.filter(entry => entry.type === '후원품').length, 3);
   assert.equal(rows.filter(entry => entry.deadline === null).length, 7);
   assert.equal(rows.some(entry => entry.id === 'bupyeong-handbell-yeowoo'), false);
+  const expectedSites = {
+    'anyang-city-choir': ['안양'],
+    'anyang-volunteer-1365': ['안양'],
+    'anyang-foodbank': ['안양'],
+    'anyang-lifelong-donate': ['안양'],
+    'ggac-welfare-performance': ['안양'],
+    'munhwabapsang-2026': ['인천', '안양'],
+    'happygiver-donghaeng-2026': ['전국'],
+    'kepco-happy-share': ['전국'],
+    'gf-sponsor-activity': ['전국'],
+    'handon-kimchi-2026': ['전국'],
+    'coad-autodoor': ['전국']
+  };
+  assert.deepEqual(Object.fromEntries(rows.map(entry => [entry.id, entry.sites])), expectedSites);
+  assert.deepEqual(normalizeSites(['전국', '안양', '기타']), ['전국']);
+  assert.ok(filterItems(rows, {site:'안양'}).some(entry => entry.id === 'munhwabapsang-2026'));
+  assert.ok(filterItems(rows, {site:'안양'}).some(entry => entry.id === 'happygiver-donghaeng-2026'));
+  assert.equal(filterItems(rows, {site:'인천'}).some(entry => entry.id === 'anyang-city-choir'), false);
+  assert.ok(filterItems(rows, {site:'전국'}).every(entry => entry.sites.length === 1 && entry.sites[0] === '전국'));
+  assert.equal(paginate(filterItems(rows, {site:'안양'}), PAGE_SIZE).total, filterItems(rows, {site:'안양'}).length);
   assert.equal(scheduleText(byId['happygiver-donghaeng-2026']), '마감 2026-11-06 18:00 · D-3');
   assert.equal(byId['happygiver-donghaeng-2026'].event_date, '2026-11-28 15:00');
   assert.equal(byId['happygiver-donghaeng-2026'].contact, '070-4432-5155');
@@ -165,7 +185,7 @@ test('home, menu and cache keys expose the support resource list', () => {
   const home = fs.readFileSync('index.html', 'utf8');
   assert.match(home, /<div class="card-heading"><h2>후원·재능기부<\/h2><span id="home-support-resources-new" class="news-new-mark"/);
   assert.match(home, /id="home-support-resources-meta" class="meta">최근 수집 확인 중/);
-  assert.ok(home.includes('/assets/support-resources.js?v=20261105-more'));
+  assert.ok(home.includes('/assets/support-resources.js?v=20261105-sites'));
   assert.ok(home.indexOf('/assets/news-badge.js') < home.indexOf('/assets/support-resources.js'));
   assert.ok(home.indexOf('/assets/support-resources.js') < home.indexOf('/assets/navigation.js'));
   for (const file of fs.readdirSync('.').filter(name => name.endsWith('.html'))) {

@@ -17,6 +17,11 @@ a.support-card { cursor:pointer; }
 .support-title { flex:1; min-width:0; overflow-wrap:anywhere; }
 .support-card h2 .news-new-mark { margin-top:3px; }
 .support-card .ui-status { flex:none; white-space:nowrap; background:var(--ui-status-bg); color:var(--ui-muted); border-radius:var(--ui-status-radius); padding:3px 8px; font-size:12px; font-weight:600; line-height:1.5; }
+.support-sites { display:flex; flex-wrap:wrap; gap:6px; }
+.support-site { display:inline-flex; align-items:center; min-height:24px; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:800; line-height:1.4; }
+.support-site--incheon { background:#e5f0fb; color:#184a86; }
+.support-site--anyang { background:#e5f6ec; color:#146043; }
+.support-site--national { background:#f3eefb; color:#4a3484; }
 .support-card p { margin:0; color:var(--ui-muted); font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
 .support-org { color:var(--ui-text); font-weight:700; }
 .support-schedule { margin-top:auto; color:var(--ui-text); font-weight:700; }

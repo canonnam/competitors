@@ -7,6 +7,7 @@
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
   const TYPES = ['무료공연·문화', '재능기부', '후원품'];
+  const SITES = ['인천', '안양', '전국'];
   const FRESH_DAYS = 7;
   const TEXT_FIELDS = ['title', 'org', 'type', 'summary', 'target', 'region', 'how_to_apply', 'deadline_note', 'contact', 'event_date'];
   const dateOk = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
@@ -72,6 +73,11 @@
     const range = item.apply_start ? '접수 ' + item.apply_start + ' ~ ' + when : '마감 ' + when;
     return range + ' · ' + label;
   }
+  function normalizeSites(value) {
+    const names = new Set((Array.isArray(value) ? value : []).filter(site => SITES.includes(site)));
+    if (names.has('전국')) return ['전국'];
+    return SITES.filter(site => site !== '전국' && names.has(site));
+  }
   function sourceRecord(record) {
     const source = {
       id: typeof record.id === 'string' ? record.id : '',
@@ -108,6 +114,7 @@
     item.apply_start = ranked.map(entry => entry.record.apply_start).find(dateOk) || null;
     item.deadline = ranked.map(entry => entry.record.deadline).find(dateOk) || null;
     item.collected_date = ranked.map(entry => entry.record.collected_date).find(dateOk) || '';
+    item.sites = ranked.map(entry => normalizeSites(entry.record.sites)).find(list => list.length) || [];
     const sources = [];
     const seen = new Set();
     function addSource(source) {
@@ -188,8 +195,14 @@
   function moreLabel(page) {
     return `더보기 (${page.shown}/${page.total})`;
   }
-  function filterItems(items, {type = '', includeClosed = true} = {}) {
-    return items.filter(item => (!type || item.type === type) && (includeClosed || !item.closed));
+  function appliesToSite(item, site) {
+    if (!site) return true;
+    const sites = item.sites || [];
+    if (site === '전국') return sites.includes('전국');
+    return sites.includes(site) || sites.includes('전국');
+  }
+  function filterItems(items, {type = '', site = '', includeClosed = true} = {}) {
+    return items.filter(item => (!type || item.type === type) && appliesToSite(item, site) && (includeClosed || !item.closed));
   }
   function itemIds(data) {
     return prepareItems(data).map(item => item.id);
@@ -237,6 +250,7 @@
     const status = $('support-status');
     const toolbar = $('support-toolbar');
     const types = $('support-types');
+    const siteFilters = $('support-sites');
     const includeClosedInput = $('support-include-closed');
     const count = $('support-count');
     const empty = $('support-empty');
@@ -245,6 +259,7 @@
     const updated = $('support-updated');
     let items = [];
     let selectedType = '';
+    let selectedSite = '';
     let includeClosed = true;
     let ready = false;
     let shown = PAGE_SIZE;
@@ -269,6 +284,19 @@
         types.append(button);
       });
     }
+    function renderSites() {
+      if (!siteFilters) return;
+      const present = new Set(items.flatMap(item => item.sites || []));
+      if (selectedSite && !present.has(selectedSite)) selectedSite = '';
+      siteFilters.replaceChildren();
+      [{id:'', label:'전체 지점'}, ...SITES.filter(site => present.has(site)).map(site => ({id:site, label:site}))].forEach(item => {
+        const button = el('button', 'ui-button', item.label);
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(selectedSite === item.id));
+        button.addEventListener('click', () => { selectedSite = item.id; render({reset:true}); });
+        siteFilters.append(button);
+      });
+    }
     function fillCard(card, item) {
       const head = el('div', 'support-card-head');
       const title = el('h2');
@@ -282,6 +310,16 @@
       head.append(title);
       if (item.type) head.append(el('span', 'ui-status', item.type));
       card.append(head);
+      if (item.sites && item.sites.length) {
+        const badges = el('div', 'support-sites');
+        badges.setAttribute('aria-label', '적용 지점');
+        item.sites.forEach(site => {
+          const kind = site === '인천' ? 'incheon' : site === '안양' ? 'anyang' : 'national';
+          const badge = el('span', 'support-site support-site--' + kind, site);
+          badges.append(badge);
+        });
+        card.append(badges);
+      }
       if (item.org) card.append(el('p', 'support-org', item.org));
       if (item.summary) card.append(el('p', '', item.summary));
       const placeParts = [item.target, item.region].filter(Boolean);
@@ -297,7 +335,7 @@
     function render(options = {}) {
       if (!detail) return;
       if (options.reset) shown = PAGE_SIZE;
-      const matched = filterItems(items, {type:selectedType, includeClosed});
+      const matched = filterItems(items, {type:selectedType, site:selectedSite, includeClosed});
       const page = paginate(matched, shown);
       count.textContent = '항목 ' + matched.length + '건';
       count.hidden = items.length === 0;
@@ -327,15 +365,17 @@
         emptyText.textContent = '아직 등록된 항목이 없어요. 평일마다 새 항목이 추가됩니다.';
         reset.hidden = true;
       } else if (filterEmpty) {
-        emptyText.textContent = '이 조건에 맞는 항목이 없습니다. 유형이나 마감 표시를 바꿔 보세요.';
+        emptyText.textContent = '이 조건에 맞는 항목이 없습니다. 유형, 지점, 마감 표시를 바꿔 보세요.';
         reset.hidden = false;
       }
       types.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String((button.textContent === '전체' && !selectedType) || button.textContent === selectedType)));
+      siteFilters?.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String((button.textContent === '전체 지점' && !selectedSite) || button.textContent === selectedSite)));
     }
     if (detail) {
       includeClosedInput.addEventListener('change', () => { includeClosed = includeClosedInput.checked; render({reset:true}); });
       reset.addEventListener('click', () => {
         selectedType = '';
+        selectedSite = '';
         includeClosed = true;
         includeClosedInput.checked = true;
         render({reset:true});
@@ -371,6 +411,7 @@
           }
           status.textContent = '';
           renderTypes();
+          renderSites();
           render();
         }
         sync(data);
@@ -383,5 +424,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, FRESH_DAYS, prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });
