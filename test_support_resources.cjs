@@ -46,26 +46,25 @@ test('the stored notices keep both collection days without merging duplicates', 
   const byId = Object.fromEntries(rows.map(entry => [entry.id, entry]));
   const added = ['anyang-lifelong-donate', 'munhwabapsang-2026', 'handon-kimchi-2026', 'coad-autodoor'];
   assert.equal(stored.updated, '2026-11-05');
-  assert.equal(stored.items.length, 12);
-  assert.equal(rows.length, 12);
+  assert.equal(stored.items.length, 11);
+  assert.equal(rows.length, 11);
   assert.deepEqual(rows.map(entry => entry.id).slice(0, 4), added);
   assert.deepEqual(rows.map(entry => entry.id).slice(4), [
-    'happygiver-donghaeng-2026', 'bupyeong-handbell-yeowoo', 'anyang-city-choir', 'ggac-welfare-performance',
+    'happygiver-donghaeng-2026', 'anyang-city-choir', 'ggac-welfare-performance',
     'kepco-happy-share', 'anyang-volunteer-1365', 'anyang-foodbank', 'gf-sponsor-activity'
   ]);
   assert.ok(rows.filter(entry => entry.collectedDate === TODAY).every(entry => entry.fresh && !entry.closed));
   assert.equal(byId['anyang-lifelong-donate'].collectedDate, '2026-11-05');
   assert.equal(byId['anyang-lifelong-donate'].closed, false);
   assert.ok(['munhwabapsang-2026', 'handon-kimchi-2026', 'coad-autodoor'].every(id => byId[id].collectedDate === '2026-11-04' && !byId[id].closed));
-  assert.equal(rows.filter(entry => entry.type === '무료공연·문화').length, 6);
+  assert.equal(rows.filter(entry => entry.type === '무료공연·문화').length, 5);
   assert.equal(rows.filter(entry => entry.type === '재능기부').length, 3);
   assert.equal(rows.filter(entry => entry.type === '후원품').length, 3);
-  assert.equal(rows.filter(entry => entry.deadline === null).length, 8);
+  assert.equal(rows.filter(entry => entry.deadline === null).length, 7);
+  assert.equal(rows.some(entry => entry.id === 'bupyeong-handbell-yeowoo'), false);
   assert.equal(scheduleText(byId['happygiver-donghaeng-2026']), '마감 2026-11-06 18:00 · D-3');
   assert.equal(byId['happygiver-donghaeng-2026'].event_date, '2026-11-28 15:00');
   assert.equal(byId['happygiver-donghaeng-2026'].contact, '070-4432-5155');
-  assert.equal(byId['bupyeong-handbell-yeowoo'].deadline_note, '상시(2026년 연중 수시 모집)');
-  assert.equal(scheduleText(byId['bupyeong-handbell-yeowoo']), '상시(2026년 연중 수시 모집)');
   assert.equal(scheduleText(byId['kepco-happy-share']), '작품별, 공연일 2~20일 전 신청 가능');
   assert.equal(scheduleText(byId['gf-sponsor-activity']), '접수 2026-10-27 ~ 2026-11-04 · D-1');
   assert.equal(byId['gf-sponsor-activity'].target, byId['gf-sponsor-activity'].region);
@@ -78,9 +77,9 @@ test('the stored notices keep both collection days without merging duplicates', 
   assert.equal(byId['anyang-lifelong-donate'].deadline, null);
   assert.equal(scheduleText(byId['anyang-lifelong-donate']), '연 2회, 수시 신청');
   assert.equal(byId['anyang-lifelong-donate'].contact, '원문 미기재');
-  assert.equal(new Set(rows.map(entry => canonicalUrl(entry.url))).size, 12);
+  assert.equal(new Set(rows.map(entry => canonicalUrl(entry.url))).size, 11);
   assert.ok(rows.every(entry => safeHref(entry.url)));
-  assert.equal(homeMeta(stored, TODAY), '최근 수집 2026. 11. 05 · 12건');
+  assert.equal(homeMeta(stored, TODAY), '최근 수집 2026. 11. 05 · 11건');
   assert.deepEqual(supportResourceIds(stored), itemIds(stored));
   assert.deepEqual(new Set(itemIds(stored)), new Set(rows.map(entry => entry.id)));
   assert.deepEqual(visitUnseen(itemIds(stored), itemIds(stored).filter(id => !added.includes(id))).sort(), [...added].sort());
