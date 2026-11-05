@@ -263,9 +263,14 @@ test('more button pages the filtered support list and a filter starts over', () 
   assert.ok(typedPage.items.every(item => item.type === items[0].type));
   assert.deepEqual(visitUnseen(itemIds(stored), []), itemIds(stored));
   assert.ok(fs.readFileSync('support-resources.html', 'utf8').includes('id="support-more"'));
-  const sampleRows = [{id:'a', title:'문화밥상', url:'https://example.com/a'}, {id:'b', title:'한돈', url:'https://example.com/b'}];
-  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set())), '문화밥상\nhttps://example.com/a\n\n한돈\nhttps://example.com/b');
-  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set(['b']))), '한돈\nhttps://example.com/b');
+  const sampleRows = [
+    {id:'a', title:'문화밥상', url:'https://example.com/a', sites:['인천','안양'], deadline:'2026-11-10', deadline_note:'모집 마감'},
+    {id:'b', title:'한돈', url:'https://example.com/b', sites:['전국'], deadline:null, deadline_note:'상시접수'}
+  ];
+  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set())), '[인천·안양] 문화밥상\nhttps://example.com/a\n마감 2026-11-10\n\n[전국] 한돈\nhttps://example.com/b\n상시접수');
+  assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set(['b']))), '[전국] 한돈\nhttps://example.com/b\n상시접수');
+  assert.equal(copyBlocks([{title:'제목 없음 후보', url:'https://example.com/c'}]), '제목 없음 후보\nhttps://example.com/c\n상시모집');
+  assert.equal(copyBlocks([{title:'공연', url:'https://example.com/d', deadline:'2026-11-06', deadline_note:'18:00'}]), '공연\nhttps://example.com/d\n마감 2026-11-06 18:00');
   assert.equal(copyBlocks(selectionForCopy(sampleRows, new Set(['gone']))), copyBlocks(sampleRows));
   const visible = filterItems(prepareItems(stored, '2026-11-05'), {site:'안양'});
   const page = paginate(visible, PAGE_SIZE);

@@ -208,11 +208,25 @@
     const chosen = (matched || []).filter(item => selectedIds && selectedIds.has(item.id));
     return chosen.length ? chosen : (matched || []);
   }
+  function siteLabel(sites) {
+    const names = normalizeSites(sites);
+    if (!names.length) return '';
+    if (names.includes('인천') && names.includes('안양')) return '[인천·안양] ';
+    return '[' + names[0] + '] ';
+  }
+  function copyDeadline(item) {
+    const note = text(item && item.deadline_note);
+    if (dateOk(item && item.deadline)) {
+      const time = note.match(/\d{1,2}:\d{2}/);
+      return '마감 ' + item.deadline + (time ? ' ' + time[0] : '');
+    }
+    return note || '상시모집';
+  }
   function copyBlocks(items) {
     return (items || []).map(item => {
-      const title = text(item.title) || '제목 없음';
+      const title = siteLabel(item.sites) + (text(item.title) || '제목 없음');
       const href = safeHref(item.url) || text(item.url) || '원문 미기재';
-      return title + '\n' + href;
+      return title + '\n' + href + '\n' + copyDeadline(item);
     }).join('\n\n');
   }
   function itemIds(data) {
@@ -496,5 +510,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, selectionForCopy, copyBlocks, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, selectionForCopy, copyBlocks, copyDeadline, siteLabel, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });
