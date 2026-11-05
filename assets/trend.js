@@ -54,6 +54,16 @@
   function articleIds(data) {
     return [...new Set(((data && data.ideas) || []).flatMap(ideaArticleIds))];
   }
+  const PAGE_SIZE = 12;
+  function paginate(items, shown) {
+    const list = items || [];
+    const total = list.length;
+    const count = Math.min(Math.max(0, shown || 0), total);
+    return {items: list.slice(0, count), shown: count, total, hasMore: count < total};
+  }
+  function moreLabel(page) {
+    return `더보기 (${page.shown}/${page.total})`;
+  }
   function unseenIdeaIds(ideas, seenBefore) {
     const seen = new Set(Array.isArray(seenBefore) ? seenBefore.filter(id => typeof id === 'string' && id) : []);
     return (ideas || []).filter(idea => ideaArticleIds(idea).some(id => !seen.has(id))).map(idea => idea.id);
@@ -103,6 +113,8 @@
     let tag = '';
     let ready = false;
     let lastFocus = null;
+    let shown = PAGE_SIZE;
+    const more = $('trend-more');
     const el = (tagName, className, text) => {
       const node = doc.createElement(tagName);
       if (className) node.className = className;
@@ -116,7 +128,7 @@
         const button = el('button', 'ui-button', item.label);
         button.type = 'button';
         button.setAttribute('aria-pressed', String(tag === item.id));
-        button.addEventListener('click', () => { tag = item.id; render(); });
+        button.addEventListener('click', () => { tag = item.id; render({reset:true}); });
         tags.append(button);
       });
     }
@@ -163,11 +175,13 @@
       if (!dialog.open) dialog.showModal();
       closeButton.focus();
     }
-    function render() {
-      const visible = filterIdeas(ideas, {query:search.value, tag});
-      count.textContent = '아이디어 ' + visible.length + '개';
+    function render(options = {}) {
+      if (options.reset) shown = PAGE_SIZE;
+      const matched = filterIdeas(ideas, {query:search.value, tag});
+      const page = paginate(matched, shown);
+      count.textContent = '아이디어 ' + matched.length + '개';
       grid.replaceChildren();
-      visible.forEach(idea => {
+      page.items.forEach(idea => {
         const single = idea.articles.length === 1 ? safeHref(idea.articles[0].url) : '';
         const card = single ? el('a', 'trend-card') : el('button', 'trend-card');
         if (single) {
@@ -183,7 +197,11 @@
         fillCard(card, idea);
         grid.append(card);
       });
-      empty.hidden = !ready || visible.length > 0;
+      if (more) {
+        more.hidden = !page.hasMore;
+        more.textContent = moreLabel(page);
+      }
+      empty.hidden = !ready || matched.length > 0;
       tags.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String((button.textContent === '전체' && !tag) || button.textContent === tag)));
     }
     if (detail) {
@@ -197,8 +215,15 @@
         if (lastFocus && lastFocus.isConnected) lastFocus.focus();
         else search.focus();
       });
-      search.addEventListener('input', render);
-      $('trend-reset').addEventListener('click', () => { search.value = ''; tag = ''; render(); search.focus(); });
+      search.addEventListener('input', () => render({reset:true}));
+      $('trend-reset').addEventListener('click', () => { search.value = ''; tag = ''; render({reset:true}); search.focus(); });
+      more?.addEventListener('click', () => {
+        const before = grid.children.length;
+        shown += PAGE_SIZE;
+        render();
+        if (more.hidden) grid.children[before]?.focus();
+        else more.focus();
+      });
       status.textContent = '아이디어를 불러오는 중';
     }
     function refresh() {
@@ -228,5 +253,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, homeMeta, mount};
+  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, paginate, moreLabel, PAGE_SIZE, homeMeta, mount};
 });

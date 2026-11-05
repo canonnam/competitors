@@ -178,6 +178,16 @@
     items.sort((a, b) => Number(a.closed) - Number(b.closed) || b.collectedDate.localeCompare(a.collectedDate) || a.order - b.order);
     return items;
   }
+  const PAGE_SIZE = 10;
+  function paginate(items, shown) {
+    const list = items || [];
+    const total = list.length;
+    const count = Math.min(Math.max(0, shown || 0), total);
+    return {items: list.slice(0, count), shown: count, total, hasMore: count < total};
+  }
+  function moreLabel(page) {
+    return `더보기 (${page.shown}/${page.total})`;
+  }
   function filterItems(items, {type = '', includeClosed = true} = {}) {
     return items.filter(item => (!type || item.type === type) && (includeClosed || !item.closed));
   }
@@ -237,6 +247,8 @@
     let selectedType = '';
     let includeClosed = true;
     let ready = false;
+    let shown = PAGE_SIZE;
+    const more = $('support-more');
     const el = (tagName, className, textValue) => {
       const node = doc.createElement(tagName);
       if (className) node.className = className;
@@ -253,7 +265,7 @@
         const button = el('button', 'ui-button', item.label);
         button.type = 'button';
         button.setAttribute('aria-pressed', String(selectedType === item.id));
-        button.addEventListener('click', () => { selectedType = item.id; render(); });
+        button.addEventListener('click', () => { selectedType = item.id; render({reset:true}); });
         types.append(button);
       });
     }
@@ -282,13 +294,15 @@
       if (item.contact) card.append(el('p', 'support-contact', '문의 ' + item.contact));
       if (item.collectedDate) card.append(el('p', 'support-collected', '수집 ' + item.collectedDate));
     }
-    function render() {
+    function render(options = {}) {
       if (!detail) return;
-      const visible = filterItems(items, {type:selectedType, includeClosed});
-      count.textContent = '항목 ' + visible.length + '건';
+      if (options.reset) shown = PAGE_SIZE;
+      const matched = filterItems(items, {type:selectedType, includeClosed});
+      const page = paginate(matched, shown);
+      count.textContent = '항목 ' + matched.length + '건';
       count.hidden = items.length === 0;
       grid.replaceChildren();
-      visible.forEach(item => {
+      page.items.forEach(item => {
         const href = safeHref(item.url);
         const card = href ? el('a', 'support-card') : el('article', 'support-card');
         if (href) {
@@ -301,8 +315,12 @@
         fillCard(card, item);
         grid.append(card);
       });
+      if (more) {
+        more.hidden = !page.hasMore;
+        more.textContent = moreLabel(page);
+      }
       const catalogEmpty = ready && items.length === 0;
-      const filterEmpty = ready && !catalogEmpty && visible.length === 0;
+      const filterEmpty = ready && !catalogEmpty && matched.length === 0;
       if (toolbar) toolbar.hidden = catalogEmpty;
       empty.hidden = !catalogEmpty && !filterEmpty;
       if (catalogEmpty) {
@@ -315,13 +333,20 @@
       types.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String((button.textContent === '전체' && !selectedType) || button.textContent === selectedType)));
     }
     if (detail) {
-      includeClosedInput.addEventListener('change', () => { includeClosed = includeClosedInput.checked; render(); });
+      includeClosedInput.addEventListener('change', () => { includeClosed = includeClosedInput.checked; render({reset:true}); });
       reset.addEventListener('click', () => {
         selectedType = '';
         includeClosed = true;
         includeClosedInput.checked = true;
-        render();
+        render({reset:true});
         types.querySelector('button')?.focus();
+      });
+      more?.addEventListener('click', () => {
+        const before = grid.children.length;
+        shown += PAGE_SIZE;
+        render();
+        if (more.hidden) grid.children[before]?.focus();
+        else more.focus();
       });
       status.textContent = '항목을 불러오는 중';
     }
@@ -358,5 +383,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, FRESH_DAYS, prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, FRESH_DAYS, prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });
