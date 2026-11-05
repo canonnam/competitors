@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04",
+  "updated": "2026-11-05",
   "items": [
     {
       "id": "happygiver-donghaeng-2026",
@@ -195,6 +195,22 @@
           "collected_date": "2026-11-04"
         }
       ]
+    },
+    {
+      "id": "anyang-lifelong-donate",
+      "title": "안양시 평생학습원 학습 재능기부 수요기관 모집",
+      "org": "안양시 평생학습원",
+      "type": "재능기부",
+      "summary": "재능기부 강사(인문교양·문화예술 등 평생학습 분야)를 수요기관에 연계, 강사비 없음(교재·재료비는 학습자 부담)",
+      "target": "학습자 모집이 가능하고 학습 공간을 갖춘 기관·단체",
+      "region": "경기 안양",
+      "apply_start": null,
+      "deadline": null,
+      "deadline_note": "연 2회, 수시 신청",
+      "how_to_apply": "온라인 신청",
+      "contact": "원문 미기재",
+      "url": "https://learning.anyang.go.kr/ay_network/supporters/donate.asp",
+      "collected_date": "2026-11-05"
     }
   ]
 }
