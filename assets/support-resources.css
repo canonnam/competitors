@@ -24,6 +24,8 @@ a.support-card { cursor:pointer; }
 .support-schedule.is-closed { color:var(--ui-muted); font-weight:600; }
 .support-empty { margin:8px 0 0; padding:28px 16px; border:1px dashed var(--ui-border); border-radius:var(--ui-card-radius); background:var(--ui-surface); color:var(--ui-muted); text-align:center; }
 .support-empty[hidden] { display:none; }
+.support-more { display:flex; align-items:center; justify-content:center; width:min(100%, 320px); margin:16px auto 0; min-height:44px; }
+.support-more[hidden] { display:none; }
 .support-empty p { margin:0; line-height:1.7; overflow-wrap:anywhere; }
 .support-empty .ui-button { margin-top:16px; }
 @media (max-width:700px) {

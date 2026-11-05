@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const {
-  prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, homeMeta, safeHref, canonicalUrl, seoulToday
+  prepareItems, filterItems, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, seoulToday
 } = require('./assets/support-resources.js');
 const {features, matchFeatures, supportResourceIds} = require('./assets/navigation.js');
 
@@ -166,7 +166,7 @@ test('home, menu and cache keys expose the support resource list', () => {
   const home = fs.readFileSync('index.html', 'utf8');
   assert.match(home, /<div class="card-heading"><h2>후원·재능기부<\/h2><span id="home-support-resources-new" class="news-new-mark"/);
   assert.match(home, /id="home-support-resources-meta" class="meta">최근 수집 확인 중/);
-  assert.ok(home.includes('/assets/support-resources.js?v=20261104-seen'));
+  assert.ok(home.includes('/assets/support-resources.js?v=20261105-more'));
   assert.ok(home.indexOf('/assets/news-badge.js') < home.indexOf('/assets/support-resources.js'));
   assert.ok(home.indexOf('/assets/support-resources.js') < home.indexOf('/assets/navigation.js'));
   for (const file of fs.readdirSync('.').filter(name => name.endsWith('.html'))) {
@@ -215,4 +215,32 @@ test('confirming support notices clears only that browser and a new id returns',
   assert.deepEqual(visitUnseen(added, JSON.parse(browserA.getItem('vida-news-seen-v1:support-resources'))), ['new-notice']);
   other.context.NewsBadge.create('support-resources',{}).update(added);
   assert.equal(other.context.NewsBadge.counts()['support-resources'], added.length);
+});
+
+test('more button pages the filtered support list and a filter starts over', () => {
+  assert.equal(PAGE_SIZE, 10);
+  const items = prepareItems(stored, '2026-11-05');
+  assert.ok(items.length > PAGE_SIZE);
+  let shown = PAGE_SIZE;
+  const first = paginate(items, shown);
+  assert.equal(first.shown, 10);
+  assert.equal(first.hasMore, true);
+  assert.equal(moreLabel(first), `더보기 (10/${items.length})`);
+  assert.equal(first.items[0].id, items[0].id);
+  shown += PAGE_SIZE;
+  const second = paginate(items, shown);
+  assert.equal(second.shown, items.length);
+  assert.equal(second.hasMore, false);
+  assert.ok(second.items.filter(item => item.closed).every(item => item.deadlineInfo));
+  const open = filterItems(items, {includeClosed:false});
+  shown = PAGE_SIZE;
+  const reset = paginate(open, shown);
+  assert.equal(reset.total, open.length);
+  assert.ok(reset.items.every(item => !item.closed));
+  const typed = filterItems(items, {type: items[0].type});
+  const typedPage = paginate(typed, PAGE_SIZE);
+  assert.equal(typedPage.total, typed.length);
+  assert.ok(typedPage.items.every(item => item.type === items[0].type));
+  assert.deepEqual(visitUnseen(itemIds(stored), []), itemIds(stored));
+  assert.ok(fs.readFileSync('support-resources.html', 'utf8').includes('id="support-more"'));
 });

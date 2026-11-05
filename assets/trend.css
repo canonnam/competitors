@@ -18,6 +18,8 @@ button.trend-card { width:100%; }
 .trend-tag-list { display:flex; flex-wrap:wrap; gap:6px; }
 .trend-empty { margin:8px 0 0; color:var(--ui-muted); }
 .trend-empty[hidden] { display:none; }
+.trend-more { display:flex; align-items:center; justify-content:center; width:min(100%, 320px); margin:16px auto 0; min-height:44px; }
+.trend-more[hidden] { display:none; }
 .trend-articles { list-style:none; margin:0; padding:0; }
 .trend-articles li { padding:12px 0; border-top:1px solid var(--ui-border); }
 .trend-articles a { font-weight:700; overflow-wrap:anywhere; }

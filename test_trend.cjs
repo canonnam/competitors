@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, homeMeta} = require('./assets/trend.js');
+const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, paginate, moreLabel, PAGE_SIZE, homeMeta} = require('./assets/trend.js');
 const {trendArticleIds} = require('./assets/navigation.js');
 
 const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
@@ -67,7 +67,7 @@ test('article identities follow each idea article and match the menu loader', ()
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
-  assert.ok(html.includes('/assets/trend.js?v=20261104-cardn'));
+  assert.ok(html.includes('/assets/trend.js?v=20261105-more'));
   assert.ok(html.indexOf('/assets/news-badge.js') < html.indexOf('/assets/trend.js'));
   assert.ok(html.indexOf('/assets/trend.js') < html.indexOf('/assets/navigation.js'));
 });
@@ -88,6 +88,30 @@ test('a trend card is new only while one of its articles is unseen at page open'
   assert.equal(merged[0].lastDate, '2026-11-04');
   assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0]).slice(1)), ['old']);
   assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0])), []);
+});
+
+test('more button pages newest-first results and a new search starts over', () => {
+  assert.equal(PAGE_SIZE, 12);
+  assert.equal(ideas.length, 55);
+  let shown = PAGE_SIZE;
+  const first = paginate(ideas, shown);
+  assert.equal(first.shown, 12);
+  assert.equal(first.hasMore, true);
+  assert.equal(moreLabel(first), '더보기 (12/55)');
+  assert.equal(first.items[0].id, ideas[0].id);
+  shown += PAGE_SIZE;
+  const second = paginate(ideas, shown);
+  assert.equal(second.shown, 24);
+  assert.equal(second.items[12].id, ideas[12].id);
+  assert.ok(unseenIdeaIds(ideas.slice(PAGE_SIZE), []).length > 0);
+  const searched = filterIdeas(ideas, {query:'김장'});
+  shown = PAGE_SIZE;
+  const reset = paginate(searched, shown);
+  assert.equal(reset.total, searched.length);
+  assert.equal(reset.hasMore, false);
+  assert.equal(paginate(ideas, ideas.length).hasMore, false);
+  assert.equal(paginate([], 12).shown, 0);
+  assert.ok(fs.readFileSync('trend.html', 'utf8').includes('id="trend-more"'));
 });
 
 test('tag and search filters narrow the same sorted list', () => {
