@@ -1,6 +1,24 @@
 {
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "ideas": [
+    {
+      "id": "director-career-trust",
+      "title": "의료 경력 안심",
+      "summary": "원장의 대학병원·보건소·치매간호 경력을 앞에 내세워 의료 인력 안심 메시지를 거는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "케어링 스테이, 의료·간호 전문인력 중심 운영체계 구축",
+          "source": "뉴스핌",
+          "date": "2026-11-05",
+          "url": "https://ir.newspim.com/news/view/20261105001054",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-05"
+    },
     {
       "id": "dementia-unit-opening-pr",
       "title": "치매전담 개원 홍보",
@@ -83,6 +101,44 @@
       "last_date": "2026-11-02"
     },
     {
+      "id": "newsletter-program-board",
+      "title": "소식지·프로그램표",
+      "summary": "매월 초에 소식지와 월간 프로그램 계획표를 같은 게시판에 올려 보호자가 한눈에 일정을 보게 하는 아이디어",
+      "tags": [
+        "가족소통",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "[소식지] 2026년 11월 소식지 / [일정표] 2026년 11월 프로그램 안내",
+          "source": "인천사랑노인요양원",
+          "date": "2026-11-02",
+          "url": "https://www.icsarang.or.kr/main/sub.html?Mode=view&boardID=www14&num=1540&page=&keyfield=&key=&bCate=",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-02"
+    },
+    {
+      "id": "monthly-plan-highlight",
+      "title": "월간표 하이라이트",
+      "summary": "월간 프로그램표에 팔구순잔치·외식 나들이·요리 활동을 눈에 띄게 넣어 계획안을 공개하는 아이디어",
+      "tags": [
+        "프로그램",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "11월 프로그램 계획안",
+          "source": "에덴노인전문요양센터",
+          "date": "2026-11-02",
+          "url": "https://edencenter.or.kr/bbs/board.php?bo_table=menu4_5&wr_id=282",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-02"
+    },
+    {
       "id": "municipal-vs-private-compare",
       "title": "시립·민간 비교안내",
       "summary": "시립 요양원 입소 접수 일정과 민간 시설의 즉시 상담·입소 가능 여부를 나란히 정리한 비교 안내를 소식지에 올리는 방식",
@@ -118,12 +174,20 @@
     {
       "id": "weekly-menu-board",
       "title": "주간 식단표 공개",
-      "summary": "주간 식단표를 미리 홈페이지에 올리고 절기·추석 특식을 한 줄로 명시하는 방식",
+      "summary": "주간 식단표를 미리 홈페이지에 올리고 월 1회 프로그램 시간표와 절기 특식을 함께 알리는 방식",
       "tags": [
         "프로그램",
         "가족소통"
       ],
       "articles": [
+        {
+          "title": "2026. 10. 26. ~ 2026. 11. 01. 식단표 / 2026년 11월 프로그램 시간표",
+          "source": "우리노인요양원",
+          "date": "2026-11-01",
+          "url": "http://wy.or.kr/bbs/board.php?bo_table=s5_1",
+          "verified": "ok",
+          "date_basis": "briefing"
+        },
         {
           "title": "제주도립노인요양원 11월 월간 프로그램표",
           "source": "제주도립노인요양원",
@@ -155,7 +219,7 @@
           "verified": "blocked"
         }
       ],
-      "last_date": "2026-10-30"
+      "last_date": "2026-11-01"
     },
     {
       "id": "monthly-guardian-meeting",
