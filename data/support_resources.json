@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "items": [
     {
       "id": "happygiver-donghaeng-2026",
@@ -228,6 +228,34 @@
       "collected_date": "2026-11-05",
       "sites": [
         "안양"
+      ]
+    },
+    {
+      "id": "kakdang-welldying-theater-2026",
+      "title": "각당 웰다잉연극단 찾아가는 공연 초청",
+      "org": "각당복지재단",
+      "type": "무료공연·문화",
+      "summary": "노인복지기관 등이 웰다잉 연극(「아름다운 여행길」/「소풍가는 날」 택1) 찾아가는 공연을 초청 신청할 수 있음(신청서 양식 2026-10-29 갱신 확인). 원문에 유료/무료 비용 문구는 없음.",
+      "target": "노인복지기관, 평생학습관, 학교, 노인대학, 병원, 교회 등 기관·단체",
+      "region": "전국",
+      "apply_start": null,
+      "deadline": null,
+      "deadline_note": "상시(원문에 마감일 미기재)",
+      "how_to_apply": "연극 신청서(docx) 작성 후 이메일 kadec@kakdang.or.kr 제출 / 문의 02-736-0192, 02-736-1928",
+      "contact": "02-736-0192, 02-736-1928, kadec@kakdang.or.kr",
+      "url": "https://kakdang.or.kr/%ED%99%9C%EB%8F%99%EC%A7%80%EC%9B%90/%EA%B0%81%EB%8B%B9-%EC%9B%B0%EB%8B%A4%EC%9E%89%EC%97%B0%EA%B7%B9%EB%8B%A8/",
+      "collected_date": "2026-11-06",
+      "sites": [
+        "전국"
+      ],
+      "sources": [
+        {
+          "id": "kakdang-welldying-theater-2026-form",
+          "title": "각당복지재단 연극 신청서",
+          "org": "각당복지재단",
+          "url": "https://kakdang.or.kr/wp-content/uploads/2024/08/각당복지재단연극신청양식-1.docx",
+          "collected_date": "2026-11-06"
+        }
       ]
     }
   ]
