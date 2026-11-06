@@ -6,7 +6,7 @@
   const roles = {
     operations: {name:'기관 운영', keys:['easy','carefor','ecm','angel','allcare','jipangi','salary','maeum','yoyangsys','cura','carehaja','rachelcare','careverse','seniorlife','caremanager','kairn']},
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai','aidosa','junctionmed','carelogue','navi']},
-    monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt','lguplus']},
+    monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt','lguplus','namuhx']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
     safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank','wellcare']}
   };

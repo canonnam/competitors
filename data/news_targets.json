@@ -21,6 +21,7 @@
   {"id":"spacebank","name":"스페이스뱅크","query":"\"스페이스뱅크\" (휴먼케어 OR 낙상 OR 요양 OR 돌봄)","aliases":["스페이스뱅크"],"context":["휴먼케어","HumanCare","낙상","요양","돌봄"]},
   {"id":"wellcare","name":"WellCare AI","query":"(\"WellCare\" OR \"에스디씨웰케어\" OR \"웰케어 AI\") (요양 OR 활력 OR 실증)","aliases":["WellCare AI","에스디씨웰케어"],"context":["요양","활력","실증","건강"]},
   {"id":"lguplus","name":"AI빌딩넷 by ixi – 웰니스노트","query":"(\"웰니스노트\" OR \"AI빌딩넷\") (요양 OR 돌봄 OR 유플러스)","aliases":["웰니스노트","AI빌딩넷","LG유플러스"],"context":["요양","돌봄","쏠라체","ixi"]},
+  {"id":"namuhx","name":"나무엑스 (NAMUHX)","query":"(\"나무엑스\" OR \"NAMUHX\" OR \"SK인텔릭스\") (요양 OR 시니어 OR 로봇 OR 돌봄)","aliases":["나무엑스","NAMUHX","SK인텔릭스"],"context":["요양","시니어","로봇","돌봄","낙상"]},
   {
     "id": "nursing-incidents",
     "name": "요양원 사건·사고",
