@@ -269,8 +269,10 @@ class App(SimpleHTTPRequestHandler):
     def send_operating_report(self, head_only=False):
         try:
             raw = (ROOT / "data" / "operating_report.json").read_bytes()
+            if urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get('summary') == ['1']:
+                raw = json.dumps({'updatedAt': json.loads(raw).get('updatedAt')}).encode()
             status = 200
-        except OSError:
+        except (OSError, ValueError):
             raw = json.dumps({"error": "운영비 자료를 불러오지 못했습니다."}, ensure_ascii=False).encode()
             status = 503
         self.send_response(status)

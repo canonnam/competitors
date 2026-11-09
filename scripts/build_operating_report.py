@@ -6,7 +6,7 @@ Requires openpyxl for this offline import only (not the running service).
 """
 import argparse
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -217,6 +217,13 @@ def build(source_root, source_date=None):
     return report
 
 
+def update_timestamp(report, previous):
+    if report['branches'] != previous.get('branches'):
+        report['updatedAt'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    elif previous.get('updatedAt'):
+        report['updatedAt'] = previous['updatedAt']
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-root', type=Path, required=True)
@@ -225,5 +232,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     result = build(args.source_root, args.source_date)
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    previous = json.loads(args.output.read_text(encoding='utf-8')) if args.output.is_file() else {}
+    update_timestamp(result, previous)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(f"Validated {result['sourceCount']} monthly workbooks; wrote anonymous aggregates.")

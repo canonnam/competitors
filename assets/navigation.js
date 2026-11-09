@@ -5,6 +5,11 @@
   if (root.document && !root.FacilityViewer?.readOnly) api.mount(root);
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
+  function operatingMarkRemaining(updatedAt, now=Date.now()) {
+    if(typeof updatedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(updatedAt))return 0;
+    const elapsed=now-Date.parse(updatedAt), week=7*86400000;
+    return elapsed>=0&&elapsed<week?week-elapsed:0;
+  }
   const categories = [
     {id:'operations', title:'운영·인사·회계'},
     {id:'facility', title:'시설 인수·개설'},
@@ -124,6 +129,21 @@
       return Object.entries(feedItems).reduce((sum,[feed,itemId])=>sum+(members.some(item=>item.id===itemId)?newsCounts[feed]||0:0),0);
     }
     function newMark(id){const mark=el('span','news-new-mark kb-new-mark','N');mark.dataset.kbUnread=id;mark.hidden=true;return mark;}
+    let operatingUpdatedAt, operatingMarkTimer;
+    function operatingMark(){
+      const mark=el('span','news-new-mark kb-new-mark','N');
+      mark.dataset.kbOperatingNew='';
+      mark.hidden=!operatingMarkRemaining(operatingUpdatedAt);
+      mark.title='최근 7일 이내 갱신된 운영비 분석';
+      mark.setAttribute('role','img');mark.setAttribute('aria-label',mark.title);
+      return mark;
+    }
+    function syncOperatingMarks(){
+      const remaining=operatingMarkRemaining(operatingUpdatedAt);
+      doc.querySelectorAll('[data-kb-operating-new]').forEach(mark=>{mark.hidden=!remaining;});
+      win.clearTimeout(operatingMarkTimer);
+      if(remaining)operatingMarkTimer=win.setTimeout(syncOperatingMarks,remaining);
+    }
     function syncNewsMarkers(counts=newsCounts){
       newsCounts=counts;
       doc.querySelectorAll('[data-kb-unread]').forEach(mark=>{const count=countFor(mark.dataset.kbUnread);mark.hidden=count===0;mark.setAttribute('aria-label','새 글 '+count+'건');mark.title='새 글 '+count+'건';});
@@ -153,7 +173,7 @@
     function renderDialog() {
       const matches=matchFeatures(dialogSearch.value,dialogFilters.value,preferences.get().favorites);
       dialogCount.textContent=matches.length+'개 기능';dialogResults.replaceChildren();
-      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(newMark(item.id));dialogResults.append(row);});
+      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(item.id==='operating-costs'?operatingMark():newMark(item.id));dialogResults.append(row);});
       if(!matches.length)dialogResults.append(el('p','kb-empty','검색 결과가 없습니다. 다른 검색어나 업무를 선택해 주세요.'));
       syncNewsMarkers();
     }
@@ -199,6 +219,7 @@
           else live.append(node);
         });
         const originalMark=live.querySelector('.news-new-mark');if(originalMark){originalMark.classList.add('kb-new-mark');heading.append(originalMark);}
+        if(item.id==='operating-costs')heading.append(operatingMark());
         const pin=button('','kb-favorite-button');pin.append(icon('favorites'));pin.dataset.kbPin=item.id;pin.addEventListener('click',()=>{preferences.toggle(item.id);render();status.textContent=item.title+(preferences.get().favorites.includes(item.id)?' 즐겨찾기에 추가했습니다.':' 즐겨찾기에서 해제했습니다.');if(!card.hidden)pin.focus();else homeSearch.focus();});
         const summary=el('div','kb-card-summary');summary.setAttribute('role','status');
         const actions=el('div','kb-card-actions');actions.append(summary,pin);
@@ -248,7 +269,7 @@
         if(focused)nav.querySelector('[data-kb-category="'+focused+'"]')?.focus();
       } else {
         const pinned=preferences.get().favorites;
-        const navLink=item=>{const anchor=link(item,'kb-nav-link');anchor.append(newMark(item.id));return anchor;};
+        const navLink=item=>{const anchor=link(item,'kb-nav-link');anchor.append(item.id==='operating-costs'?operatingMark():newMark(item.id));return anchor;};
         if(pinned.length){const group=el('div','kb-nav-group'),title=el('p');title.append(icon('favorites'),el('span','','즐겨찾기'),newMark('favorites'));group.append(title);pinned.forEach(id=>group.append(navLink(features.find(item=>item.id===id))));nav.append(group);}
         categories.forEach(category=>{const group=el('details','kb-nav-group');group.open=current?.category===category.id||(!current&&category.id==='operations');const summary=el('summary');summary.append(icon(category.id),el('span','kb-category-label',category.title),newMark(category.id));group.append(summary);features.filter(item=>item.category===category.id).forEach(item=>group.append(navLink(item)));nav.append(group);});
       }
@@ -285,6 +306,20 @@
     // legacy card markup, preventing the old three-column grid from flashing.
     if(home) doc.body.classList.add('kb-navigation-ready');
     win.NewsBadge?.subscribe(syncNewsMarkers);
+    doc.querySelector('.dash-operating .dash-panel-head > a')?.append(' ',operatingMark());
+    let loadingOperating=false;
+    async function refreshOperatingMark(){
+      if(loadingOperating||doc.hidden)return;
+      loadingOperating=true;
+      try{
+        const response=await win.fetch('/api/operating-report?summary=1',{cache:'no-store',signal:win.AbortSignal.timeout(15000)});
+        if(response.ok)operatingUpdatedAt=(await response.json()).updatedAt;
+      }catch(_){}
+      finally{loadingOperating=false;syncOperatingMarks();}
+    }
+    refreshOperatingMark();win.setInterval(refreshOperatingMark,300000);
+    win.addEventListener('pageshow',refreshOperatingMark);
+    doc.addEventListener('visibilitychange',refreshOperatingMark);
     // Home collectors already fetch these feeds. On other pages load only missing summaries,
     // without acknowledging them as read; the actual feed page owns acknowledgement.
     if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
@@ -295,5 +330,5 @@
       refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
     }
   }
-  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds};
+  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds,operatingMarkRemaining};
 });

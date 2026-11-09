@@ -16,6 +16,8 @@ The source directory must contain `더비다요양원 안양점 현금출납부`
 
 Commit the regenerated `data/operating_report.json` with the code and push `petdev`. Railway's existing `vida` project, `dev` environment, `competitors` service builds this branch through its Dockerfile. No production Python dependencies or database migrations were added. This report is a snapshot; it does not collect future workbooks automatically.
 
+The importer records a UTC `updatedAt` when the report data changes and preserves that timestamp when the same data is rebuilt. The navigation reads it from `/api/operating-report?summary=1` and shows the N badge for seven days from that timestamp. The source review date and opening the report do not reset the badge.
+
 ## Definitions and review points
 
 - Operating result: signed operating receipts less signed operating payments, including interest. This cash-based management measure is not accrual net income. No depreciation, unpaid bills or receivables are available.

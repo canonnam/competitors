@@ -9,13 +9,24 @@ from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 import app
 import facility_access
-from scripts.build_operating_report import classify
+from scripts.build_operating_report import classify, update_timestamp
 
 ROOT = Path(__file__).resolve().parent
 REPORT = json.loads((ROOT/'data'/'operating_report.json').read_text(encoding='utf-8'))
 
 
 class OperatingReportTests(unittest.TestCase):
+    def test_update_timestamp_tracks_report_changes_not_review_dates(self):
+        previous = {'branches': [{'id': 'anyang'}], 'updatedAt': '2025-09-01T01:00:00Z'}
+        same_data = {'branches': previous['branches'], 'sourceDate': '2026-11-10'}
+        update_timestamp(same_data, previous)
+        self.assertEqual(same_data['updatedAt'], previous['updatedAt'])
+
+        changed_data = {'branches': [{'id': 'anyang'}, {'id': 'incheon'}]}
+        update_timestamp(changed_data, previous)
+        self.assertRegex(changed_data['updatedAt'], r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
+        self.assertNotEqual(changed_data['updatedAt'], previous['updatedAt'])
+
     def test_all_months_reconcile_to_source_and_cash_bridge(self):
         self.assertEqual(REPORT['sourceCount'], 35)
         for branch in REPORT['branches']:
@@ -112,6 +123,9 @@ class OperatingEndpointTests(unittest.TestCase):
         with urllib.request.urlopen(self.request('/api/operating-report')) as response:
             self.assertEqual(json.load(response),REPORT)
             self.assertEqual(response.headers['Cache-Control'],'no-store')
+        with urllib.request.urlopen(self.request('/api/operating-report?summary=1')) as response:
+            self.assertEqual(json.load(response), {'updatedAt': REPORT['updatedAt']})
+            self.assertEqual(response.headers['Cache-Control'], 'no-store')
 
     def test_raw_data_source_and_unlisted_files_are_not_served(self):
         for path in ['/data/operating_report.json','/scripts/build_operating_report.py','/app.py','/.git/config','/missing.html']:
