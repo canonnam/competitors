@@ -1,6 +1,113 @@
 {
-  "updated": "2026-11-06",
+  "updated": "2026-11-09",
   "ideas": [
+    {
+      "id": "food-cost-transparency",
+      "title": "식재료비 공개",
+      "summary": "식재료비 사용내역 요약과 이번 주 점심 사진을 매달 블로그·카톡에 올려 급식 투명성을 보여주는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "숫자로 본 전국 요양원 (2026년 11월)",
+          "source": "요양파인더",
+          "date": "2026-11-08",
+          "url": "https://yoyangfinder.com/%EB%A6%AC%ED%8F%AC%ED%8A%B8/",
+          "verified": "ok"
+        },
+        {
+          "title": "복지부 장기요양기관 급식관리 기준",
+          "source": "연합뉴스",
+          "date": "2026-10-06",
+          "url": "https://www.yna.co.kr/view/AKR20261006072600530",
+          "verified": "ok"
+        },
+        {
+          "title": "식사재료비 공개 관련",
+          "source": "뉴시스",
+          "date": "2026-10-06",
+          "url": "https://www.newsis.com/view/NISX20261006_0003815284",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-08"
+    },
+    {
+      "id": "guardian-question-order",
+      "title": "질문 순서 안내문",
+      "summary": "요양병원 안내 사례를 참고해 입소 전·하루 일과·면회·퇴소 순서로 보호자 안내를 배치하고 확인일을 적는 요양원용 아이디어. 병원 내용을 요양원 사실로 옮기지 않는다",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양병원 보호자 질문 순서에 맞춘 안내 구성",
+          "source": "JH커뮤니케이션",
+          "date": "2026-11-08",
+          "url": "https://jhcommunication06.co.kr/blog/nursing-hospital-guardian-question-flow-information/",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-08"
+    },
+    {
+      "id": "robot-pilot-notice",
+      "title": "로봇은 실증 안내",
+      "summary": "AI 로봇의 낙상 감지·알림과 순찰 기록 자동화는 실증·계획이라고 보호자에게 알리는 아이디어. 운영 성과나 확정 기능으로 쓰지 않는다",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양시설에 AI 로봇 들어온다…낙상 감지·순찰 기록 자동화 시험",
+          "source": "실버투데이",
+          "date": "2026-11-07",
+          "url": "https://www.silvertoday.co.kr/news/articleView.html?idxno=21548",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-07"
+    },
+    {
+      "id": "resident-choir",
+      "title": "어르신 합창단",
+      "summary": "입소 어르신이 합창단의 주인공으로 무대에 서며 성취감과 자신감을 얻도록 프로그램을 운영하는 아이디어",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "\"존엄하게, 아름답게\"…수원·김해 보훈요양원 복지부 장관상",
+          "source": "파이낸셜뉴스",
+          "date": "2026-11-06",
+          "url": "https://www.fnnews.com/news/202611061720569405",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-06"
+    },
+    {
+      "id": "end-of-life-visit-room",
+      "title": "생애 말 면회",
+      "summary": "생애 말 희망사항을 조사해 돌봄에 반영하고, 가족과 마지막 시간을 보낼 별도 면회 공간을 두는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "\"존엄하게, 아름답게\"…수원·김해 보훈요양원 복지부 장관상",
+          "source": "파이낸셜뉴스",
+          "date": "2026-11-06",
+          "url": "https://www.fnnews.com/news/202611061720569405",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-06"
+    },
     {
       "id": "director-career-trust",
       "title": "의료 경력 안심",
@@ -1042,32 +1149,6 @@
         }
       ],
       "last_date": "2026-10-08"
-    },
-    {
-      "id": "food-cost-transparency",
-      "title": "식재료비 공개",
-      "summary": "식재료비 사용내역 요약과 이번 주 점심 사진을 매달 블로그·카톡에 올려 급식 투명성을 보여주는 방식",
-      "tags": [
-        "가족소통",
-        "홍보"
-      ],
-      "articles": [
-        {
-          "title": "복지부 장기요양기관 급식관리 기준",
-          "source": "연합뉴스",
-          "date": "2026-10-06",
-          "url": "https://www.yna.co.kr/view/AKR20261006072600530",
-          "verified": "ok"
-        },
-        {
-          "title": "식사재료비 공개 관련",
-          "source": "뉴시스",
-          "date": "2026-10-06",
-          "url": "https://www.newsis.com/view/NISX20261006_0003815284",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-06"
     },
     {
       "id": "hiring-safety-leaflet",
