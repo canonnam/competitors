@@ -6,7 +6,9 @@ import unittest
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
+from unittest.mock import patch
 import app
+import facility_access
 from scripts.build_operating_report import classify
 
 ROOT = Path(__file__).resolve().parent
@@ -15,7 +17,7 @@ REPORT = json.loads((ROOT/'data'/'operating_report.json').read_text(encoding='ut
 
 class OperatingReportTests(unittest.TestCase):
     def test_all_months_reconcile_to_source_and_cash_bridge(self):
-        self.assertEqual(REPORT['sourceCount'], 33)
+        self.assertEqual(REPORT['sourceCount'], 35)
         for branch in REPORT['branches']:
             self.assertEqual(len({m['month'] for m in branch['months']}),len(branch['months']))
             for m in branch['months']:
@@ -54,19 +56,24 @@ class OperatingReportTests(unittest.TestCase):
         incheon_july=next(m for m in incheon['months'] if m['month']=='2026-07')
         self.assertEqual(incheon_july['flags'][0]['amount'],5000000)
 
-    def test_august_matches_workbook_controls_and_separates_returns(self):
-        # Independently read E114:G114 (Anyang), E82:G82 (Incheon).
+    def test_august_and_september_match_workbook_controls_and_separate_returns(self):
+        # August controls: Anyang E114:G114, Incheon E82:G82.
+        # September controls: Anyang E149:G149, Incheon E128:G128.
         expected = {
-            'anyang': (100770030, 84316828, 16453202, 91696630, 70243428, 21453202, 0),
-            'incheon': (110709790, 122390965, -11681175, 110144790, 103111815, 7032975, -13714150),
+            ('anyang', '2026-08'): (100770030, 84316828, 16453202, 91696630, 70243428, 21453202, 0, 111, '2026-08-03'),
+            ('incheon', '2026-08'): (110709790, 122390965, -11681175, 110144790, 103111815, 7032975, -13714150, 79, '2026-08-02'),
+            ('anyang', '2026-09'): (110581743, 104141798, 6439945, 106261403, 90141798, 16119605, 4320340, 146, '2026-09-01'),
+            ('incheon', '2026-09'): (120029143, 135068678, -15039535, 117656831, 101196366, 16460465, -19500000, 125, '2026-09-01'),
         }
+        fields = ['sourceIncome', 'sourceExpense', 'cashChange', 'revenue', 'cost', 'profit', 'correction', 'transactionCount', 'firstDate']
         for branch in REPORT['branches']:
-            august=next(m for m in branch['months'] if m['month']=='2026-08')
-            july=next(m for m in branch['months'] if m['month']=='2026-07')
-            with self.subTest(branch=branch['id']):
-                self.assertEqual(tuple(august[k] for k in ['sourceIncome','sourceExpense','cashChange','revenue','cost','profit','correction']),expected[branch['id']])
-                self.assertEqual(august['openingBalance'],july['closingBalance'])
-                self.assertEqual(august['lastDate'],'2026-08-31')
+            months = {m['month']: m for m in branch['months']}
+            for previous, month, last_day in [('2026-07', '2026-08', '31'), ('2026-08', '2026-09', '30')]:
+                with self.subTest(branch=branch['id'], month=month):
+                    current = months[month]
+                    self.assertEqual(tuple(current[k] for k in fields), expected[branch['id'], month])
+                    self.assertEqual(current['openingBalance'], months[previous]['closingBalance'])
+                    self.assertEqual(current['lastDate'], f'{month}-{last_day}')
 
     def test_aggregates_contain_no_transaction_memos_or_names(self):
         serialized=json.dumps(REPORT,ensure_ascii=False)
@@ -77,6 +84,11 @@ class OperatingReportTests(unittest.TestCase):
 class OperatingEndpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        password_hash = facility_access.make_password_hash('test-operating-report')
+        env = patch.dict('os.environ', {facility_access.HASH_ENV: password_hash})
+        env.start()
+        cls.addClassCleanup(env.stop)
+        cls.cookie = facility_access.COOKIE + '=' + facility_access.issue_cookie()
         cls.server=ThreadingHTTPServer(('127.0.0.1',0),app.App)
         cls.thread=threading.Thread(target=cls.server.serve_forever,daemon=True)
         cls.thread.start()
@@ -86,22 +98,25 @@ class OperatingEndpointTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.server.shutdown();cls.server.server_close();cls.thread.join()
 
+    def request(self, path, method='GET'):
+        return urllib.request.Request(self.base + path, method=method, headers={'Cookie': self.cookie})
+
     def test_new_page_assets_api_and_head(self):
         for path in ['/operating-costs.html','/assets/operating-costs.css','/assets/operating-costs.js','/assets/operating-model.js','/assets/operating-cards.js','/assets/dashboard-operating.js','/api/operating-report']:
-            with self.subTest(path=path),urllib.request.urlopen(self.base+path) as response:
+            with self.subTest(path=path),urllib.request.urlopen(self.request(path)) as response:
                 self.assertEqual(response.status,200)
         for path in ['/operating-costs.html','/api/operating-report']:
-            with urllib.request.urlopen(urllib.request.Request(self.base+path,method='HEAD')) as response:
+            with urllib.request.urlopen(self.request(path, method='HEAD')) as response:
                 self.assertEqual(response.read(),b'')
                 self.assertGreater(int(response.headers['Content-Length']),0)
-        with urllib.request.urlopen(self.base+'/api/operating-report') as response:
+        with urllib.request.urlopen(self.request('/api/operating-report')) as response:
             self.assertEqual(json.load(response),REPORT)
             self.assertEqual(response.headers['Cache-Control'],'no-store')
 
     def test_raw_data_source_and_unlisted_files_are_not_served(self):
         for path in ['/data/operating_report.json','/scripts/build_operating_report.py','/app.py','/.git/config','/missing.html']:
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as raised:
-                urllib.request.urlopen(self.base+path)
+                urllib.request.urlopen(self.request(path))
             self.assertEqual(raised.exception.code,404)
 
 

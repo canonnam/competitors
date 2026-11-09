@@ -6,6 +6,7 @@ assert.equal(M.previousMonth('2026-01'),'2025-12');
 assert.equal(M.combined([null,report.branches[1].months[0]]),null);
 assert.equal(M.combined(report.branches.map(b=>b.months.find(m=>m.month==='2026-07'))).profit,7176327);
 assert.equal(M.combined(report.branches.map(b=>b.months.find(m=>m.month==='2026-08'))).profit,28486177);
+assert.equal(M.combined(report.branches.map(b=>b.months.find(m=>m.month==='2026-09'))).profit,32580070);
 for(const b of report.branches) for(const current of b.months) {
   const previous=b.months.find(m=>m.month===M.previousMonth(current.month));
   const drivers=M.drivers(current,previous);
@@ -19,6 +20,7 @@ const csv=M.csv(report,'2025');
 assert.ok(csv.startsWith('\ufeff'));
 assert.ok(csv.includes('자료 없음'));
 assert.ok(!csv.includes('2026-'));
-assert.equal(M.csv(report,'2026').split('\r\n').length,17);
+assert.equal(M.csv(report,'2026').split('\r\n').length,19);
 assert.ok(M.csv(report,'2026').includes('"2026-08","인천점","110144790","103111815","7032975","-11681175"'));
+assert.ok(M.csv(report,'2026').includes('"2026-09","인천점","117656831","101196366","16460465","-15039535"'));
 console.log('Operating report arithmetic: all monthly changes reconcile; gaps, refunds and CSV verified.');

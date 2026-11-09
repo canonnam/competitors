@@ -5,11 +5,11 @@ const {prepare,profitScale,barGeometry,render,start}=require('./assets/dashboard
 const Cards=require('./assets/operating-cards.js');
 const report=JSON.parse(fs.readFileSync('data/operating_report.json','utf8'));
 test('latest registered year shows chronological branch profit bars from the actual report',()=>{
-  const view=prepare(report);assert.equal(view.month,'2026-08');
-  assert.equal(view.year,'2026');assert.equal(view.rows.length,8);
-  assert.deepEqual(view.rows.map(row=>row.month),Array.from({length:8},(_,i)=>'2026-0'+(i+1)));
+  const view=prepare(report);assert.equal(view.month,'2026-09');
+  assert.equal(view.year,'2026');assert.equal(view.rows.length,9);
+  assert.deepEqual(view.rows.map(row=>row.month),Array.from({length:9},(_,i)=>'2026-0'+(i+1)));
   const html=render({data:report});
-  for(const expected of ['2,145.3만원','703.3만원','-2,526.2만원'])assert.ok(html.includes(expected),expected);
+  for(const expected of ['1,612.0만원','1,646.0만원','-2,526.2만원'])assert.ok(html.includes(expected),expected);
   for(const removed of ['실제 입출금 기준','자료 기준','월별 수치 보기','자동 수집하지 않습니다'])assert.ok(!html.includes(removed),removed);
   assert.match(html,/class="dash-branch-picker"/);assert.doesNotMatch(html,/<select/);
   assert.equal((html.match(/data-operating-option=/g)||[]).length,3);
@@ -21,19 +21,19 @@ test('latest registered year shows chronological branch profit bars from the act
     assert.ok(html.includes(`data-profit="${row.profits[i]}"`));
     assert.ok(html.includes(`href="/operating-costs.html?year=2026&month=${row.month}"`));
   }
-  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,16);
+  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,18);
   assert.equal((html.match(/ is-latest/g)||[]).length,2);
   const reordered=structuredClone(report);reordered.branches.reverse();reordered.branches.forEach(b=>b.months.reverse());
   assert.deepEqual(prepare(reordered).rows,view.rows);
 });
 test('missing branches and months stay gaps, including months absent from both branches',()=>{
-  const partial=structuredClone(report);partial.branches[1].months=partial.branches[1].months.filter(m=>m.month!=='2026-08');
+  const partial=structuredClone(report);partial.branches[1].months=partial.branches[1].months.filter(m=>m.month!=='2026-09');
   partial.branches.forEach(b=>b.months=b.months.filter(m=>m.month!=='2026-04'));
-  assert.equal(prepare(partial).month,'2026-08');
+  assert.equal(prepare(partial).month,'2026-09');
   assert.deepEqual(prepare(partial).rows[3],{month:'2026-04',profits:[null,null]});
   assert.equal(prepare(partial).rows.at(-1).profits[1],null);
-  const html=render({data:partial});assert.match(html,/자료 없음/);assert.doesNotMatch(html,/703.3만원/);
-  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,13);
+  const html=render({data:partial});assert.match(html,/자료 없음/);assert.doesNotMatch(html,/1,646.0만원/);
+  assert.equal((html.match(/class="dash-profit-bar /g)||[]).length,15);
   assert.equal((html.match(/class="dash-profit-missing"/g)||[]).length,3);
   assert.match(render({data:{schemaVersion:1,branches:[]}}),/아직 등록된/);
   assert.ok(prepare({...partial,branches:[partial.branches[0]]}).rows.every(row=>row.profits[1]===null));
@@ -100,7 +100,7 @@ test('collector reads the existing endpoint without duplicate requests and signa
   win.document.hidden=true;await collector.refresh();assert.equal(called,2);
   const anyang={dataset:{operatingOption:'anyang'},closest:selector=>selector==='[data-operating-option]'?anyang:picker};
   listeners.click({target:anyang});assert.equal(redraws,1);assert.equal(picker.open,false);assert.equal(trigger.focused,true);
-  const filtered=render({data:report});assert.equal((filtered.match(/class="dash-profit-bar /g)||[]).length,8);assert.doesNotMatch(filtered,/dash-profit-bar incheon/);
+  const filtered=render({data:report});assert.equal((filtered.match(/class="dash-profit-bar /g)||[]).length,9);assert.doesNotMatch(filtered,/dash-profit-bar incheon/);
   picker.open=true;listeners.click({target:{closest:()=>null}});assert.equal(picker.open,false,'outside click closes the picker');
   picker.open=true;trigger.focused=false;listeners.keydown({key:'Escape'});assert.equal(picker.open,false);assert.equal(trigger.focused,true,'Escape closes and returns focus');
   const all={dataset:{operatingOption:'all'},closest:selector=>selector==='[data-operating-option]'?all:picker};
