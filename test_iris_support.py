@@ -1,10 +1,12 @@
 from datetime import datetime
 from contextlib import closing
+from email.message import Message
+import io
 import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import agency_news as news
 import business_support
@@ -45,6 +47,36 @@ def page(identity='023937', title=TITLE):
 
 
 class IrisSupportTests(unittest.TestCase):
+    def test_large_valid_detail_is_read_without_raising_other_board_limits(self):
+        # Reproduce a normal announcement exceeding the former 2 MB boundary.
+        raw = (DETAIL + '<!--' + 'x' * news.MAX_BYTES + '-->').encode('utf-8')
+        def response():
+            stream = io.BytesIO(raw)
+            stream.headers = Message()
+            stream.headers['Content-Type'] = 'text/html; charset=utf-8'
+            return stream
+        opener = Mock()
+        opener.open.side_effect = lambda *args, **kwargs: response()
+        with patch.object(news.urllib.request, 'build_opener', return_value=opener):
+            html = news.fetch_html(iris_support.detail_url('024657'))
+            self.assertEqual(iris_support.parse_detail(html)['title'], TITLE)
+            for url in ('https://www.mohw.go.kr/board.es', iris_support.LIST_URL):
+                with self.subTest(url=url), self.assertRaisesRegex(ValueError, 'too large'):
+                    news.fetch_html(url)
+
+    def test_oversized_iris_detail_is_rejected_after_bounded_read(self):
+        stream = io.BytesIO(b'x' * (news.IRIS_DETAIL_MAX_BYTES + 500))
+        stream.headers = Message()
+        stream.headers['Content-Type'] = 'text/html; charset=utf-8'
+        read = Mock(wraps=stream.read)
+        stream.read = read
+        opener = Mock()
+        opener.open.return_value = stream
+        with patch.object(news.urllib.request, 'build_opener', return_value=opener):
+            with self.assertRaisesRegex(ValueError, 'too large'):
+                news.fetch_html(iris_support.detail_url('024657'))
+        read.assert_called_once_with(news.IRIS_DETAIL_MAX_BYTES + 1)
+
     def test_attachment_only_notice_does_not_abort_source_or_invent_body(self):
         html = DETAIL[:DETAIL.index('<div class="tb_contents">')] + '''
         <div class="tb_contents">■ 공고문</div>

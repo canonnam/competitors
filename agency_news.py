@@ -23,6 +23,9 @@ SCHEDULE = '매일 09:10 (한국시간)'
 MAX_PAGES = 40
 BOOTSTRAP_PAGES = 2
 MAX_BYTES = 2_000_000
+# IRIS detailed announcements can include over 2 MB of editor markup.
+# Keep other boards and the JSON list on the original, smaller limit.
+IRIS_DETAIL_MAX_BYTES = 4_000_000
 LOG = logging.getLogger('agency_news')
 SYNC_LOCK = threading.Lock()
 ALLOWED_HOSTS = {'www.longtermcare.or.kr', 'www.mohw.go.kr', 'www.bizinfo.go.kr', 'www.iris.go.kr',
@@ -95,6 +98,9 @@ class BoardRedirect(urllib.request.HTTPRedirectHandler):
 def fetch_html(url):
     request = urllib.request.Request(checked_url(url), headers={
         'User-Agent': 'TheVidaKnowledgeBase/1.0 (daily public board reader)', 'Accept': 'text/html'})
+    destination = urllib.parse.urlsplit(url)
+    max_bytes = (IRIS_DETAIL_MAX_BYTES if destination.netloc == 'www.iris.go.kr'
+                 and destination.path == '/contents/retrieveBsnsAncmView.do' else MAX_BYTES)
     handlers = [BoardRedirect()]
     if urllib.parse.urlsplit(url).netloc == 'www.anyang.go.kr':
         # The city's TLS endpoint needs OpenSSL's standard cipher set. Keep
@@ -103,9 +109,9 @@ def fetch_html(url):
         context.set_ciphers('DEFAULT')
         handlers.append(urllib.request.HTTPSHandler(context=context))
     with urllib.request.build_opener(*handlers).open(request, timeout=20) as response:
-        raw = response.read(MAX_BYTES+1)
+        raw = response.read(max_bytes+1)
         charset = response.headers.get_content_charset() or 'utf-8'
-    if len(raw) > MAX_BYTES:
+    if len(raw) > max_bytes:
         raise ValueError('Board response too large')
     return raw.decode(charset)
 
