@@ -1,6 +1,76 @@
 {
-  "updated": "2026-11-09",
+  "updated": "2026-11-10",
   "ideas": [
+    {
+      "id": "nursing-staff-share",
+      "title": "간호인력 공개",
+      "summary": "간호사·간호조무사 배치를 보여주고, 연구 기사가 밝힌 진료비 변화를 인용해 보호자에게 알리는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양원에 간호사 배치 늘린다는데…건보엔 도움, 요양보험엔 압박",
+          "source": "농민신문",
+          "date": "2026-11-09",
+          "url": "https://www.nongmin.com/article/20261106500069",
+          "verified": "ok"
+        },
+        {
+          "title": "최저임금 올렸더니 요양원 '간호사'가 사라졌다",
+          "source": "대한경제",
+          "date": "2026-11-03",
+          "url": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202611031511509330464",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
+    {
+      "id": "small-change-report",
+      "title": "작은 변화 리포트",
+      "summary": "입소 첫날부터 숟가락을 쥐는지, 두 사람 부축이 한 사람으로 줄었는지를 기록하고, 등급이 그대로여도 그 변화를 보호자에게 전하는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "[김현우의 돌보다] 자립 막는 요양제도 이대로 괜찮은가",
+          "source": "여성경제신문",
+          "date": "2026-11-09",
+          "url": "https://www.womaneconomy.co.kr/news/articleView.html?idxno=260868",
+          "verified": "ok"
+        },
+        {
+          "title": "요양뉴스 우수시설탐방 작은 변화·상장",
+          "source": "요양뉴스",
+          "date": "2026-10-28",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
+    {
+      "id": "abuse-report-app",
+      "title": "학대 신고 앱 안내",
+      "summary": "급여이용설명회와 상담 때 보호자·종사자에게 노인학대 신고·상담 앱 나비새김 설치와 신고 방법을 안내하는 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "건보공단, 장기요양 노인학대 예방·신고 활성화 지원",
+          "source": "병원신문",
+          "date": "2026-11-09",
+          "url": "http://www.khanews.com/news/articleView.html?idxno=252441",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
     {
       "id": "food-cost-transparency",
       "title": "식재료비 공개",
@@ -143,24 +213,6 @@
         }
       ],
       "last_date": "2026-11-04"
-    },
-    {
-      "id": "nursing-staff-share",
-      "title": "간호인력 공개",
-      "summary": "간호사 비중과 진료비 수치를 인용해 우리 시설의 간호 인력 구성을 보여주는 콘텐츠를 올리는 아이디어",
-      "tags": [
-        "홍보"
-      ],
-      "articles": [
-        {
-          "title": "최저임금 올렸더니 요양원 '간호사'가 사라졌다",
-          "source": "대한경제",
-          "date": "2026-11-03",
-          "url": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202611031511509330464",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-03"
     },
     {
       "id": "csat-cheer-letter",
@@ -383,25 +435,6 @@
       "articles": [
         {
           "title": "요양뉴스 우수시설탐방 상장 사례",
-          "source": "요양뉴스",
-          "date": "2026-10-28",
-          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-28"
-    },
-    {
-      "id": "small-change-report",
-      "title": "작은 변화 리포트",
-      "summary": "매달 어르신별 변화 한 줄과 사진 한 장을 보호자에게 보내고 동의받은 사례만 소식지에 올리는 방식",
-      "tags": [
-        "가족소통",
-        "홍보"
-      ],
-      "articles": [
-        {
-          "title": "요양뉴스 우수시설탐방 작은 변화·상장",
           "source": "요양뉴스",
           "date": "2026-10-28",
           "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
