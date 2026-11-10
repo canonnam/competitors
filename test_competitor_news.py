@@ -129,7 +129,7 @@ class NewsTests(unittest.TestCase):
         item = next(item for item in report['items'] if not item['reviewed'])
         self.assertEqual(set(item['categories']), {'nursing_incident', 'nursing_policy'})
         self.assertEqual(report['total'], SEED_COUNT + 1)
-        self.assertEqual(report['sync']['competitor_count'], 23)
+        self.assertEqual(report['sync']['competitor_count'], 25)
         self.assertEqual(report['sync']['topic_count'], 2)
         self.assertIn(item['id'], news.report(self.path, NOW, summary=True)['article_ids'])
 

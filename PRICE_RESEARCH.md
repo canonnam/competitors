@@ -88,6 +88,8 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | WellCare AI | [실증 FAQ](https://kwellcareai.com/pilot/faq/) (2026-11-02) | 7개월 무상 실증. 2027년 SaaS 유료 전환은 협의이고 50인 월 요금은 없음. 의료기기·통신비는 기관 부담 |
 | AI빌딩넷 by ixi – 웰니스노트 | [LG 보도자료](https://www.lg.co.kr/media/release/30473) (2026-08-20), [한국일보](https://www.hankookilbo.com/news/article/A2026110109190000297) (2026-11-01) | 시범 보도에 50인 계약 요금 없음 |
 | 나무엑스 (NAMUHX) | [공식 사이트](https://namuhx.com/), [아시아경제](https://www.asiae.co.kr/article/2026110608591537926) (2026-11-06), [글로벌이코노믹](https://www.g-enews.com/article/Distribution/2026/11/202611060837599943a96f092d0c_1) (2026-11-06) | 시설 실증 보도와 가정용 소개에 50인 월 요금 없음. 긴급출동은 세이프케어 플러스 구독이라고만 적혀 있다 |
+| 복도리 케어 | [공식 사이트](https://thumbshine.co.kr/), [기능](https://thumbshine.co.kr/features), [한국경제TV](https://www.wowtv.co.kr/NewsCenter/News/Read?articleId=AKR20260119062000017) (2026-01-19) | 2026-11-10 확인. 50인 월 요금 없음 |
+| 슬기로운 돌봄생활 | [소개](https://tfnetworks.kr/dolbom-life/) (2026-11-10) | 도입 문의. 50인 월 요금 없음 |
 
 ## 재검증 방법
 
