@@ -133,5 +133,15 @@ class OperatingEndpointTests(unittest.TestCase):
                 urllib.request.urlopen(self.request(path))
             self.assertEqual(raised.exception.code,404)
 
+    def test_update_summary_only_returns_timestamps(self):
+        updated = {'payroll-insurance': '2026-11-10T05:12:31+00:00'}
+        with patch.object(app.card_updates, 'recent', return_value=updated):
+            with urllib.request.urlopen(self.request('/api/card-updates')) as response:
+                self.assertEqual(json.load(response), {'updatedAt': updated})
+                self.assertIn('no-store', response.headers['Cache-Control'])
+                self.assertIn('Cookie', response.headers['Vary'])
+            with urllib.request.urlopen(self.request('/api/card-updates', method='HEAD')) as response:
+                self.assertEqual(response.read(), b'')
+
 
 if __name__=='__main__':unittest.main()

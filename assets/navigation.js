@@ -5,8 +5,8 @@
   if (root.document && !root.FacilityViewer?.readOnly) api.mount(root);
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
-  function operatingMarkRemaining(updatedAt, now=Date.now()) {
-    if(typeof updatedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(updatedAt))return 0;
+  function updateMarkRemaining(updatedAt, now=Date.now()) {
+    if(typeof updatedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(updatedAt))return 0;
     const elapsed=now-Date.parse(updatedAt), week=7*86400000;
     return elapsed>=0&&elapsed<week?week-elapsed:0;
   }
@@ -124,30 +124,39 @@
     const icon=(id)=>{const mark=el('span','kb-menu-icon');mark.style.setProperty('--kb-icon','url("/assets/icons/line/'+id+'.svg")');mark.setAttribute('aria-hidden','true');return mark;};
     const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch',trend:'trend','support-resources':'support-resources'};
     let newsCounts=win.NewsBadge?.counts()||{};
+    let updatedAt={}, updateTimer;
+    function membersFor(id){
+      return id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
+    }
     function countFor(id){
-      const members=id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
+      const members=membersFor(id);
       return Object.entries(feedItems).reduce((sum,[feed,itemId])=>sum+(members.some(item=>item.id===itemId)?newsCounts[feed]||0:0),0);
     }
-    function newMark(id){const mark=el('span','news-new-mark kb-new-mark','N');mark.dataset.kbUnread=id;mark.hidden=true;return mark;}
-    let operatingUpdatedAt, operatingMarkTimer;
-    function operatingMark(){
+    function newMark(id, updateId=id){
       const mark=el('span','news-new-mark kb-new-mark','N');
-      mark.dataset.kbOperatingNew='';
-      mark.hidden=!operatingMarkRemaining(operatingUpdatedAt);
-      mark.title='최근 7일 이내 갱신된 운영비 분석';
-      mark.setAttribute('role','img');mark.setAttribute('aria-label',mark.title);
+      mark.dataset.kbUnread=id;
+      mark.dataset.kbUpdated=updateId;
+      mark.setAttribute('role','img');
+      mark.hidden=true;
       return mark;
-    }
-    function syncOperatingMarks(){
-      const remaining=operatingMarkRemaining(operatingUpdatedAt);
-      doc.querySelectorAll('[data-kb-operating-new]').forEach(mark=>{mark.hidden=!remaining;});
-      win.clearTimeout(operatingMarkTimer);
-      if(remaining)operatingMarkTimer=win.setTimeout(syncOperatingMarks,remaining);
     }
     function syncNewsMarkers(counts=newsCounts){
       newsCounts=counts;
-      doc.querySelectorAll('[data-kb-unread]').forEach(mark=>{const count=countFor(mark.dataset.kbUnread);mark.hidden=count===0;mark.setAttribute('aria-label','새 글 '+count+'건');mark.title='새 글 '+count+'건';});
-      dialogFilters.querySelectorAll('option').forEach(option=>{const group=[{id:'all',title:'전체 업무'},{id:'favorites',title:'즐겨찾기'},...categories].find(item=>item.id===option.value);option.textContent=group.title+(countFor(group.id)?' · N':'');});
+      const now=Date.now();
+      const remaining=features.map(item=>[item.id,updateMarkRemaining(updatedAt[item.id],now)]).filter(([,ms])=>ms);
+      const active=new Set(remaining.map(([id])=>id));
+      const recentlyUpdated=id=>membersFor(id).some(item=>active.has(item.id));
+      doc.querySelectorAll('[data-kb-updated]').forEach(mark=>{
+        const count=countFor(mark.dataset.kbUnread);
+        const recent=recentlyUpdated(mark.dataset.kbUpdated);
+        const label=[recent?'최근 7일 이내 갱신':'',count?'새 글 '+count+'건':''].filter(Boolean).join(' · ');
+        mark.hidden=!label;
+        mark.title=label;
+        mark.setAttribute('aria-label',label);
+      });
+      dialogFilters.querySelectorAll('option').forEach(option=>{const group=[{id:'all',title:'전체 업무'},{id:'favorites',title:'즐겨찾기'},...categories].find(item=>item.id===option.value);option.textContent=group.title+(countFor(group.id)||recentlyUpdated(group.id)?' · N':'');});
+      win.clearTimeout(updateTimer);
+      if(remaining.length)updateTimer=win.setTimeout(syncNewsMarkers,Math.min(...remaining.map(([,ms])=>ms)));
     }
     doc.body.classList.add('kb-navigable');
     main.id ||= 'kb-main-content';
@@ -173,7 +182,7 @@
     function renderDialog() {
       const matches=matchFeatures(dialogSearch.value,dialogFilters.value,preferences.get().favorites);
       dialogCount.textContent=matches.length+'개 기능';dialogResults.replaceChildren();
-      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(item.id==='operating-costs'?operatingMark():newMark(item.id));dialogResults.append(row);});
+      matches.forEach(item=>{const row=link(item,'kb-dialog-result');row.replaceChildren(el('span','kb-dialog-copy'));const copy=row.lastChild;copy.append(el('span','kb-dialog-name',item.title),el('span','kb-dialog-description',item.description));row.append(newMark(item.id));dialogResults.append(row);});
       if(!matches.length)dialogResults.append(el('p','kb-empty','검색 결과가 없습니다. 다른 검색어나 업무를 선택해 주세요.'));
       syncNewsMarkers();
     }
@@ -218,8 +227,7 @@
           else if(node.classList.contains('card-heading')){[...node.children].forEach(child=>live.append(child));node.remove();}
           else live.append(node);
         });
-        const originalMark=live.querySelector('.news-new-mark');if(originalMark){originalMark.classList.add('kb-new-mark');heading.append(originalMark);}
-        if(item.id==='operating-costs')heading.append(operatingMark());
+        heading.append(newMark(item.id));
         const pin=button('','kb-favorite-button');pin.append(icon('favorites'));pin.dataset.kbPin=item.id;pin.addEventListener('click',()=>{preferences.toggle(item.id);render();status.textContent=item.title+(preferences.get().favorites.includes(item.id)?' 즐겨찾기에 추가했습니다.':' 즐겨찾기에서 해제했습니다.');if(!card.hidden)pin.focus();else homeSearch.focus();});
         const summary=el('div','kb-card-summary');summary.setAttribute('role','status');
         const actions=el('div','kb-card-actions');actions.append(summary,pin);
@@ -264,12 +272,12 @@
             if(group.id!=='dashboard')control.append(newMark(group.id),el('span','kb-category-count',String(matchFeatures('',group.id,preferences.get().favorites).length)));
             control.addEventListener('click',()=>{category=group.id;if(category==='dashboard'){query='';homeSearch.value='';}updateHomeURL();mobileMenu.open=false;render();if(target===mobileNav)mobileSummary.focus();});target.append(control);
           });
-          if(category===group.id){mobileSummary.replaceChildren(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title),newMark('all'),el('span','kb-menu-chevron','⌄'));}
+          if(category===group.id){mobileSummary.replaceChildren(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title),newMark('all',group.id),el('span','kb-menu-chevron','⌄'));}
         });
         if(focused)nav.querySelector('[data-kb-category="'+focused+'"]')?.focus();
       } else {
         const pinned=preferences.get().favorites;
-        const navLink=item=>{const anchor=link(item,'kb-nav-link');anchor.append(item.id==='operating-costs'?operatingMark():newMark(item.id));return anchor;};
+        const navLink=item=>{const anchor=link(item,'kb-nav-link');anchor.append(newMark(item.id));return anchor;};
         if(pinned.length){const group=el('div','kb-nav-group'),title=el('p');title.append(icon('favorites'),el('span','','즐겨찾기'),newMark('favorites'));group.append(title);pinned.forEach(id=>group.append(navLink(features.find(item=>item.id===id))));nav.append(group);}
         categories.forEach(category=>{const group=el('details','kb-nav-group');group.open=current?.category===category.id||(!current&&category.id==='operations');const summary=el('summary');summary.append(icon(category.id),el('span','kb-category-label',category.title),newMark(category.id));group.append(summary);features.filter(item=>item.category===category.id).forEach(item=>group.append(navLink(item)));nav.append(group);});
       }
@@ -295,7 +303,7 @@
       const saved=preferences.get();favoriteRows.replaceChildren();
       favoritesSection.hidden=!saved.favorites.length;
       editButton.hidden=saved.favorites.length<2;editButton.textContent=editing?'편집 완료':'순서 편집';editButton.setAttribute('aria-pressed',String(editing));
-      saved.favorites.forEach((id,index)=>{const item=features.find(item=>item.id===id);const row=el('div','kb-shortcut');row.append(link(item,''));if(editing){[-1,1].forEach(delta=>{const control=button(delta<0?'←':'→','kb-reorder');control.disabled=delta<0?index===0:index===saved.favorites.length-1;control.setAttribute('aria-label',item.title+(delta<0?' 앞으로 이동':' 뒤로 이동'));control.addEventListener('click',()=>{preferences.move(id,delta);render();editButton.focus();status.textContent=item.title+' 순서를 변경했습니다.';});row.append(control);});}favoriteRows.append(row);});
+      saved.favorites.forEach((id,index)=>{const item=features.find(item=>item.id===id);const row=el('div','kb-shortcut');const shortcut=link(item,'');shortcut.append(' ',newMark(id));row.append(shortcut);if(editing){[-1,1].forEach(delta=>{const control=button(delta<0?'←':'→','kb-reorder');control.disabled=delta<0?index===0:index===saved.favorites.length-1;control.setAttribute('aria-label',item.title+(delta<0?' 앞으로 이동':' 뒤로 이동'));control.addEventListener('click',()=>{preferences.move(id,delta);render();editButton.focus();status.textContent=item.title+' 순서를 변경했습니다.';});row.append(control);});}favoriteRows.append(row);});
     }
     function render(){renderNav();renderCards();renderShortcuts();if(dialog.open)renderDialog();syncNewsMarkers();}
     win.addEventListener('storage',event=>{if(event.key===key||event.key===null){preferences.reload();render();}});
@@ -306,20 +314,23 @@
     // legacy card markup, preventing the old three-column grid from flashing.
     if(home) doc.body.classList.add('kb-navigation-ready');
     win.NewsBadge?.subscribe(syncNewsMarkers);
-    doc.querySelector('.dash-operating .dash-panel-head > a')?.append(' ',operatingMark());
-    let loadingOperating=false;
-    async function refreshOperatingMark(){
-      if(loadingOperating||doc.hidden)return;
-      loadingOperating=true;
+    dashboard?.querySelectorAll('.dash-panel-head > a[href]').forEach(anchor=>{
+      const item=features.find(feature=>feature.href===anchor.getAttribute('href'));
+      if(item)anchor.append(' ',newMark(item.id));
+    });
+    let loadingUpdates=false;
+    async function refreshUpdateMarks(){
+      if(loadingUpdates||doc.hidden)return;
+      loadingUpdates=true;
       try{
-        const response=await win.fetch('/api/operating-report?summary=1',{cache:'no-store',signal:win.AbortSignal.timeout(15000)});
-        if(response.ok)operatingUpdatedAt=(await response.json()).updatedAt;
+        const response=await win.fetch('/api/card-updates',{cache:'no-store',signal:win.AbortSignal.timeout(15000)});
+        if(response.ok)updatedAt=(await response.json()).updatedAt||{};
       }catch(_){}
-      finally{loadingOperating=false;syncOperatingMarks();}
+      finally{loadingUpdates=false;syncNewsMarkers();}
     }
-    refreshOperatingMark();win.setInterval(refreshOperatingMark,300000);
-    win.addEventListener('pageshow',refreshOperatingMark);
-    doc.addEventListener('visibilitychange',refreshOperatingMark);
+    refreshUpdateMarks();win.setInterval(refreshUpdateMarks,300000);
+    win.addEventListener('pageshow',refreshUpdateMarks);
+    doc.addEventListener('visibilitychange',refreshUpdateMarks);
     // Home collectors already fetch these feeds. On other pages load only missing summaries,
     // without acknowledging them as read; the actual feed page owns acknowledgement.
     if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
@@ -330,5 +341,5 @@
       refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
     }
   }
-  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds,operatingMarkRemaining};
+  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds,updateMarkRemaining};
 });

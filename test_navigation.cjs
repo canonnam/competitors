@@ -1,17 +1,18 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {features, categories, matchFeatures, createPreferences, operatingMarkRemaining} = require('./assets/navigation.js');
+const {features, categories, matchFeatures, createPreferences, updateMarkRemaining} = require('./assets/navigation.js');
 const memory = () => {const values=new Map();return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};};
 
-test('the operating badge expires seven days after the recorded update',()=>{
+test('update badges expire seven days after the recorded update',()=>{
   const published='2026-11-09T14:57:30Z', start=Date.parse(published), week=7*86400000;
-  assert.equal(operatingMarkRemaining(published,start-1),0);
-  assert.equal(operatingMarkRemaining(published,start),week);
-  assert.equal(operatingMarkRemaining(published,start+week-1),1);
-  assert.equal(operatingMarkRemaining(published,start+week),0);
-  assert.equal(operatingMarkRemaining(undefined,start),0);
-  assert.equal(operatingMarkRemaining('2026-11-09',start),0);
+  assert.equal(updateMarkRemaining(published,start-1),0);
+  assert.equal(updateMarkRemaining(published,start),week);
+  assert.equal(updateMarkRemaining('2026-11-09T23:57:30.000+09:00',start),week);
+  assert.equal(updateMarkRemaining(published,start+week-1),1);
+  assert.equal(updateMarkRemaining(published,start+week),0);
+  assert.equal(updateMarkRemaining(undefined,start),0);
+  assert.equal(updateMarkRemaining('2026-11-09',start),0);
 });
 
 test('directory covers every existing home card and deployable destination',()=>{

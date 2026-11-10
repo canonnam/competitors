@@ -106,7 +106,7 @@ class MapAccessTests(unittest.TestCase):
                 self.assertEqual(raw,page.read_bytes())
 
     def test_all_read_and_write_apis_are_denied_before_dispatch_without_cookie(self):
-        routes = ('/api/operating-report','/api/naver-ads','/api/competitor-news',
+        routes = ('/api/operating-report','/api/card-updates','/api/naver-ads','/api/competitor-news',
             '/api/maps-config','/api/nearby-facilities','/api/claim-check',
             '/api/search-visibility','/api/reputation-watch','/api/agency-news',
             '/api/support/payroll-insurance','/api/support/projects',

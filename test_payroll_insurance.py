@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import app
 import card_knowledge
+import facility_access
 import payroll_insurance as m
 from scripts.collect_payroll_insurance import candidates, build_branch, birthday
 
@@ -104,6 +105,12 @@ class PayrollInsuranceTests(unittest.TestCase):
 class EndpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        auth = patch.dict(os.environ, {
+            facility_access.HASH_ENV: facility_access.make_password_hash('test-payroll-access'),
+        })
+        auth.start()
+        cls.addClassCleanup(auth.stop)
+        cls.cookie = facility_access.COOKIE + '=' + facility_access.issue_cookie()
         cls.server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
         cls.thread=threading.Thread(target=cls.server.serve_forever,daemon=True);cls.thread.start()
 
@@ -112,12 +119,14 @@ class EndpointTests(unittest.TestCase):
         cls.server.shutdown();cls.server.server_close();cls.thread.join(5)
 
     def request(self,path,method='GET'):
-        c=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=5)
+        port=self.server.server_port
+        c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
         try:
-            c.request(method,path);r=c.getresponse();return r.status,r.headers,r.read()
+            c.request(method,path,headers={'Cookie':self.cookie,'Origin':f'http://127.0.0.1:{port}'})
+            r=c.getresponse();return r.status,r.headers,r.read()
         finally:c.close()
 
-    def test_open_get_head_csv_and_read_only_post(self):
+    def test_authenticated_get_head_csv_and_read_only_post(self):
         with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,{'PAYROLL_INSURANCE_DIR':temp}):
             m.save(sample())
             for path in ('/api/support/payroll-insurance','/api/support/payroll-insurance?format=csv'):
@@ -126,7 +135,7 @@ class EndpointTests(unittest.TestCase):
                     self.assertEqual(status,405 if method=='POST' else 200);self.assertEqual(headers['Cache-Control'],'no-store')
                     if method=='HEAD':self.assertEqual(body,b'')
 
-    def test_open_api_and_static_deny(self):
+    def test_authenticated_api_and_static_deny(self):
         with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,{'PAYROLL_INSURANCE_DIR':temp}):
             m.save(sample())
             status,headers,body=self.request('/api/support/payroll-insurance?month=2026-08')
