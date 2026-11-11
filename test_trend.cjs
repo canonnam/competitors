@@ -8,12 +8,12 @@ const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
 const ideas = prepareIdeas(data);
 
 test('merged trend ideas stay newest-first and keep blocked links', () => {
-  assert.equal(data.updated, '2026-11-10');
-  assert.equal(ideas.length, 63);
-  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 104);
-  assert.equal(ideas.filter(idea => idea.articles.length >= 2).length, 30);
-  assert.equal(ideas[0].id, 'nursing-staff-share');
-  assert.equal(ideas[0].lastDate, '2026-11-09');
+  assert.equal(data.updated, '2026-11-11');
+  assert.equal(ideas.length, 66);
+  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 108);
+  assert.equal(ideas.filter(idea => idea.articles.length >= 2).length, 31);
+  assert.equal(ideas[0].id, 'kimchi-guardian-party');
+  assert.equal(ideas[0].lastDate, '2026-11-10');
   assert.equal(ideas.filter(idea => idea.articles.some(article => article.url.includes('freeboard_id=2478'))).length, 1);
   const cheer = ideas.find(idea => idea.id === 'csat-cheer-letter');
   assert.equal(cheer.lastDate, '2026-11-02');
@@ -50,7 +50,7 @@ test('a newer article on an old idea moves that card first', () => {
 
 test('article identities follow each idea article and match the menu loader', () => {
   const ids = articleIds(data);
-  assert.equal(ids.length, 104);
+  assert.equal(ids.length, 108);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(trendArticleIds(data), ids);
   const sample = {ideas: [
@@ -65,7 +65,7 @@ test('article identities follow each idea article and match the menu loader', ()
     'recent\n2026-10-01\nhttps://example.com/old'
   ]);
   assert.deepEqual(trendArticleIds(sample), articleIds(sample));
-  assert.equal(homeMeta(data), '최근 기사 2026. 11. 09 · 아이디어 63개');
+  assert.equal(homeMeta(data), '최근 기사 2026. 11. 10 · 아이디어 66개');
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
@@ -94,12 +94,12 @@ test('a trend card is new only while one of its articles is unseen at page open'
 
 test('more button pages newest-first results and a new search starts over', () => {
   assert.equal(PAGE_SIZE, 12);
-  assert.equal(ideas.length, 63);
+  assert.equal(ideas.length, 66);
   let shown = PAGE_SIZE;
   const first = paginate(ideas, shown);
   assert.equal(first.shown, 12);
   assert.equal(first.hasMore, true);
-  assert.equal(moreLabel(first), '더보기 (12/63)');
+  assert.equal(moreLabel(first), '더보기 (12/66)');
   assert.equal(first.items[0].id, ideas[0].id);
   shown += PAGE_SIZE;
   const second = paginate(ideas, shown);
