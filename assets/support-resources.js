@@ -8,7 +8,6 @@
   'use strict';
   const TYPES = ['무료공연·문화', '재능기부', '후원품'];
   const SITES = ['인천', '안양', '전국'];
-  const FRESH_DAYS = 7;
   const TEXT_FIELDS = ['title', 'org', 'type', 'summary', 'target', 'region', 'how_to_apply', 'deadline_note', 'contact', 'event_date'];
   const dateOk = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
   function seoulToday(now = new Date()) {
@@ -114,6 +113,7 @@
     item.apply_start = ranked.map(entry => entry.record.apply_start).find(dateOk) || null;
     item.deadline = ranked.map(entry => entry.record.deadline).find(dateOk) || null;
     item.collected_date = ranked.map(entry => entry.record.collected_date).find(dateOk) || '';
+    item.updated = ranked.map(entry => entry.record.updated).filter(dateOk).sort().at(-1) || '';
     item.sites = ranked.map(entry => normalizeSites(entry.record.sites)).find(list => list.length) || [];
     const sources = [];
     const seen = new Set();
@@ -178,7 +178,6 @@
         ...item,
         collectedDate,
         deadlineInfo,
-        fresh: !!collectedDate && dayDiff(collectedDate, todayValue) >= 0 && dayDiff(collectedDate, todayValue) <= FRESH_DAYS,
         closed: deadlineInfo.key === 'closed'
       };
     });
@@ -232,13 +231,6 @@
   function itemIds(data) {
     return prepareItems(data).map(item => item.id);
   }
-  function freshIds(data, today) {
-    return prepareItems(data, today).filter(item => item.fresh).map(item => item.id);
-  }
-  function visitUnseen(ids, seenBefore) {
-    const seen = new Set(Array.isArray(seenBefore) ? seenBefore.filter(id => typeof id === 'string' && id) : []);
-    return (ids || []).filter(id => !seen.has(id));
-  }
   function homeMeta(data, today) {
     const items = prepareItems(data, today);
     if (!items.length) return '아직 등록된 항목이 없어요';
@@ -251,24 +243,13 @@
     const $ = id => doc.getElementById(id);
     const grid = $('support-grid');
     const homeMetaNode = $('home-support-resources-meta');
-    const homeBadge = $('home-support-resources-new');
     const detail = !!grid;
-    if (!detail && !homeMetaNode && !homeBadge) return;
-    const tracker = win.NewsBadge?.create('support-resources', {badge: homeBadge || undefined, detail, seenLabel:'후원·재능기부 페이지'});
+    if (!detail && !homeMetaNode) return;
+    const tracker = win.NewsBadge?.create('support-resources', {detail});
     let loaded = null;
-    let acknowledged = null;
-    function readSeen() {
-      try {
-        const saved = JSON.parse(win.localStorage.getItem('vida-news-seen-v1:support-resources') || '[]');
-        return new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && id) : []);
-      } catch {
-        return new Set();
-      }
-    }
     function sync(data) {
       loaded = data;
       const ids = itemIds(data);
-      if (detail && acknowledged === null) acknowledged = readSeen();
       tracker?.update(ids);
       if (homeMetaNode) homeMetaNode.textContent = homeMeta(data, seoulToday());
     }
@@ -346,12 +327,8 @@
       const head = el('div', 'support-card-head');
       const title = el('h2');
       title.append(el('span', 'support-title', item.title || '제목 없음'));
-      if (detail && acknowledged && !acknowledged.has(item.id)) {
-        const mark = el('span', 'news-new-mark', 'N');
-        mark.title = '이 브라우저에서 아직 확인하지 않은 항목';
-        mark.setAttribute('aria-label', '확인하지 않은 항목');
-        title.append(mark);
-      }
+      const mark = win.NewsBadge?.todayMark(doc, item.collectedDate, item.updated);
+      if (mark) title.append(mark);
       head.append(title);
       if (item.type) head.append(el('span', 'ui-status', item.type));
       card.append(head);
@@ -484,7 +461,6 @@
       }).then(data => {
         if (detail) {
           items = prepareItems(data, today);
-          if (acknowledged === null) acknowledged = readSeen();
           ready = true;
           if (updated) {
             if (dateOk(data.updated)) {
@@ -510,5 +486,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {TYPES, SITES, FRESH_DAYS, prepareItems, filterItems, selectionForCopy, copyBlocks, copyDeadline, siteLabel, normalizeSites, deadlineLabel, scheduleText, itemIds, freshIds, visitUnseen, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
+  return {TYPES, SITES, prepareItems, filterItems, selectionForCopy, copyBlocks, copyDeadline, siteLabel, normalizeSites, deadlineLabel, scheduleText, itemIds, paginate, moreLabel, PAGE_SIZE, homeMeta, safeHref, canonicalUrl, canonicalName, seoulToday, mount};
 });

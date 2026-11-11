@@ -23,7 +23,7 @@
   if(typeof document==='undefined')return;
   const $=id=>document.getElementById(id),home=$('home-reputation-status'),list=$('reputation-list');
   if(!home&&!list)return;
-  const tracker=root.NewsBadge?.create('reputation',{badge:$('home-reputation-new'),detail:!!list});
+  const tracker=root.NewsBadge?.create('reputation',{detail:!!list});
   const when=value=>value?new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'미확인';
   const branchName={incheon:'인천점',anyang:'안양점',brand:'지점 미표기',unknown:'대상 확인 필요'};
   const categoryName={care:'돌봄·안전',staff:'직원·응대',billing:'비용·계약',facility:'시설·위생',administration:'행정·운영',other:'기타',none:'해당 없음'};
@@ -33,6 +33,11 @@
     const items=filterItems(current.items,{filter:$('reputation-filter').value,branch:$('reputation-branch').value,query:$('reputation-query').value});
     $('reputation-count').textContent=`${items.length}건 표시`;
     list.innerHTML=items.map(item=>`<article class="reputation-finding ${!item.active?'is-archived':item.verdict==='uncertain'?'is-uncertain':''}"><div class="reputation-tags"><span class="visibility-tag is-warning">${esc(item.active?verdictName[item.verdict]:'후속 분류에서 제외')}</span><span class="visibility-tag is-absent">${esc(branchName[item.identity])}</span><span class="visibility-tag is-absent">${esc(categoryName[item.category])}</span></div><h3><a href="${esc(safeUrl(item.url))}" target="_blank" rel="noopener noreferrer">${esc(item.title)}</a></h3><p>${esc(item.publisher)} · ${esc(item.basis)}<br>게시일 ${item.published_at?esc(when(item.published_at)):'확인하지 못함'}</p><blockquote>${esc(item.evidence)}</blockquote><p>위 표현은 수집한 제목·요약에서 그대로 발췌했습니다. 주장 내용의 사실 여부와 정확한 대상은 원문에서 확인해주세요.</p><p>처음 감지 ${esc(when(item.first_detected))} · 최근 감지 ${esc(when(item.last_detected))}${!item.seen_in_latest_search?'<br>이번 검색에서는 다시 확인하지 못했습니다. 해결 여부는 알 수 없습니다.':''}${!item.active?'<br>후속 수집·분류에서 같은 부정 표현을 다시 확인하지 못했습니다. 이전 감지 기록이며 해결을 뜻하지 않습니다.':''}</p><a class="reputation-source-link" href="${esc(safeUrl(item.url))}" target="_blank" rel="noopener noreferrer">원문 확인 →</a></article>`).join('')||`<div class="reputation-empty">${state(current).warning?'점검이 완료되지 않았습니다. 현재까지 저장된 후보 중 이 조건에 맞는 글이 없습니다.':current.counts.concern||current.counts.uncertain||current.counts.archived?'선택한 조건에 맞는 검토 후보가 없습니다.':'이번에 확인한 공개 검색 결과에서는 검토 후보를 찾지 못했습니다.<br>확인한 수집처와 글 목록을 아래에서 살펴볼 수 있습니다.'}</div>`;
+    list.querySelectorAll('h3').forEach((heading,index)=>{
+      const item=items[index];
+      const mark=root.NewsBadge?.todayMark(document,item.first_detected,item.assessed_at);
+      if(mark)heading.append(' ',mark);
+    });
   }
   function render(data){
     current=data;

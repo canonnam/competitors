@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 import app
+import facility_access
 import reputation_watch as r
 
 NOW = datetime(2026, 9, 9, 12, tzinfo=r.KST)
@@ -180,18 +181,32 @@ class ReputationTests(unittest.TestCase):
 
     def test_api_is_read_only_and_does_not_publish_private_files_or_api_keys(self):
         self.sync()
-        with patch.object(r,'db_path',return_value=self.path),patch.object(r,'sync') as collector:
+        with patch.object(r,'db_path',return_value=self.path), patch.object(r,'sync') as collector, patch.dict(os.environ, {
+            facility_access.HASH_ENV: facility_access.make_password_hash('reputation-test'),
+            'SITE_ACCESS_DB_PATH': str(Path(self.temp.name) / 'access.db'),
+            'RAILWAY_ENVIRONMENT_ID': '',
+        }):
             server=app.ThreadingHTTPServer(('127.0.0.1',0),app.App)
             thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
             try:
+                conn=http.client.HTTPConnection('127.0.0.1',server.server_port)
+                conn.request('GET','/api/reputation-watch?summary=1')
+                response=conn.getresponse();response.read();conn.close()
+                self.assertEqual(response.status,401)
+                conn=http.client.HTTPConnection('127.0.0.1',server.server_port)
+                conn.request('POST',facility_access.PREFIX+'session',json.dumps({'password':'reputation-test'}),
+                             {'Content-Type':'application/json','Origin':f'http://127.0.0.1:{server.server_port}'})
+                response=conn.getresponse();response.read();conn.close()
+                self.assertEqual(response.status,200)
+                cookie=response.getheader('Set-Cookie').split(';')[0]
                 for method in ('GET','HEAD'):
                     conn=http.client.HTTPConnection('127.0.0.1',server.server_port)
-                    conn.request(method,'/api/reputation-watch?summary=1')
+                    conn.request(method,'/api/reputation-watch?summary=1',headers={'Cookie':cookie})
                     response=conn.getresponse();body=response.read()
                     self.assertEqual(response.status,200);self.assertEqual(response.getheader('Cache-Control'),'no-store')
                     self.assertNotIn(b'unit-test-secret',body);conn.close()
                 conn=http.client.HTTPConnection('127.0.0.1',server.server_port)
-                conn.request('GET','/reputation_watch.py');response=conn.getresponse();response.read()
+                conn.request('GET','/reputation_watch.py',headers={'Cookie':cookie});response=conn.getresponse();response.read()
                 self.assertEqual(response.status,404);conn.close();collector.assert_not_called()
             finally:server.shutdown();server.server_close();thread.join()
 

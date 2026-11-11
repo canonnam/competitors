@@ -64,10 +64,6 @@
   function moreLabel(page) {
     return `더보기 (${page.shown}/${page.total})`;
   }
-  function unseenIdeaIds(ideas, seenBefore) {
-    const seen = new Set(Array.isArray(seenBefore) ? seenBefore.filter(id => typeof id === 'string' && id) : []);
-    return (ideas || []).filter(idea => ideaArticleIds(idea).some(id => !seen.has(id))).map(idea => idea.id);
-  }
   function homeMeta(data) {
     const ideas = prepareIdeas(data);
     const latest = ideas.reduce((max, idea) => idea.lastDate > max ? idea.lastDate : max, '');
@@ -81,21 +77,11 @@
     const dialog = $('trend-dialog');
     const homeMetaNode = $('home-trend-meta');
     const detail = !!(grid && dialog);
-    if (!detail && !homeMetaNode && !$('home-trend-new')) return;
-    const tracker = win.NewsBadge?.create('trend', {badge:$('home-trend-new') || undefined, detail, seenLabel:'트렌드 페이지'});
+    if (!detail && !homeMetaNode) return;
+    const tracker = win.NewsBadge?.create('trend', {detail});
     let loaded = null;
-    let acknowledged = null;
-    function readSeen() {
-      try {
-        const saved = JSON.parse(win.localStorage.getItem('vida-news-seen-v1:trend') || '[]');
-        return new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && id) : []);
-      } catch {
-        return new Set();
-      }
-    }
     function sync(data) {
       loaded = data;
-      if (detail && acknowledged === null) acknowledged = readSeen();
       if (homeMetaNode) homeMetaNode.textContent = homeMeta(data);
       tracker?.update(articleIds(data));
     }
@@ -136,12 +122,8 @@
       const head = el('div', 'trend-card-head');
       const title = el('h2');
       title.append(el('span', 'trend-title', idea.title));
-      if (detail && acknowledged && ideaArticleIds(idea).some(id => !acknowledged.has(id))) {
-        const mark = el('span', 'news-new-mark', 'N');
-        mark.title = '이 브라우저에서 아직 확인하지 않은 기사';
-        mark.setAttribute('aria-label', '확인하지 않은 기사');
-        title.append(mark);
-      }
+      const mark = win.NewsBadge?.todayMark(doc, idea.updated);
+      if (mark) title.append(mark);
       head.append(title);
       if (idea.articles.length >= 2) head.append(el('span', 'ui-status', '관련 기사 ' + idea.articles.length));
       const summary = el('p', '', idea.summary);
@@ -233,7 +215,6 @@
       }).then(data => {
         if (detail) {
           ideas = prepareIdeas(data);
-          if (acknowledged === null) acknowledged = readSeen();
           ready = true;
           if (updated && data.updated) {
             updated.dateTime = data.updated;
@@ -253,5 +234,5 @@
     doc.addEventListener('visibilitychange', () => { if (!doc.hidden) refresh(); });
     win.setInterval(() => { if (!doc.hidden) refresh(); }, 300000);
   }
-  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, paginate, moreLabel, PAGE_SIZE, homeMeta, mount};
+  return {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, paginate, moreLabel, PAGE_SIZE, homeMeta, mount};
 });

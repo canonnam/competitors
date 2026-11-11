@@ -3,13 +3,48 @@
   const validIds=ids=>Array.isArray(ids)&&ids.every(id=>typeof id==='string'&&id.length>0);
   const feeds=['competitor','agency','reputation','trend','support-resources'], latest=new Map(), trackers=new Map(), subscribers=new Set();
   const currentKey=feed=>'vida-news-current-v1:'+feed;
-  const koreaDay=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'});
-  function collectedToday(item,now=Date.now()) {
-    const value=item?.first_seen_at||item?.collected_at;
-    if(!value)return false;
-    const collected=new Date(value),today=new Date(now);
-    return Number.isFinite(collected.getTime())&&Number.isFinite(today.getTime())
-      &&koreaDay.format(collected)===koreaDay.format(today);
+  const dayMs=86_400_000;
+  const koreaOffset=9*60*60*1000;
+  const todayLabel='오늘 처음 수집되었거나 갱신됨 (한국시간)';
+  const koreaDayStart=now=>Math.floor((now+koreaOffset)/dayMs)*dayMs-koreaOffset;
+  function isToday(value, now=Date.now()) {
+    if(typeof value!=='string')return false;
+    const dateOnly=/^\d{4}-\d{2}-\d{2}$/.test(value);
+    if(!dateOnly&&!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value))return false;
+    const at=Date.parse(dateOnly?value+'T00:00:00+09:00':value);
+    if(!Number.isFinite(at))return false;
+    if(dateOnly&&new Date(at+koreaOffset).toISOString().slice(0,10)!==value)return false;
+    return koreaDayStart(now)<=at&&at<=now;
+  }
+  function todayMark(doc, ...dates) {
+    const now=Date.now();
+    if(!dates.some(date=>isToday(date,now)))return null;
+    const mark=doc.createElement('span');
+    mark.className='news-new-mark';
+    mark.textContent='N';
+    mark.title=todayLabel;
+    mark.dataset.newsDay=String(koreaDayStart(now));
+    mark.setAttribute('role','img');
+    mark.setAttribute('aria-label',todayLabel);
+    return mark;
+  }
+  if(root.document?.querySelectorAll&&root.setTimeout) {
+    let day=koreaDayStart(Date.now()), timer;
+    function syncDay() {
+      const now=Date.now(), nextDay=koreaDayStart(now);
+      if(day!==nextDay) {
+        day=nextDay;
+        root.document.querySelectorAll('[data-news-day]').forEach(mark=>{
+          if(mark.dataset.newsDay!==String(day))mark.remove();
+        });
+        root.dispatchEvent(new Event('news-day-change'));
+      }
+      root.clearTimeout(timer);
+      timer=root.setTimeout(syncDay,day+dayMs-now);
+    }
+    root.addEventListener('pageshow',syncDay);
+    root.document.addEventListener('visibilitychange',()=>{if(!root.document.hidden)syncDay();});
+    syncDay();
   }
   function storage(){try{return root.localStorage;}catch{return undefined;}}
   function trackerFor(feed){if(!trackers.has(feed))trackers.set(feed,createTracker(feed,storage()));return trackers.get(feed);}
@@ -38,30 +73,21 @@
       }
     };
   }
-  function create(feed,{badge,detail=false,seenLabel='뉴스 페이지'}={}) {
+  function create(feed,{detail=false}={}) {
     const tracker=trackerFor(feed);
-    let current=[];
-    function draw() {
-      const count=tracker.unread(current);
-      if(badge){
-        badge.hidden=count===0;
-        badge.title=`새로 수집된 글 ${count}건 · ${seenLabel}를 확인하면 표시가 사라집니다`;
-        badge.setAttribute('aria-label',`새로 수집된 글 ${count}건`);
-      }
-      publish();
-    }
-    root.addEventListener('storage',event=>{if(event.key===tracker.key||event.key===null)draw();});
-    root.addEventListener('pageshow',draw);
     return {update(ids) {
       if(!validIds(ids))return;
-      current=ids;
       latest.set(feed,[...new Set(ids)]);
       try{storage()?.setItem(currentKey(feed),JSON.stringify(latest.get(feed)));}catch{}
       if(detail&&!root.document.hidden)tracker.mark(ids);
-      draw();
+      publish();
     }};
   }
-  if(typeof root.addEventListener==='function')root.addEventListener('storage',event=>{if(event.key===null||event.key?.startsWith('vida-news-'))publish();});
-  root.NewsBadge={create,createTracker,counts,subscribe,collectedToday};
-  if(typeof module!=='undefined'&&module.exports)module.exports={create,createTracker,counts,subscribe,collectedToday};
+  if(typeof root.addEventListener==='function'){
+    root.addEventListener('storage',event=>{if(event.key===null||event.key?.startsWith('vida-news-'))publish();});
+    root.addEventListener('pageshow',publish);
+  }
+  const api={create,createTracker,counts,subscribe,isToday,todayMark,todayLabel};
+  root.NewsBadge=api;
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

@@ -209,6 +209,18 @@ class AgencyNewsTests(unittest.TestCase):
         self.assertEqual(report['article_ids'], ['nhis_B0152:1'])
         self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], report['article_ids'])
 
+    def test_reviewing_identical_content_keeps_the_saved_update_date(self):
+        news.sync(self.path, NOW, lambda _: nhis_page([entry(1)]), [NHIS])
+        tomorrow = NOW + timedelta(days=1)
+        with news.connect(self.path) as db:
+            item = json.loads(db.execute('SELECT payload FROM articles').fetchone()[0])
+        item['collected_at'] = tomorrow.isoformat()
+        with patch.object(news, 'collect', return_value=([item], {})):
+            news.sync(self.path, tomorrow, sources=[NHIS])
+        saved = news.report(self.path, tomorrow)['items'][0]
+        self.assertEqual(saved['collected_at'], NOW.isoformat())
+        self.assertEqual(saved['first_seen_at'], NOW.isoformat())
+
     def test_failed_page_preserves_previous_success_archive_and_watermark(self):
         news.sync(self.path, NOW, lambda _: nhis_page([entry(1)]), [NHIS])
         before = self.state()[NHIS['id']]['last_success']

@@ -24,9 +24,8 @@ test('untrusted source text and links cannot become executable HTML',()=>{
   assert.equal(r.safeUrl('javascript:alert(1)'), '');assert.equal(r.safeUrl('https://user:password@example.com'), '');
   assert.equal(r.esc('<img src=x onerror=alert(1)>'),'&lt;img src=x onerror=alert(1)&gt;');
 });
-test('reputation card follows visibility and uses its own unseen-item marker',()=>{
+test('reputation card follows visibility and tracks its own read count',()=>{
   const html=fs.readFileSync('index.html','utf8');
   assert.ok(html.indexOf('<h2>검색노출 현황</h2>')<html.indexOf('<h2>더비다요양원 평판 점검</h2>'));
-  assert.ok(html.includes('id="home-reputation-new"'));
   assert.ok(fs.readFileSync('assets/reputation-watch.js','utf8').includes("create('reputation'"));
 });

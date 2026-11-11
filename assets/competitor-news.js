@@ -62,7 +62,7 @@
     window.addEventListener('resize', hideRules);
     window.addEventListener('scroll', event => { if (!rulesTooltip.contains(event.target)) hideRules(); }, true);
   }
-  const newMark=root.NewsBadge?.create('competitor',{badge:$('home-news-new'),detail:!!timeline});
+  const tracker=root.NewsBadge?.create('competitor',{detail:!!timeline});
   const date = value => value ? new Date(value).toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) : '확인 중';
   const collected = value => value ? new Date(value).toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}) : '';
@@ -104,11 +104,8 @@
       const dateLine = make('div', 'date');
       const time = make('time', '', date(item.published_at));
       time.dateTime = item.published_at; dateLine.append(time);
-      if (root.NewsBadge?.collectedToday(item)) {
-        const mark = make('span', 'news-new-mark', 'N');
-        mark.title = '오늘 처음 수집한 글 (한국시간)'; mark.setAttribute('aria-label', mark.title);
-        dateLine.append(' ', mark);
-      }
+      const mark=root.NewsBadge?.todayMark(document,item.first_seen_at,item.collected_at);
+      if(mark)dateLine.append(' ',mark);
       article.append(dateLine, make('h2', '', item.title));
       if (item.reviewed && item.summary) article.append(make('p', '', item.summary));
       const labels = make('div', 'labels');
@@ -149,7 +146,7 @@
       $('news-controls').hidden = false;
       drawList();
     }
-    newMark?.update(data.article_ids);
+    tracker?.update(data.article_ids);
     if(home)root.HomeDashboard?.update('competitor',data,syncStatus(data));
   }
   async function refresh() {

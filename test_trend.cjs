@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, ideaArticleIds, unseenIdeaIds, paginate, moreLabel, PAGE_SIZE, homeMeta} = require('./assets/trend.js');
-const {trendArticleIds} = require('./assets/navigation.js');
+const {prepareIdeas, filterIdeas, effectiveDate, safeHref, articleIds, paginate, moreLabel, PAGE_SIZE, homeMeta} = require('./assets/trend.js');
+const {isToday} = require('./assets/news-badge.js');
 
 const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
 const ideas = prepareIdeas(data);
@@ -48,11 +48,10 @@ test('a newer article on an old idea moves that card first', () => {
   assert.equal(prepareIdeas(sample)[0].lastDate, '2026-11-03');
 });
 
-test('article identities follow each idea article and match the menu loader', () => {
+test('article identities follow each idea article for the unread count', () => {
   const ids = articleIds(data);
   assert.equal(ids.length, 108);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(trendArticleIds(data), ids);
   const sample = {ideas: [
     {id:'old', articles:[{date:'2026-11-03', url:'https://example.com/new'}, {date:'2020-01-01', url:'https://example.com/old'}]},
     {id:'recent', articles:[{date:'2026-10-01', url:'https://example.com/old'}]},
@@ -64,32 +63,22 @@ test('article identities follow each idea article and match the menu loader', ()
     'old\n2020-01-01\nhttps://example.com/old',
     'recent\n2026-10-01\nhttps://example.com/old'
   ]);
-  assert.deepEqual(trendArticleIds(sample), articleIds(sample));
   assert.equal(homeMeta(data), '최근 기사 2026. 11. 10 · 아이디어 66개');
   const html = fs.readFileSync('index.html', 'utf8');
-  assert.match(html, /<div class="card-heading"><h2>트렌드<\/h2><span id="home-trend-new" class="news-new-mark"/);
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
-  assert.ok(html.includes('/assets/trend.js?v=20261105-more'));
+  assert.ok(html.includes('/assets/trend.js?v=20261112-today'));
   assert.ok(html.indexOf('/assets/news-badge.js') < html.indexOf('/assets/trend.js'));
   assert.ok(html.indexOf('/assets/trend.js') < html.indexOf('/assets/navigation.js'));
 });
 
-test('a trend card is new only while one of its articles is unseen at page open', () => {
-  const ideas = prepareIdeas(data);
-  assert.equal(unseenIdeaIds(ideas, []).length, ideas.filter(idea => ideaArticleIds(idea).length).length);
-  const seen = articleIds(data);
-  assert.deepEqual(unseenIdeaIds(ideas, seen), []);
-  const withoutNursing = seen.filter(id => !id.startsWith('nursing-staff-share\n'));
-  assert.deepEqual(unseenIdeaIds(ideas, withoutNursing), ['nursing-staff-share']);
-  const merged = prepareIdeas({ideas: [
-    {id:'old', title:'예전', summary:'예전 방식', tags:['프로그램'], last_date:'2020-01-01', articles:[
-      {title:'기존', source:'예', date:'2020-01-01', url:'https://example.com/old', verified:'ok'},
-      {title:'새 기사', source:'예', date:'2026-11-04', url:'https://example.com/new', verified:'ok'}
-    ]}
-  ]});
-  assert.equal(merged[0].lastDate, '2026-11-04');
-  assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0]).slice(1)), ['old']);
-  assert.deepEqual(unseenIdeaIds(merged, ideaArticleIds(merged[0])), []);
+test('curated cards use their own reflection date, including updated ideas with older articles', () => {
+  const now=Date.parse('2026-11-11T12:00:00+09:00');
+  const today=ideas.filter(idea=>isToday(idea.updated,now));
+  assert.deepEqual(new Set(today.map(idea=>idea.id)),new Set([
+    'kimchi-guardian-party','yearend-family-invite','fee-change-notice','night-signal-demo'
+  ]));
+  assert.ok(today.every(idea=>idea.lastDate<idea.updated));
+  assert.equal(ideas.some(idea=>isToday(idea.updated,now+86400000)),false);
 });
 
 test('more button pages newest-first results and a new search starts over', () => {
@@ -105,7 +94,6 @@ test('more button pages newest-first results and a new search starts over', () =
   const second = paginate(ideas, shown);
   assert.equal(second.shown, 24);
   assert.equal(second.items[12].id, ideas[12].id);
-  assert.ok(unseenIdeaIds(ideas.slice(PAGE_SIZE), []).length > 0);
   const searched = filterIdeas(ideas, {query:'김장'});
   shown = PAGE_SIZE;
   const reset = paginate(searched, shown);

@@ -5,11 +5,6 @@
   if (root.document && !root.FacilityViewer?.readOnly) api.mount(root);
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
-  function updateMarkRemaining(updatedAt, now=Date.now()) {
-    if(typeof updatedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(updatedAt))return 0;
-    const elapsed=now-Date.parse(updatedAt), week=7*86400000;
-    return elapsed>=0&&elapsed<week?week-elapsed:0;
-  }
   const categories = [
     {id:'operations', title:'운영·인사·회계'},
     {id:'facility', title:'시설 인수·개설'},
@@ -46,26 +41,6 @@
     {id:'statistics', category:'research', title:'통계자료', description:'통계 문서와 표·그래프 책갈피', keywords:'입소 상담 돌봄 품질 직원 근무환경 연구'},
     {id:'trend', category:'research', title:'트렌드', description:'요양 트렌드에서 고른 시설 프로그램·홍보 아이디어', keywords:'트렌드 요양트렌드 시설아이디어 프로그램 행사 상장 가족소통'}
   ].map(item => ({...item, href:'/' + item.id + '.html'}));
-  function trendArticleIds(data) {
-    const dateOk = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
-    const ids = [];
-    for (const idea of (data && data.ideas) || []) {
-      const ideaId = typeof idea.id === 'string' ? idea.id : '';
-      if (!ideaId) continue;
-      for (const article of idea.articles || []) {
-        if (!article || typeof article !== 'object') continue;
-        const date = typeof article.date === 'string' ? article.date : '';
-        const url = typeof article.url === 'string' ? article.url : '';
-        if (!dateOk(date) || !url) continue;
-        ids.push(ideaId + '\n' + date + '\n' + url);
-      }
-    }
-    return [...new Set(ids)];
-  }
-  function supportResourceIds(data) {
-    const api = globalThis.SupportResources;
-    return api ? api.itemIds(data) : [];
-  }
   const key = 'vida-navigation-v1';
   const ids = new Set(features.map(item => item.id));
   const cleanIds = value => Array.isArray(value) ? [...new Set(value.filter(id => ids.has(id)))].slice(0, features.length) : [];
@@ -122,41 +97,33 @@
     const button=(text,className)=>{const node=el('button',className,text);node.type='button';return node;};
     const link=(item,className)=>{const node=el('a',className,item.title);node.href=item.href;if(current?.id===item.id)node.setAttribute('aria-current','page');return node;};
     const icon=(id)=>{const mark=el('span','kb-menu-icon');mark.style.setProperty('--kb-icon','url("/assets/icons/line/'+id+'.svg")');mark.setAttribute('aria-hidden','true');return mark;};
-    const feedItems={competitor:'competitor-news',agency:'agency-news',reputation:'reputation-watch',trend:'trend','support-resources':'support-resources'};
-    let newsCounts=win.NewsBadge?.counts()||{};
-    let updatedAt={}, updateTimer;
+    const newsBadge=win.NewsBadge;
+    let updatedAt={};
     function membersFor(id){
       return id==='all'?features:id==='favorites'?features.filter(item=>preferences.get().favorites.includes(item.id)):features.filter(item=>item.category===id||item.id===id);
     }
-    function countFor(id){
-      const members=membersFor(id);
-      return Object.entries(feedItems).reduce((sum,[feed,itemId])=>sum+(members.some(item=>item.id===itemId)?newsCounts[feed]||0:0),0);
-    }
-    function newMark(id, updateId=id){
+    function newMark(id){
       const mark=el('span','news-new-mark kb-new-mark','N');
-      mark.dataset.kbUnread=id;
-      mark.dataset.kbUpdated=updateId;
+      mark.dataset.kbUpdated=id;
       mark.setAttribute('role','img');
+      if(newsBadge){
+        mark.title=newsBadge.todayLabel;
+        mark.setAttribute('aria-label',newsBadge.todayLabel);
+      }
       mark.hidden=true;
       return mark;
     }
-    function syncNewsMarkers(counts=newsCounts){
-      newsCounts=counts;
+    function syncNewsMarkers(){
       const now=Date.now();
-      const remaining=features.map(item=>[item.id,updateMarkRemaining(updatedAt[item.id],now)]).filter(([,ms])=>ms);
-      const active=new Set(remaining.map(([id])=>id));
-      const recentlyUpdated=id=>membersFor(id).some(item=>active.has(item.id));
+      const active=new Set(features.filter(item=>newsBadge?.isToday(updatedAt[item.id],now)).map(item=>item.id));
+      const updatedToday=id=>membersFor(id).some(item=>active.has(item.id));
       doc.querySelectorAll('[data-kb-updated]').forEach(mark=>{
-        const count=countFor(mark.dataset.kbUnread);
-        const recent=recentlyUpdated(mark.dataset.kbUpdated);
-        const label=[recent?'최근 7일 이내 갱신':'',count?'새 글 '+count+'건':''].filter(Boolean).join(' · ');
-        mark.hidden=!label;
-        mark.title=label;
-        mark.setAttribute('aria-label',label);
+        mark.hidden=!updatedToday(mark.dataset.kbUpdated);
       });
-      dialogFilters.querySelectorAll('option').forEach(option=>{const group=[{id:'all',title:'전체 업무'},{id:'favorites',title:'즐겨찾기'},...categories].find(item=>item.id===option.value);option.textContent=group.title+(countFor(group.id)||recentlyUpdated(group.id)?' · N':'');});
-      win.clearTimeout(updateTimer);
-      if(remaining.length)updateTimer=win.setTimeout(syncNewsMarkers,Math.min(...remaining.map(([,ms])=>ms)));
+      dialogFilters.querySelectorAll('option').forEach(option=>{
+        const group=[{id:'all',title:'전체 업무'},{id:'favorites',title:'즐겨찾기'},...categories].find(item=>item.id===option.value);
+        option.textContent=group.title+(updatedToday(group.id)?' · N':'');
+      });
     }
     doc.body.classList.add('kb-navigable');
     main.id ||= 'kb-main-content';
@@ -272,7 +239,7 @@
             if(group.id!=='dashboard')control.append(newMark(group.id),el('span','kb-category-count',String(matchFeatures('',group.id,preferences.get().favorites).length)));
             control.addEventListener('click',()=>{category=group.id;if(category==='dashboard'){query='';homeSearch.value='';}updateHomeURL();mobileMenu.open=false;render();if(target===mobileNav)mobileSummary.focus();});target.append(control);
           });
-          if(category===group.id){mobileSummary.replaceChildren(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title),newMark('all',group.id),el('span','kb-menu-chevron','⌄'));}
+          if(category===group.id){mobileSummary.replaceChildren(icon(group.id==='dashboard'?'all':group.id),el('span','kb-category-label',group.title),newMark(group.id),el('span','kb-menu-chevron','⌄'));}
         });
         if(focused)nav.querySelector('[data-kb-category="'+focused+'"]')?.focus();
       } else {
@@ -313,7 +280,6 @@
     // Reveal the home only after the category/search UI has transformed the
     // legacy card markup, preventing the old three-column grid from flashing.
     if(home) doc.body.classList.add('kb-navigation-ready');
-    win.NewsBadge?.subscribe(syncNewsMarkers);
     dashboard?.querySelectorAll('.dash-panel-head > a[href]').forEach(anchor=>{
       const item=features.find(feature=>feature.href===anchor.getAttribute('href'));
       if(item)anchor.append(' ',newMark(item.id));
@@ -329,17 +295,9 @@
       finally{loadingUpdates=false;syncNewsMarkers();}
     }
     refreshUpdateMarks();win.setInterval(refreshUpdateMarks,300000);
+    win.addEventListener('news-day-change',syncNewsMarkers);
     win.addEventListener('pageshow',refreshUpdateMarks);
     doc.addEventListener('visibilitychange',refreshUpdateMarks);
-    // Home collectors already fetch these feeds. On other pages load only missing summaries,
-    // without acknowledging them as read; the actual feed page owns acknowledgement.
-    if(!home&&typeof win.fetch==='function'&&win.NewsBadge){
-      const feeds=[['competitor','competitor-news'],['agency','agency-news'],['reputation','reputation-watch'],['trend','trend'],['support-resources','support-resources']].filter(([,id])=>current?.id!==id);
-      const trackers=feeds.map(([feed,id])=>({feed,id,tracker:win.NewsBadge.create(feed,{detail:false})}));
-      let loading=false;
-      const refresh=async()=>{if(loading||doc.hidden)return;loading=true;try{await Promise.allSettled(trackers.map(async({feed,id,tracker})=>{const path=feed==='trend'?'/data/trend_ideas.json':feed==='support-resources'?'/data/support_resources.json':'/api/'+id+'?summary=1';const response=await win.fetch(path,{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)return;const data=await response.json();const ids=feed==='trend'?trendArticleIds(data):feed==='support-resources'?supportResourceIds(data):data.article_ids;tracker.update(ids);}));}finally{loading=false;}};
-      refresh();win.setInterval(refresh,300000);doc.addEventListener('visibilitychange',refresh);
-    }
   }
-  return {features,categories,matchFeatures,createPreferences,mount,trendArticleIds,supportResourceIds,updateMarkRemaining};
+  return {features,categories,matchFeatures,createPreferences,mount};
 });

@@ -473,6 +473,12 @@ def sync(path, now=None, fetcher=fetch_html, sources=None, stop=None, force=True
                         if exists:
                             previous = json.loads(exists[0])
                             item['first_seen_at'] = previous.get('first_seen_at', previous['collected_at'])
+                            # Policy reviews can return an identical notice with a fresh check time.
+                            date_fields = {'first_seen_at', 'collected_at'}
+                            content = {key: value for key, value in item.items() if key not in date_fields}
+                            previous_content = {key: value for key, value in previous.items() if key not in date_fields}
+                            if content == previous_content:
+                                item['collected_at'] = previous['collected_at']
                         else:
                             item['first_seen_at'] = item.get('first_seen_at', item['collected_at'])
                         added += int(not exists)

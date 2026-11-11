@@ -36,7 +36,7 @@
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id), home = $('home-agency-meta'), list = $('agency-list');
   if (!home && !list) return;
-  const newMark=root.NewsBadge?.create('agency',{badge:$('home-agency-new'),detail:!!list});
+  const tracker=root.NewsBadge?.create('agency',{detail:!!list});
   const when = value => value ? new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}) : '확인 중';
   const make = (tag,cls,text) => { const node=document.createElement(tag); if(cls)node.className=cls; if(text!==undefined)node.textContent=text; return node; };
   const readKey='vida-support-read-v1';
@@ -126,10 +126,8 @@
       const article=make('article','agency-item'), meta=make('div','agency-item-meta');
       const time=make('time','',item.published_at);time.dateTime=item.published_at;
       meta.append(time,make('span','',item.agency+' · '+item.source));
-      if(root.NewsBadge?.collectedToday(item)) {
-        const mark=make('span','news-new-mark','N');
-        mark.title='오늘 처음 수집한 글 (한국시간)';mark.setAttribute('aria-label',mark.title);meta.append(mark);
-      }
+      const mark=root.NewsBadge?.todayMark(document,item.first_seen_at,item.collected_at);
+      if(mark)meta.append(mark);
       if(item.pinned)meta.append(make('span','agency-pin','게시판 공지'));
       if(item.kind==='support') {
         article.classList.add('support-item');
@@ -186,7 +184,7 @@
   }
   function render(data) {
     if(!data?.sync||!Array.isArray(data.sources)||!Number.isInteger(data.total)||(list&&!Array.isArray(data.items)))throw new Error('Invalid agency data');
-    current=data;drawStatus(data);drawList();newMark?.update(data.article_ids);
+    current=data;drawStatus(data);drawList();tracker?.update(data.article_ids);
   }
   async function loadReport() {
     const response=await fetch('/api/agency-news'+(list?'':'?summary=1'),{cache:'no-store',signal:AbortSignal.timeout(20000)});
@@ -235,7 +233,7 @@
       message.textContent=saved?'관심 선택과 이유는 저장했습니다. 추천 목록을 갱신하지 못해 새로고침이 필요합니다.':
         (error.name==='Error'?error.message:'관심 선택의 저장을 확인하지 못했습니다. 입력한 이유를 유지했으니 다시 저장해주세요.');
     } finally {
-      saving=false;drawStatus(current);drawList();newMark?.update(current.article_ids);
+      saving=false;drawStatus(current);drawList();tracker?.update(current.article_ids);
       if(reasonDialog?.open) {
         [...reasonForm.elements].forEach(field=>{field.disabled=false;});
         if(saved){reasonFocus=null;reasonDialog.close();reasonTarget=null;}

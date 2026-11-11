@@ -20,3 +20,5 @@ This repository is the existing Python/static application served at `app.aivida.
 ## Change history
 
 For every site change, update `docs/CHANGELOG.md` in the same commit with the user-visible change, source or reason, verification, and deployment result. If runtime, local setup, or deployment details change, also update `docs/DEVELOPMENT_ENVIRONMENT.md`. Git remains the exact file-level history; the Markdown log is the human-readable history. Never record secret values or personal data.
+
+When publishing edited reference content, record the actual publication date in `data/card_updates.json` if the feature has no automatic source. For trend and support resource lists, record the date on each item you add or change as described in [TREND_IDEAS.md](data/TREND_IDEAS.md) and [SUPPORT_RESOURCES.md](data/SUPPORT_RESOURCES.md).

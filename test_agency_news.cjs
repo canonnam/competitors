@@ -3,12 +3,12 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {status,safeUrl,unreadSupport,filterItems,isRecommended}=require('./assets/agency-news.js');
 
-test('the public agency card follows competitor news and precedes AI Hub',()=>{
+test('agency news remains between competitor news and related resource cards',()=>{
   const home=fs.readFileSync('index.html','utf8');
   const titles=[...home.matchAll(/<article[^>]*>.*?<h2>(.*?)<\/h2>/g)].map(match=>match[1]);
   const start=titles.indexOf('경쟁사 및 요양원 뉴스');
   assert.ok(start>=0);
-  assert.deepEqual(titles.slice(start,start+3),['경쟁사 및 요양원 뉴스','건보공단·복지부 뉴스·지원사업','AI 허브 활용데이터']);
+  assert.deepEqual(titles.slice(start,start+4),['경쟁사 및 요양원 뉴스','건보공단·복지부 뉴스·지원사업','후원·재능기부','AI 허브 활용데이터']);
   assert.equal(titles.filter(title=>title==='건보공단·복지부 뉴스·지원사업').length,1);
   assert.ok(!fs.readFileSync('assets/site.css','utf8').includes('.card .icon{background:'));
 });

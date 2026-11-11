@@ -1,4 +1,5 @@
 """Read the publication times used by the knowledge base navigation."""
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import json
 import re
@@ -9,16 +10,18 @@ import bank_transactions
 import claim_check
 import clarity_report
 import competitor_news
+import facility_projects
 import liability_insurance
 import naver_ads
 import payroll_insurance
 import recipient_history
 import reputation_watch
 import search_visibility
+import staff_eval
+import support_applications
 import website_intake
 
 KST = timezone(timedelta(hours=9))
-WEEK = timedelta(days=7)
 
 
 def read_json(path):
@@ -56,7 +59,29 @@ def ad_dates():
 
 def article_dates(feed):
     for item in feed.report(feed.db_path())['items']:
-        yield item.get('first_seen_at') or item.get('collected_at')
+        yield item.get('first_seen_at')
+        yield item.get('collected_at')
+
+
+def reputation_dates():
+    for item in reputation_watch.report(reputation_watch.db_path())['items']:
+        yield item.get('first_detected')
+        yield item.get('assessed_at')
+
+
+def curated_dates(path, item_key):
+    data = read_json(path)
+    yield data.get('updated')
+    for item in data.get(item_key, []):
+        yield item.get('updated')
+        yield item.get('collected_date')
+
+
+def sqlite_dates(path, query):
+    if path is None or not path.is_file():
+        return
+    with closing(sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=2)) as db:
+        yield from db.execute(query).fetchone()
 
 
 def visibility_dates():
@@ -68,8 +93,9 @@ def visibility_dates():
 
 
 def recent(root, now=None):
-    """Return feature IDs and timestamps only. Unavailable sources are independent."""
+    """Return feature IDs and timestamps for today's changes in Korea."""
     now = now or datetime.now(timezone.utc)
+    today = now.astimezone(KST).date()
     updated = {}
 
     def keep(feature, value, *, date_only=False):
@@ -81,7 +107,7 @@ def recent(root, now=None):
             return
         if date_only and re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
             at = at.replace(tzinfo=KST)
-        if at.tzinfo is None or not now - WEEK < at <= now:
+        if at.tzinfo is None or at > now or at.astimezone(KST).date() != today:
             return
         if feature not in updated or at > updated[feature]:
             updated[feature] = at
@@ -116,15 +142,22 @@ def recent(root, now=None):
         'search-visibility': visibility_dates,
         'competitor-news': lambda: article_dates(competitor_news),
         'agency-news': lambda: article_dates(agency_news),
-        'reputation-watch': lambda: (item['first_detected'] for item in
-                                     reputation_watch.report(reputation_watch.db_path())['items'] if item['active']),
-        'trend': lambda: [read_json(data / 'trend_ideas.json').get('updated')],
-        'support-resources': lambda: [read_json(data / 'support_resources.json').get('updated')],
+        'reputation-watch': reputation_dates,
+        'trend': lambda: curated_dates(data / 'trend_ideas.json', 'ideas'),
+        'support-resources': lambda: curated_dates(data / 'support_resources.json', 'items'),
+        'facility-3d': lambda: sqlite_dates(facility_projects.DB_PATH, 'SELECT MAX(updated_at) FROM facility_projects'),
+        'staff-eval': lambda: sqlite_dates(staff_eval.db_path(), """
+            SELECT MAX(created), MAX(submitted_at), MAX(confirmed_at), MAX(deleted_at) FROM staff_evaluations
+        """),
+        'support-projects': lambda: sqlite_dates(support_applications.path(), """
+            SELECT (SELECT MAX(updated) FROM grant_projects), (SELECT MAX(created) FROM grant_files)
+        """),
+        'nearby-facilities': lambda: [read_json(data / 'nearby_facilities.json').get('categoryUpdatedAt')],
     }
     for feature, values in sources.items():
         try:
             for value in values():
-                keep(feature, value, date_only=feature in ('trend', 'support-resources'))
+                keep(feature, value, date_only=feature in ('trend', 'support-resources', 'nearby-facilities'))
         except (OSError, ValueError, KeyError, TypeError, AttributeError, sqlite3.Error):
             continue
     return {feature: at.astimezone(timezone.utc).isoformat() for feature, at in updated.items()}

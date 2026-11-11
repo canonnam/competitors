@@ -1,6 +1,10 @@
 """Financial reconciliation and public endpoint regression coverage."""
+from contextlib import closing
 import json
+from datetime import datetime
 from pathlib import Path
+import sqlite3
+import tempfile
 import threading
 import unittest
 import urllib.error
@@ -16,6 +20,54 @@ REPORT = json.loads((ROOT/'data'/'operating_report.json').read_text(encoding='ut
 
 
 class OperatingReportTests(unittest.TestCase):
+    def test_update_summary_uses_korean_day_and_article_content_update(self):
+        updates = app.card_updates
+        by_file = {
+            'card_updates.json': {
+                'statistics': '2026-11-11T14:59:59Z',
+                'competitors': '2026-11-11T15:00:00Z',
+                'payroll': '2026-11-12T00:00:01+09:00',
+            },
+            'operating_report.json': {},
+            'trend_ideas.json': {'ideas': [{'updated': '2026-11-12'}]},
+            'support_resources.json': {'items': [{'collected_date': '2026-11-11'}]},
+            'nearby_facilities.json': {},
+        }
+        notice = {'first_seen_at': '2026-11-10T09:00:00+09:00', 'collected_at': '2026-11-12T00:00:00+09:00'}
+        with (
+            patch.object(updates, 'read_json', side_effect=lambda path: by_file[path.name]),
+            patch.object(updates, 'monthly_updates', return_value=[]),
+            patch.object(updates, 'claim_dates', return_value=[]),
+            patch.object(updates, 'policy_dates', return_value=[]),
+            patch.object(updates, 'ad_dates', return_value=[]),
+            patch.object(updates, 'visibility_dates', return_value=[]),
+            patch.object(updates, 'reputation_dates', return_value=[]),
+            patch.object(updates, 'sqlite_dates', return_value=[]),
+            patch.object(updates.website_intake, 'summary', return_value={}),
+            patch.object(updates.clarity_report, 'report', return_value={}),
+            patch.object(updates.competitor_news, 'report', return_value={'items': []}),
+            patch.object(updates.agency_news, 'report', return_value={'items': [notice]}),
+        ):
+            before = updates.recent(ROOT, datetime.fromisoformat('2026-11-11T14:59:59+00:00'))
+            midnight = updates.recent(ROOT, datetime.fromisoformat('2026-11-11T15:00:00+00:00'))
+        self.assertEqual(set(before), {'statistics', 'support-resources'})
+        self.assertEqual(set(midnight), {'competitors', 'agency-news', 'trend'})
+
+    def test_read_only_timestamp_lookup_uses_saved_dates_without_creating_a_database(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'feature dates.db'
+            query = 'SELECT MAX(updated) FROM test_updates'
+            self.assertEqual(list(app.card_updates.sqlite_dates(path, query)), [])
+            self.assertFalse(path.exists())
+            with closing(sqlite3.connect(path)) as db, db:
+                db.execute('CREATE TABLE test_updates (updated TEXT)')
+                db.executemany('INSERT INTO test_updates VALUES (?)', [
+                    ('2026-11-11T14:59:59+00:00',), ('2026-11-11T15:00:00+00:00',)
+                ])
+            self.assertEqual(list(app.card_updates.sqlite_dates(path, query)), ['2026-11-11T15:00:00+00:00'])
+            with self.assertRaises(sqlite3.OperationalError):
+                list(app.card_updates.sqlite_dates(path, 'DELETE FROM test_updates'))
+
     def test_update_timestamp_tracks_report_changes_not_review_dates(self):
         previous = {'branches': [{'id': 'anyang'}], 'updatedAt': '2025-09-01T01:00:00Z'}
         same_data = {'branches': previous['branches'], 'sourceDate': '2026-11-10'}
