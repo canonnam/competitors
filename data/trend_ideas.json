@@ -1,6 +1,32 @@
 {
-  "updated": "2026-11-10",
+  "updated": "2026-11-11",
   "ideas": [
+    {
+      "id": "kimchi-guardian-party",
+      "title": "김장·수육 파티",
+      "summary": "시설에서 김장한 뒤 보호자를 초청해 수육을 나누거나, 지역 기관 봉사단과 함께 김장을 하는 행사 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
+          "source": "에이타임즈",
+          "date": "2026-11-10",
+          "url": "http://m.atimes.kr/news/articleView.html?idxno=89951",
+          "verified": "ok"
+        },
+        {
+          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
+          "source": "케어런츠",
+          "date": "2026-11-02",
+          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-10"
+    },
     {
       "id": "nursing-staff-share",
       "title": "간호인력 공개",
@@ -66,6 +92,25 @@
           "source": "병원신문",
           "date": "2026-11-09",
           "url": "http://www.khanews.com/news/articleView.html?idxno=252441",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
+    {
+      "id": "yearend-family-invite",
+      "title": "송년 초대장",
+      "summary": "연말 가족 행사를 초대장 형식의 공지로 올려 보호자 참석을 부탁하는 아이디어",
+      "tags": [
+        "가족소통",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "[초대장] 2026년 요양원 송년 가족 행사 「두 손 가득, 온기 가득」에 초대합니다!",
+          "source": "효자의집",
+          "date": "2026-11-09",
+          "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1275",
           "verified": "ok"
         }
       ],
@@ -215,6 +260,25 @@
       "last_date": "2026-11-04"
     },
     {
+      "id": "fee-change-notice",
+      "title": "수가 변경 안내",
+      "summary": "다음 해 장기요양 수가가 정해지면 본인부담·비급여 변동을 보호자에게 먼저 알리는 아이디어. 고시 원문과 시설 계산을 확인하기 전 인상률을 단정하지 않는다",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "2027년 장기요양수가 결정사항 안내 및 비급여비용 공지",
+          "source": "효자의집",
+          "date": "2026-11-04",
+          "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1274",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-04"
+    },
+    {
       "id": "csat-cheer-letter",
       "title": "수능 응원 손편지",
       "summary": "어르신과 청소년이 수험생에게 간식 꾸러미·손편지·응원 영상을 전하는 세대 교류 행사를 여는 아이디어",
@@ -235,25 +299,6 @@
           "source": "경북일보",
           "date": "2026-10-28",
           "url": "https://www.kyongbuk.co.kr/news/articleView.html?idxno=4088764",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-02"
-    },
-    {
-      "id": "kimchi-guardian-party",
-      "title": "김장·수육 파티",
-      "summary": "시설에서 김장을 한 뒤 보호자를 초청해 수육과 함께 먹는 연례행사를 여는 아이디어",
-      "tags": [
-        "프로그램",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
-          "source": "케어런츠",
-          "date": "2026-11-02",
-          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
           "verified": "ok"
         }
       ],
@@ -292,6 +337,24 @@
           "source": "에덴노인전문요양센터",
           "date": "2026-11-02",
           "url": "https://edencenter.or.kr/bbs/board.php?bo_table=menu4_5&wr_id=282",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-02"
+    },
+    {
+      "id": "night-signal-demo",
+      "title": "야간 신호등 실증",
+      "summary": "야간 수면 확인 AI 전화와 낙상·화장실·기상을 색으로 구분하는 알림은 현장 시연이라고 보호자에게 알리는 아이디어. 낙상이 줄었다고 쓰지 않는다",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "노인 요양도 AI 시대, LGU+ 'AI빌딩넷'",
+          "source": "헤럴드경제",
+          "date": "2026-11-02",
+          "url": "https://biz.heraldcorp.com/article/10922647",
           "verified": "ok"
         }
       ],
