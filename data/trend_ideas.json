@@ -1,16 +1,117 @@
 {
-  "updated": "2026-11-11",
+  "updated": "2026-11-12",
   "ideas": [
     {
+      "id": "hiring-safety-leaflet",
+      "updated": "2026-11-12",
+      "title": "안심 채용 안내문",
+      "summary": "채용 시 범죄경력 조회·자체 검증·인권교육 주기·CCTV 즉시 열람을 한 장으로 정리해 보호자에게 알리는 아이디어. 노인학대 관련 취업제한을 넓히는 개정안은 발의된 상태이며 통과된 의무로 쓰지 않는다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "노인 대상 살인·상해치사범 취업 제한, 노인복지법 개정안 발의",
+          "source": "브라보마이라이프",
+          "date": "2026-11-11",
+          "url": "https://bravo.etoday.co.kr/view/atc_view/20468",
+          "verified": "ok"
+        },
+        {
+          "title": "SBS 학대 요양보호사 재취업 허점 단독",
+          "source": "SBS",
+          "date": "2026-10-06",
+          "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008785534",
+          "verified": "ok"
+        },
+        {
+          "title": "다온노인복지센터 존엄케어 탐방",
+          "source": "요양뉴스",
+          "date": "2026-10-05",
+          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24402",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-11"
+    },
+    {
+      "id": "admission-proxy-day",
+      "updated": "2026-11-12",
+      "title": "접수 대행 데이",
+      "summary": "온라인 신청이 어려운 보호자·어르신을 위해 정해진 날 오프라인에서 입소 신청서 작성과 접수를 돕는 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "화성시, 첫 시립요양원 '실버드림센터' 입소자 110명 모집",
+          "source": "연합뉴스",
+          "date": "2026-11-11",
+          "url": "https://www.yna.co.kr/view/AKR20261111121700061",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-11"
+    },
+    {
+      "id": "integrated-care-booth",
+      "updated": "2026-11-12",
+      "title": "통합돌봄 상담소",
+      "summary": "동 행정복지센터와 함께 어르신의 건강·생활 상태를 듣고 의료·요양 서비스를 안내하는 상담 자리를 여는 아이디어",
+      "tags": [
+        "지역연계",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "미추홀구 도화2·3동, 어르신 의료·요양 통합 돌봄 상담소 운영",
+          "source": "데일리인천",
+          "date": "2026-11-11",
+          "url": "https://www.dailyincheon.com/news/36311",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-11"
+    },
+    {
+      "id": "staff-award-healing",
+      "updated": "2026-11-12",
+      "title": "표창과 힐링 교육",
+      "summary": "돌봄의 품격·노인인권 교육과 유공 종사자 표창, 힐링·소통 시간을 묶어 소식지에 알리는 아이디어",
+      "tags": [
+        "직원사기",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "성남시 노인요양기관 358곳 근무자 직무교육",
+          "source": "에이타임즈",
+          "date": "2026-11-11",
+          "url": "http://m.atimes.kr/news/articleView.html?idxno=89997",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-11"
+    },
+    {
       "id": "kimchi-guardian-party",
-      "updated": "2026-11-11",
+      "updated": "2026-11-12",
       "title": "김장·수육 파티",
-      "summary": "시설에서 김장한 뒤 보호자를 초청해 수육을 나누거나, 지역 기관 봉사단과 함께 김장을 하는 행사 아이디어",
+      "summary": "시설에서 김장한 뒤 보호자를 초청해 수육을 나누거나, 사회봉사 국민공모제처럼 지역 기관 일손을 받아 김장을 하는 행사 아이디어",
       "tags": [
         "프로그램",
         "가족소통"
       ],
       "articles": [
+        {
+          "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
+          "source": "동양일보",
+          "date": "2026-11-10",
+          "url": "https://www.dynews.co.kr/news/articleView.html?idxno=873438",
+          "verified": "ok"
+        },
         {
           "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
           "source": "에이타임즈",
@@ -1299,33 +1400,6 @@
         }
       ],
       "last_date": "2026-10-08"
-    },
-    {
-      "id": "hiring-safety-leaflet",
-      "updated": "2026-11-03",
-      "title": "안심 채용 안내문",
-      "summary": "채용 시 범죄경력 조회·자체 검증·인권교육 주기·CCTV 즉시 열람을 한 장으로 정리한 보호자용 안심 안내문",
-      "tags": [
-        "홍보",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "SBS 학대 요양보호사 재취업 허점 단독",
-          "source": "SBS",
-          "date": "2026-10-06",
-          "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008785534",
-          "verified": "ok"
-        },
-        {
-          "title": "다온노인복지센터 존엄케어 탐방",
-          "source": "요양뉴스",
-          "date": "2026-10-05",
-          "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24402",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-06"
     },
     {
       "id": "external-performance-invite",
