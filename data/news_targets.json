@@ -17,6 +17,8 @@
   {"id":"caring","name":"케어링","query":"\"케어링\" (요양 OR 돌봄 OR 시니어)","aliases":["케어링","케어링 스테이"],"context":["요양","돌봄","시니어","어르신","주간보호","데이케어","스테이"]},
   {"id":"bokdori","name":"복도리 케어 (복케어)","query":"(\"복도리\" OR \"복케어\" OR \"텀브샤인\") (요양 OR 돌봄 OR 센서)","aliases":["복도리","복케어","텀브샤인"],"context":["요양","돌봄","센서","낙상"]},
   {"id":"dolbom","name":"슬기로운 돌봄생활","query":"(\"슬기로운 돌봄생활\" OR \"티에프네트웍스\" OR \"TF네트웍스\") (돌봄 OR 요양 OR 기록)","aliases":["슬기로운 돌봄생활","티에프네트웍스"],"context":["돌봄","요양","기록","평가"]},
+  {"id":"carebridge","name":"돌봄다리","query":"(\"돌봄다리\" OR \"돌봄테크\") (요양 OR 매칭 OR 재가)","aliases":["돌봄다리","돌봄테크"],"context":["요양","매칭","재가"]},
+  {"id":"dolbomi","name":"돌봄이","query":"(\"돌봄이\" OR \"에이전웍스\") (기록 OR 요양 OR 시설)","aliases":["돌봄이","에이전웍스"],"context":["기록","요양","시설","평가"]},
   {"id":"caredoc","name":"케어닥","query":"\"케어닥\"","aliases":["케어닥"]},
   {"id":"cleverus","name":"클레버러스","query":"(\"클레버러스\" OR \"비클레버\")","aliases":["클레버러스","비클레버","Be:Clever"]},
   {"id":"inzinious","name":"인지니어스","query":"(\"인지니어스\" OR \"InCare24\") (레이더 OR 낙상 OR 환자 OR 요양)","aliases":["인지니어스","InCare24","Inzinious"],"context":["레이더","낙상","환자","요양","생체신호","InCare24"],"exclude":["보드게임"]},

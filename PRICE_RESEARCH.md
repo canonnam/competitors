@@ -90,6 +90,8 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | 나무엑스 (NAMUHX) | [공식 사이트](https://namuhx.com/), [아시아경제](https://www.asiae.co.kr/article/2026110608591537926) (2026-11-06), [글로벌이코노믹](https://www.g-enews.com/article/Distribution/2026/11/202611060837599943a96f092d0c_1) (2026-11-06) | 시설 실증 보도와 가정용 소개에 50인 월 요금 없음. 긴급출동은 세이프케어 플러스 구독이라고만 적혀 있다 |
 | 복도리 케어 | [공식 사이트](https://thumbshine.co.kr/), [기능](https://thumbshine.co.kr/features), [한국경제TV](https://www.wowtv.co.kr/NewsCenter/News/Read?articleId=AKR20260119062000017) (2026-01-19) | 2026-11-10 확인. 50인 월 요금 없음 |
 | 슬기로운 돌봄생활 | [소개](https://tfnetworks.kr/dolbom-life/) (2026-11-10) | 도입 문의. 50인 월 요금 없음 |
+| 돌봄다리 | [고객지원](https://www.caretech.kr/support.html) (2026-11-12) | 베타 기간 전 기능 무료. 50인 유료 요금 없음. 영구 무료가 아님 |
+| 돌봄이 | [제품](https://agentworks.co.kr/care.html) (2026-11-12) | 50인 월 요금 없음. 첫 계약은 회사 페이지가 무상·현물로 적음 |
 
 ## 재검증 방법
 
