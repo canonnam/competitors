@@ -1,6 +1,26 @@
 {
-  "updated": "2026-11-12",
+  "updated": "2026-11-13",
   "ideas": [
+    {
+      "id": "digital-memory-photo",
+      "updated": "2026-11-13",
+      "title": "디지털 추억 인화",
+      "summary": "지역 디지털 배움터와 함께 어르신·보호자가 AI·디지털을 체험하고, 가족 사진을 현장에서 인화해 드리는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "우리요양병원, AI·디지털 배움터와 어르신에게 특별한 추억 선물",
+          "source": "경상일보",
+          "date": "2026-11-12",
+          "url": "https://www.ksilbo.co.kr/news/articleView.html?idxno=1072374",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-12"
+    },
     {
       "id": "hiring-safety-leaflet",
       "updated": "2026-11-12",
@@ -90,6 +110,25 @@
           "source": "에이타임즈",
           "date": "2026-11-11",
           "url": "http://m.atimes.kr/news/articleView.html?idxno=89997",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-11"
+    },
+    {
+      "id": "weekly-rights-text",
+      "updated": "2026-11-13",
+      "title": "주간 인권문자",
+      "summary": "인권방송이 매주 보내는 인권문자를 공지사항에 올려 보호자에게 보여주는 아이디어",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "노인 인권 보호의 예방을 위한 인권문자",
+          "source": "행복다인요양원",
+          "date": "2026-11-11",
+          "url": "http://www.happydain.kr/bbs/board.php?bo_table=notice&wr_id=1745",
           "verified": "ok"
         }
       ],
@@ -217,6 +256,33 @@
           "source": "효자의집",
           "date": "2026-11-09",
           "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1275",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
+    {
+      "id": "birthday-invite-repost",
+      "updated": "2026-11-13",
+      "title": "생신 초대장",
+      "summary": "월 생신잔치를 초대장 공지로 올리고, 날짜가 바뀌면 변경일을 적어 다시 공지하는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "11월 생신잔치 초대장 (날짜 변경되었습니다. 11/11 수요일)",
+          "source": "일산차요양원",
+          "date": "2026-11-09",
+          "url": "http://ilsancha.com/bbs/board.php?bo_table=bbs4&wr_id=230",
+          "verified": "ok"
+        },
+        {
+          "title": "2026년 11월 생신잔치 일정",
+          "source": "행복다인요양원",
+          "date": "2026-11-06",
+          "url": "http://www.happydain.kr/bbs/board.php?bo_table=notice&wr_id=1744",
           "verified": "ok"
         }
       ],
