@@ -8,12 +8,12 @@ const data = JSON.parse(fs.readFileSync('data/trend_ideas.json', 'utf8'));
 const ideas = prepareIdeas(data);
 
 test('merged trend ideas stay newest-first and keep blocked links', () => {
-  assert.equal(data.updated, '2026-11-12');
-  assert.equal(ideas.length, 69);
-  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 113);
-  assert.equal(ideas.filter(idea => idea.articles.length >= 2).length, 31);
-  assert.equal(ideas[0].id, 'hiring-safety-leaflet');
-  assert.equal(ideas[0].lastDate, '2026-11-11');
+  assert.equal(data.updated, '2026-11-13');
+  assert.equal(ideas.length, 72);
+  assert.equal(ideas.reduce((sum, idea) => sum + idea.articles.length, 0), 117);
+  assert.equal(ideas.filter(idea => idea.articles.length >= 2).length, 32);
+  assert.equal(ideas[0].id, 'digital-memory-photo');
+  assert.equal(ideas[0].lastDate, '2026-11-12');
   assert.equal(ideas.filter(idea => idea.articles.some(article => article.url.includes('freeboard_id=2478'))).length, 1);
   const cheer = ideas.find(idea => idea.id === 'csat-cheer-letter');
   assert.equal(cheer.lastDate, '2026-11-02');
@@ -50,7 +50,7 @@ test('a newer article on an old idea moves that card first', () => {
 
 test('article identities follow each idea article for the unread count', () => {
   const ids = articleIds(data);
-  assert.equal(ids.length, 113);
+  assert.equal(ids.length, 117);
   assert.equal(new Set(ids).size, ids.length);
   const sample = {ideas: [
     {id:'old', articles:[{date:'2026-11-03', url:'https://example.com/new'}, {date:'2020-01-01', url:'https://example.com/old'}]},
@@ -63,7 +63,7 @@ test('article identities follow each idea article for the unread count', () => {
     'old\n2020-01-01\nhttps://example.com/old',
     'recent\n2026-10-01\nhttps://example.com/old'
   ]);
-  assert.equal(homeMeta(data), '최근 기사 2026. 11. 11 · 아이디어 69개');
+  assert.equal(homeMeta(data), '최근 기사 2026. 11. 12 · 아이디어 72개');
   const html = fs.readFileSync('index.html', 'utf8');
   assert.match(html, /id="home-trend-meta" class="meta">최근 기사 확인 중/);
   assert.ok(html.includes('/assets/trend.js?v=20261112-today'));
@@ -81,18 +81,22 @@ test('curated cards use their own reflection date, including updated ideas with 
   assert.deepEqual(new Set(next.map(idea=>idea.id)),new Set([
     'hiring-safety-leaflet','admission-proxy-day','integrated-care-booth','staff-award-healing','kimchi-guardian-party'
   ]));
-  assert.ok([...today,...next].every(idea=>idea.lastDate<idea.updated));
-  assert.equal(ideas.some(idea=>isToday(idea.updated,now+2*86400000)),false);
+  const third=ideas.filter(idea=>isToday(idea.updated,now+2*86400000));
+  assert.deepEqual(new Set(third.map(idea=>idea.id)),new Set([
+    'digital-memory-photo','weekly-rights-text','birthday-invite-repost'
+  ]));
+  assert.ok([...today,...next,...third].every(idea=>idea.lastDate<idea.updated));
+  assert.equal(ideas.some(idea=>isToday(idea.updated,now+3*86400000)),false);
 });
 
 test('more button pages newest-first results and a new search starts over', () => {
   assert.equal(PAGE_SIZE, 12);
-  assert.equal(ideas.length, 69);
+  assert.equal(ideas.length, 72);
   let shown = PAGE_SIZE;
   const first = paginate(ideas, shown);
   assert.equal(first.shown, 12);
   assert.equal(first.hasMore, true);
-  assert.equal(moreLabel(first), '더보기 (12/69)');
+  assert.equal(moreLabel(first), '더보기 (12/72)');
   assert.equal(first.items[0].id, ideas[0].id);
   shown += PAGE_SIZE;
   const second = paginate(ideas, shown);
