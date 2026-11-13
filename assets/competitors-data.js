@@ -827,7 +827,7 @@ Object.assign(price50, {
 // Date this analysis record changed, independent of launch, article and price dates.
 Object.entries({
   cura:'2026-10-09', careaigpt:'2026-10-12', koreacareai:'2026-10-12',
-  easy:'2026-10-15', carehaja:'2026-10-15', caring:'2026-11-10', angel:'2026-11-06', carefor:'2026-11-06', ecm:'2026-10-29'
+  easy:'2026-10-15', carehaja:'2026-10-15', caring:'2026-11-13', angel:'2026-11-06', carefor:'2026-11-06', ecm:'2026-10-29'
 }).forEach(([key,date]) => { d[key].updatedAt = date; });
 d.ecm.sources = [['EcM 공식 소개·요금 · 2026-10-29', 'https://ecm.or.kr/main/intro']];
 Object.assign(d.caring, {
@@ -851,7 +851,7 @@ Object.assign(d.caring, {
     ["수익성", "파이낸셜뉴스 2026-10-29는 EBITDA 흑자 전환을 적지만 연간인지 월간인지는 쓰지 않는다. 벤처스퀘어·동행일보 2026-10-19는 2025년 11월 월간 EBITDA 흑자. 동행일보는 2025년 연간 순영업손실이 남아 있다고 보도"],
     ["투자", "시리즈C 400억원. 파이낸셜뉴스 2026-10-29 보도: 2026년 초 유치, 스틱인베스트먼트·스틱벤처스가 신규, IMM인베스트먼트·SV인베스트먼트·현대투자파트너스가 후속. 동행일보 2026-10-19도 2026년 초 400억원과 누적 1,150억원을 적고 투자자명은 없다. 벤처스퀘어는 올해 400억원·누적 1,150억원이며 투자자명은 없다"],
     ["출시일", "인텔리전스 정식 출시일 미확인. 로봇 시범 일정은 출시 완료일이 아님"],
-    ["기능 확인일", "2026-11-10 · 직영·매출은 2026-11-02에 대조한 기사. 케어링 스테이는 디지털타임스 2026-11-09"]
+    ["기능 확인일", "2026-11-13 · 직영·매출은 2026-11-02, 스테이는 2026-11-09, AX 교육은 아시아경제 2026-11-13"]
   ],
   "note": "68개 직영 센터의 데이터를 자체 ERP·CRM과 AI에 연결하는 운영 사례다. 2025년 연결 매출은 파이낸셜뉴스 1,647억원과 10월 19일 보도 1,658억원을 함께 적는다. 인텔리전스의 외부 판매 여부는 미확인이다. 케어링 모션의 12월 시범은 벤처스퀘어 계획이고, 2028년 하반기 상장과 주간사는 파이낸셜뉴스 보도다. 케어링 스테이는 직영 센터와 다른 시니어 주거 브랜드로, 디지털타임스 2026-11-09 보도다. 약 1조원은 방배동 사업 투입 규모이지 케어링 매출이 아니다."
 });
@@ -861,6 +861,14 @@ d.caring.facts.push(
   ["방배동 레지던스", "같은 기사: 서울 서초구 방배동 한샘 디자인파크 부지에 약 1조원을 투입하는 초호화 시니어 레지던스의 운영사로 선정. 1조원은 사업 투입 규모이고 케어링 매출·투자 유치액이 아니다. 착공·개원일은 없다"],
   ["스테이 운영 안내", "같은 기사: 24시간 상주 돌봄, 병원 동행, 1:1 물리치료, 인지 프로그램, 직영 조리, AI 건강 모니터링, 스마트 돌봄일지, 지능형 CCTV. 전 지점 보증금 2,000만원 정액, 가구·가전, 유료 한달살이 후 계약. 조건의 종료 가능성은 기사에 있다. caring.co.kr에서 이 문장을 다시 확인하지는 못했다"]
 );
+d.caring.sources.push(["아시아경제 · 2026-11-13", "https://www.asiae.co.kr/article/2026111308144813858"]);
+d.caring.facts.push(
+  ["AX 교육", "아시아경제 2026-11-13(입력 08:14). 본사 인력이 영남·호남·수도권·충청 권역 본부를 찾아 주간보호·통합요양 센터에 AX 교육을 하고 있다고 13일 밝혔다. 같은 기사는 영남에 이어 호남·수도권·충청으로 심화 교육을 넓힐 계획이라고도 적는다. 최근 실습 장소는 케어링 주간보호센터 부산북구점, 대상은 영남본부"],
+  ["기록 점검", "같은 기사: 통합요양 사회복지사가 업무수행일지에서 5등급 상담 기록의 인지활동, 방문요양과 방문목욕을 함께 쓰는 어르신의 목욕 내용을 일일이 보던 일을 자동화. 주간보호는 어르신별 낙상위험도를 한 번에 취합. 결과는 매일 오전 메시지. 외부 판매 여부는 이 기사에 없다"],
+  ["통합 대시보드", "같은 기사: 교육에 앞서 방문요양 운영 노하우를 ‘AI 기반 통합 대시보드’로 구현. 한 번 입력하면 업무일지·케어 현황·운영 지표가 모이고, 질병·복용약·수술 이력·인지기능 기록이 쌓인다. 10월 인터뷰의 케어링 인텔리전스와 같은 이름인지는 이 기사에 없다"],
+  ["회사 설명", "기사가 ‘케어링에 따르면’로 전한 수치: 현장 인력 70% 이상이 40대 이상, 본사·본부 직원 5명 중 4명이 20·30대. 지난 9월 요양보호사 100여 명 AI 교육. 측정 기준은 없다"]
+);
+d.caring.note += " 2026-11-13 아시아경제는 권역 본부 AX 교육과 사내 기록 점검·오전 메시지, AI 통합 대시보드를 전한다. 외부에 팔지 않는다는 문장은 이 기사에도 없다. 분석(공급사 주장 아님): 평가지표에 맞춘 기록 누락 알림, 낙상위험 일괄 보기, 아침 요약은 더비다 ERP에 넣을 수 있는 기능이다. 판매 여부가 확인되지 않아 직접 경쟁보다 기능 벤치마크로 본다.";
 d.carefor.sources = [["케어포 공식 사이트", "https://www.carefor.co.kr/"], ["FAQ 목록 · 게시일 2026-10-18 확인", "https://carefor.co.kr/cs/list_faq.php"], ["처방전 AI분석등록 매뉴얼 안내", "https://carefor.co.kr/cs/view_faq.php?calmgno=46913"]];
 d.carefor.facts.find(([label]) => label === '핵심 기능')[1] += ', 처방전 AI분석등록 매뉴얼 공개';
 d.carefor.facts.push(
@@ -1391,6 +1399,49 @@ Object.assign(price50, {
   }
 });
 
+// 순시미 파트너스. 개편 내용은 2026-11-12 기사. 공식 사이트에는 그 기능 문장이 없다.
+Object.assign(d, {
+  soonseeme: {
+    n: '순시미 파트너스',
+    type: '방문요양 센터 관리 · 보호자 앱',
+    src: '비욘드포스트 · 안앤락 공식 사이트 · 2026-11-13 확인',
+    url: 'https://anl.kr/platform',
+    sources: [
+      ['비욘드포스트 · 2026-11-12', 'https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'],
+      ['안앤락 공식 사이트', 'https://anl.kr/'],
+      ['순시미 플랫폼 소개', 'https://anl.kr/platform']
+    ],
+    screenshot: null,
+    updatedAt: '2026-11-13',
+    facts: [
+      ['운영사', '(주)안앤락. 공식 사이트 하단은 대표 오세용, 사업자 342-81-00505, 서울 서초구 강남대로27길 9 수암빌딩 5층. 비욘드포스트도 대표를 오세용으로 적는다'],
+      ['제품', '공식 사이트: 시니어 플랫폼 순시미. 요양보호사와 피보호자 매칭, 실시간 돌봄 알림, 커뮤니티, 순시미몰. 보호자 앱·케어매니저 앱 다운로드를 안내. 순시미 파트너스, AI 월간 편지, 본인부담금이라는 문장은 2026-11-13에 연 공식 페이지에 없다'],
+      ['개편 보도', '비욘드포스트 2026-11-12 09:00. 방문요양센터 관리 시스템 순시미 파트너스와 보호자용 순시미 앱의 연동을 전면 개편했다고 회사가 밝혔다. 기사 속 기능은 회사 발표이며 제품 화면으로 다시 확인하지 못함'],
+      ['연동', '기사: 급여계약을 마친 보호자가 앱에서 연결을 요청하면 센터가 파트너스에서 검토·승인. 승인된 보호자만 일정, 이용 현황, 본인부담금 청구 내역을 본다'],
+      ['센터 기능', '기사: 위임받은 수급자의 장기요양 정보를 매일 자동 정리하는 통합 대시보드. 급여제공계획서 원문과 보호자용 AI 요약. AI 월간 돌봄 편지 초안은 센터가 검수한 뒤 전달. 본인부담금 청구서 개별·일괄 발행, 계좌 입금 자동 확인, 현금영수증'],
+      ['보호자 앱', '기사: 지역·케어매니저 경력·방문 일정으로 매칭 신청, 케어매니저가 수락 또는 거절. 일·주·월 일정, 방문 시작·종료 실시간 확인, 매일 돌봄 요약·일정 변경 알림. 24시간 AI 간편 상담. 블로그·유튜브·커뮤니티 연계'],
+      ['범위', '기사는 방문요양센터 전용이라고 적는다. 요양원·주야간 지원은 이 기사와 공식 플랫폼 소개에서 확인하지 못함. 공단 연동도 없다'],
+      ['고객수', '공개 자료에서 미확인'],
+      ['출시일', '이번 개편 보도일은 2026-11-12. 순시미 첫 출시일은 이 페이지와 기사에서 미확인'],
+      ['직영 기관 운영', '확인 필요. 공식 사이트는 복지용구·의료기기·홈케어 유통과 순시미를 함께 적는다'],
+      ['기능 확인일', '2026-11-13 · 비욘드포스트 2026-11-12, anl.kr, anl.kr/platform']
+    ],
+    note: '방문요양센터와 보호자 앱을 잇는다고 회사가 발표한 개편이다. 같은 기능은 공식 소개 페이지에서 찾지 못했다. 분석(공급사 주장 아님): 보호자용 AI 월간 편지와 급여제공계획서 쉬운 요약은 시설 보호자 앱에서 검토할 만한 방향이다. 케어포 가족돌봄앱과 나란히 볼 수 있다. 엔젤의 별도 보호자 앱 이름까지 이번 출처로 비교하지는 않는다.'
+  }
+});
+Object.assign(price50, {
+  soonseeme: {
+    m: '50인 공개 요금 미확인',
+    o: '가입·설치비 표기 없음',
+    u: '공식 사이트와 2026-11-12 기사에서 방문요양 수급자 50명 월 요금과 부가세를 확인하지 못함',
+    b: '개편 보도를 계약 단가로 환산하지 않음',
+    v: '공식 사이트·기사 확인 · 가격 미공개',
+    s: 'https://anl.kr/platform',
+    links: [['비욘드포스트 · 2026-11-12', 'https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30']],
+    checked: '2026-11-13'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -1441,7 +1492,8 @@ const institutionResearch = {
   bokdori: [['facility'], '홈과 기능 페이지는 장기요양기관·요양 현장 프로그램이고, 2026-01-19 기사의 시범은 안산 요양원 3곳이다. 주야간보호를 지원 유형으로 적지는 않는다.', [['복도리 케어','https://thumbshine.co.kr/'], ['기능','https://thumbshine.co.kr/features']]],
   dolbom: [['daycare','facility'], '소개 페이지의 핵심 제공영역은 주야간보호와 요양시설이다. 방문돌봄은 확장 기능이라 방문요양 지원 유형으로 넣지 않는다.', [['슬기로운 돌봄생활','https://tfnetworks.kr/dolbom-life/']]],
   carebridge: [['homecare','visiting','daycare'], '고객지원은 방문요양·방문목욕·방문간호·주야간보호와 요양보호사 교육원을 현재 대상으로 적는다. 교육원 유형은 이 분류에 없고, 요양원은 향후 예정이라 넣지 않는다.', [['고객지원','https://www.caretech.kr/support.html']]],
-  dolbomi: [['unknown'], '제품 페이지는 장애인 거주시설·어린이집·노인요양시설을 함께 적는다. 이름 있는 계약은 양주 장애인 거주시설 미리내공동체뿐이다. 요양원 도입 실적이 없어 요양시설 유형으로 넣지 않는다.', [['돌봄이','https://agentworks.co.kr/care.html']]]
+  dolbomi: [['unknown'], '제품 페이지는 장애인 거주시설·어린이집·노인요양시설을 함께 적는다. 이름 있는 계약은 양주 장애인 거주시설 미리내공동체뿐이다. 요양원 도입 실적이 없어 요양시설 유형으로 넣지 않는다.', [['돌봄이','https://agentworks.co.kr/care.html']]],
+  soonseeme: [['homecare'], '2026-11-12 기사는 방문요양센터 전용 관리 시스템이라고 적는다. 요양원·주야간은 그 기사와 공식 플랫폼 소개에 없어 넣지 않는다.', [['비욘드포스트 · 2026-11-12','https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'], ['순시미 플랫폼','https://anl.kr/platform']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -1456,5 +1508,6 @@ for (const key of ['wellcare', 'lguplus']) d[key].institutionEvidence.checked = 
 for (const key of ['namuhx', 'carefor']) d[key].institutionEvidence.checked = '2026-11-06';
 for (const key of ['bokdori', 'dolbom', 'caring']) d[key].institutionEvidence.checked = '2026-11-10';
 for (const key of ['carebridge', 'dolbomi']) d[key].institutionEvidence.checked = '2026-11-12';
+for (const key of ['soonseeme', 'caring']) d[key].institutionEvidence.checked = '2026-11-13';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;

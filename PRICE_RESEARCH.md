@@ -92,6 +92,7 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | 슬기로운 돌봄생활 | [소개](https://tfnetworks.kr/dolbom-life/) (2026-11-10) | 도입 문의. 50인 월 요금 없음 |
 | 돌봄다리 | [고객지원](https://www.caretech.kr/support.html) (2026-11-12) | 베타 기간 전 기능 무료. 50인 유료 요금 없음. 영구 무료가 아님 |
 | 돌봄이 | [제품](https://agentworks.co.kr/care.html) (2026-11-12) | 50인 월 요금 없음. 첫 계약은 회사 페이지가 무상·현물로 적음 |
+| 순시미 파트너스 | [플랫폼](https://anl.kr/platform), [비욘드포스트](https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30) (2026-11-12) | 2026-11-13 확인. 50인 월 요금 없음 |
 
 ## 재검증 방법
 
