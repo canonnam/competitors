@@ -60,8 +60,9 @@
     for(const id of ['groups','reconcile'])$(id).tBodies[0].replaceChildren();
     $('totals').replaceChildren();
     const sum=k=>selected.length&&selected.every(b=>b.totals[k]!=null)?selected.reduce((s,b)=>s+b.totals[k],0):null;
-    for(const [label,key,detail] of [['급여 지급총액','grossPay','급여대장 '+sum('payrollPeople')+'명'],['급여 보험공제','employeeDeductions','급여대장의 직원 공제액'],['보험료 총합','insuranceTotal','노사합산 기준 · 공단 자료 '+sum('insurancePeople')+'명']]){
-      const card=node('div',null,'pi-stat');card.append(node('span',label),node('strong',money(sum(key))+'원'),node('small',detail));$('totals').append(card);
+    for(const [label,key,detail] of [['급여 지급총액','grossPay','급여대장 '+(sum('payrollPeople')??0)+'명'],['급여 보험공제','employeeDeductions','급여대장의 직원 공제액'],['보험료 총합','insuranceTotal','노사합산 기준 · 공단 자료 '+(sum('insurancePeople')??0)+'명']]){
+      const value=sum(key);
+      const card=node('div',null,'pi-stat');card.append(node('span',label),node('strong',value==null?'—':money(value)+'원'),node('small',detail));$('totals').append(card);
     }
     for(const b of selected){
       for(const g of b.groups){if(!g.people&&['기타','직책 미확인'].includes(g.role))continue;appendRow('groups',[b.name,g.role,g.payrollPeople+' / '+g.insurancePeople,g.grossPay,g.employeeDeductions,g.insuranceTotal,employerShare(g)]);}
