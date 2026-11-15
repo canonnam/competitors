@@ -213,4 +213,4 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 
 `SEVERANCE_DIR`의 기본 경로는 `/data/severance`이며 기존 Railway 영구 볼륨에 계산 기록과 수정 이력을 저장한다. 로컬에서는 임시 디렉터리를 지정한다. 급여 원본은 `PAYROLL_INSURANCE_DIR`에서 읽기만 한다. 추가 패키지는 없으며 빈 Excel 양식을 `templates/`에 번들한다. 계산·내려받기는 공통 사이트 인증을 사용한다.
 
-2026-11-15 삭제·복구: POST `/api/severance/delete`, `/restore`는 `{id, revision}`을 받아 같은 JSON 파일에 삭제 시각 `deletedAt`을 추가/해제하고 revision과 수정 이력을 갱신한다. 별도 저장소나 마이그레이션은 없다. GET `/records?view=active|deleted`는 기본 active이며 삭제된 기록의 `/record`, `/export`는 404, `/save`는 409를 반환한다. 삭제·복구는 계산 스냅샷을 변경하지 않는다. 공통 인증·Origin 검사·no-store 응답을 그대로 적용한다.
+2026-11-15 직접 삭제. POST `/api/severance/delete-permanently`는 `{id, revision}`의 최신 버전을 확인하고 해당 UUID의 수정 이력과 현재 파일을 지운다. 종전 화면에서 복구 가능하다는 안내를 본 경우에 대비해 이전 `/delete`, `/restore` 요청은 새로고침을 안내한다. GET `/records`는 현재 기록만 반환하며 기존 `deletedAt` 파일은 계속 숨긴다. 오래된 기록 일괄 정리나 저장소 마이그레이션은 실행하지 않는다. 삭제된 기록의 `/record`, `/export`는 404, 수정 요청은 409를 반환한다. 공통 인증·Origin 검사·no-store 응답을 적용한다.

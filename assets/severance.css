@@ -2,7 +2,7 @@
 .sv-panel{background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:var(--ui-card-radius);padding:24px;margin:20px 0;min-width:0}
 .sv-panel h2{font-size:20px;margin:0 0 20px}.sv-muted{color:var(--ui-muted);font-size:14px}
 .sv-toolbar,.sv-actions,.sv-section-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.sv-actions{margin-top:20px}.sv-toolbar{margin-top:24px}.sv-section-head{justify-content:space-between}.sv-section-head h2{margin:0}
-.sv-history-controls,.sv-history-controls [role=group],.sv-record-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sv-history-controls [aria-pressed=true]{background:var(--ui-selected);color:var(--ui-primary)}
+.sv-record-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sv-ordinary{display:flex;flex-direction:column;gap:8px;min-width:0}#sv-ordinary-label{display:flex;align-items:center;gap:4px}
 #sv-delete-dialog{width:min(480px,calc(100% - 32px));box-sizing:border-box;padding:24px;background:var(--ui-surface);color:var(--ui-text);border:1px solid var(--ui-border);border-radius:var(--ui-card-radius)}#sv-delete-dialog h2{font-size:20px;margin-top:0}#sv-delete-dialog p{overflow-wrap:anywhere}#sv-delete-dialog .sv-actions{justify-content:flex-end}
 .sv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.sv-grid label,.sv-note{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:600;min-width:0}

@@ -162,42 +162,39 @@ class SeveranceTests(unittest.TestCase):
             for cell in ['B3','B8','B9','B14','H15']:self.assertEqual(s[cell]._style,original[cell]._style)
         b['includeSeal']=False;book=openpyxl.load_workbook(io.BytesIO(m.xlsx(m.calculate(b))));self.assertFalse(book.active._images)
 
-    def test_delete_restore_preserves_snapshot_and_version_history(self):
-        original=m.save(manual());ident=original['id'];before=m.xlsx(original)
-        with patch.object(m,'calculate',side_effect=AssertionError('Lifecycle changes must not recalculate')):
-            deleted=m.change_record_state({'id':ident,'revision':1},True)
-            self.assertEqual(m.records(),[]);self.assertEqual(len(m.records('deleted')),1)
-            self.assertEqual(deleted['revision'],2);self.assertTrue(deleted['deletedAt'])
-            with self.assertRaises(m.wiki_chat.ChatError) as error:m.read(ident)
-            self.assertEqual(error.exception.status,404)
-            restored=m.change_record_state({'id':ident,'revision':2},False)
-        self.assertEqual(restored['revision'],3);self.assertNotIn('deletedAt',restored)
-        for key in ['input','result','createdAt']:self.assertEqual(restored[key],original[key])
-        self.assertEqual(m.records('deleted'),[]);self.assertEqual(len(m.records()),1)
-        # Zip timestamps may differ, but every exported entry must remain identical.
-        with zipfile.ZipFile(io.BytesIO(before)) as a,zipfile.ZipFile(io.BytesIO(m.xlsx(restored))) as b:
-            self.assertEqual({n:a.read(n) for n in a.namelist()},{n:b.read(n) for n in b.namelist()})
-        history=m.storage()/'history'
-        self.assertEqual(json.loads((history/f'{ident}-1.json').read_text('utf-8')),original)
-        self.assertEqual(json.loads((history/f'{ident}-2.json').read_text('utf-8')),deleted)
+    def test_permanent_delete_removes_only_the_selected_record_and_its_versions(self):
+        original = m.save(manual())
+        other = m.save(manual())
+        ident = original['id']
+        current = m.save({**manual(), 'id': ident, 'revision': 1})
+        m.save({**manual(), 'id': other['id'], 'revision': 1})
+        history = m.storage() / 'history'
+        previous_version = history / f'{ident}-1.json'
+        self.assertTrue(previous_version.is_file())
+        with self.assertRaises(m.wiki_chat.ChatError) as stale:
+            m.delete_record({'id': ident, 'revision': 1})
+        self.assertEqual(stale.exception.status, 409)
+        self.assertEqual(m.read(ident), current)
+        self.assertTrue(previous_version.is_file())
 
-    def test_delete_conflicts_and_deleted_record_cannot_be_saved(self):
-        body=manual();first=m.save(body);ident=first['id']
-        for revision in [None,True,0,2,'1']:
-            with self.subTest(revision=revision),self.assertRaises(m.wiki_chat.ChatError) as error:
-                m.change_record_state({'id':ident,'revision':revision},True)
-            self.assertEqual(error.exception.status,409)
-        deleted=m.change_record_state({'id':ident,'revision':1},True)
-        for revision in [1,2]:
-            with self.assertRaises(m.wiki_chat.ChatError):m.change_record_state({'id':ident,'revision':revision},True)
-        body.update(id=ident,revision=deleted['revision'])
-        with self.assertRaises(m.wiki_chat.ChatError) as error:m.save(body)
-        self.assertEqual(error.exception.status,409)
-        restored=m.change_record_state({'id':ident,'revision':2},False)
-        with self.assertRaises(m.wiki_chat.ChatError):m.save(body)
-        body['revision']=restored['revision'];body['note']='복구 후 수정'
-        self.assertEqual(m.save(body)['revision'],4)
-        with self.assertRaises(ValueError):m.records('all')
+        m.delete_record({'id': ident, 'revision': current['revision']})
+        self.assertFalse(m.record_path(ident).exists())
+        self.assertFalse(previous_version.exists())
+        self.assertEqual([record['id'] for record in m.records()], [other['id']])
+        self.assertTrue((history / f"{other['id']}-1.json").is_file())
+        with self.assertRaises(m.wiki_chat.ChatError) as stale_save:
+            m.save({**manual(), 'id': ident, 'revision': current['revision']})
+        self.assertEqual(stale_save.exception.status, 409)
+
+    def test_previous_trash_records_do_not_reappear_after_upgrade(self):
+        record = m.save(manual())
+        ident = record['id']
+        payroll.atomic(m.record_path(ident), payroll.encoded({**record, 'deletedAt': payroll.now()}))
+        self.assertEqual(m.records(), [])
+        with self.assertRaises(m.wiki_chat.ChatError) as hidden:
+            m.read(ident)
+        self.assertEqual(hidden.exception.status, 404)
+        self.assertTrue(m.record_path(ident).is_file())
 
 
 class SeveranceAPITests(unittest.TestCase):
@@ -230,25 +227,29 @@ class SeveranceAPITests(unittest.TestCase):
         self.assertEqual(self.request('/api/severance/record?id=../../oops')[0],400)
         self.assertEqual(self.request('/templates/severance.xlsx')[0],404)
 
-    def test_delete_restore_auth_origin_filter_and_export(self):
-        status,_,raw=self.request('/api/severance/save','POST',manual());self.assertEqual(status,200)
-        record=json.loads(raw);body={'id':record['id'],'revision':1}
-        for action in ['delete','restore']:
-            path='/api/severance/'+action
-            self.assertEqual(self.request(path,'POST',body,auth=False)[0],401)
-            self.assertEqual(self.request(path,'POST',body,origin='https://elsewhere.invalid')[0],403)
-            self.assertEqual(self.request(path+'?id='+record['id'])[0],404)
-        self.assertEqual(self.request('/api/severance/delete','POST',body)[0],200)
-        for route in ['record','export']:
-            for method in ['GET','HEAD']:
-                self.assertEqual(self.request('/api/severance/'+route+'?id='+record['id'],method)[0],404)
-        for view,expected in [('active',False),('deleted',True)]:
-            status,_,raw=self.request('/api/severance/records?view='+view)
-            self.assertEqual(status,200);self.assertEqual(record['id'] in [r['id'] for r in json.loads(raw)['records']],expected)
-        self.assertEqual(self.request('/api/severance/restore','POST',body)[0],409)
-        body['revision']=2;self.assertEqual(self.request('/api/severance/restore','POST',body)[0],200)
-        self.assertEqual(self.request('/api/severance/export?id='+record['id'])[0],200)
-        self.assertEqual(self.request('/api/severance/records?view=all')[0],400)
+    def test_permanent_delete_auth_origin_and_old_tabs(self):
+        status, _, raw = self.request('/api/severance/save', 'POST', manual())
+        self.assertEqual(status, 200)
+        record = json.loads(raw)
+        body = {'id': record['id'], 'revision': record['revision']}
+        path = '/api/severance/delete-permanently'
+        self.assertEqual(self.request(path, 'POST', body, auth=False)[0], 401)
+        self.assertEqual(self.request(path, 'POST', body, origin='https://elsewhere.invalid')[0], 403)
+        self.assertEqual(self.request(path + '?id=' + record['id'])[0], 404)
+        for action in ['delete', 'restore']:
+            self.assertEqual(self.request('/api/severance/' + action, 'POST', body)[0], 405)
+        self.assertEqual(self.request('/api/severance/records?view=deleted')[0], 400)
+        self.assertTrue(m.record_path(record['id']).is_file())
+
+        status, _, raw = self.request(path, 'POST', body)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw), {'deleted': True})
+        self.assertEqual(self.request(path, 'POST', body)[0], 404)
+        for route in ['record', 'export']:
+            self.assertEqual(self.request('/api/severance/' + route + '?id=' + record['id'])[0], 404)
+        status, _, raw = self.request('/api/severance/records')
+        self.assertEqual(status, 200)
+        self.assertNotIn(record['id'], [item['id'] for item in json.loads(raw)['records']])
 
 
 if __name__=='__main__':unittest.main()
