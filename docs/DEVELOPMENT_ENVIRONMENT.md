@@ -208,3 +208,7 @@ python -m unittest test_static_pages.py test_card_knowledge.py
 - 기존 `agency_news.py`에 인천시 새소식·안양시 새소식/보건소 3개 출처를 추가한다. 새 모듈·DB·환경 변수 없이 동일 `/data/agency-news.db`와 매일 09:10 KST 스케줄을 사용한다. 출처별 요청 실패는 이전 자료를 보존한다.
 - 안양시 HTTPS에만 `ssl.create_default_context()`와 OpenSSL `DEFAULT` cipher 집합을 사용한다. 인증서 검증·호스트 검증·최소 TLS 버전을 낮추지 않는다.
 - 공공기관 글 재수집 시 `first_seen_at`을 보존한다. 기존 자료의 `collected_at`을 최초 기록으로 승계하고 기존 DB 스키마는 변경하지 않는다.
+
+## 2026-11-15 퇴직금 관리 저장소
+
+`SEVERANCE_DIR`의 기본 경로는 `/data/severance`이며 기존 Railway 영구 볼륨에 계산 기록과 수정 이력을 저장한다. 로컬에서는 임시 디렉터리를 지정한다. 급여 원본은 `PAYROLL_INSURANCE_DIR`에서 읽기만 한다. 추가 패키지는 없으며 빈 Excel 양식을 `templates/`에 번들한다. 계산·내려받기는 공통 사이트 인증을 사용한다.

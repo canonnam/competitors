@@ -13,6 +13,7 @@ import search_visibility
 import reputation_watch
 import claim_check
 import payroll_insurance
+import severance
 import facility_observation
 import facility_collection
 import facility_projects
@@ -41,7 +42,7 @@ PUBLIC_PAGES = frozenset({
     "nearby-facilities.html", "statistics.html", "knowledge.html",
     "facility-acquisition.html", "facility-3d.html", "liability-insurance.html",
     "recipient-history.html", "bank-transactions.html", "clarity-report.html",
-    "support-projects.html", "support-share.html", "payroll-insurance.html",
+    "support-projects.html", "support-share.html", "payroll-insurance.html", "severance.html",
     "staff-eval.html", "staff-eval-session.html", "trend.html", "support-resources.html",
 })
 DB_PATH = Path(os.getenv("FEEDBACK_DB_PATH", "/data/feedback.db"))
@@ -135,6 +136,8 @@ class App(SimpleHTTPRequestHandler):
             return
         if payroll_insurance.handle(self, "GET"):
             return
+        if severance.handle(self, "GET"):
+            return
         if staff_eval.handle(self, "GET"):
             return
         if support_applications.handle(self, "GET"):
@@ -190,6 +193,8 @@ class App(SimpleHTTPRequestHandler):
         if website_intake.handle(self, "HEAD"):
             return
         if payroll_insurance.handle(self, "HEAD"):
+            return
+        if severance.handle(self, "HEAD"):
             return
         if staff_eval.handle(self, "HEAD"):
             return
@@ -437,6 +442,8 @@ class App(SimpleHTTPRequestHandler):
         if website_intake.handle(self, "POST"):
             return
         if payroll_insurance.handle(self, "POST"):
+            return
+        if severance.handle(self, "POST"):
             return
         if staff_eval.handle(self, "POST"):
             return

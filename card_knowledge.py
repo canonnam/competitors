@@ -15,6 +15,7 @@ CARDS = {
     'recipient_history': ('수급자구분 변경이력', '/recipient-history.html'),
     'liability_insurance': ('배상책임보험 관리', '/liability-insurance.html'),
     'payroll_insurance': ('월별 급여·4대보험', '/payroll-insurance.html'),
+    'severance': ('퇴직금 관리', '/severance.html'),
     'payroll': ('급여 계산·근로계약서', '/payroll.html'),
     'claim_check': ('지점별 청구 점검', '/claim-check.html'),
     'agency_news': ('건보공단·복지부 뉴스·지원사업', '/agency-news.html'),
@@ -34,6 +35,7 @@ ALIASES = {
     'recipient_history': ('수급자구분', '수급자변경이력', '자격변경', '수급자자격', '수급자변경'),
     'liability_insurance': ('배상책임보험', '보험가입인원', '보험증서', '보험만료', '배상보험'),
     'payroll_insurance': ('4대보험', '사회보험료', '급여대장', '월별급여', '직책별급여'),
+    'severance': ('퇴직금', '퇴직급', '퇴사정산', '퇴직금산정내역서', '잔여연차수당'),
     'payroll': ('급여계산', '급여계산기', '근로계약', '통상임금', '통상시급', '주휴시간', '주주야야', '연장수당', '야간수당'),
     'claim_check': ('청구점검', '청구현황', '청구상태', '청구여부', '청구마감', '접수완료', '청구처리'),
     'agency_news': ('건보공단', '복지부', '공공기관', '기관뉴스', '지원사업', '지원금', '정부지원', '공고', '지원추천', '사업추천'),
@@ -397,6 +399,12 @@ def retrieve(kind, question, now):
             '보험 가입 인원이 현원 이상이면 양호이며 현원보다 적으면 늘리도록 안내합니다. 보험사에 변경을 요청한 뒤 수정된 인원과 증서를 등록해주세요. '
             'PDF·이미지 증서의 보험 이름·가입 인원·가입기간은 브라우저에서 추출하고 사용자가 확인 후 저장합니다. '
             '만료일 30일 전부터 갱신 준비를 안내합니다. 현재 상태와 증서는 보험 관리 화면에서 확인해주세요.')]
+    if kind == 'severance':
+        from service_knowledge import evidence
+        return [evidence(kind, '퇴직금 관리 안내',
+            '운영·인사·회계에서 저장된 안양·인천 급여를 연결해 퇴직금을 계산하고 산정내역서를 내려받습니다. '
+            '최초 입사일·마지막 근무일·통상임금·상여·연차를 입력하고 부분월 급여와 제외액을 확인합니다. '
+            '산정 결과를 저장하면 지점별 직인이 포함된 기존 Excel 양식으로 발급됩니다. 실제 직원 이름·급여·계산 기록은 전용 화면에서 확인해주세요.')]
     if kind == 'payroll_insurance':
         from service_knowledge import evidence
         return [evidence(kind, '월별 급여·4대보험 접근 안내',
@@ -426,6 +434,7 @@ def status():
              'recipient_history': [ROOT / 'recipient-history.html'],
              'liability_insurance': [ROOT / 'liability-insurance.html'],
              'payroll_insurance': [ROOT / 'payroll-insurance.html'],
+             'severance': [ROOT / 'severance.html'],
              'ai_hub': [ROOT / 'ai-hub-data.html'], 'claim_check': [claim_check.data_path()],
              'agency_news': [agency_news.db_path()], 'naver_ads': [naver_ads.db_path()],
              'search_visibility': [search_visibility.db_path(), naver_ads.db_path()],
