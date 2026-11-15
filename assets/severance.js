@@ -4,14 +4,14 @@
   const field = name => form.elements.namedItem(name);
   const fmt = n => Number(n).toLocaleString('ko-KR', {maximumFractionDigits:2});
   const node = (tag, text, cls) => {const n=document.createElement(tag); if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
-  let schedule=[], saved=null, calculated=null, loadSequence=0, peopleSequence=0, busy=false, autoTimer;
+  let schedule=[], saved=null, calculated=null, loadSequence=0, peopleSequence=0, historySequence=0, historyView='active', busy=false, autoTimer;
   const api = async (route, body) => {
     const response=await fetch('/api/severance/'+route,body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {cache:'no-store'});
     let value;try{value=await response.json();}catch{throw Error('응답을 읽지 못했습니다. 로그인 상태와 연결을 확인해주세요.');}
     if(!response.ok)throw Error(value.error||'요청을 처리하지 못했습니다.');return value;
   };
   const status=(message,error=false)=>{ $('sv-status').textContent=message;$('sv-status').dataset.status=error?'error':'success';if(error)$('sv-status').scrollIntoView({behavior:'smooth',block:'center'}); };
-  const setBusy=value=>{busy=value;form.inert=value;['sv-load','sv-calculate','sv-save','sv-new','sv-refresh'].forEach(id=>$(id).disabled=value);};
+  const setBusy=value=>{busy=value;form.inert=value;['sv-load','sv-calculate','sv-save','sv-new','sv-refresh','sv-view-active','sv-view-deleted'].forEach(id=>$(id).disabled=value);$('sv-records').querySelectorAll('button').forEach(button=>button.disabled=value);};
   const dirty=()=>{calculated=null;$('sv-result').hidden=true;};
   const clearWages=()=>{clearTimeout(autoTimer);loadSequence++;schedule=[];$('sv-wages').replaceChildren();$('sv-wage-wrap').hidden=true;$('sv-wage-empty').hidden=false;$('sv-period').textContent='직원과 날짜를 입력하면 급여가 자동으로 연결됩니다.';dirty();};
   const sealLabel=()=>{$('sv-seal-label').textContent=(field('branch').value==='2'?'안양점':'인천점')+' 직인 포함';};
@@ -84,10 +84,31 @@
     $('sv-result').hidden=false;
   }
   async function history(){
-    try{const r=await api('records');$('sv-records').replaceChildren();$('sv-history-status').textContent=r.records.length?'총 '+r.records.length+'건':'저장한 산정 내역이 없습니다. 산정 후 저장해주세요.';
+    const seq=++historySequence, deleted=historyView==='deleted';
+    $('sv-history-status').textContent=(deleted?'휴지통':'저장 내역')+'을 불러오는 중…';$('sv-history-status').removeAttribute('data-status');$('sv-records').replaceChildren();
+    try{const r=await api('records?view='+historyView);if(seq!==historySequence)return;
+      $('sv-history-status').textContent=r.records.length?'총 '+r.records.length+'건'+(deleted?' · 복구하면 저장 당시 금액으로 돌아갑니다.':''):(deleted?'휴지통이 비어 있습니다.':'저장한 산정 내역이 없습니다. 산정 후 저장해주세요.');
       r.records.forEach(item=>{const tr=node('tr');[item.branch===2?'안양점':'인천점',item.name,item.lastDay,fmt(item.severance)+'원',fmt(item.totalBeforeTax)+'원'].forEach(v=>tr.append(node('td',v)));
-        const actions=node('td'), open=node('button','열기','ui-button');open.type='button';open.addEventListener('click',()=>openRecord(item.id));actions.append(open);tr.append(actions);$('sv-records').append(tr);});
-    }catch(e){$('sv-history-status').textContent=e.message;}
+        const actions=node('td'), buttons=node('div',undefined,'sv-record-actions');
+        if(!deleted){const open=node('button','열기','ui-button');open.type='button';open.disabled=busy;open.addEventListener('click',()=>openRecord(item.id));buttons.append(open);}
+        const action=node('button',deleted?'복구':'삭제','ui-button');action.type='button';action.disabled=busy;action.addEventListener('click',()=>changeRecordState(item,deleted?'restore':'delete'));buttons.append(action);actions.append(buttons);tr.append(actions);$('sv-records').append(tr);});
+    }catch(e){if(seq!==historySequence)return;$('sv-history-status').textContent=e.message;$('sv-history-status').dataset.status='error';}
+  }
+  async function changeRecordState(item,action){
+    if(busy)return;
+    clearTimeout(autoTimer);
+    if(action==='delete'){
+      const dialog=$('sv-delete-dialog');$('sv-delete-record').textContent=`${item.branch===2?'안양점':'인천점'} ${item.name} · 마지막 근무일 ${item.lastDay}`;
+      dialog.returnValue='cancel';
+      const confirmed=new Promise(resolve=>dialog.addEventListener('close',()=>resolve(dialog.returnValue==='delete'),{once:true}));dialog.showModal();
+      if(!await confirmed)return;
+    }
+    setBusy(true);
+    let message,error=false;
+    try{await api(action,{id:item.id,revision:item.revision});message=action==='delete'?'삭제했습니다. 휴지통에서 복구할 수 있습니다.':'복구했습니다. 저장 내역에서 다시 열 수 있습니다.';
+      if(action==='delete'&&saved?.id===item.id){saved=null;dirty();$('sv-record-label').textContent='';status('열려 있던 저장 내역을 삭제했습니다. 현재 입력값은 화면에 남겨두었습니다.');}
+    }catch(e){message=e.message;error=true;}
+    finally{await history();setBusy(false);const listError=$('sv-history-status').dataset.status==='error';$('sv-history-status').textContent=message+' '+$('sv-history-status').textContent;$('sv-history-status').dataset.status=error||listError?'error':'success';$('sv-view-'+historyView).focus();}
   }
   async function openRecord(id){
     if(busy)return;if(calculated&&!calculated.id&&!window.confirm('저장하지 않은 산정 결과가 있습니다. 다른 기록을 여시겠습니까?'))return;
@@ -120,5 +141,7 @@
   });
   $('sv-new').addEventListener('click',()=>{if(calculated&&!calculated.id&&!window.confirm('저장하지 않은 산정 결과를 비우고 새로 시작하시겠습니까?'))return;form.reset();saved=null;clearWages();sealLabel();extraSummary();$('sv-extra').open=false;$('sv-record-label').textContent='';people();});
   $('sv-refresh').addEventListener('click',history);
+  $('sv-delete-dialog').addEventListener('click',event=>{if(event.target===$('sv-delete-dialog'))$('sv-delete-dialog').close('cancel');});
+  ['active','deleted'].forEach(view=>$('sv-view-'+view).addEventListener('click',()=>{if(busy)return;historyView=view;['active','deleted'].forEach(key=>$('sv-view-'+key).setAttribute('aria-pressed',String(key===view)));history();}));
   Promise.all([people(),history()]);
 })();

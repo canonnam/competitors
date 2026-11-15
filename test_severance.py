@@ -162,6 +162,43 @@ class SeveranceTests(unittest.TestCase):
             for cell in ['B3','B8','B9','B14','H15']:self.assertEqual(s[cell]._style,original[cell]._style)
         b['includeSeal']=False;book=openpyxl.load_workbook(io.BytesIO(m.xlsx(m.calculate(b))));self.assertFalse(book.active._images)
 
+    def test_delete_restore_preserves_snapshot_and_version_history(self):
+        original=m.save(manual());ident=original['id'];before=m.xlsx(original)
+        with patch.object(m,'calculate',side_effect=AssertionError('Lifecycle changes must not recalculate')):
+            deleted=m.change_record_state({'id':ident,'revision':1},True)
+            self.assertEqual(m.records(),[]);self.assertEqual(len(m.records('deleted')),1)
+            self.assertEqual(deleted['revision'],2);self.assertTrue(deleted['deletedAt'])
+            with self.assertRaises(m.wiki_chat.ChatError) as error:m.read(ident)
+            self.assertEqual(error.exception.status,404)
+            restored=m.change_record_state({'id':ident,'revision':2},False)
+        self.assertEqual(restored['revision'],3);self.assertNotIn('deletedAt',restored)
+        for key in ['input','result','createdAt']:self.assertEqual(restored[key],original[key])
+        self.assertEqual(m.records('deleted'),[]);self.assertEqual(len(m.records()),1)
+        # Zip timestamps may differ, but every exported entry must remain identical.
+        with zipfile.ZipFile(io.BytesIO(before)) as a,zipfile.ZipFile(io.BytesIO(m.xlsx(restored))) as b:
+            self.assertEqual({n:a.read(n) for n in a.namelist()},{n:b.read(n) for n in b.namelist()})
+        history=m.storage()/'history'
+        self.assertEqual(json.loads((history/f'{ident}-1.json').read_text('utf-8')),original)
+        self.assertEqual(json.loads((history/f'{ident}-2.json').read_text('utf-8')),deleted)
+
+    def test_delete_conflicts_and_deleted_record_cannot_be_saved(self):
+        body=manual();first=m.save(body);ident=first['id']
+        for revision in [None,True,0,2,'1']:
+            with self.subTest(revision=revision),self.assertRaises(m.wiki_chat.ChatError) as error:
+                m.change_record_state({'id':ident,'revision':revision},True)
+            self.assertEqual(error.exception.status,409)
+        deleted=m.change_record_state({'id':ident,'revision':1},True)
+        for revision in [1,2]:
+            with self.assertRaises(m.wiki_chat.ChatError):m.change_record_state({'id':ident,'revision':revision},True)
+        body.update(id=ident,revision=deleted['revision'])
+        with self.assertRaises(m.wiki_chat.ChatError) as error:m.save(body)
+        self.assertEqual(error.exception.status,409)
+        restored=m.change_record_state({'id':ident,'revision':2},False)
+        with self.assertRaises(m.wiki_chat.ChatError):m.save(body)
+        body['revision']=restored['revision'];body['note']='복구 후 수정'
+        self.assertEqual(m.save(body)['revision'],4)
+        with self.assertRaises(ValueError):m.records('all')
+
 
 class SeveranceAPITests(unittest.TestCase):
     @classmethod
@@ -192,6 +229,26 @@ class SeveranceAPITests(unittest.TestCase):
         self.assertEqual(self.request('/api/severance/export?id='+record['id'],'HEAD')[2],b'')
         self.assertEqual(self.request('/api/severance/record?id=../../oops')[0],400)
         self.assertEqual(self.request('/templates/severance.xlsx')[0],404)
+
+    def test_delete_restore_auth_origin_filter_and_export(self):
+        status,_,raw=self.request('/api/severance/save','POST',manual());self.assertEqual(status,200)
+        record=json.loads(raw);body={'id':record['id'],'revision':1}
+        for action in ['delete','restore']:
+            path='/api/severance/'+action
+            self.assertEqual(self.request(path,'POST',body,auth=False)[0],401)
+            self.assertEqual(self.request(path,'POST',body,origin='https://elsewhere.invalid')[0],403)
+            self.assertEqual(self.request(path+'?id='+record['id'])[0],404)
+        self.assertEqual(self.request('/api/severance/delete','POST',body)[0],200)
+        for route in ['record','export']:
+            for method in ['GET','HEAD']:
+                self.assertEqual(self.request('/api/severance/'+route+'?id='+record['id'],method)[0],404)
+        for view,expected in [('active',False),('deleted',True)]:
+            status,_,raw=self.request('/api/severance/records?view='+view)
+            self.assertEqual(status,200);self.assertEqual(record['id'] in [r['id'] for r in json.loads(raw)['records']],expected)
+        self.assertEqual(self.request('/api/severance/restore','POST',body)[0],409)
+        body['revision']=2;self.assertEqual(self.request('/api/severance/restore','POST',body)[0],200)
+        self.assertEqual(self.request('/api/severance/export?id='+record['id'])[0],200)
+        self.assertEqual(self.request('/api/severance/records?view=all')[0],400)
 
 
 if __name__=='__main__':unittest.main()

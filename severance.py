@@ -252,11 +252,14 @@ def record_path(ident):
     return storage() / f'{ident}.json'
 
 
-def read(ident):
+def read(ident, include_deleted=False):
     path = record_path(ident)
     if not path.exists():
         raise wiki_chat.ChatError(404, '저장된 산정 기록이 없습니다.')
-    return json.loads(path.read_text('utf-8'))
+    record = json.loads(path.read_text('utf-8'))
+    if record.get('deletedAt') and not include_deleted:
+        raise wiki_chat.ChatError(404, '삭제된 산정 기록입니다. 휴지통에서 복구해주세요.')
+    return record
 
 
 def save(body):
@@ -264,7 +267,9 @@ def save(body):
     with LOCK:
         ident = body.get('id') or uuid.uuid4().hex
         path = record_path(ident)
-        old = read(ident) if path.exists() else None
+        old = read(ident, include_deleted=True) if path.exists() else None
+        if old and old.get('deletedAt'):
+            raise wiki_chat.ChatError(409, '삭제된 기록은 수정할 수 없습니다. 휴지통에서 먼저 복구해주세요.')
         if (body.get('id') and old is None) or (old and body.get('revision') != old['revision']):
             raise wiki_chat.ChatError(409, '다른 창에서 변경된 기록입니다. 목록에서 다시 열어주세요.')
         now = payroll.now()
@@ -276,10 +281,33 @@ def save(body):
         return record
 
 
-def records():
+def change_record_state(body, deleted):
+    """Keep calculation snapshots intact when moving records to/from the trash."""
+    with LOCK:
+        old = read(body.get('id'), include_deleted=True)
+        if type(body.get('revision')) is not int or body['revision'] != old['revision']:
+            raise wiki_chat.ChatError(409, '다른 창에서 변경된 기록입니다. 목록을 새로고침해주세요.')
+        if bool(old.get('deletedAt')) == deleted:
+            raise wiki_chat.ChatError(409, '이미 처리된 기록입니다. 목록을 새로고침해주세요.')
+        now = payroll.now()
+        record = {**old, 'revision': old['revision'] + 1, 'updatedAt': now}
+        if deleted:
+            record['deletedAt'] = now
+        else:
+            record.pop('deletedAt', None)
+        payroll.atomic(storage() / 'history' / f'{old["id"]}-{old["revision"]}.json', payroll.encoded(old))
+        payroll.atomic(record_path(old['id']), payroll.encoded(record))
+        return record
+
+
+def records(view='active'):
+    if view not in ('active', 'deleted'):
+        raise ValueError('저장 내역 또는 휴지통을 선택해주세요.')
     result = []
     for path in storage().glob('*.json'):
-        item = read(path.stem)
+        item = read(path.stem, include_deleted=True)
+        if bool(item.get('deletedAt')) != (view == 'deleted'):
+            continue
         result.append({'id': item['id'], 'revision': item['revision'], 'updatedAt': item['updatedAt'],
                        'name': item['input']['name'], 'branch': item['input']['branch'],
                        'lastDay': item['input']['lastDay'], 'severance': item['result']['severance'],
@@ -362,7 +390,7 @@ def handle(handler, method):
     try:
         if method in ('GET', 'HEAD'):
             if route == 'employees': result = {'employees': employees(branch_id(param('branch')))}
-            elif route == 'records': result = {'records': records()}
+            elif route == 'records': result = {'records': records(param('view') or 'active')}
             elif route == 'record': result = read(param('id'))
             elif route == 'export':
                 item = read(param('id'))
@@ -370,7 +398,7 @@ def handle(handler, method):
                 return True
             else: raise wiki_chat.ChatError(404, '요청한 기능이 없습니다.')
             response.send_json(handler, 200, result, head)
-        elif method == 'POST' and route in ('wages', 'calculate', 'save'):
+        elif method == 'POST' and route in ('wages', 'calculate', 'save', 'delete', 'restore'):
             wiki_chat.check_origin(handler)
             if not handler.headers.get('Origin'):
                 raise wiki_chat.ChatError(403, '퇴직금 관리 화면에서 요청해주세요.')
@@ -380,6 +408,8 @@ def handle(handler, method):
             if route == 'wages':
                 result = {'wages': wages(branch_id(body.get('branch')), text(body.get('name'), '성명', 50),
                                         day(body.get('hireDate'), '입사일'), day(body.get('lastDay'), '마지막 근무일'))}
+            elif route in ('delete', 'restore'):
+                result = change_record_state(body, route == 'delete')
             else:
                 result = save(body) if route == 'save' else calculate(body)
             response.send_json(handler, 200, result)
