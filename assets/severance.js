@@ -60,7 +60,6 @@
     calculated=record;const r=record.result;$('sv-totals').replaceChildren();
     [['퇴직금 (세전)',r.severance],['추가 지급 연차수당',r.leaveDue],['세전 지급합계',r.totalBeforeTax]].forEach(([label,value])=>{const item=node('div');item.append(node('span',label),node('strong',fmt(value)+'원'));$('sv-totals').append(item);});
     let detail=`퇴직일 ${r.retirementDate} · 계속근로 ${r.tenureDays}일 · 평균임금 산정 ${r.periodDays}일\n3개월 임금 ${fmt(r.wageTotal)}원 + 상여 산입 ${fmt(r.bonusIncluded)}원 + 연차 산입 ${fmt(r.priorLeaveIncluded)}원\n1일 평균임금 ${fmt(r.averageDaily)}원 · 적용 임금 ${fmt(r.appliedDaily)}원 (${r.ordinaryApplied?'통상임금':'평균임금'})\n퇴직 시 연차수당 ${fmt(r.unusedLeavePay)}원 중 기지급 ${fmt(record.input.leaveAlreadyPaid)}원 · 지급기한 ${r.paymentDue}`;
-    if(record.input.acquisitionDate)detail+=`\n인수 전 ${r.previousDays}일 · ${fmt(r.previousShare)}원 / 인수 후 ${r.currentDays}일 · ${fmt(r.currentShare)}원`;
     $('sv-result-detail').textContent=detail;$('sv-warnings').replaceChildren(...r.warnings.map(w=>node('li',w)));
     $('sv-save').textContent=saved?'변경 내용 저장':'산정 내역 저장';$('sv-download').hidden=!record.id;
     if(record.id)$('sv-download').href='/api/severance/export?id='+encodeURIComponent(record.id);

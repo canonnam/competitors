@@ -18,7 +18,7 @@
     {id:'recipient-history', category:'operations', title:'수급자구분 변경이력', description:'월별 수급자 자격 변경·기간 갱신·확인 필요 내역', keywords:'롱텀 공단 수급자 구분 변경 자격 일반 감경 기초 의료 적용일 종료일 매월 1일 당월'},
     {id:'liability-insurance', category:'operations', title:'배상책임보험 관리', description:'전체 현원·가입 인원 비교와 증서·만료일 관리', keywords:'안양 인천 배상 책임 보험 현원 가입 증서 만료 갱신 매일'},
     {id:'payroll-insurance', category:'operations', title:'월별 급여·4대보험', description:'직원별 급여·보험료와 직책별 합계', keywords:'사회복지사 간호사 간호조무사 물리치료사 작업치료사 요양보호사 급여대장 인건비 사회보험 매월 10일'},
-    {id:'severance', category:'operations', title:'퇴직금 관리', description:'급여 연동 산정·저장과 직인 포함 엑셀 내역서', keywords:'퇴직 퇴사 퇴직급 연차 통상임금 평균임금 인수 안분 산정내역서 정산'},
+    {id:'severance', category:'operations', title:'퇴직금 관리', description:'급여 연동 산정·저장과 직인 포함 엑셀 내역서', keywords:'퇴직 퇴사 퇴직급 연차 통상임금 평균임금 산정내역서 정산'},
     {id:'support-projects', category:'support', title:'지원사업 준비·기록', description:'지원 조건·준비 현황·컨소시엄·예산 관리', keywords:'정부 과제 AX 실증밸리 공모 멀티모달'},
     {id:'website-requests', category:'marketing', title:'상담·무료체험 신청', description:'방문상담·무료체험 접수와 담당자 메모', keywords:'고객 문의 홈페이지 영업 리드'},
     {id:'payroll', category:'operations', title:'급여 계산·근로계약서', description:'근무조건별 급여 계산과 계약서 작성', keywords:'월급 인건비 직원 채용 인사 노무 PDF'},

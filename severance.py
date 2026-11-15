@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent
 PREFIX = '/api/severance'
 BRANCHES = {2: '안양점', 3: '인천점'}
 LOCK = threading.RLock()
-POLICY = '2026-11-15-v1'
+POLICY = '2026-11-15-v2'
 
 
 def storage():
@@ -198,10 +198,6 @@ def calculate(body):
     applied = max(daily, ordinary)
     eligible = retirement >= shift_month(hire, 12) and hours >= 15
     severance = money(applied * 30 * tenure / 365) if eligible else 0
-    acquisition = day(body['acquisitionDate'], '인수일') if body.get('acquisitionDate') else None
-    before = max(0, min(tenure, (acquisition - hire).days)) if acquisition else 0
-    previous_share = money(applied * 30 * before / 365) if eligible else 0
-    current_share = severance - previous_share
     leave_total = money(ordinary * unused)
     if leave_paid > leave_total:
         raise ValueError('이미 지급한 연차수당은 산정된 잔여 연차수당을 넘을 수 없습니다.')
@@ -215,7 +211,7 @@ def calculate(body):
     clean = {'branch': branch, 'name': name, 'hireDate': hire.isoformat(), 'lastDay': last.isoformat(),
              'weeklyHours': float(hours), 'ordinaryDaily': float(ordinary), 'annualBonus': float(bonus),
              'priorLeavePay': float(prior_leave), 'unusedDays': float(unused), 'leaveAlreadyPaid': float(leave_paid),
-             'acquisitionDate': acquisition.isoformat() if acquisition else '', 'note': note,
+             'note': note,
              'includeSeal': include_seal, 'standardPeriodConfirmed': True, 'payItemsConfirmed': True, 'wages': clean_rows}
     result = {'policyVersion': POLICY, 'branchName': BRANCHES[branch], 'retirementDate': retirement.isoformat(),
               'periodStart': schedule[0]['start'], 'periodEnd': last.isoformat(), 'periodDays': days,
@@ -223,8 +219,7 @@ def calculate(body):
               'bonusIncluded': float(bonus_part), 'priorLeaveIncluded': float(leave_part),
               'averageDaily': float(daily), 'appliedDaily': float(applied), 'ordinaryApplied': ordinary > daily,
               'severance': severance, 'unusedLeavePay': leave_total, 'leaveDue': leave_due,
-              'totalBeforeTax': severance + leave_due, 'previousDays': before, 'currentDays': tenure - before,
-              'previousShare': previous_share, 'currentShare': current_share,
+              'totalBeforeTax': severance + leave_due,
               'paymentDue': (retirement + timedelta(days=14)).isoformat(), 'wages': lines, 'warnings': warnings}
     return {'input': clean, 'result': result}
 
@@ -313,8 +308,6 @@ def xlsx(record):
     extra = []
     if data['unusedDays'] or data['leaveAlreadyPaid']:
         extra.append(f'별도 연차수당 {won(r["unusedLeavePay"])}원 · 기지급 {won(data["leaveAlreadyPaid"])}원 · 세전 지급합계 {won(r["totalBeforeTax"])}원')
-    if data['acquisitionDate']:
-        extra.append(f'인수일 {data["acquisitionDate"]} · 이전 부담 {won(r["previousShare"])}원 / 현재 부담 {won(r["currentShare"])}원')
     set_cell('B16', '\n'.join(extra))
     if not data['includeSeal']:
         drawing = sheet.find(tag('drawing'))

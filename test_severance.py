@@ -23,7 +23,7 @@ from test_payroll_insurance import sample
 def manual(hire='2025-01-01', last='2025-12-31', amount=3000000):
     return {'branch': 2, 'name': '검증용', 'hireDate': hire, 'lastDay': last, 'weeklyHours': 40,
             'ordinaryDaily': 80000, 'annualBonus': 0, 'priorLeavePay': 0, 'unusedDays': 0,
-            'leaveAlreadyPaid': 0, 'acquisitionDate': '', 'note': '', 'includeSeal': True,
+            'leaveAlreadyPaid': 0, 'note': '', 'includeSeal': True,
             'standardPeriodConfirmed': True, 'payItemsConfirmed': True,
             'wages': [{'month': p['month'], 'mode': 'manual', 'amount': amount, 'excluded': 0,
                        'sourceKey': '', 'sourceHash': '', 'reason': '검증용 입력'}
@@ -60,11 +60,18 @@ class SeveranceTests(unittest.TestCase):
         b['unusedDays']=20
         self.assertEqual(m.calculate(b)['result']['averageDaily'],r['averageDaily'])
 
-    def test_transfer_rounding_reconciles_and_late_hire(self):
-        b=manual();b['acquisitionDate']='2025-07-01';r=m.calculate(b)['result']
-        self.assertEqual((r['previousDays'],r['currentDays']),(181,184))
-        self.assertEqual(r['previousShare']+r['currentShare'],r['severance'])
-        b['acquisitionDate']='2024-01-01';self.assertEqual(m.calculate(b)['result']['previousShare'],0)
+    def test_legacy_acquisition_input_does_not_change_employee_entitlement(self):
+        b=manual();expected=m.calculate(b)
+        b['acquisitionDate']='2025-07-01'
+        self.assertEqual(m.calculate(b),expected)
+        # Old saved records remain readable/exportable without the retired split.
+        legacy=copy.deepcopy(expected)
+        legacy['input']['acquisitionDate']='2025-07-01'
+        legacy['result'].update(previousShare=1000000,currentShare=1934783)
+        import openpyxl
+        sheet=openpyxl.load_workbook(io.BytesIO(m.xlsx(legacy))).active
+        self.assertEqual(sheet['H15'].value,2934783)
+        self.assertFalse(any('인수일' in str(cell.value) or '이전 부담' in str(cell.value) for row in sheet for cell in row))
 
     def write_payroll(self, duplicate=False, gross=3100000):
         for month in ['2025-12','2026-01','2026-02','2026-03']:
@@ -123,7 +130,7 @@ class SeveranceTests(unittest.TestCase):
         import openpyxl
         original=openpyxl.load_workbook(m.ROOT/'templates/severance.xlsx').active
         for branch,filename in [(2,'seal-anyang.png'),(3,'seal-incheon.png')]:
-            b=manual();b.update(branch=branch,name='=1+2',unusedDays=2,acquisitionDate='2025-07-01')
+            b=manual();b.update(branch=branch,name='=1+2',unusedDays=2)
             raw=m.xlsx(m.calculate(b));book=openpyxl.load_workbook(io.BytesIO(raw));s=book.active
             self.assertEqual(s['C5'].value,'=1+2');self.assertEqual(s['C5'].data_type,'s')
             self.assertEqual(str(s.merged_cells),str(original.merged_cells));self.assertEqual(s['H15'].value,2934783)
