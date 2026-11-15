@@ -97,6 +97,28 @@ class SeveranceTests(unittest.TestCase):
         b['wages'][0].update(excluded=310000,reason='별도 안분 상여')
         self.assertEqual(m.calculate(b)['result']['wages'][0]['included'],1350000)
 
+    def test_suggestions_do_not_guess_unclear_final_partial_pay(self):
+        self.write_payroll();ps=m.wages(2,'검증용',date(2025,1,1),date(2026,3,16))
+        self.assertEqual(ps[0]['candidates'][0]['suggested'],1500000)
+        self.assertEqual(ps[1]['candidates'][0]['suggested'],3100000)
+        self.assertIsNone(ps[-1]['candidates'][0]['suggested'])
+        self.assertEqual(ps[-1]['candidates'][0]['prorated'],1600000)
+        report=payroll.read_report('2026-03')['report'];report['branches'][0]['rows'][0]['payroll']['work_days']=16;payroll.save(report)
+        self.assertEqual(m.wages(2,'검증용',date(2025,1,1),date(2026,3,16))[-1]['candidates'][0]['suggested'],3100000)
+
+    def test_direct_period_amount_preserves_provenance_and_is_not_prorated_twice(self):
+        self.write_payroll();b=self.source_body()
+        for row in b['wages']:row.update(mode='period',amount=1200000,excluded=100000,reason='해당 기간 연차분 차감')
+        result=m.calculate(b)
+        self.assertEqual(result['result']['wages'][0]['included'],1100000)
+        self.assertEqual(result['result']['wageTotal'],4400000)
+        self.assertEqual(result['input']['wages'][0]['sourceKey'],b['wages'][0]['sourceKey'])
+        self.assertTrue(m.xlsx(result).startswith(b'PK'))
+        b['wages'][0]['amount']=''
+        with self.assertRaises(ValueError):m.calculate(b)
+        b['wages'][0]['amount']=1200000;self.write_payroll(gross=3200000)
+        with self.assertRaises(m.wiki_chat.ChatError):m.calculate(b)
+
     def test_source_staleness_duplicate_choice_and_missing_gross(self):
         self.write_payroll(duplicate=True);b=self.source_body()
         self.assertEqual(len(m.wages(2,'검증용',date(2025,1,1),date(2026,3,16))[0]['candidates']),2)

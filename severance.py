@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent
 PREFIX = '/api/severance'
 BRANCHES = {2: '안양점', 3: '인천점'}
 LOCK = threading.RLock()
-POLICY = '2026-11-15-v2'
+POLICY = '2026-11-15-v3'
 
 
 def storage():
@@ -120,6 +120,20 @@ def wages(branch, name, hire, last):
             {'key': r['key'], 'gross': r['payroll'].get('gross_pay'), 'workDays': r['payroll'].get('work_days'),
              'position': r['position'], 'note': r.get('sourceNote', '')} for r in rows],
             'sources': [{'file': s['file'], 'sheet': s.get('sheet', '')} for s in sources]})
+        for candidate in p['candidates']:
+            gross = candidate['gross']
+            candidate.update(suggested=None, prorated=None, suggestion='해당 기간의 세전 급여를 입력해주세요.')
+            if gross is None or gross < 0:
+                continue
+            candidate['prorated'] = money(Decimal(str(gross)) * p['days'] / p['calendarDays'])
+            if p['days'] == p['calendarDays']:
+                candidate.update(suggested=gross, suggestion='한 달 지급총액 자동 반영')
+            elif p['month'] != last.strftime('%Y-%m'):
+                candidate.update(suggested=candidate['prorated'], suggestion=f'월 급여 × {p["days"]}/{p["calendarDays"]}일')
+            elif candidate['workDays'] == p['days']:
+                candidate.update(suggested=gross, suggestion='원본 근무일수가 해당 기간과 같아 정산액 반영')
+            else:
+                candidate['suggestion'] = '월중 퇴사: 이미 정산된 급여인지 확인해주세요.'
     return result
 
 
@@ -159,12 +173,20 @@ def calculate(body):
         if not isinstance(row, dict) or row.get('month') != period['month']:
             raise ValueError('급여 산정 월이 변경되었습니다. 다시 불러와주세요.')
         mode = row.get('mode')
-        if mode not in ('monthly', 'actual', 'manual'):
+        if mode not in ('monthly', 'actual', 'manual', 'period'):
             raise ValueError(f'{period["month"]}의 적용 방식을 선택해주세요.')
         reason = text(row.get('reason', ''), '급여 확인 메모', 180, True)
         source_key = row.get('sourceKey', '')
         source = next((c for c in period['candidates'] if c['key'] == source_key), None)
-        if mode == 'manual':
+        if mode == 'period':
+            gross = number(row.get('amount'), f'{period["month"]} 기간 급여')
+            if source_key and not source:
+                raise ValueError('원본 급여를 다시 불러와주세요.')
+            if source and row.get('sourceHash') != period['sourceHash']:
+                raise wiki_chat.ChatError(409, '급여 원본이 갱신되었습니다. 급여를 다시 불러와 확인해주세요.')
+            if not reason:
+                reason = '기간 급여 직접 입력'
+        elif mode == 'manual':
             gross = number(row.get('amount'), f'{period["month"]} 직접 입력 임금')
             if not reason:
                 raise ValueError('직접 입력한 임금의 근거를 메모해주세요.')
@@ -292,7 +314,7 @@ def xlsx(record):
     set_cell('I5', (date.fromisoformat(r['retirementDate']) - date(1899, 12, 30)).days)
     set_cell('E6', f'{r["tenureDays"]}일')
     set_cell('G6', f'{fmt_date(r["periodStart"])} ~ {fmt_date(r["periodEnd"])}')
-    modes = {'monthly': '월급 일할 적용', 'actual': '해당 기간 정산액', 'manual': '직접 확인액'}
+    modes = {'monthly': '월급 일할 적용', 'actual': '해당 기간 정산액', 'manual': '직접 확인액', 'period': '해당 기간 반영액'}
     wage_lines = []
     for line in r['wages']:
         desc = f'{line["days"]}일 / {won(line["included"])}원 ({modes[line["mode"]]}'

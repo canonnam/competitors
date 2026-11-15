@@ -16,26 +16,25 @@
 <label>직원 성명<input id="sv-name" name="name" list="sv-employees" maxlength="50" autocomplete="off" required placeholder="급여 명단에서 선택 또는 직접 입력"><datalist id="sv-employees"></datalist></label>
 <label>최초 입사일<input id="sv-hire" name="hireDate" type="date" required></label>
 <label>마지막 근무일<input id="sv-last" name="lastDay" type="date" required></label>
-<label>주 평균 소정근로시간<input name="weeklyHours" type="number" min="0" max="168" step="0.01" value="40" required></label>
+<label>1일 통상임금 (원)<input name="ordinaryDaily" type="number" min="0.000001" step="0.000001" max="10000000" required placeholder="근로계약 기준 금액"></label>
 </div><p data-ui-help="재직 정보 안내">고용승계 직원은 최초 입사일을 입력합니다. 퇴직일은 마지막 근무일의 다음 날이며 근속일수에서 제외합니다. 주 평균 소정근로시간은 4주 평균입니다. 동명이인·재입사자는 같은 이름의 급여가 본인의 해당 재직기간 자료인지 확인해주세요.</p>
-<div class="sv-actions"><button type="button" id="sv-load" class="ui-button">직전 3개월 급여 불러오기</button><span id="sv-period" class="sv-muted"></span></div></section>
+<div class="sv-actions"><span id="sv-period" class="sv-muted">직원과 날짜를 입력하면 급여가 자동으로 연결됩니다.</span><button type="button" id="sv-load" class="ui-button">급여 다시 불러오기</button></div></section>
 <section class="sv-panel"><h2>평균임금에 포함할 급여</h2>
-<p id="sv-wage-empty" class="sv-muted">직원과 날짜를 입력한 뒤 급여를 불러와주세요.</p>
-<p data-ui-help="산입 급여 안내">세전 지급총액을 사용합니다. 한 달 전체 급여는 ‘월급 일할 적용’, 이미 해당 기간만 정산된 급여는 ‘해당 기간 정산액’을 선택합니다. 부분월은 적용 방식을 직접 선택해야 합니다. ‘직접 입력’ 금액은 산정기간 해당분으로 입력합니다. 퇴직 시 연차수당과 별도 연간 안분할 상여·연차가 월급여에 포함되어 있으면 제외액에 입력해 중복 산입을 방지합니다. 제외액은 일할 적용 전에 차감합니다.</p>
-<div class="sv-table-wrap" id="sv-wage-wrap" tabindex="0" aria-label="월별 산입 급여" hidden><table><thead><tr><th>산정 기간</th><th>원본 지급총액</th><th>적용 방식·직접 입력</th><th>제외액 (원)</th><th>확인 메모</th></tr></thead><tbody id="sv-wages"></tbody></table></div>
+<p id="sv-wage-empty" class="sv-muted">직원과 재직기간을 입력해주세요. 적용 방식 선택 없이 금액을 바로 수정할 수 있습니다.</p>
+<p data-ui-help="산입 급여 안내">한 달 전체는 지급총액을, 첫 달의 일부 기간은 일할 금액을 채웁니다. 마지막 부분월은 원본 근무일수가 일치하면 정산액을 채우고, 불명확하면 금액 확인을 요청합니다. 금액은 언제든 직접 수정할 수 있습니다. 월 급여에 포함된 퇴직 시 연차나 별도 안분할 상여·연차는 ‘금액 조정’에서 해당 기간에 포함된 금액만 제외합니다. 산정 금액은 세전 기준입니다.</p>
+<div class="sv-table-wrap" id="sv-wage-wrap" tabindex="0" aria-label="월별 산입 급여" hidden><table><thead><tr><th>산정 기간</th><th>원본 지급총액</th><th>기간 급여 (원)</th><th>필요한 경우만 조정</th></tr></thead><tbody id="sv-wages"></tbody></table></div>
 </section>
-<section class="sv-panel"><h2>통상임금·상여·연차</h2><div class="sv-grid">
-<label>1일 통상임금 (원)<input name="ordinaryDaily" type="number" min="0.000001" step="0.000001" max="10000000" required></label>
+<details class="sv-panel" id="sv-extra"><summary>상여·연차 등 추가 항목 <span id="sv-extra-summary" class="sv-muted">상여·연차 0원 · 주 40시간</span></summary><p class="sv-muted">해당하는 항목만 변경해주세요. 기본 설정은 상여·연차 0원, 주 40시간, 평균임금 제외기간 없음입니다.</p><div class="sv-grid">
 <label>최근 1년 상여금 총액 (원)<input name="annualBonus" type="number" min="0" step="1" value="0" required></label>
 <label>기지급 전년도 연차수당 (원)<input name="priorLeavePay" type="number" min="0" step="1" value="0" required></label>
 <label>퇴직 시 미사용 연차 (일)<input name="unusedDays" type="number" min="0" max="366" step="0.01" value="0" required></label>
 <label>이미 지급한 퇴직 시 연차수당 (원)<input name="leaveAlreadyPaid" type="number" min="0" step="1" value="0" required></label>
+<label>주 평균 소정근로시간<input name="weeklyHours" type="number" min="0" max="168" step="0.01" value="40" required></label>
 </div><p data-ui-help="통상임금·상여·연차 안내">1일 평균임금과 통상임금 중 높은 금액으로 계산합니다. 상여·전년도 기지급 연차는 최근 1년 총액의 3/12을 포함합니다. 퇴직 시 미사용 연차수당은 통상임금 × 미사용 일수로 별도 정산하며, 이미 지급한 금액은 추가 지급액에서 뺍니다. 이 화면은 세전 산정이며 퇴직소득세·근로소득세는 각각 별도 정산합니다. 월별 산입액과 최종 퇴직금은 원 단위 반올림하고 평균임금은 중간 반올림하지 않습니다.</p>
-<label class="sv-check"><input type="checkbox" name="standardPeriodConfirmed" required>산정기간에 휴직·휴업 등 평균임금 계산에서 제외할 기간이 없습니다.</label>
-<label class="sv-check"><input type="checkbox" name="payItemsConfirmed" required>상여·연차 금액과 월급여에 중복 포함된 제외액을 확인했습니다.</label>
+<label class="sv-check"><input type="checkbox" name="hasExcludedPeriod">산정기간에 휴직·휴업 등 평균임금 제외기간이 있습니다.</label>
 <label class="sv-note">산정 메모<textarea name="note" rows="2" maxlength="1000" placeholder="금액 확인 근거 또는 정산 참고사항"></textarea></label>
 <label class="sv-check"><input type="checkbox" name="includeSeal" checked><span id="sv-seal-label">안양점 직인 포함</span></label>
-<div class="sv-actions"><button type="submit" class="ui-button ui-button--primary" id="sv-calculate">퇴직금 산정하기</button></div></section>
+</details><div class="sv-actions sv-submit"><button type="submit" class="ui-button ui-button--primary" id="sv-calculate">퇴직금 산정하기</button></div>
 </form>
 <section id="sv-result" class="sv-panel" hidden><h2>산정 결과</h2><div class="sv-totals" id="sv-totals"></div><p id="sv-result-detail"></p><ul id="sv-warnings"></ul>
 <div class="sv-actions"><button type="button" class="ui-button ui-button--primary" id="sv-save">산정 내역 저장</button><a class="ui-button" id="sv-download" hidden>엑셀 산정내역서 내려받기</a></div><p class="sv-muted">입력값과 계산 결과를 저장하면 같은 내용의 산정내역서를 다시 내려받을 수 있습니다.</p></section>
