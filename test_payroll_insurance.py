@@ -89,6 +89,47 @@ class PayrollInsuranceTests(unittest.TestCase):
         self.assertEqual(birthday('1970-01-01'),'700101')
         self.assertEqual(len(candidates('가명','',people*2,'username','birth_date')[0]),2)
 
+    def test_historical_single_branch_without_insurance(self):
+        value = sample()
+        value['branches'] = value['branches'][:1]
+        b = value['branches'][0]
+        b.update(ledgerId=None, confirmedAt=None, insuranceCheckedAt=None, sources=[],
+                 portalTotals=dict.fromkeys(b['portalTotals']),
+                 payrollSources=[{'file': '급여대장.xlsx', 'sha256': 'b'*64, 'records': 1}])
+        row = b['rows'][0]
+        row['insurance'] = dict.fromkeys(m.INSURANCE)
+        row['payroll']['work_days'] = None
+        m.save(value)
+        saved = m.read_report(value['month'])['report']
+        self.assertEqual(saved, m.validate(saved))
+        self.assertIsNone(saved['branches'][0]['totals']['insuranceTotal'])
+        self.assertEqual(saved['branches'][0]['totals']['grossPay'], 1000)
+        self.assertIn('급여대장.xlsx', json.dumps(saved, ensure_ascii=False))
+        row['insurance']['health'] = 0
+        with self.assertRaises(ValueError): m.validate(value)
+        row['insurance']['health'] = None
+        row['payroll'] = dict.fromkeys(m.PAY)
+        row['payroll']['net_pay'] = 500
+        row['sourceNote'] = '원본에 추가 실지급액만 기재'
+        data = m.validate(value)['branches'][0]
+        self.assertIsNone(data['totals']['grossPay'])
+        self.assertIsNone(data['totals']['employeeDeductions'])
+        self.assertEqual(data['totals']['netPay'], 500)
+
+    def test_source_adjustment_requires_exact_reconciliation_and_note(self):
+        value = sample()
+        b = value['branches'][0]
+        b['payrollSources'] = [{'file': '급여대장.xls', 'sha256': 'b'*64, 'records': 1}]
+        row = b['rows'][0]
+        row.update(settlementAdjustment=50, sourceNote='원본 추가 지급 메모')
+        row['payroll']['net_pay'] += 50
+        self.assertEqual(m.validate(value)['branches'][0]['rows'][0]['settlementAdjustment'], 50)
+        row['settlementAdjustment'] = 40
+        with self.assertRaises(ValueError): m.validate(value)
+        row['settlementAdjustment'] = 50
+        row.pop('sourceNote')
+        with self.assertRaises((KeyError, ValueError)): m.validate(value)
+
     def test_csv_escapes_formulas_and_missing_values(self):
         value=sample();value['branches'][0]['rows'][0]['name']='=FORMULA()'
         raw=m.csv_bytes(m.validate(value),'2').decode('utf-8-sig')

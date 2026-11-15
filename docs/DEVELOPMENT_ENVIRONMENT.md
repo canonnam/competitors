@@ -1,5 +1,10 @@
 # 더비다 지식 창고 개발 환경
 
+## 과거 급여파일 (2026-11-15)
+
+- 기존 `/data/payroll-insurance`와 schemaVersion 1에 선택적 `payrollSources`, `payrollNote`, 행별 `sourceNote`, `settlementAdjustment`를 추가한다. 원본 없는 보험료와 추가 지급행의 미기재 급여 항목은 null이다. 정기 수집의 두 지점·4종 보험 원본 검증은 유지한다.
+- 운영 입력은 기존 `publish_payroll_insurance.py`와 Railway SSH를 사용한다. 과거 파일 추출물·실제 경로·백업은 로컬 `.local/history-import`에 보관하며 저장소와 배포 파일에서 제외한다. 기존 월의 공단 금액은 전후 대조하고 최종 JSON 해시로 원격 저장을 확인한다.
+
 ## N 표시 날짜 (2026-11-12)
 
 - 인증된 /api/card-updates는 한국 시간 당일에 해당하는 기능 ID와 시각을 반환한다. 시설 3D·종사자 평가·지원사업 준비는 기존 SQLite 파일을 읽기 전용으로 열어 날짜만 집계한다. 주변 영업처 지도는 자료 분류 갱신일을 사용한다. 직접 편집 자료의 실제 반영 시각은 data/card_updates.json에 기록한다.

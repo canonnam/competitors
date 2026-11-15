@@ -81,7 +81,7 @@ def insurance_total(row):
 
 def employee_deductions(row):
     pay = row['payroll']
-    return None if pay is None else sum(pay[k] for k in PAY[5:])
+    return None if pay is None or any(pay[k] is None for k in PAY[5:]) else sum(pay[k] for k in PAY[5:])
 
 
 def summarize(rows):
@@ -102,15 +102,28 @@ def validate(payload):
     if not isinstance(payload, dict) or payload.get('schemaVersion') != 1:
         raise ValueError('지원하지 않는 결과 형식입니다.')
     result = {'schemaVersion': 1, 'month': month(payload['month']), 'checkedAt': timestamp(payload['checkedAt']), 'branches': []}
-    if sorted(b['id'] for b in payload['branches']) != [2, 3]:
-        raise ValueError('안양·인천 두 지점의 결과가 모두 필요합니다.')
+    ids = [b['id'] for b in payload['branches']]
+    if not ids or len(ids) != len(set(ids)) or any(i not in BRANCHES for i in ids):
+        raise ValueError('지점 결과를 확인해주세요.')
+    if sorted(ids) != [2, 3] and not all(b.get('payrollSources') for b in payload['branches']):
+        raise ValueError('정기 수집은 안양·인천 두 지점의 결과가 모두 필요합니다.')
     for b in payload['branches']:
         ident = b['id']
-        clean = {'id': ident, 'name': BRANCHES[ident], 'ledgerId': number(b['ledgerId']),
+        historical = bool(b.get('payrollSources'))
+        clean = {'id': ident, 'name': BRANCHES[ident], 'ledgerId': number(b['ledgerId'], nullable=historical),
                  'confirmedAt': timestamp(b.get('confirmedAt'), optional=True),
                  'payrollCheckedAt': timestamp(b['payrollCheckedAt']),
-                 'insuranceCheckedAt': timestamp(b['insuranceCheckedAt']), 'rows': [], 'sources': [],
+                 'insuranceCheckedAt': timestamp(b['insuranceCheckedAt'], optional=historical), 'rows': [], 'sources': [],
                  'portalTotals': {k: number(b['portalTotals'].get(k), nullable=True) for k in ('healthCare', 'pension', 'employment', 'accident')}}
+        if historical:
+            clean['payrollSources'] = []
+            if b.get('payrollNote'):
+                clean['payrollNote'] = string(b['payrollNote'], 300)
+            for source in b['payrollSources']:
+                if not re.fullmatch('[a-f0-9]{64}', source['sha256']):
+                    raise ValueError('급여 원본 해시 오류')
+                clean['payrollSources'].append({'file': string(source['file']), 'sheet': string(source.get('sheet', '')),
+                                               'sha256': source['sha256'], 'records': number(source['records'])})
         for source in b['sources']:
             kind = source['kind']
             if kind not in ('건강', '국민연금', '고용', '산재'): raise ValueError('보험 종류 오류')
@@ -118,8 +131,11 @@ def validate(payload):
             if not re.fullmatch('[a-f0-9]{64}', digest): raise ValueError('원본 해시 오류')
             clean['sources'].append({'kind': kind, 'file': f'{BRANCHES[ident]}_{result["month"]}_{kind}.csv',
                                      'sha256': digest, 'records': number(source['records'])})
-        if sorted(s['kind'] for s in clean['sources']) != sorted(('건강', '국민연금', '고용', '산재')):
+        payroll_only = historical and not clean['sources'] and clean['insuranceCheckedAt'] is None
+        if not payroll_only and sorted(s['kind'] for s in clean['sources']) != sorted(('건강', '국민연금', '고용', '산재')):
             raise ValueError('4종 원본 파일이 모두 필요합니다.')
+        if payroll_only and any(v is not None for v in clean['portalTotals'].values()):
+            raise ValueError('공단 원본 없는 보험료 합계')
         keys = set()
         for r in b['rows']:
             key = string(r['key'])
@@ -127,12 +143,24 @@ def validate(payload):
             keys.add(key)
             pay = r.get('payroll')
             if pay is not None:
-                pay = {k: number(pay[k], fraction=k == 'work_days') for k in PAY}
-                if pay['gross_pay'] - pay['total_deduction'] != pay['net_pay']:
+                pay = {k: number(pay[k], nullable=historical, fraction=k == 'work_days') for k in PAY}
+                adjustment = number(r.get('settlementAdjustment', 0)) if historical else 0
+                if adjustment and not r.get('sourceNote'):
+                    raise ValueError('실지급 차액의 원본 근거가 필요합니다.')
+                complete = all(pay[k] is not None for k in ('gross_pay', 'total_deduction', 'net_pay'))
+                if complete and pay['gross_pay'] - pay['total_deduction'] + adjustment != pay['net_pay']:
                     raise ValueError('급여 지급·공제·실지급 합계 불일치')
+                if not complete and (not historical or not r.get('sourceNote') or adjustment):
+                    raise ValueError('급여 누락 항목의 원본 설명이 필요합니다.')
             row = {'key': key, 'name': string(r['name']), 'position': string(r['position']),
                    'match': string(r['match']), 'payroll': pay,
                    'insurance': {k: number(r['insurance'][k], nullable=True) for k in INSURANCE}}
+            if historical and r.get('sourceNote'):
+                row['settlementAdjustment'] = number(r.get('settlementAdjustment', 0))
+                row['sourceNote'] = string(r['sourceNote'], 200)
+                if not row['sourceNote'].strip(): raise ValueError('실지급 차액의 원본 근거가 필요합니다.')
+            if payroll_only and any(v is not None for v in row['insurance'].values()):
+                raise ValueError('공단 원본 없는 개인 보험료')
             row['role'] = role(row['position'])
             row['insuranceTotal'] = insurance_total(row)
             row['employeeDeductions'] = employee_deductions(row)
@@ -222,7 +250,9 @@ def csv_bytes(report, branch=''):
         for r in b['rows']:
             pay = r['payroll'] or {}
             cells = [report['month'], b['name'], r['name'], r['position'], r['role'], *[pay.get(k) for k in PAY[:5]],
-                     r['employeeDeductions'], *[r['insurance'][k] for k in INSURANCE], r['insuranceTotal'], r['match']]
+                     r['employeeDeductions'], *[r['insurance'][k] for k in INSURANCE], r['insuranceTotal'],
+                     r['match'] + (f' · {r["sourceNote"]}' if r.get('sourceNote') else '')
+                     + (f' (차액 {r["settlementAdjustment"]}원)' if r.get('settlementAdjustment') else '')]
             writer.writerow(["'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for v in cells])
     return ('\ufeff' + out.getvalue()).encode('utf-8')
 

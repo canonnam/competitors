@@ -49,7 +49,8 @@
     for(const b of branches())for(const r of b.rows){
       if(search&&!String(r.name+' '+r.position+' '+r.role).toLocaleLowerCase().includes(search))continue;
       const p=r.payroll||{};count++;
-      appendRow('people',[b.name,r.name,r.position,p.work_days,p.basic_pay,p.gross_pay,p.total_deduction,p.net_pay,r.employeeDeductions,r.insurance.health,r.insurance.care,r.insurance.pension,r.insurance.employment,r.insurance.accident,r.insuranceTotal,r.match]);
+      const note=r.sourceNote?r.match+' · '+r.sourceNote+(r.settlementAdjustment?' (차액 '+money(r.settlementAdjustment)+'원)':''):r.match;
+      appendRow('people',[b.name,r.name,r.position,p.work_days,p.basic_pay,p.gross_pay,p.total_deduction,p.net_pay,r.employeeDeductions,r.insurance.health,r.insurance.care,r.insurance.pension,r.insurance.employment,r.insurance.accident,r.insuranceTotal,note]);
     }
     $('count').textContent=count+'명 표시 · 이름 검색은 개인별 표에만 적용됩니다.';
   }
@@ -58,7 +59,7 @@
     const selected=branches();
     for(const id of ['groups','reconcile'])$(id).tBodies[0].replaceChildren();
     $('totals').replaceChildren();
-    const sum=k=>selected.reduce((s,b)=>s+(b.totals[k]||0),0);
+    const sum=k=>selected.length&&selected.every(b=>b.totals[k]!=null)?selected.reduce((s,b)=>s+b.totals[k],0):null;
     for(const [label,key,detail] of [['급여 지급총액','grossPay','급여대장 '+sum('payrollPeople')+'명'],['급여 보험공제','employeeDeductions','급여대장의 직원 공제액'],['보험료 총합','insuranceTotal','노사합산 기준 · 공단 자료 '+sum('insurancePeople')+'명']]){
       const card=node('div',null,'pi-stat');card.append(node('span',label),node('strong',money(sum(key))+'원'),node('small',detail));$('totals').append(card);
     }
@@ -73,9 +74,11 @@
       const share=selected.every(b=>employerShare(b.totals)!=null)?sum('insuranceTotal')-sum('employeeDeductions'):null;
       appendRow('groups',['전체','전체 합계',sum('payrollPeople')+' / '+sum('insurancePeople'),sum('grossPay'),sum('employeeDeductions'),sum('insuranceTotal'),share],true);
     }
-    $('source').textContent=report.month+' 귀속 · '+selected.map(b=>b.name+' 급여 '+(b.confirmedAt?'확정 '+date(b.confirmedAt):'미확정')+' / ERP 조회 '+date(b.payrollCheckedAt)+' / 공단 확인 '+date(b.insuranceCheckedAt)).join(' · ');
+    $('source').textContent=report.month+' 귀속 · '+(selected.length?selected.map(b=>b.name+' '+(b.payrollSources?'급여파일 반영 '+date(b.payrollCheckedAt):'급여 '+(b.confirmedAt?'확정 '+date(b.confirmedAt):'미확정')+' / ERP 조회 '+date(b.payrollCheckedAt))+' / '+(b.insuranceCheckedAt?'공단 확인 '+date(b.insuranceCheckedAt):'공단 자료 없음')).join(' · '):'선택 지점의 자료가 없습니다.');
     $('source').hidden=false;positionHelp();
-    renderPeople();$('data').hidden=false;$('download').disabled=false;
+    const notes=selected.filter(b=>b.payrollNote).map(b=>b.name+' '+b.payrollNote);
+    if(notes.length)$('source').textContent+=' · '+notes.join(' · ');
+    renderPeople();$('data').hidden=false;$('download').disabled=!selected.length;
   }
   async function load(period='') {
     const id=++requestId;clear();$('refresh').disabled=true;status('저장 결과를 불러오는 중…');
@@ -90,10 +93,11 @@
       const failure=data.failure||data.latestFailure;
       if(!report){status(failure?failure.month+' 수집 실패 · '+date(failure.failedAt):selected+' 저장 결과가 없습니다. 다음 수집 후 확인해주세요.','warning');return;}
       render();
-      const unconfirmed=report.branches.some(b=>!b.confirmedAt), stale=report.month<data.expectedMonth;
+      const historical=report.branches.some(b=>b.payrollSources);
+      const unconfirmed=report.branches.some(b=>!b.payrollSources&&!b.confirmedAt), stale=!period&&report.month<data.expectedMonth;
       const unmatched=report.branches.reduce((s,b)=>s+b.rows.filter(r=>!r.payroll||r.match.includes('확인 필요')).length,0);
       const differences=report.branches.some(b=>Object.values(b.reconciliation).some(r=>r.difference));
-      status(failure?failure.month+' 수집 실패 ('+date(failure.failedAt)+') · 이전 성공 결과 표시':report.month+' 조회 완료'+(unconfirmed?' · 미확정 급여대장 포함':' · 두 지점 급여대장 확정')+(stale?' · 이번 전월분은 아직 없습니다':'')+(unmatched?' · 급여 미연결 '+unmatched+'명':'')+(differences?' · 사업장 고지액 차이 있음':''),(failure||unconfirmed||stale||unmatched||differences)?'warning':'success');
+      status(failure?failure.month+' 수집 실패 ('+date(failure.failedAt)+') · 이전 성공 결과 표시':report.month+' 조회 완료'+(historical?' · 과거 급여파일 반영':unconfirmed?' · 미확정 급여대장 포함':' · 두 지점 급여대장 확정')+(report.branches.length<2?' · '+report.branches.map(b=>b.name).join('·')+' 자료만 있음':'')+(stale?' · 이번 전월분은 아직 없습니다':'')+(unmatched?' · 급여 미연결 '+unmatched+'명':'')+(differences?' · 사업장 고지액 차이 있음':''),(failure||unconfirmed||stale||unmatched||differences)?'warning':'success');
     }catch(error){if(id===requestId||$('workspace').hidden)status(error.message,'error');}
     finally{if(id===requestId)$('refresh').disabled=false;}
   }
