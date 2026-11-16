@@ -36,6 +36,7 @@ ROOT = Path(__file__).resolve().parent
 # Every name here must also be COPY'd into the image. See test_static_pages.py.
 PUBLIC_PAGES = frozenset({
     "website-requests.html", "support-prep.html", "payroll.html", "claim-check.html",
+    "erp-longterm-verification.html",
     "index.html", "competitors.html", "competitor-uiux.html", "competitor-news.html",
     "agency-news.html", "ai-hub-data.html", "naver-ads.html", "search-visibility.html",
     "reputation-watch.html", "operating-costs.html", "borrowing-status.html",

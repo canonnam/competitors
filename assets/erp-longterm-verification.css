@@ -1,0 +1,33 @@
+.verification-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.verification-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 12px;
+}
+.verification-branch {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--ui-surface);
+}
+.verification-branch header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.verification-branch h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.verification-branch p, .verification-note {
+  margin: 12px 0 0;
+  color: var(--ui-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
