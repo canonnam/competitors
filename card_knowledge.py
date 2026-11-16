@@ -352,11 +352,12 @@ def statistics(question):
     result = [evidence('statistics', '통계자료·책갈피 목록',
         '원문 전체가 아닌 카드의 검토된 발췌입니다. 발행일·조사연도·대상·분모를 구분하며 전국 통계를 두 지점의 실적으로 해석하지 마세요. 기사 인용 통계는 원자료를 직접 검증하지 못했습니다.\n' +
         dump([fields(d, 'title published survey publisher summary scope') for d in docs.values()]), data['reviewedAt'])]
+    source_kind = {'article': '보도 기사 인용', 'viewer': '공식 연구보고서 표 요약'}
     for row in ranked(question, data['bookmarks'], lambda r: dump(fields(r, 'title topic insight metricLabel')), 6):
         doc = docs[row['documentId']]
-        result.append(evidence('statistics', row['title'], dump({'자료유형': '보도 기사 인용' if doc.get('format') == 'article' else '공식 발간물 원문 발췌',
+        result.append(evidence('statistics', row['title'], dump({'자료유형': source_kind.get(doc.get('format'), '공식 발간물 원문 발췌'),
             '출처': fields(doc, 'title published survey publisher scope'),
-            '통계': fields(row, 'metric metricLabel rows insight action caveat pdfPage printedPage figure')}),
+            '통계': fields(row, 'metric metricLabel rows insight action caveat pdfPage viewerPage printedPage figure')}),
             data['reviewedAt'], url=safe_url(doc.get('sourceUrl'))))
     return result
 

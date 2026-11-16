@@ -1,10 +1,21 @@
-/* Curated from the original PDFs. Capture provenance: STATISTICS_LIBRARY.md. */
+/* Curated statistics. Source details: STATISTICS_LIBRARY.md. */
 (function (root) {
   const data = {
-    reviewedAt: '2026-09-28',
+    reviewedAt: '2026-11-16',
     portalUrl: 'https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html',
-    topics: ['기관평가', '안전·사고', '입소·수요', '돌봄·품질', '인력·운영', '디지털 돌봄'],
+    topics: ['기관평가', '안전·사고', '입소·수요', '비급여·비용', '돌봄·품질', '인력·운영', '디지털 돌봄'],
     documents: [
+      {
+        id:'ltc-noncovered-2025', format:'viewer',
+        title:'노인장기요양보험 비급여 운영현황과 관리방안',
+        author:'권진희·이정석·이호용·이희승·김현기', publisher:'국민건강보험공단 건강보험연구원',
+        publication:'정규연구보고서 2025-1-0013', published:'2025', year:2025, viewerPages:286,
+        survey:'2025년 노인요양시설 비급여 실태조사', topics:['비급여·비용'],
+        summary:'입소자의 월 부담액과 비급여 항목별 이용, 시설의 식사재료비·상급침실료, 보호자의 비용 안내 요구를 조사했습니다.',
+        scope:'비용은 2025년 5월 일반·감경 수급자 640명, 비용 안내 의견은 가족보호자 1,061명을 분석했습니다. 2025년 7월 14일~8월 28일 시설 운영자 조사에는 노인요양시설 530곳이 응답했습니다.',
+        sourceUrl:'https://dl.nanet.go.kr/search/searchInnerDetail.do?controlNo=MONO12026000011305',
+        viewerNote:'국회도서관에서 ‘원문보기’를 누른 뒤 뷰어 쪽수를 입력하세요. 189쪽 표 5-4에서 연구진의 운영지침 제안을 볼 수 있습니다.'
+      },
       {"id":"ltc-2025","title":"2025년 장기요양실태조사","author":"김세진·고은아·정찬우·이선희·이윤경·강은나·오미애","publisher":"보건복지부·한국보건사회연구원","publication":"용역보고서 2025-027","published":"2025.11","survey":"2025년 장기요양실태조사","year":2025,"pages":"1–1120","pdfPages":1152,"topics":["입소·수요","돌봄·품질","인력·운영","안전·사고","디지털 돌봄"],"summary":"수급자의 초고령·독거 비중, 재가 거주 희망, 가족 만족, 인력 연령과 처우, 기관 운영 애로와 안전사고, 돌봄기술 활용을 모았습니다.","scope":"2025년 1월말 기준 전국 조사. 수급자 4,500명, 이용자 가족 3,000명, 기관 1,991곳, 요원 4,500명. 표마다 본인응답·시설 규모 등 분석 대상이 다릅니다.","sourceUrl":"https://repository.kihasa.re.kr/handle/201002/50024","downloadUrl":"https://www.mohw.go.kr/boardDownload.es?bid=0019&list_no=1491730&seq=1"},
       {"id":"ltc-evaluation","title":"노인장기요양보험 정책·사업 평가","author":"손동희","publisher":"국회예산정책처","publication":"사업평가 보고서","published":"2025.11","survey":"시설 2021–2022년·재가 2023–2024년 평가","periodLabel":"평가: 시설 2021–2022년 / 재가 2023–2024년","year":2022,"pages":"1–130","pdfPages":171,"topics":["기관평가"],"summary":"기관 유형과 설립주체별 평가등급 분포를 살펴봅니다. 2025년에 발행됐지만, 수록된 시설 평가 통계는 2021–2022년 기준입니다.","scope":"보건복지부 제출자료를 국회예산정책처가 재작성한 전국 기관 평가 현황. 시설 4,423곳과 재가 18,118곳은 평가 연도가 다르므로 분리해서 읽습니다.","sourceUrl":"https://nabo.go.kr/ko/report/evaluationView.do?idx=8990&key=2509110003","downloadUrl":"https://nabo.go.kr/board/file/down.do?fid=33318949","relatedUrl":"https://www.data.go.kr/data/15104801/fileData.do?recommendDataYn=Y","relatedLabel":"2025년 평가 결과 · CSV 다운로드 페이지 ↗","relatedNote":"국민건강보험공단의 2026.06.25 기준 공개자료입니다. 2025년 평가부터 영역이 5개에서 4개로 바뀌어 과거 영역별 점수와 직접 비교하기 어렵습니다."},
       {"id":"ltc-safety","title":"2022년 장기요양실태조사","author":"이윤경·이선희·강은나·김세진·남궁은하·최유정","publisher":"보건복지부·한국보건사회연구원","publication":"정책보고서 2022-89","published":"2022.12","survey":"2022년 장기요양실태조사","year":2022,"pages":"1–896","pdfPages":922,"topics":["안전·사고"],"summary":"장기요양기관이 응답한 안전사고, 낙상 건수와 손해배상 대응방식을 모았습니다. 기관 규모와 문항별 응답 대상을 함께 확인합니다.","scope":"2022.07.01 기준 전국 장기요양기관 조사. 전체 응답기관 1,953곳, 사고 경험 408곳, 낙상 경험 362곳, 손해배상 경험 386곳 등 표마다 분석 대상이 다릅니다.","sourceUrl":"https://www.kihasa.re.kr/library/10120/contents/5861393","downloadUrl":"https://sri.kostat.go.kr/boardDownload.es?bid=12074&list_no=428235&seq=1"},
@@ -26,6 +37,66 @@
       }
     ],
     bookmarks: [
+      {
+        id:'ltc-noncovered-monthly-cost', documentId:'ltc-noncovered-2025', topic:'비급여·비용',
+        title:'입소자 월 부담액에서 비급여가 차지한 비중',
+        metric:'53.8%', metricLabel:'월평균 본인부담금 중 비급여 비중',
+        periodLabel:'2025년 5월 비용', viewerPage:23, printedPage:13, figure:'표 2',
+        rows:[
+          ['월평균 본인부담금', '716,600원'],
+          ['급여 본인부담금', '331,109원 (46.2%)'],
+          ['비급여 본인부담금', '385,491원 (53.8%)']
+        ],
+        insight:'2025년 5월 노인요양시설 일반·감경 수급자 640명의 월평균 본인부담금은 716,600원이었습니다. 비급여가 평균 385,491원을 차지했습니다.',
+        action:'입소 상담 견적서에서 급여 본인부담금과 식사재료비·선택 비용을 항목별로 적고, 모두 더한 월 예상액을 안내해 보세요.',
+        caveat:'일반·감경 수급자 표본 640명의 한 달 평균입니다. 상담 시 지점의 실제 단가와 이용 일수로 계산하세요.'
+      },
+      {
+        id:'ltc-noncovered-item-costs', documentId:'ltc-noncovered-2025', topic:'비급여·비용',
+        title:'식사재료비·상급침실료 등 항목별 월 부담액',
+        metric:'93.6%', metricLabel:'식사재료비 부담 비율',
+        periodLabel:'2025년 5월 비용', viewerPage:109, printedPage:104, figure:'표 3-10',
+        rows:[
+          ['식사재료비', '93.6% · 306,126원'],
+          ['상급침실 추가 비용', '9.2% · 403,839원'],
+          ['이·미용비', '2.7% · 4,882원'],
+          ['기타실비', '86.6% · 71,182원']
+        ],
+        insight:'비용을 부담한 비율은 식사재료비가 93.6%(599명)로 가장 높았습니다. 상급침실은 부담한 사람이 59명으로, 이들의 월평균 추가 비용은 403,839원이었습니다.',
+        action:'식사재료비는 월 견적에 표시하고, 상급침실료는 해당 침실을 이용할 때 붙는 비용으로 안내해 보세요. 기타실비는 무엇에 얼마가 드는지 적어 두면 상담과 정산에 함께 쓸 수 있습니다.',
+        caveat:'비율의 분모는 640명입니다. 금액은 각 항목의 비용을 부담한 사람만의 월평균이므로 행의 금액을 합산해 월 견적을 만들 수 없습니다.'
+      },
+      {
+        id:'ltc-noncovered-facility-prices', documentId:'ltc-noncovered-2025', topic:'비급여·비용',
+        title:'시설이 응답한 식사재료비와 상급침실료',
+        metric:'3,173원', metricLabel:'시설 조사 평균 식비 · 1식',
+        periodLabel:'2025년 7~8월 시설 운영자 조사', viewerPage:143, printedPage:139, figure:'표 4-5',
+        rows:[
+          ['식사재료비 · 1개월', '288,584원'],
+          ['식비 · 1식', '3,173원'],
+          ['간식비 · 1회', '942원'],
+          ['상급침실 1인실 · 1박', '13,105원'],
+          ['상급침실 2인실 · 1박', '6,802원']
+        ],
+        insight:'노인요양시설 530곳의 월 식사재료비 평균은 288,584원이었습니다. 기관 특성별 표 4-6(뷰어 144쪽)의 인천·경기 233곳 평균은 323,109원이었습니다.',
+        action:'안양점·인천점의 게시 요금을 비교할 때 월 금액과 1식·1회·1박 단위를 맞추고, 식사재료비에 포함되는 항목을 함께 확인해 보세요.',
+        caveat:'2025년 조사 당시 응답 시설의 평균입니다. 인천·경기 수치는 두 지역을 합친 값이며, 상담에는 각 시설이 게시한 현재 요금을 사용하세요.'
+      },
+      {
+        id:'ltc-noncovered-family-disclosure', documentId:'ltc-noncovered-2025', topic:'비급여·비용',
+        title:'보호자가 필요하다고 본 비급여 비용 안내',
+        metric:'90.7%', metricLabel:'입소계약서에 비급여 서비스와 비용 명시가 필요하다는 응답',
+        periodLabel:'2025년 가족보호자 조사', viewerPage:131, printedPage:126, figure:'표 3-28',
+        rows:[
+          ['계약서에 서비스·비용 명시 필요', '90.7%'],
+          ['서비스와 비용 설명·동의 필요', '88.3%'],
+          ['홈페이지·게시판에 정보 게시가 도움 됨', '81.6%'],
+          ['기관별 비급여 정보 비교가 도움 됨', '77.9%']
+        ],
+        insight:'가족보호자 1,061명 중 962명(90.7%)은 입소계약서에 비급여 서비스와 비용을 적을 필요가 있다고 답했습니다. 설명과 동의가 필요하다는 응답은 937명(88.3%)이었습니다.',
+        action:'홈페이지, 입소 안내문, 계약서의 항목명과 금액 단위를 맞추고, 선택 서비스는 언제 비용이 붙는지 상담 때 설명해 보세요.',
+        caveat:'비급여 안내 방식에 대한 가족보호자의 응답입니다. 연구진의 운영지침 제안은 뷰어 189쪽에 있습니다.'
+      },
       {
         id:'restraint-abuse-victims', documentId:'restraint-report-2026', topic:'안전·사고',
         title:'신체 구속·감금 학대 판정 피해자 수', metric:'184명',

@@ -18,6 +18,8 @@ assert.equal(filterItems({query:'없는통계검색어'}).length, 0);
 assert.equal(filterItems({documentId:'housing'}).length, 2);
 assert.equal(filterItems({documentId:'ltc-2025'}).length, 12);
 assert.equal(filterItems({documentId:'restraint-report-2026'}).length, 2);
+assert.deepEqual(filterItems({view:'documents',topic:'비급여·비용',query:'건강보험연구원'}).map(x=>x.id), ['ltc-noncovered-2025']);
+assert.equal(filterItems({documentId:'ltc-noncovered-2025',topic:'비급여·비용'}).length, 4);
 assert.deepEqual(filterItems({query:'인천 270'}).map(x=>x.id), ['restraint-use-facilities']);
 assert.deepEqual(filterItems({view:'documents',query:'2023'}).map(x=>x.id), ['ltc-evaluation','housing']);
 assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 3);
@@ -39,6 +41,14 @@ for (const doc of data.documents) {
     assert.equal(new URL(doc.sourceUrl).hostname,'www.ppnews.kr');
     continue;
   }
+  if (doc.format === 'viewer') {
+    const url = new URL(doc.sourceUrl);
+    assert.equal(url.origin,'https://dl.nanet.go.kr');
+    assert.match(url.searchParams.get('controlNo'), /^MONO\d+$/);
+    assert.ok(Number.isInteger(doc.viewerPages) && doc.viewerPages > 0);
+    assert.equal(doc.downloadUrl,undefined);
+    continue;
+  }
   const source = manifest.documents.find(x=>x.id===doc.id);
   assert.ok(source);
   assert.equal(source.downloadUrl,doc.downloadUrl);
@@ -53,6 +63,15 @@ for (const doc of data.documents) {
 }
 for (const item of data.bookmarks) {
   if (item.rows) {
+    const doc = data.documents.find(x=>x.id===item.documentId);
+    assert.ok(doc?.topics.includes(item.topic));
+    if (doc.format === 'viewer') {
+      assert.ok(Number.isInteger(item.viewerPage) && item.viewerPage >= 1 && item.viewerPage <= doc.viewerPages);
+      assert.ok(Number.isInteger(item.printedPage) && item.printedPage > 0);
+      assert.match(item.figure,/^표 \d+(?:-\d+)?$/);
+    } else {
+      assert.equal(doc.format,'article');
+    }
     assert.ok(data.topics.includes(item.topic));
     assert.ok(item.rows.length >= 3);
     assert.ok(item.rows.every(row => row.length === 2));
