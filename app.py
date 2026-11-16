@@ -23,6 +23,7 @@ import resident_movement
 import recipient_history
 import bank_transactions
 import card_updates
+import erp_longterm_verification
 import aeo_missions
 import web_search_results
 import support_applications
@@ -119,6 +120,8 @@ class App(SimpleHTTPRequestHandler):
         if urllib.parse.urlsplit(self.path).path == '/api/card-updates':
             support_applications.send_json(self, 200, {'updatedAt': card_updates.recent(ROOT)})
             return
+        if erp_longterm_verification.handle(self, 'GET'):
+            return
         if clarity_report.handle(self, 'GET'):
             return
         if liability_insurance.handle(self, 'GET'):
@@ -176,6 +179,8 @@ class App(SimpleHTTPRequestHandler):
             return
         if urllib.parse.urlsplit(self.path).path == '/api/card-updates':
             support_applications.send_json(self, 200, {'updatedAt': card_updates.recent(ROOT)}, head=True)
+            return
+        if erp_longterm_verification.handle(self, 'HEAD'):
             return
         if clarity_report.handle(self, 'HEAD'):
             return

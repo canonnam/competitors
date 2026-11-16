@@ -24,7 +24,7 @@ COPY resident_movement.py /app/
 COPY recipient_history.py recipient-history.html /app/
 COPY bank_transactions.py bank-transactions.html /app/
 COPY card_updates.py /app/
-COPY erp-longterm-verification.html /app/
+COPY erp_longterm_verification.py erp-longterm-verification.html /app/
 COPY robots.txt favicon.ico /app/
 COPY data /app/data
 COPY service_knowledge.py /app/

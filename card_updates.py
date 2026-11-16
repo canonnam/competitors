@@ -10,6 +10,7 @@ import bank_transactions
 import claim_check
 import clarity_report
 import competitor_news
+import erp_longterm_verification
 import facility_projects
 import liability_insurance
 import naver_ads
@@ -127,6 +128,7 @@ def recent(root, now=None):
         pass
 
     sources = {
+        'erp-longterm-verification': lambda: [erp_longterm_verification.read_report().get('publishedAt')],
         'payroll-insurance': lambda: monthly_updates(payroll_insurance.root(), payroll_insurance.MONTH,
                                                     lambda report: [report['checkedAt']]),
         'recipient-history': lambda: monthly_updates(recipient_history.root(), recipient_history.MONTH,

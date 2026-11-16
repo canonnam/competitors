@@ -106,7 +106,7 @@ class MapAccessTests(unittest.TestCase):
                 self.assertEqual(raw,page.read_bytes())
 
     def test_all_read_and_write_apis_are_denied_before_dispatch_without_cookie(self):
-        routes = ('/api/operating-report','/api/card-updates','/api/naver-ads','/api/competitor-news',
+        routes = ('/api/operating-report','/api/card-updates','/api/erp-longterm-verification','/api/naver-ads','/api/competitor-news',
             '/api/maps-config','/api/nearby-facilities','/api/claim-check',
             '/api/search-visibility','/api/reputation-watch','/api/agency-news',
             '/api/support/payroll-insurance','/api/support/projects',
@@ -140,6 +140,18 @@ class MapAccessTests(unittest.TestCase):
         code,headers,raw=self.call('/assets/statistics-data.js',cookie=cookie)
         self.assertEqual(code,200)
         self.assertIn('no-store',headers['Cache-Control'])
+        report_path = Path(self.folder.name) / 'erp-longterm-verification.json'
+        report = {'updatedOn':'2026-11-16', 'months':{'2026-10':{'anyang':{'status':'complete'}}},
+                  'findings':[], 'updates':[]}
+        report_path.write_text(json.dumps(report), encoding='utf-8')
+        with patch.dict(os.environ, {'ERP_LONGTERM_VERIFICATION_PATH': str(report_path)}):
+            code,headers,raw=self.call('/api/erp-longterm-verification',cookie=cookie)
+            self.assertEqual(code,200)
+            self.assertIn('no-store',headers['Cache-Control'])
+            self.assertEqual(json.loads(raw),report)
+            code,headers,raw=self.call('/api/erp-longterm-verification','HEAD',cookie=cookie)
+            self.assertEqual((code,raw),(200,b''))
+            self.assertIn('no-store',headers['Cache-Control'])
         self.assertIn('Cookie',headers['Vary'])
         self.assertEqual(self.call('/app.py',cookie=cookie)[0],404)
 

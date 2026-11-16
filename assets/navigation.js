@@ -27,7 +27,7 @@
     {id:'facility-acquisition', category:'facility', title:'요양원 인수·개설', description:'인수 점검·허가 절차·지정심사 제출서류', keywords:'시설 매입 인수 개설 허가 설치신고 지정심사 건물도면 소방 전기 가스 체크리스트 컨설팅 HWP'},
     {id:'facility-3d', category:'facility', title:'시설 3D 지도', description:'이미지·PDF 자동 구성·공간 이름 연결·다층 건물 보기', keywords:'3D 3차원 입체 공간 건물 지도 도면 평면도 층 생활실 침대 5층 건축 PDF OCR 자동 공간 이름 추가 삭제'},
     {id:'claim-check', category:'operations', title:'지점별 청구 점검', description:'급여 청구 여부와 처리상태 확인', keywords:'공단 장기근속장려금 접수 안양 인천'},
-    {id:'erp-longterm-verification', category:'evaluation', title:'ERP와 롱텀보고 검증', description:'2026년 1~10월 케어포·공단 자료 대조', keywords:'안양점 인천점 장기요양 점검 평가 입퇴소 외박 근무 기타자료 프로그램'},
+    {id:'erp-longterm-verification', category:'evaluation', title:'ERP와 롱텀보고 검증', description:'케어포·공단 월별 점검 현황과 지적사항', keywords:'안양점 인천점 장기요양 점검 평가 입퇴소 외박 근무 기타자료 프로그램'},
     {id:'competitors', category:'market', title:'경쟁사 분석', description:'ERP·AI·디지털 돌봄 서비스 비교', keywords:'시장 기능 가격 운영 모델'},
     {id:'competitor-uiux', category:'market', title:'경쟁사 UIUX 분석', description:'엔젤·케어포·더비다 화면 비교와 실입력 사용성 테스트', keywords:'UIUX UX 사용성 화면비교 UXTEST 실입력 엔젤시스템 케어포 더비다 입소자 투약 본인부담금 메시지'},
     {id:'competitor-news', category:'market', title:'경쟁사 및 요양원 뉴스', description:'업계 소식과 사건·안전·정책 기사', keywords:'경쟁 뉴스 낙상 제도 사고'},

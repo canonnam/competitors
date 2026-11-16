@@ -1,5 +1,10 @@
 # 더비다 지식 창고 개발 환경
 
+## ERP·롱텀보고 지적사항 (2026-11-16)
+
+- 홈 카드와 상세 화면은 기존 사이트 로그인 뒤 같은 GET·HEAD `/api/erp-longterm-verification`을 읽는다. 월별 지적사항과 수정 이력은 Railway 비공개 볼륨의 `/data/erp-longterm-verification.json`에 둔다. 기존 Railway SSH 게시기는 월·지점별 결과를 잠금 안에서 병합하고 파일을 한 번에 교체한다. 로컬 검증 경로는 `ERP_LONGTERM_VERIFICATION_PATH`로 지정할 수 있다.
+- 월별 자료의 갱신과 검증 방법은 [ERP와 롱텀보고 월별 검증](ERP_LONGTERM_VERIFICATION.md)에 있다.
+
 ## 과거 급여파일 (2026-11-15)
 
 - 기존 `/data/payroll-insurance`와 schemaVersion 1에 선택적 `payrollSources`, `payrollNote`, 행별 `sourceNote`, `settlementAdjustment`를 추가한다. 원본 없는 보험료와 추가 지급행의 미기재 급여 항목은 null이다. 정기 수집의 두 지점·4종 보험 원본 검증은 유지한다.
