@@ -1,6 +1,80 @@
 {
-  "updated": "2026-11-13",
+  "updated": "2026-11-16",
   "ideas": [
+    {
+      "id": "waitlist-recruit-notice",
+      "updated": "2026-11-16",
+      "title": "대기자 모집 안내",
+      "summary": "공립 치매전담 시설의 모집 소식과 대기 관리 방식을 미리 알려, 가족이 신청 기회를 놓치지 않게 하는 안내 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "인천시의회 이범석 의원, 제2의료원 재정 부담·치매전담요양시설 모집 절차 개선 촉구",
+          "source": "경인글로벌뉴스",
+          "date": "2026-11-15",
+          "url": "https://www.kglobalnews.com/news/articleView.html?idxno=33561",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-15"
+    },
+    {
+      "id": "emergency-protocol-page",
+      "updated": "2026-11-16",
+      "title": "응급 시 이렇게",
+      "summary": "응급 때 연락·이송·병원 동행 순서를 홈에 사실대로 올리는 안내. 진료·입원 조치를 두는 제35조의6 신설안은 발의된 상태이며 통과된 의무로 쓰지 않는다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "장기요양기관, 응급 땐 진료·입원 조치 의무화…제35조의6 신설안",
+          "source": "시사매거진",
+          "date": "2026-11-14",
+          "url": "https://www.sisamagazine.co.kr/article/1000000000793",
+          "verified": "ok"
+        },
+        {
+          "title": "시흥시의회 응급상황 대응 간담회",
+          "source": "중앙뉴스타임스",
+          "date": "2026-10-22",
+          "url": "https://www.jnewstimes.com/news/article.html?no=765869",
+          "verified": "ok"
+        },
+        {
+          "title": "KB광교빌리지 현장기사 응급·병원 연계",
+          "source": "데일리안",
+          "date": "2026-10-20",
+          "url": "https://www.dailian.co.kr/news/view/1703262",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-14"
+    },
+    {
+      "id": "contact-concern-notice",
+      "updated": "2026-11-16",
+      "title": "접촉 우려 안내",
+      "summary": "가족이 돌봄 중 신체 접촉을 문제 삼으면 접수 담당, 확인 절차, 신고 경로를 공지에 미리 밝히는 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "돌봄 중 신체 접촉 우려를 가족이 알린 보도",
+          "source": "중앙일보",
+          "date": "2026-11-14",
+          "url": "https://www.joongang.co.kr/article/25478613",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-14"
+    },
     {
       "id": "digital-memory-photo",
       "updated": "2026-11-13",
@@ -136,14 +210,21 @@
     },
     {
       "id": "kimchi-guardian-party",
-      "updated": "2026-11-12",
+      "updated": "2026-11-16",
       "title": "김장·수육 파티",
-      "summary": "시설에서 김장한 뒤 보호자를 초청해 수육을 나누거나, 사회봉사 국민공모제처럼 지역 기관 일손을 받아 김장을 하는 행사 아이디어",
+      "summary": "시설에서 김장한 뒤 보호자를 초청해 수육을 나누거나, 1365 봉사자 일손과 사진 촬영을 받아 김장을 하는 행사 아이디어",
       "tags": [
         "프로그램",
         "가족소통"
       ],
       "articles": [
+        {
+          "title": "동행재활요양병원 김장데이 봉사자 모집",
+          "source": "러뷰",
+          "date": "2026-11-11",
+          "url": "https://www.lovu.co.kr/detail.html?id=1365_3546294",
+          "verified": "ok"
+        },
         {
           "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
           "source": "동양일보",
@@ -166,7 +247,7 @@
           "verified": "ok"
         }
       ],
-      "last_date": "2026-11-10"
+      "last_date": "2026-11-11"
     },
     {
       "id": "nursing-staff-share",
@@ -953,33 +1034,6 @@
           "date": "2026-09-28",
           "url": "http://www.hbmj.kr/p/notice/282",
           "verified": "blocked"
-        }
-      ],
-      "last_date": "2026-10-22"
-    },
-    {
-      "id": "emergency-protocol-page",
-      "updated": "2026-11-03",
-      "title": "응급 시 이렇게",
-      "summary": "야간 보고 순서·119 연락 기준·가까운 병원까지 걸리는 시간을 홈·플레이스에 사실대로 올리는 안내",
-      "tags": [
-        "홍보",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "시흥시의회 응급상황 대응 간담회",
-          "source": "중앙뉴스타임스",
-          "date": "2026-10-22",
-          "url": "https://www.jnewstimes.com/news/article.html?no=765869",
-          "verified": "ok"
-        },
-        {
-          "title": "KB광교빌리지 현장기사 응급·병원 연계",
-          "source": "데일리안",
-          "date": "2026-10-20",
-          "url": "https://www.dailian.co.kr/news/view/1703262",
-          "verified": "ok"
         }
       ],
       "last_date": "2026-10-22"
