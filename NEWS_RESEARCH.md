@@ -9,6 +9,7 @@
 - 첫 실행이나 누락 일정은 시작 시 보충한다. 전체 성공 시각과 마지막 시도 시각을 구분하며, 일부 검색이 실패해도 성공한 검색의 새 기사는 반영하고 실패한 검색과 기존 기사는 유지한다. 실패 시 30분 후 다시 시도하며, 홈 배지와 상세 화면에 수집 지연을 표시한다.
 - `GET /api/competitor-news`는 목록과 수집 상태를 반환한다. 홈은 `?summary=1`로 기사 수·최신 게시일·수집 상태만 조회한다. 브라우저는 첫 방문, 탭 복귀, 5분 간격으로 서버에 저장된 결과를 확인한다. 페이지 방문 자체는 외부 뉴스 수집을 실행하지 않는다.
 - 상태 확인: `updated_at`, `sync.enabled`, `sync.stale`, `sync.errors`, `sync.next_run`. 환경변수 `COMPETITOR_NEWS_DB_PATH` 기본값은 `/data/competitor-news.db`, `COMPETITOR_NEWS_SYNC_ENABLED` 기본값은 `true`이다. 로컬 미리보기는 별도 DB 경로를 지정한다.
+- 같은 09:00 집계 주기에서 실패한 대상만 30분 뒤 재시도한다. Google 뉴스가 HTTP 429를 반환하면 그 요청 이후의 대상을 대기 목록에 넣고 `Retry-After`가 30분보다 길면 해당 시각까지 기다린다. 정상 기사 보존과 전체 성공 시각 갱신 기준은 그대로 적용한다. 다음 09:00 주기에는 전체 목록을 다시 조회한다.
 - 수동 수집: `python competitor_news.py --sync`. 상태만 출력: `python competitor_news.py`. 수동 실행 전 `COMPETITOR_NEWS_DB_PATH`를 대상 DB로 지정한다.
 - 검증: `python -m unittest discover`; `node --test test_*.cjs`. 실제 RSS 첫 수집에서 18개 검색 성공, 자동 기사 37건을 확인했다. UI에서 경쟁사 필터, 더 보기, 기사 링크 이동과 홈 집계를 확인했다.
 

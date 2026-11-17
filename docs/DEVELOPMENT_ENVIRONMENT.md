@@ -1,5 +1,9 @@
 # 더비다 지식 창고 개발 환경
 
+## 경쟁사·요양원 뉴스 재시도 (2026-11-17)
+
+- 당일 실패 대상은 기존 SQLite `state.errors`에서 읽으며 429 대기 시각은 같은 상태 테이블의 `retry_not_before`로 저장한다. 이 값이 없는 기존 저장본에도 기본 30분 재시도를 적용한다. 기존 뉴스 환경변수와 볼륨을 사용한다.
+
 ## ERP·롱텀보고 지적사항 (2026-11-16)
 
 - 홈 카드와 상세 화면은 기존 사이트 로그인 뒤 같은 GET·HEAD `/api/erp-longterm-verification`을 읽는다. 월별 지적사항과 수정 이력은 Railway 비공개 볼륨의 `/data/erp-longterm-verification.json`에 둔다. 기존 Railway SSH 게시기는 월·지점별 결과를 잠금 안에서 병합하고 파일을 한 번에 교체한다. 로컬 검증 경로는 `ERP_LONGTERM_VERIFICATION_PATH`로 지정할 수 있다.

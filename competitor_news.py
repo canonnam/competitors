@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import sqlite3
 import threading
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -200,12 +201,38 @@ def due_at(now):
 
 
 def next_run(state, now):
-    if state.get("errors") and state.get("last_attempt"):
-        return timestamp(state["last_attempt"]) + timedelta(minutes=30)
+    cycle = due_at(now)
+    attempt = timestamp(state.get("last_attempt"))
     last = timestamp(state.get("last_success"))
-    if last is None or last < due_at(now):
-        return now
-    return due_at(now) + timedelta(days=1)
+    if state.get("errors") and attempt and attempt >= cycle:
+        scheduled = min(attempt + timedelta(minutes=30), cycle + timedelta(days=1))
+    elif last is None or last < cycle:
+        scheduled = now
+    else:
+        scheduled = cycle + timedelta(days=1)
+    pause_until = timestamp(state.get("retry_not_before"))
+    return max(scheduled, pause_until) if pause_until else scheduled
+
+
+def scheduled_targets(state, now):
+    attempt = timestamp(state.get("last_attempt"))
+    failed = set(state.get("errors", []))
+    if failed and attempt and attempt >= due_at(now):
+        targets = [target for target in TARGETS if target["name"] in failed]
+        if len(targets) == len(failed):
+            return targets
+    return TARGETS
+
+
+def rate_limit_deadline(error, now):
+    fallback = now + timedelta(minutes=30)
+    if not error.headers or not (header := error.headers.get("Retry-After", "").strip()):
+        return fallback
+    try:
+        deadline = now + timedelta(seconds=int(header)) if header.isdecimal() else parsedate_to_datetime(header)
+        return max(fallback, deadline)
+    except (TypeError, ValueError, OverflowError):
+        return fallback
 
 
 def sync(path, now=None, fetcher=fetch_feed, targets=None, stop=None):
@@ -215,11 +242,20 @@ def sync(path, now=None, fetcher=fetch_feed, targets=None, stop=None):
         return None
     try:
         stories, errors = [], []
-        for target in targets:
+        retry_not_before = None
+        for index, target in enumerate(targets):
             if stop and stop.is_set():
                 return None
             try:
                 stories.extend(parse_feed(fetcher(target), target, now))
+            except urllib.error.HTTPError as error:
+                if error.code == 429:
+                    retry_not_before = rate_limit_deadline(error, datetime.now(KST))
+                    errors.extend(pending["name"] for pending in targets[index:])
+                    LOG.warning("News feed rate limited: %s (HTTP 429); remaining feeds deferred", target["id"])
+                    break
+                errors.append(target["name"])
+                LOG.warning("News feed unavailable: %s (HTTP %s)", target["id"], error.code)
             except Exception:
                 errors.append(target["name"])
                 LOG.warning("News feed unavailable: %s", target["id"])
@@ -230,6 +266,7 @@ def sync(path, now=None, fetcher=fetch_feed, targets=None, stop=None):
             write_state(db, "last_attempt", now.isoformat())
             write_state(db, "errors", errors)
             write_state(db, "last_added", added)
+            write_state(db, "retry_not_before", retry_not_before.isoformat() if retry_not_before else None)
             if not errors:
                 write_state(db, "last_success", now.isoformat())
         LOG.info("News sync completed: %s added, %s failed feeds", added, len(errors))
@@ -294,7 +331,7 @@ def run_scheduler(path, stop):
             with connect(path) as db:
                 state = read_state(db)
             if now >= next_run(state, now):
-                sync(path, now=now, stop=stop)
+                sync(path, now=now, targets=scheduled_targets(state, now), stop=stop)
         except Exception:
             LOG.exception("News scheduler will retry; stored stories retained")
             if stop.wait(1800):

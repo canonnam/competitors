@@ -10,6 +10,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 import app
 import competitor_news as news
@@ -214,6 +215,41 @@ class NewsTests(unittest.TestCase):
         self.assertIsNone(report['updated_at'])
         self.assertEqual(report['sync']['errors'], ['케어링'])
 
+    def test_scheduled_retry_only_fetches_failed_targets_in_same_cycle(self):
+        other = next(row for row in news.TARGETS if row['id'] == 'caring')
+        news.sync(self.path, NOW, lambda target: feed() if target == TARGET else b'bad', [TARGET, other])
+        with news.connect(self.path) as db:
+            state = news.read_state(db)
+        retry = NOW + timedelta(minutes=30)
+        targets = news.scheduled_targets(state, retry)
+        self.assertEqual(targets, [other])
+        news.sync(self.path, retry, lambda _: b'<rss><channel><title>News</title></channel></rss>', targets)
+        after = news.report(self.path, retry)
+        self.assertEqual(after['sync']['errors'], [])
+        self.assertEqual(after['updated_at'], retry.isoformat())
+        self.assertEqual(after['total'], SEED_COUNT + 1)
+        self.assertEqual(news.scheduled_targets(state, news.due_at(NOW) + timedelta(days=1)), news.TARGETS)
+
+    def test_rate_limit_defers_remaining_targets_and_honors_retry_after(self):
+        checked = datetime.now(news.KST)
+        other = next(row for row in news.TARGETS if row['id'] == 'caring')
+        unseen = next(row for row in news.TARGETS if row['id'] == 'carefor')
+        calls = []
+
+        def fetch(target):
+            calls.append(target)
+            if target == other:
+                raise HTTPError(news.feed_url(target), 429, 'Too Many Requests', {'Retry-After': '2400'}, None)
+            return feed(published=checked)
+
+        news.sync(self.path, checked, fetch, [TARGET, other, unseen])
+        self.assertEqual(calls, [TARGET, other])
+        after = news.report(self.path, checked)
+        self.assertEqual(after['sync']['errors'], [other['name'], unseen['name']])
+        self.assertGreaterEqual(news.timestamp(after['sync']['next_run']), checked + timedelta(minutes=40))
+        self.assertEqual(after['total'], SEED_COUNT + 1)
+        self.assertIsNone(after['updated_at'])
+
     def test_valid_empty_feed_is_success_and_preserves_existing_articles(self):
         news.sync(self.path, NOW, lambda _: b'<rss><channel><title>No news</title></channel></rss>', [TARGET])
         report = news.report(self.path, NOW)
@@ -230,6 +266,9 @@ class NewsTests(unittest.TestCase):
         after = boundary + timedelta(hours=2)
         self.assertEqual(news.next_run(state, after), after)
         self.assertEqual(news.next_run({'last_success': boundary.isoformat()}, after), boundary+timedelta(days=1))
+        failures = {**state, 'last_attempt': before.isoformat(), 'errors': [TARGET['name']]}
+        self.assertEqual(news.next_run(failures, before), boundary)
+        self.assertEqual(news.next_run(failures, boundary), boundary)
 
     def test_archive_keeps_prior_records_and_orders_newest_first(self):
         for index in range(3):
