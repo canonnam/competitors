@@ -126,7 +126,7 @@
       const article=make('article','agency-item'), meta=make('div','agency-item-meta');
       const time=make('time','',item.published_at);time.dateTime=item.published_at;
       meta.append(time,make('span','',item.agency+' · '+item.source));
-      const mark=root.NewsBadge?.todayMark(document,item.first_seen_at,item.collected_at);
+      const mark=root.NewsBadge?.articleMark(document,item);
       if(mark)meta.append(mark);
       if(item.pinned)meta.append(make('span','agency-pin','게시판 공지'));
       if(item.kind==='support') {

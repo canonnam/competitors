@@ -12,6 +12,8 @@ test('timestamp and Korean date both expire at midnight, including future and in
   assert.equal(isToday('2026-11-11T15:00:00Z',midnight),true);
   assert.equal(isToday('2026-11-12',midnight),true);
   assert.equal(isToday('2026-11-11',midnight),false);
+  assert.equal(isToday('2026-11-11T24:00:00+09:00',midnight),false);
+  assert.equal(isToday('2026-02-30T00:00:00+09:00',Date.parse('2026-03-02T12:00:00+09:00')),false);
   for(const value of [null,'invalid','2026-11-12T00:00:00','2026-11-12T00:00:01+09:00','2026-11-13']) {
     assert.equal(isToday(value,midnight),false);
   }
@@ -40,7 +42,7 @@ test('an open page expires visible marks at Korean midnight even after reading o
   api.create('agency',{detail:true}).update(['read']);
   assert.equal(api.counts().agency,0);
   assert.equal(api.todayMark(document,'2026-11-10'),null);
-  marks.push(api.todayMark(document,'2026-11-10','2026-11-11T14:59:57Z'));
+  marks.push(api.articleMark(document,{collected_at:'2026-11-10',updated_at:'2026-11-11T14:59:57Z'}));
   assert.equal(marks[0].textContent,'N');
   assert.equal(delay,2000);
   now=midnight;

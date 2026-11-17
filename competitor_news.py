@@ -56,8 +56,21 @@ def title_key(title, published_at):
 
 
 def put_article(db, item):
-    # Never overwrite the human-reviewed summary when RSS rediscovers an article.
     key = title_key(item["title"], item["published_at"])
+    if not item["reviewed"]:
+        exact = db.execute("SELECT id,payload FROM articles WHERE url=?", (item["url"],)).fetchone()
+        if exact:
+            previous = json.loads(exact["payload"])
+            # A second feed may give the same article a different tracking URL or search target.
+            # Treat only a changed headline or source at the same URL as an RSS revision.
+            if not previous["reviewed"] and any(item[field] != previous[field] for field in ("title", "source")):
+                revised_key = title_key(item["title"], previous["published_at"])
+                if not db.execute("SELECT 1 FROM articles WHERE title_key=? AND id<>?",
+                                  (revised_key, exact["id"])).fetchone():
+                    previous.update(title=item["title"], source=item["source"], updated_at=item["collected_at"])
+                    db.execute("UPDATE articles SET title_key=?,payload=? WHERE id=?",
+                               (revised_key, json.dumps(previous, ensure_ascii=False), exact["id"]))
+            return 0
     if db.execute("SELECT 1 FROM articles WHERE url=? OR title_key=?", (item["url"], key)).fetchone():
         return 0
     db.execute("INSERT INTO articles(id,url,title_key,published_at,reviewed,payload) VALUES(?,?,?,?,?,?)",
@@ -85,13 +98,25 @@ def init_db(path):
             for item in json.loads(seed):
                 # A reviewed update can enrich a previously collected headline.
                 key = title_key(item["title"], item["published_at"])
-                existing = db.execute("SELECT id FROM articles WHERE url=? OR title_key=?",
-                                      (item["url"], key)).fetchone()
+                existing = db.execute(
+                    "SELECT id,payload FROM articles WHERE id=? OR url=? OR title_key=? ORDER BY id=? DESC LIMIT 1",
+                    (item["id"], item["url"], key, item["id"])).fetchone()
                 if existing:
-                    item = {**item, "id": existing[0]}
+                    previous = json.loads(existing["payload"])
+                    dates = {"collected_at", "first_seen_at", "updated_at"}
+                    item = {**item, "id": existing["id"]}
+                    changed = ({k: v for k, v in item.items() if k not in dates} !=
+                               {k: v for k, v in previous.items() if k not in dates})
+                    if "first_seen_at" in previous:
+                        item["first_seen_at"] = previous["first_seen_at"]
+                    item["collected_at"] = previous["collected_at"]
+                    if changed:
+                        item["updated_at"] = datetime.now(KST).isoformat()
+                    elif "updated_at" in previous:
+                        item["updated_at"] = previous["updated_at"]
                     db.execute("UPDATE articles SET title_key=?,published_at=?,reviewed=?,payload=? WHERE id=?",
                                (key, item["published_at"], int(item["reviewed"]),
-                                json.dumps(item, ensure_ascii=False), existing[0]))
+                                json.dumps(item, ensure_ascii=False), existing["id"]))
                 else:
                     put_article(db, item)
             write_state(db, "seeded", True)

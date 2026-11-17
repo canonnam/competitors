@@ -23,6 +23,9 @@ import support_applications
 import website_intake
 
 KST = timezone(timedelta(hours=9))
+DAY = re.compile(r'\d{4}-\d{2}-\d{2}')
+ZONED_TIMESTAMP = re.compile(
+    r'\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)')
 
 
 def read_json(path):
@@ -62,6 +65,7 @@ def article_dates(feed):
     for item in feed.report(feed.db_path())['items']:
         yield item.get('first_seen_at')
         yield item.get('collected_at')
+        yield item.get('updated_at')
 
 
 def reputation_dates():
@@ -72,7 +76,6 @@ def reputation_dates():
 
 def curated_dates(path, item_key):
     data = read_json(path)
-    yield data.get('updated')
     for item in data.get(item_key, []):
         yield item.get('updated')
         yield item.get('collected_date')
@@ -99,14 +102,17 @@ def recent(root, now=None):
     today = now.astimezone(KST).date()
     updated = {}
 
-    def keep(feature, value, *, date_only=False):
+    def keep(feature, value):
         if not isinstance(value, str):
+            return
+        date_only = DAY.fullmatch(value)
+        if not date_only and not ZONED_TIMESTAMP.fullmatch(value):
             return
         try:
             at = datetime.fromisoformat(value)
         except ValueError:
             return
-        if date_only and re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+        if date_only:
             at = at.replace(tzinfo=KST)
         if at.tzinfo is None or at > now or at.astimezone(KST).date() != today:
             return
@@ -159,7 +165,7 @@ def recent(root, now=None):
     for feature, values in sources.items():
         try:
             for value in values():
-                keep(feature, value, date_only=feature in ('trend', 'support-resources', 'nearby-facilities'))
+                keep(feature, value)
         except (OSError, ValueError, KeyError, TypeError, AttributeError, sqlite3.Error):
             continue
     return {feature: at.astimezone(timezone.utc).isoformat() for feature, at in updated.items()}

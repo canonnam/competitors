@@ -8,12 +8,12 @@
   const todayLabel='오늘 처음 수집되었거나 갱신됨 (한국시간)';
   const koreaDayStart=now=>Math.floor((now+koreaOffset)/dayMs)*dayMs-koreaOffset;
   function isToday(value, now=Date.now()) {
-    if(typeof value!=='string')return false;
+    if(typeof value!=='string'||value.startsWith('0000-'))return false;
     const dateOnly=/^\d{4}-\d{2}-\d{2}$/.test(value);
-    if(!dateOnly&&!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value))return false;
+    if(!dateOnly&&!/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.test(value))return false;
+    const date=value.slice(0,10), day=Date.parse(date+'T00:00:00Z');
+    if(!Number.isFinite(day)||new Date(day).toISOString().slice(0,10)!==date)return false;
     const at=Date.parse(dateOnly?value+'T00:00:00+09:00':value);
-    if(!Number.isFinite(at))return false;
-    if(dateOnly&&new Date(at+koreaOffset).toISOString().slice(0,10)!==value)return false;
     return koreaDayStart(now)<=at&&at<=now;
   }
   function todayMark(doc, ...dates) {
@@ -28,6 +28,7 @@
     mark.setAttribute('aria-label',todayLabel);
     return mark;
   }
+  const articleMark=(doc, item)=>todayMark(doc,item.first_seen_at,item.collected_at,item.updated_at);
   if(root.document?.querySelectorAll&&root.setTimeout) {
     let day=koreaDayStart(Date.now()), timer;
     function syncDay() {
@@ -87,7 +88,7 @@
     root.addEventListener('storage',event=>{if(event.key===null||event.key?.startsWith('vida-news-'))publish();});
     root.addEventListener('pageshow',publish);
   }
-  const api={create,createTracker,counts,subscribe,isToday,todayMark,todayLabel};
+  const api={create,createTracker,counts,subscribe,isToday,todayMark,articleMark,todayLabel};
   root.NewsBadge=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

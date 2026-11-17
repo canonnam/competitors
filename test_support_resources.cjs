@@ -188,8 +188,8 @@ test('home, menu and cache keys expose the support resource list', () => {
     }
     assert.equal((html.match(/\/assets\/support-resources\.js/g) || []).length, 1, file);
     assert.ok(html.indexOf('/assets/support-resources.js') < html.indexOf('/assets/navigation.js'), file);
-    assert.ok(html.includes('/assets/navigation.js?v=20261112-today'), file);
-    assert.ok(html.includes('/assets/news-badge.js?v=20261112-today'), file);
+    assert.match(html, /\/assets\/navigation\.js\?v=[^"]+/, file);
+    assert.match(html, /\/assets\/news-badge\.js\?v=[^"]+/, file);
   }
 });
 

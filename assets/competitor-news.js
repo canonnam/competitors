@@ -104,7 +104,7 @@
       const dateLine = make('div', 'date');
       const time = make('time', '', date(item.published_at));
       time.dateTime = item.published_at; dateLine.append(time);
-      const mark=root.NewsBadge?.todayMark(document,item.first_seen_at,item.collected_at);
+      const mark=root.NewsBadge?.articleMark(document,item);
       if(mark)dateLine.append(' ',mark);
       article.append(dateLine, make('h2', '', item.title));
       if (item.reviewed && item.summary) article.append(make('p', '', item.summary));

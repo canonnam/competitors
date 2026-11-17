@@ -30,10 +30,11 @@ class OperatingReportTests(unittest.TestCase):
             },
             'operating_report.json': {},
             'trend_ideas.json': {'ideas': [{'updated': '2026-11-12'}]},
-            'support_resources.json': {'items': [{'collected_date': '2026-11-11'}]},
+            'support_resources.json': {'updated': '2026-11-12', 'items': [{'collected_date': '2026-11-11'}]},
             'nearby_facilities.json': {},
         }
         notice = {'first_seen_at': '2026-11-10T09:00:00+09:00', 'collected_at': '2026-11-12T00:00:00+09:00'}
+        revised_article = {'collected_at': '2026-11-10', 'updated_at': '2026-11-11T15:00:00Z'}
         with (
             patch.object(updates, 'read_json', side_effect=lambda path: by_file[path.name]),
             patch.object(updates, 'monthly_updates', return_value=[]),
@@ -45,13 +46,13 @@ class OperatingReportTests(unittest.TestCase):
             patch.object(updates, 'sqlite_dates', return_value=[]),
             patch.object(updates.website_intake, 'summary', return_value={}),
             patch.object(updates.clarity_report, 'report', return_value={}),
-            patch.object(updates.competitor_news, 'report', return_value={'items': []}),
+            patch.object(updates.competitor_news, 'report', return_value={'items': [revised_article]}),
             patch.object(updates.agency_news, 'report', return_value={'items': [notice]}),
         ):
             before = updates.recent(ROOT, datetime.fromisoformat('2026-11-11T14:59:59+00:00'))
             midnight = updates.recent(ROOT, datetime.fromisoformat('2026-11-11T15:00:00+00:00'))
         self.assertEqual(set(before), {'statistics', 'support-resources'})
-        self.assertEqual(set(midnight), {'competitors', 'agency-news', 'trend'})
+        self.assertEqual(set(midnight), {'competitors', 'competitor-news', 'agency-news', 'trend'})
 
     def test_read_only_timestamp_lookup_uses_saved_dates_without_creating_a_database(self):
         with tempfile.TemporaryDirectory() as tmp:

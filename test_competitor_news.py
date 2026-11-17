@@ -63,7 +63,8 @@ class NewsTests(unittest.TestCase):
 
     def test_reviewed_seed_enriches_prior_headline_and_keeps_its_identity(self):
         original = news.report(self.path, NOW)['items'][0]
-        headline = {**original, 'id': 'earlier-rss-id', 'summary': '', 'reviewed': False}
+        collected = (NOW - timedelta(days=2)).isoformat()
+        headline = {**original, 'id': 'earlier-rss-id', 'summary': '', 'reviewed': False, 'collected_at': collected}
         with news.connect(self.path) as db:
             db.execute('DELETE FROM articles WHERE id=?', (original['id'],))
             news.put_article(db, headline)
@@ -72,6 +73,8 @@ class NewsTests(unittest.TestCase):
         updated = next(row for row in news.report(self.path, NOW)['items'] if row['id'] == 'earlier-rss-id')
         self.assertEqual(updated['summary'], original['summary'])
         self.assertTrue(updated['reviewed'])
+        self.assertEqual(updated['collected_at'], collected)
+        self.assertGreater(datetime.fromisoformat(updated['updated_at']), datetime.fromisoformat(collected))
         self.assertEqual(news.report(self.path, NOW)['total'], SEED_COUNT)
 
     def test_retired_supplier_is_hidden_from_list_summary_and_shared_reader(self):
@@ -165,6 +168,24 @@ class NewsTests(unittest.TestCase):
         news.sync(self.path, NOW, lambda _: feed(title='케어닥 : 새로운 돌봄 서비스 발표'), [TARGET])
         self.assertEqual(news.report(self.path, NOW)['total'], SEED_COUNT + 1)
         self.assertEqual(news.report(self.path, NOW, summary=True)['article_ids'], first_ids)
+
+    def test_same_article_revision_preserves_first_collection_and_ignores_rediscovery(self):
+        def current():
+            return next(row for row in news.report(self.path, NOW)['items'] if not row['reviewed'])
+
+        news.sync(self.path, NOW, lambda _: feed(), [TARGET])
+        original = current()
+        tomorrow = NOW + timedelta(days=1)
+        news.sync(self.path, tomorrow, lambda _: feed(), [TARGET])
+        self.assertEqual(current(), original)
+        revision = feed(title='케어닥, 새로운 돌봄 서비스 시범 운영')
+        self.assertEqual(news.sync(self.path, tomorrow, lambda _: revision, [TARGET])['added'], 0)
+        news.sync(self.path, tomorrow + timedelta(days=1), lambda _: revision, [TARGET])
+        revised = current()
+        self.assertEqual(revised['id'], original['id'])
+        self.assertEqual(revised['collected_at'], NOW.isoformat())
+        self.assertEqual(revised['updated_at'], tomorrow.isoformat())
+        self.assertEqual(revised['title'], '케어닥, 새로운 돌봄 서비스 시범 운영')
 
     def test_rss_never_replaces_reviewed_summary(self):
         original = news.report(self.path, NOW)['items'][0]
