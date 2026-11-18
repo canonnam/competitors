@@ -1,6 +1,99 @@
 {
-  "updated": "2026-11-17",
+  "updated": "2026-11-18",
   "ideas": [
+    {
+      "id": "guardian-info-table",
+      "updated": "2026-11-18",
+      "title": "보호자 정보표",
+      "summary": "등급 조건·월 비용·인력·식사·면회·이송·셔틀을 플레이스와 홈에 표로 올리는 아이디어. 순위가 올랐다는 말은 광고 업체의 사례 주장이다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "더바른컨설팅, 보호자가 확인하는 항목을 표로 올리라는 칼럼",
+          "source": "더바른컨설팅",
+          "date": "2026-11-18",
+          "url": "https://yeggu.com/column/%EC%9A%94%EC%96%91%EC%9B%90%EB%84%A4%EC%9D%B4%EB%B2%84%ED%94%8C%EB%A0%88%EC%9D%B4%EC%8A%A4%EC%83%81%EC%9C%84%EB%85%B8%EC%B6%9C%EA%B4%91%EA%B3%A0%EC%97%85%EC%B2%B4",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "long-stay-daily",
+      "updated": "2026-11-18",
+      "title": "오래 머무는 일상",
+      "summary": "시설에서 지내는 기간이 길다는 조사 결과를 전하고, 하루 생활과 방의 사생활 여건을 보호자에게 보여주는 아이디어. 보사연 조사의 평균 입소 기간은 3.6년이다",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "“엄마는 아파도 집에서 있고 싶다”… 요양시설 한 번 가면 3.6년 지내",
+          "source": "서울신문",
+          "date": "2026-11-18",
+          "url": "https://www.seoul.co.kr/news/society/health-welfare/2026/11/18/20261118010008",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "monthly-home-letter",
+      "updated": "2026-11-18",
+      "title": "월간 가정통신문",
+      "summary": "매달 급여제공 기록을 바탕으로 건강 상태와 다음 일정을 보호자에게 묶어서 보내는 소통. 건보공단 급여제공관리 전산은 기관이 이용료 없이 돌봄 과정을 기록하는 서비스다",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "건보공단, 요양원에 '어르신 돌봄 기록 서비스' 확대",
+          "source": "연합뉴스",
+          "date": "2026-11-17",
+          "url": "https://www.yna.co.kr/view/AKR20261117060600530",
+          "verified": "ok"
+        },
+        {
+          "title": "MTN 스마트장기요양 앱 급여제공기록지 안내",
+          "source": "MTN",
+          "date": "2026-10-22",
+          "url": "https://news.mtn.co.kr/article/2026102207341717053",
+          "verified": "ok"
+        },
+        {
+          "title": "부평행복마지 10월 가정통신문",
+          "source": "부평행복마지",
+          "date": "2026-09-28",
+          "url": "http://www.hbmj.kr/p/notice/282",
+          "verified": "blocked"
+        }
+      ],
+      "last_date": "2026-11-17"
+    },
+    {
+      "id": "barrier-check-photos",
+      "updated": "2026-11-18",
+      "title": "안전시설 점검 사진",
+      "summary": "손잡이·계단·점자블록·위생시설을 시설이 직접 점검하고 사진을 보호자에게 공개하는 아이디어. 이번 기사는 공공 시립요양원의 장애물 없는 생활환경 본인증 반려 사례다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "145억 들여 지었는데 BF 인증 '부적합'…인천시립요양원 7억 또 투입",
+          "source": "중부일보",
+          "date": "2026-11-17",
+          "url": "https://www.joongboo.com/news/articleView.html?idxno=363742777",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-17"
+    },
     {
       "id": "actual-roster-share",
       "updated": "2026-11-17",
@@ -1074,32 +1167,6 @@
           "date": "2026-10-22",
           "url": "https://www.idjnews.kr/news/articleView.html?idxno=303441",
           "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-22"
-    },
-    {
-      "id": "monthly-home-letter",
-      "updated": "2026-11-03",
-      "title": "월간 가정통신문",
-      "summary": "매달 급여제공기록지·건강 상태·개별 활동사진·다음 달 일정표를 묶어 보호자에게 보내는 소통",
-      "tags": [
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "MTN 스마트장기요양 앱 급여제공기록지 안내",
-          "source": "MTN",
-          "date": "2026-10-22",
-          "url": "https://news.mtn.co.kr/article/2026102207341717053",
-          "verified": "ok"
-        },
-        {
-          "title": "부평행복마지 10월 가정통신문",
-          "source": "부평행복마지",
-          "date": "2026-09-28",
-          "url": "http://www.hbmj.kr/p/notice/282",
-          "verified": "blocked"
         }
       ],
       "last_date": "2026-10-22"
