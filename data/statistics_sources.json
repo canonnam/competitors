@@ -1,7 +1,64 @@
 {
-  "reviewedAt": "2026-09-18",
+  "reviewedAt": "2026-11-18",
   "scaleTo": 1800,
   "documents": [
+    {
+      "id": "kdi-skilled-nursing-2026",
+      "downloadUrl": "https://www.kdi.re.kr/file/download?atch_no=4S2XKRCMrV0cM31dY0uI7g%3D%3D",
+      "sourceUrl": "https://www.kdi.re.kr/research/focusView?pub_no=19320",
+      "pdfPages": 8,
+      "sha256": "a3e309ba713ef4280859060bba58bddb59d7a8c7a861b63c735c50d0f33673b2",
+      "captures": [
+        {
+          "id": "kdi-nursing-utilization",
+          "pdfPage": 6,
+          "printedPage": 6,
+          "figure": "표 2",
+          "image": "/assets/statistics/kdi-nursing-utilization.png",
+          "capture": [
+            145,
+            109,
+            1131,
+            441
+          ]
+        },
+        {
+          "id": "kdi-nursing-conditions",
+          "pdfPage": 6,
+          "printedPage": 6,
+          "figure": "표 3",
+          "image": "/assets/statistics/kdi-nursing-conditions.png",
+          "capture": [
+            144,
+            1377,
+            1131,
+            1704
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kiri-care-annuity-2026",
+      "downloadUrl": "https://www.kiri.or.kr/report/downloadFile.do?docId=899539",
+      "sourceUrl": "https://www.kiri.or.kr/publication/list.do?catId=0&docId=899539&page=1&parentCatId=13&searchCon=&searchWord=",
+      "pdfPages": 9,
+      "sha256": "8cc1575eb99b5d51c8687cea04c35d2f0b1cb08ca0176cc0d822239e01daccdc",
+      "captures": [
+        {
+          "id": "kiri-grade1-facility-cost",
+          "pdfPage": 8,
+          "printedPage": 17,
+          "figure": "5절 결론 및 시사점",
+          "image": "/assets/statistics/kiri-grade1-facility-cost.png",
+          "capture": [
+            164,
+            1546,
+            1164,
+            1624
+          ]
+        }
+      ]
+    },
     {
       "id": "ltc-2025",
       "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0019&list_no=1491730&seq=1",

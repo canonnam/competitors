@@ -1,6 +1,6 @@
 {
-  "sourceHash": "94aedd61f686738e0deab18cac7be87ca2d737cd6bfcb92764eb37322cf120c2",
-  "reviewedAt": "2026-11-16",
+  "sourceHash": "5f79a9c02e8eec6d1d1118f6f7dbdded2d3f2b7ff5756b5892b99357e31ca388",
+  "reviewedAt": "2026-11-18",
   "portalUrl": "https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html",
   "topics": [
     "기관평가",
@@ -12,6 +12,47 @@
     "디지털 돌봄"
   ],
   "documents": [
+    {
+      "id": "kdi-skilled-nursing-2026",
+      "title": "노인요양시설의 숙련 간호인력 확충 효과와 정책 방향",
+      "author": "권정현",
+      "publisher": "한국개발연구원(KDI)",
+      "publication": "KDI FOCUS 통권 제156호",
+      "published": "2026.11.03",
+      "survey": "장기요양보험 청구·건강보험 명세서 연계 분석",
+      "periodLabel": "2016년 1월~2023년 12월",
+      "year": 2023,
+      "pages": "1–8",
+      "pdfPages": 8,
+      "topics": [
+        "인력·운영",
+        "돌봄·품질"
+      ],
+      "summary": "노인요양시설에서 간호인력 중 간호사 비중의 변화와 시설급여 수급자의 의료 이용·건강보험 진료비를 분석했습니다.",
+      "scope": "2016년 1월~2023년 12월 운영을 지속한 요양시설 2,890곳의 시설급여 수급자 자료입니다. 장기요양·건강보험 청구를 연계한 수급자-월 관측치 10,841,626건이며 개인 수가 아닙니다. 분석 대상과 방법은 본문·PDF 4쪽을 참고하세요.",
+      "sourceUrl": "https://www.kdi.re.kr/research/focusView?pub_no=19320",
+      "downloadUrl": "https://www.kdi.re.kr/file/download?atch_no=4S2XKRCMrV0cM31dY0uI7g%3D%3D"
+    },
+    {
+      "id": "kiri-care-annuity-2026",
+      "title": "중산층 고령자를 위한 즉시형 장기요양연금 도입 필요성과 과제",
+      "author": "송윤아",
+      "publisher": "보험연구원(KIRI)",
+      "publication": "KIRI 리포트 · 포커스",
+      "published": "2026.11.09",
+      "survey": "한·영·미 제도·상품 비교와 국내 급여비 사례",
+      "periodLabel": "국내 2008·2026년 급여비 비교",
+      "year": 2026,
+      "pages": "10–18",
+      "pdfPages": 9,
+      "topics": [
+        "비급여·비용"
+      ],
+      "summary": "돌봄이 필요해진 시점의 비용 대비 수단을 살펴보고, 영국·미국 사례와 국내 제도를 비교한 정책 연구입니다.",
+      "scope": "별도 설문이나 추적 표본 없이 국내외 공적 지원·보험상품 사례를 비교합니다. 비용 사례의 대상은 국내 요양시설 장기요양 1등급 이용자, 월 30일 기준입니다.",
+      "sourceUrl": "https://www.kiri.or.kr/publication/list.do?catId=0&docId=899539&page=1&parentCatId=13&searchCon=&searchWord=",
+      "downloadUrl": "https://www.kiri.or.kr/report/downloadFile.do?docId=899539"
+    },
     {
       "id": "ltc-noncovered-2025",
       "format": "viewer",
@@ -206,6 +247,69 @@
     }
   ],
   "bookmarks": [
+    {
+      "id": "kdi-nursing-utilization",
+      "documentId": "kdi-skilled-nursing-2026",
+      "topic": "인력·운영",
+      "title": "간호사 비중과 입소자의 의료 이용·진료비",
+      "periodLabel": "2016년 1월~2023년 12월",
+      "pdfPage": 6,
+      "printedPage": 6,
+      "figure": "표 2",
+      "capture": [
+        145,
+        109,
+        1131,
+        441
+      ],
+      "insight": "간호인력 중 간호사 비중이 10%p 높을 때 총내원일수는 0.33%, 입원일수는 0.49%, 건강보험 진료비는 7.7% 감소한 것으로 추정했습니다.",
+      "action": "간호인력 구성과 함께 입소자 의료기관 방문·입원 현황을 운영 지표로 살펴볼 때 참고할 수 있습니다.",
+      "caveat": "2018년 최저임금 인상을 도구변수로 사용한 2단계 추정입니다. 10%p의 기준은 전체 직원이 아닌 시설 간호인력입니다. 개별 시설의 진료비나 예산 절감액을 예측하는 수치가 아닙니다.",
+      "alt": "KDI 표 2. 총내원일수·입원일수·외래일수와 건강보험 진료비 추정치, 평균, 분석 주석.",
+      "image": "/assets/statistics/kdi-nursing-utilization.png"
+    },
+    {
+      "id": "kdi-nursing-conditions",
+      "documentId": "kdi-skilled-nursing-2026",
+      "topic": "돌봄·품질",
+      "title": "간호사 비중과 욕창·요로감염 관련 의료 이용",
+      "periodLabel": "2016년 1월~2023년 12월",
+      "pdfPage": 6,
+      "printedPage": 6,
+      "figure": "표 3",
+      "capture": [
+        144,
+        1377,
+        1131,
+        1704
+      ],
+      "insight": "간호인력 중 간호사 비중이 10%p 늘 때 요로감염 관련 의료 이용은 약 0.03%, 욕창 관련 의료 이용은 약 0.10% 감소한 것으로 추정했습니다.",
+      "action": "욕창과 요로감염 관련 외래·입원 기록을 간호 관리 지표와 함께 검토할 때 참고할 수 있습니다.",
+      "caveat": "시설급여 수급자의 주상병별 내원일수 추정입니다. 욕창이나 요로감염 자체의 발생률 감소를 뜻하지 않으며 시설별 성과로 환산할 수 없습니다.",
+      "alt": "KDI 표 3. 요로감염·욕창·인플루엔자와 폐렴·치매 관련 의료 이용 추정치와 분석 주석.",
+      "image": "/assets/statistics/kdi-nursing-conditions.png"
+    },
+    {
+      "id": "kiri-grade1-facility-cost",
+      "documentId": "kiri-care-annuity-2026",
+      "topic": "비급여·비용",
+      "title": "장기요양 1등급 시설급여 비용의 변화",
+      "periodLabel": "2008·2026년 · 1등급 30일 기준",
+      "pdfPage": 8,
+      "printedPage": 17,
+      "figure": "5절 결론 및 시사점",
+      "capture": [
+        164,
+        1546,
+        1164,
+        1624
+      ],
+      "insight": "1등급 시설급여의 월 비용(30일)은 2008년 약 115만 원에서 2026년 279만 원으로 증가했습니다. 같은 비교에서 법정 본인부담금은 약 23만 원에서 56만 원으로 늘었습니다.",
+      "action": "과거 급여비 흐름을 설명할 때 시설급여 총액, 법정 본인부담금, 별도로 발생하는 비용을 각각 안내할 수 있습니다.",
+      "caveat": "보고서의 연도별 제도 비교이며 시설 이용자 실태조사 평균이 아닙니다. 식비 등 비급여를 포함한 실납부액이나 현재 개별 시설 견적, 국내 즉시형 연금의 판매 현황을 뜻하지 않습니다.",
+      "alt": "보험연구원 17쪽. 1등급 30일 기준 2008년과 2026년 시설급여비 및 법정 본인부담금 비교.",
+      "image": "/assets/statistics/kiri-grade1-facility-cost.png"
+    },
     {
       "id": "ltc-noncovered-monthly-cost",
       "documentId": "ltc-noncovered-2025",

@@ -22,12 +22,16 @@ assert.deepEqual(filterItems({view:'documents',topic:'비급여·비용',query:'
 assert.equal(filterItems({documentId:'ltc-noncovered-2025',topic:'비급여·비용'}).length, 4);
 assert.deepEqual(filterItems({query:'인천 270'}).map(x=>x.id), ['restraint-use-facilities']);
 assert.deepEqual(filterItems({view:'documents',query:'2023'}).map(x=>x.id), ['ltc-evaluation','housing']);
-assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 3);
+assert.equal(filterItems({view:'documents',topic:'인력·운영'}).length, 4);
 assert.deepEqual(filterItems({topic:'기관평가'}).map(x=>x.id), ['facility-evaluation']);
 assert.equal(filterItems({topic:'안전·사고'}).length, 8);
 assert.deepEqual(filterItems({topic:'안전·사고',query:'낙상 재발'}).map(x=>x.id), ['fall-repeat']);
 assert.deepEqual(filterItems({view:'documents',query:'국회예산정책처'}).map(x=>x.id), ['ltc-evaluation']);
 assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing-a-home','fall-repeat']);
+
+assert.deepEqual(filterItems({documentId:'kdi-skilled-nursing-2026'}).map(x=>x.figure), ['표 2','표 3']);
+assert.deepEqual(filterItems({view:'documents',query:'즉시형 장기요양연금'}).map(x=>x.id), ['kiri-care-annuity-2026']);
+assert.equal(filterItems({documentId:'kiri-care-annuity-2026'})[0].printedPage,17);
 
 // Every displayed source and crop has reproducible provenance and valid dimensions.
 assert.equal(new Set(data.documents.map(x=>x.id)).size,data.documents.length);
@@ -57,7 +61,7 @@ for (const doc of data.documents) {
   for (const url of [doc.downloadUrl,doc.sourceUrl,doc.relatedUrl].filter(Boolean)) {
     const parsed = new URL(url);
     assert.equal(parsed.protocol,'https:');
-    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr','www.mohw.go.kr'].includes(parsed.hostname));
+    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr','www.mohw.go.kr','www.kdi.re.kr','www.kiri.or.kr'].includes(parsed.hostname));
   }
   assert.ok(doc.year <= Number(doc.published.slice(0,4)));
 }
