@@ -93,6 +93,8 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | 돌봄다리 | [고객지원](https://www.caretech.kr/support.html) (2026-11-12) | 베타 기간 전 기능 무료. 50인 유료 요금 없음. 영구 무료가 아님 |
 | 돌봄이 | [제품](https://agentworks.co.kr/care.html) (2026-11-12) | 50인 월 요금 없음. 첫 계약은 회사 페이지가 무상·현물로 적음 |
 | 순시미 파트너스 | [플랫폼](https://anl.kr/platform), [비욘드포스트](https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30) (2026-11-12) | 2026-11-13 확인. 50인 월 요금 없음 |
+| 급여제공관리 전산 | [아시아경제](https://www.asiae.co.kr/article/2026111710272947099), [연합뉴스](https://www.yna.co.kr/view/AKR20261117060600530) (2026-11-17) | 이용료 없음. 50인 월 요금이 아님 |
+| 빅허그 | [제품](https://farmingstar.co.kr/ai-app), [헬스중앙](https://jhealthmedia.joins.com/news/articleView.html?idxno=31905) (2026-02-05) | 2026-11-18 확인. 50인 월 요금 없음 |
 
 ## 재검증 방법
 

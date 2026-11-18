@@ -1442,6 +1442,82 @@ Object.assign(price50, {
   }
 });
 
+// 건보공단 급여제공관리, 빅허그. 확인 2026-11-18.
+Object.assign(d, {
+  nhisltc: {
+    n: '급여제공관리 전산',
+    type: '공공 · 돌봄 기록',
+    src: '아시아경제 · 연합뉴스 · 2026-11-18 확인',
+    url: 'https://www.asiae.co.kr/article/2026111710272947099',
+    sources: [
+      ['아시아경제 · 2026-11-17', 'https://www.asiae.co.kr/article/2026111710272947099'],
+      ['연합뉴스 · 2026-11-17', 'https://www.yna.co.kr/view/AKR20261117060600530']
+    ],
+    screenshot: null,
+    updatedAt: '2026-11-18',
+    facts: [
+      ['운영', '국민건강보험공단의 공공 서비스. 민간 회사 상품이 아님'],
+      ['확대', '2026-11-17 발표. 노인요양시설과 노인요양공동생활가정으로 확대. 아시아경제는 약 6400개소, 연합뉴스는 약 6천400곳. 같은 규모로 본다'],
+      ['대상 유형', '아시아경제: 2022년 시범 뒤 가정방문 급여제공기관과 주·야간보호로 단계 확대, 이번으로 복지용구를 뺀 모든 장기요양 급여 유형. 연합뉴스는 이번 확대로 복지용구를 뺀 모든 유형이 된다고만 적고 2022년 시범은 없다'],
+      ['기록', '장기요양기관 업무포털의 급여제공관리 메뉴. 수급자 욕구 조사부터 결과 평가까지. 이용료는 없음. 연합뉴스는 자율적으로 쓴다고 적는다'],
+      ['앱·권한', '아시아경제만: 일부 서식은 스마트 장기요양 앱에서 입력·전송. 종사자 업무에 따라 조회·입력·출력 권한을 둔다. 연합뉴스 본문에는 앱과 권한 문장이 없다'],
+      ['전자서명', '두 기사: 전자서명을 마친 기록은 따로 출력하거나 종이로 보관할 필요가 없다'],
+      ['고객수', '약 6,400곳은 이번 확대 대상 기관 수. 실제 사용 기관 수는 아니다'],
+      ['출시일', '확대 발표일은 2026-11-17. 아시아경제의 시범 시작은 2022년이고 날짜는 없다'],
+      ['직영 기관 운영', '해당 없음. 공단 제공 서비스'],
+      ['기능 확인일', '2026-11-18 · 아시아경제·연합뉴스 2026-11-17. 공단 화면은 이번 조사에서 열지 않음']
+    ],
+    note: '민간 기록 프로그램을 대체할 수 있는 무료 공공 기록이다. 분석(공급사 주장 아님): 욕구 조사부터 결과 평가까지의 기본 기록이 공단 전산과 겹친다. 더비다는 공단 전산과 겹쳐 쓰는 이중 입력을 줄이는 연동, AI 기록·요약, 낙상 감지, 평가 리스크, 보호자 앱, 인사·회계·청구를 구분점으로 볼 수 있다. 앱과 권한, 2022년 시범은 아시아경제에만 있다.'
+  },
+  bighug: {
+    n: '빅허그 (Big Hug)',
+    type: '시설 돌봄기록 · 보호자 앱',
+    src: '파밍스타 제품 페이지 · 헬스중앙 · 2026-11-18 확인',
+    url: 'https://farmingstar.co.kr/ai-app',
+    sources: [
+      ['빅허그 제품 페이지', 'https://farmingstar.co.kr/ai-app'],
+      ['헬스중앙 · 2026-02-05', 'https://jhealthmedia.joins.com/news/articleView.html?idxno=31905']
+    ],
+    screenshot: null,
+    updatedAt: '2026-11-18',
+    facts: [
+      ['운영사', '(주)파밍스타. 제품 페이지 하단은 경기 고양시 덕양구 항공대학로 76, 한국항공대학교 산학협력단 412-B, soldout@farmingstar.co.kr. 대표·사업자번호는 이 페이지에 없다'],
+      ['대상', '제품 페이지와 기사 모두 요양병원·요양원. 역할은 요양보호사, 사회복지사, 원무과, 보호자'],
+      ['기록', '제품 페이지: 식사·세면·배변·체위 변경을 버튼으로 입력하고 입력 시각이 자동 저장. 식사는 완식·반식·거부. 수정·삭제 때 확인. 사회복지사는 프로그램 일정·활동을 달력으로. 원무과는 소모품·비용을 일자별로 집계. 보호자는 제공 내역, 상태 변화, 소모품·비용을 하루 단위로 본다'],
+      ['기사에만 있는 기능', '헬스중앙 2026-02-05: 돌봄 항목을 보건복지부 지정 항목이라고 적는다. 보호자 화면에 사진이 있다. AI가 일상 패턴과 변화, 식사량·활동의 이상 징후를 요약한다. 2026-11-18 제품 페이지의 빅허그 소개에는 사진·AI·이상 징후·보건복지부 문장이 없다. 같은 페이지의 AI는 다른 앱 K-Calli'],
+      ['출시', '헬스중앙 입력 2026-02-05: 2월 23일 정식 출시한다고 회사가 밝혔다. 예정 발표이고 출시 완료 확인이 아니다. 제품 페이지는 기능을 현재형으로 적지만 출시일은 없다'],
+      ['없는 항목', '제품 페이지와 기사에서 공단 연동, 급여 청구, 기관 평가, 낙상 감지는 확인하지 못함'],
+      ['회사 문구', '제품 페이지: 반복 문의가 줄고 신뢰·만족이 높아지며 장기 이용과 이탈 방지에 기여한다. 측정 수치는 없다'],
+      ['고객수', '공개 자료에서 미확인'],
+      ['직영 기관 운영', '확인 필요'],
+      ['기능 확인일', '2026-11-18 · 제품 페이지와 헬스중앙 2026-02-05']
+    ],
+    note: '요양원·요양병원 기록과 보호자 화면을 한 앱으로 소개한다. 분석(공급사 주장 아님): 시설 기록과 보호자에게 하루 내역을 보여주는 점은 더비다와 겹친다. 공단 연동, 청구, 평가, 낙상 감지는 확인되지 않았다. AI 요약과 사진은 2026-02-05 기사에만 있고, 2월 23일 출시는 당시 예정 발표다.'
+  }
+});
+Object.assign(price50, {
+  nhisltc: {
+    m: '이용료 없음',
+    o: '별도 가입·설치비는 두 기사에 없음',
+    u: '장기요양기관이 업무포털에서 쓰는 공공 서비스. 수급자 50명 월 요금이 아님. 연합뉴스는 자율 이용이라고 적음',
+    b: '두 기사의 이용료 없음. 50인 월정액으로 환산하지 않음',
+    v: '기사 확인 · 공공 무료',
+    s: 'https://www.asiae.co.kr/article/2026111710272947099',
+    links: [['연합뉴스 · 2026-11-17', 'https://www.yna.co.kr/view/AKR20261117060600530']],
+    checked: '2026-11-18'
+  },
+  bighug: {
+    m: '50인 공개 요금 미확인',
+    o: '가입·설치비 표기 없음',
+    u: '제품 페이지와 2026-02-05 기사에서 요양원 50인 월 요금과 부가세를 확인하지 못함',
+    b: '출시 예정 보도를 계약 단가로 환산하지 않음',
+    v: '제품 페이지·기사 확인 · 가격 미공개',
+    s: 'https://farmingstar.co.kr/ai-app',
+    links: [['헬스중앙 · 2026-02-05', 'https://jhealthmedia.joins.com/news/articleView.html?idxno=31905']],
+    checked: '2026-11-18'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -1493,7 +1569,9 @@ const institutionResearch = {
   dolbom: [['daycare','facility'], '소개 페이지의 핵심 제공영역은 주야간보호와 요양시설이다. 방문돌봄은 확장 기능이라 방문요양 지원 유형으로 넣지 않는다.', [['슬기로운 돌봄생활','https://tfnetworks.kr/dolbom-life/']]],
   carebridge: [['homecare','visiting','daycare'], '고객지원은 방문요양·방문목욕·방문간호·주야간보호와 요양보호사 교육원을 현재 대상으로 적는다. 교육원 유형은 이 분류에 없고, 요양원은 향후 예정이라 넣지 않는다.', [['고객지원','https://www.caretech.kr/support.html']]],
   dolbomi: [['unknown'], '제품 페이지는 장애인 거주시설·어린이집·노인요양시설을 함께 적는다. 이름 있는 계약은 양주 장애인 거주시설 미리내공동체뿐이다. 요양원 도입 실적이 없어 요양시설 유형으로 넣지 않는다.', [['돌봄이','https://agentworks.co.kr/care.html']]],
-  soonseeme: [['homecare'], '2026-11-12 기사는 방문요양센터 전용 관리 시스템이라고 적는다. 요양원·주야간은 그 기사와 공식 플랫폼 소개에 없어 넣지 않는다.', [['비욘드포스트 · 2026-11-12','https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'], ['순시미 플랫폼','https://anl.kr/platform']]]
+  soonseeme: [['homecare'], '2026-11-12 기사는 방문요양센터 전용 관리 시스템이라고 적는다. 요양원·주야간은 그 기사와 공식 플랫폼 소개에 없어 넣지 않는다.', [['비욘드포스트 · 2026-11-12','https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'], ['순시미 플랫폼','https://anl.kr/platform']]],
+  nhisltc: [['facility','daycare','homecare','visiting'], '2026-11-17 확대 대상은 노인요양시설·공동생활가정이다. 아시아경제는 그 전에 가정방문·주야간으로 넓혔고, 복지용구는 뺀다고 적는다. 연합뉴스는 2022년 시범을 적지 않는다.', [['아시아경제 · 2026-11-17','https://www.asiae.co.kr/article/2026111710272947099'], ['연합뉴스 · 2026-11-17','https://www.yna.co.kr/view/AKR20261117060600530']]],
+  bighug: [['facility','hospital'], '제품 페이지와 2026-02-05 기사는 요양원·요양병원용이라고 적는다. 공단 급여 유형별 지원 범위는 확인하지 못했다.', [['빅허그','https://farmingstar.co.kr/ai-app']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -1509,5 +1587,6 @@ for (const key of ['namuhx', 'carefor']) d[key].institutionEvidence.checked = '2
 for (const key of ['bokdori', 'dolbom', 'caring']) d[key].institutionEvidence.checked = '2026-11-10';
 for (const key of ['carebridge', 'dolbomi']) d[key].institutionEvidence.checked = '2026-11-12';
 for (const key of ['soonseeme', 'caring']) d[key].institutionEvidence.checked = '2026-11-13';
+for (const key of ['nhisltc', 'bighug']) d[key].institutionEvidence.checked = '2026-11-18';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;
