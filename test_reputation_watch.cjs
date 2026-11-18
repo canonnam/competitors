@@ -20,6 +20,15 @@ test('uncertain and archived records are not counted as current negative claims'
   assert.equal(r.filterItems(items,{filter:'archived'}).length,1);
   assert.equal(r.filterItems(items,{branch:'incheon',query:'불만'}).length,1);
 });
+test('rule review holds and collection failures never become an all-clear headline',()=>{
+  const value=data();value.counts.uncertain=2;
+  assert.match(r.headline(value),/원문 확인 대기 2건/);
+  assert.doesNotMatch(r.headline(value),/찾지 못했습니다/);
+  value.sync.complete=false;value.sync.checked_sources=4;
+  value.counts.reviewed=27;value.counts.documents=27;
+  assert.equal(r.state(value).warning,true);
+  assert.match(r.headline(value),/수집처 4\/6개 · 분류 27\/27건/);
+});
 test('untrusted source text and links cannot become executable HTML',()=>{
   assert.equal(r.safeUrl('javascript:alert(1)'), '');assert.equal(r.safeUrl('https://user:password@example.com'), '');
   assert.equal(r.esc('<img src=x onerror=alert(1)>'),'&lt;img src=x onerror=alert(1)&gt;');
