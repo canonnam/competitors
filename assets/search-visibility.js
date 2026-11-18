@@ -38,9 +38,8 @@
   }
   function filterRows(items,query='',filter='all'){return items.filter(item=>item.keyword.includes(query.trim())&&(filter==='all'||(filter==='found'&&fresh(item)&&item.mentioned)||(filter==='absent'&&fresh(item)&&!item.mentioned&&!item.branch_unconfirmed)||(filter==='unknown'&&fresh(item)&&item.branch_unconfirmed)||(filter==='pending'&&!fresh(item))));}
   function scopeData(data,branch=''){
-    if(!branch)return data;
     return {...data,selected_branch:branch,providers:data.providers.map(p=>{
-      const items=p.items.filter(item=>item.branch===branch).map(item=>({...item,...item.branch_result}));
+      const items=p.items.filter(item=>!branch||item.branch===branch).map(item=>({...item,...item.branch_result}));
       const checked=items.filter(fresh);
       return {...p,items,expected:items.length,checked:checked.length,mentioned:checked.filter(item=>item.mentioned).length,first_page:checked.filter(item=>item.first_page===1).length};
     })};

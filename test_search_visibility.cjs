@@ -65,6 +65,32 @@ test('home shows both branches and keeps failed AI checks outside the denominato
   assert.equal(v.homeSummary(data).warning,true);
 });
 
+test('all branches uses each query branch for counts, rows and history without changing observations',()=>{
+  const otherBranch={area:'place',page:1,position:2};
+  const incheon={area:'web',page:5,position:3};
+  const data={providers:[{id:'naver',kind:'search',configured:true,checked:2,expected:2,first_page:2,items:[
+    {keyword:'만안구요양원',branch:'incheon',status:'ready',stale:false,mentioned:true,first_page:1,matches:[otherBranch,incheon],
+      history:[{at:'2026-11-18',mentioned:true,first_page:1}],
+      branch_result:{mentioned:true,first_page:5,matches:[incheon],history:[{at:'2026-11-18',mentioned:true,first_page:5}]}},
+    {keyword:'만안구요양원',branch:'anyang',status:'ready',stale:false,mentioned:true,first_page:1,matches:[otherBranch],
+      branch_result:{mentioned:true,first_page:1,matches:[otherBranch]}},
+    {keyword:'지점 미확인',branch:'incheon',status:'error',stale:true,observed_at:'2026-11-16T10:50:00+09:00',
+      mentioned:true,first_page:1,branch_result:{mentioned:false,first_page:null,matches:[],branch_unconfirmed:true}}
+  ]}]};
+  const original=structuredClone(data);
+  const all=v.scopeData(data);
+  const provider=all.providers[0];
+  assert.equal(provider.expected,3);
+  assert.equal(provider.checked,2);
+  assert.equal(provider.first_page,1);
+  assert.equal(v.matchLabel(provider.items[0],['web','place']),'5페이지 · 3번째');
+  assert.equal(provider.items[0].history[0].first_page,5);
+  assert.equal(provider.items[2].status,'error');
+  assert.equal(provider.first_page,['incheon','anyang'].reduce((sum,id)=>sum+v.scopeData(data,id).providers[0].first_page,0));
+  assert.equal(v.scopeData(all,'incheon').providers[0].first_page,0);
+  assert.deepEqual(data,original);
+});
+
 test('missed collection preserves dated last results without counting them as current',()=>{
   const provider={id:'chatgpt_web',kind:'ai',configured:true,expected:3,checked:0,mentioned:0,items:[
     {branch:'incheon',status:'pending',stale:true,observed_at:'2026-09-14T11:00:00+09:00',mentioned:true,branch_result:{mentioned:true}},
