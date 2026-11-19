@@ -32,6 +32,7 @@ assert.deepEqual([...readSaved('["choosing-a-home","fall-repeat"]')], ['choosing
 assert.deepEqual(filterItems({documentId:'kdi-skilled-nursing-2026'}).map(x=>x.figure), ['표 2','표 3']);
 assert.deepEqual(filterItems({view:'documents',query:'즉시형 장기요양연금'}).map(x=>x.id), ['kiri-care-annuity-2026']);
 assert.equal(filterItems({documentId:'kiri-care-annuity-2026'})[0].printedPage,17);
+assert.deepEqual(filterItems({query:'손위생 50명'}).map(x=>x.id), ['hand-hygiene-training-compliance']);
 
 // Every displayed source and crop has reproducible provenance and valid dimensions.
 assert.equal(new Set(data.documents.map(x=>x.id)).size,data.documents.length);
@@ -51,6 +52,11 @@ for (const doc of data.documents) {
     assert.match(url.searchParams.get('controlNo'), /^MONO\d+$/);
     assert.ok(Number.isInteger(doc.viewerPages) && doc.viewerPages > 0);
     assert.equal(doc.downloadUrl,undefined);
+    continue;
+  }
+  if (doc.format === 'journal') {
+    assert.equal(new URL(doc.sourceUrl).origin, 'https://www.icjournal.org');
+    assert.equal(doc.downloadUrl, undefined);
     continue;
   }
   const source = manifest.documents.find(x=>x.id===doc.id);
@@ -73,6 +79,11 @@ for (const item of data.bookmarks) {
       assert.ok(Number.isInteger(item.viewerPage) && item.viewerPage >= 1 && item.viewerPage <= doc.viewerPages);
       assert.ok(Number.isInteger(item.printedPage) && item.printedPage > 0);
       assert.match(item.figure,/^표 \d+(?:-\d+)?$/);
+    } else if (doc.format === 'journal') {
+      assert.equal(item.sourceAnchor, 'T2');
+      assert.equal(item.figure, '표 2');
+      assert.match(item.rows[0][1], /80\.0%/);
+      assert.match(item.rows[1][1], /12\.0%/);
     } else {
       assert.equal(doc.format,'article');
     }

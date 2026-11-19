@@ -1,6 +1,6 @@
 {
-  "sourceHash": "5f79a9c02e8eec6d1d1118f6f7dbdded2d3f2b7ff5756b5892b99357e31ca388",
-  "reviewedAt": "2026-11-18",
+  "sourceHash": "f285ee5e7760940eaac4bf4de72675d733e7f0f798180e3edc8eca13e43edaec",
+  "reviewedAt": "2026-11-19",
   "portalUrl": "https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html",
   "topics": [
     "기관평가",
@@ -12,6 +12,25 @@
     "디지털 돌봄"
   ],
   "documents": [
+    {
+      "id": "ic-hand-hygiene-2026",
+      "format": "journal",
+      "title": "노인요양시설 손위생 교육과 수행률",
+      "author": "Dong Hoon Shin 외 6명",
+      "publisher": "Infection & Chemotherapy",
+      "publication": "58권 3호 · 352–359쪽",
+      "published": "2026.07.31",
+      "survey": "서울 3개 자치구 요양시설 손위생 관찰 연구",
+      "periodLabel": "2025년 상·하반기 관찰",
+      "year": 2025,
+      "pages": "352–359",
+      "topics": [
+        "돌봄·품질"
+      ],
+      "summary": "보라매병원 연구진은 서울 3개 자치구 요양시설의 대면 손위생 교육과 돌봄 종사자의 수행률 간 관계를 분석했습니다.",
+      "scope": "2025년 서울 송파·동작·관악의 참여 시설 17곳. 상·하반기 총 131명을 관찰했고, 표 2의 하반기 비교는 교육받은 50명과 받지 않은 12명입니다. 참여 시설은 자발적으로 모집했고 교육 여부는 무작위 배정하지 않았습니다.",
+      "sourceUrl": "https://www.icjournal.org/DOIx.php?id=10.3947%2Fic.2026.0025"
+    },
     {
       "id": "kdi-skilled-nursing-2026",
       "title": "노인요양시설의 숙련 간호인력 확충 효과와 정책 방향",
@@ -247,6 +266,38 @@
     }
   ],
   "bookmarks": [
+    {
+      "id": "hand-hygiene-training-compliance",
+      "documentId": "ic-hand-hygiene-2026",
+      "topic": "돌봄·품질",
+      "title": "요양시설 손위생 교육과 수행률",
+      "metric": "80% · 12%",
+      "metricLabel": "2025년 하반기 교육 여부별 수행률 중앙값",
+      "periodLabel": "2025년 9월 23일~10월 31일 관찰",
+      "figure": "표 2",
+      "sourceAnchor": "T2",
+      "rows": [
+        [
+          "교육받은 50명",
+          "중앙값 80.0% · 사분위 범위 35.0–100.0%"
+        ],
+        [
+          "교육받지 않은 12명",
+          "중앙값 12.0% · 사분위 범위 0.0–50.0%"
+        ],
+        [
+          "비교 기간",
+          "2025년 9월 23일~10월 31일"
+        ],
+        [
+          "두 집단 비교",
+          "p = 0.002"
+        ]
+      ],
+      "insight": "관찰자는 개인별로 손위생이 필요한 순간 중 실제 수행한 비율을 계산했습니다. 하반기 이 비율의 중앙값은 교육받은 집단 80.0%, 받지 않은 집단 12.0%였습니다.",
+      "action": "교육 이후 수행 여부를 살펴볼 때는 관찰한 기회 수와 실제 수행 횟수를 함께 기록해 관찰 조건을 비교할 수 있습니다.",
+      "caveat": "서울 일부 참여 시설의 관찰 결과입니다. 같은 종사자를 교육 전후로 추적하지 않았고, 입소자의 감염 발생률이나 입원 감소는 측정 범위에 포함되지 않았습니다."
+    },
     {
       "id": "kdi-nursing-utilization",
       "documentId": "kdi-skilled-nursing-2026",

@@ -30,6 +30,7 @@
   const saveButton = item => `<button class="save-button" data-save="${item.id}" aria-pressed="${saved.has(item.id)}" aria-label="${escape(item.title)} ${saved.has(item.id) ? '저장 해제' : '책갈피 저장'}">${icon}<span>${saved.has(item.id) ? '저장됨' : '저장'}</span></button>`;
   const sourceLink = item => {
     const doc = docs.get(item.documentId);
+    if (item.sourceAnchor) return doc.sourceUrl + '#' + item.sourceAnchor;
     return doc.downloadUrl ? doc.downloadUrl + '#page=' + item.pdfPage : doc.sourceUrl;
   };
   const external = (url, label, cls='') => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${escape(label)}</a>`;
@@ -37,15 +38,17 @@
   const publication = doc => doc.publication || '보건복지포럼';
   const period = (doc, item) => (item && item.periodLabel) || doc.periodLabel || `조사 ${doc.year}년`;
   const relatedSource = doc => doc.relatedUrl ? `<div class="related-source">${external(doc.relatedUrl,doc.relatedLabel)}<p>${escape(doc.relatedNote)}</p></div>` : '';
-  const reportTable = (item, doc) => `<div class="report-panel"><span class="report-kind">${doc.format === 'article' ? '기사 인용 통계' : '연구보고서 표 요약'}</span><strong>${escape(item.metric)}</strong><span>${escape(item.metricLabel)}</span><table><caption class="sr-only">${escape(item.title)}</caption><tbody>${item.rows.map(([label,value]) => `<tr><th scope="row">${escape(label)}</th><td>${escape(value)}</td></tr>`).join('')}</tbody></table></div>`;
+  const reportTable = (item, doc) => `<div class="report-panel"><span class="report-kind">${doc.format === 'article' ? '기사 인용 통계' : '원문 표 요약'}</span><strong>${escape(item.metric)}</strong><span>${escape(item.metricLabel)}</span><table><caption class="sr-only">${escape(item.title)}</caption><tbody>${item.rows.map(([label,value]) => `<tr><th scope="row">${escape(label)}</th><td>${escape(value)}</td></tr>`).join('')}</tbody></table></div>`;
   function sourceLocation(item, doc) {
     if (doc.format === 'viewer') return `뷰어 ${item.viewerPage}쪽 · 본문 ${item.printedPage}쪽 ${item.figure}`;
     if (doc.format === 'article') return '기사 인용 · 보건복지부 국회 제출자료';
+    if (doc.format === 'journal') return `${publisher(doc)} · ${item.figure}`;
     return `PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · ${publisher(doc)}`;
   }
   function sourceLabel(doc, pdfLabel) {
     if (doc.format === 'viewer') return '국회도서관 원문 보기 ↗';
     if (doc.format === 'article') return '보도 기사 원문 보기 ↗';
+    if (doc.format === 'journal') return '학술지 원문 보기 ↗';
     return pdfLabel;
   }
   function documentLinks(doc) {
@@ -56,6 +59,7 @@
   function documentExtent(doc) {
     if (doc.format === 'viewer') return `원문 뷰어 ${doc.viewerPages}쪽`;
     if (doc.format === 'article') return '기사 인용';
+    if (doc.format === 'journal') return `본문 ${doc.pages}쪽`;
     return `본문 ${doc.pages}쪽 · PDF ${doc.pdfPages}페이지`;
   }
   function bookmarkCard(item) {
