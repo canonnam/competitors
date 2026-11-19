@@ -1518,6 +1518,51 @@ Object.assign(price50, {
   }
 });
 
+// 케어네이션 LTC·방문요양 매칭. 확인 2026-11-19.
+Object.assign(d, {
+  carenation: {
+    n: '케어네이션 LTC',
+    type: '재가 ERP · 방문요양 매칭',
+    src: '조선비즈 · LTC 공식 페이지 · 2026-11-19 확인',
+    url: 'https://homecare.carenation.co.kr/',
+    sources: [
+      ['조선비즈 · 2026-11-18', 'https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/'],
+      ['케어네이션 LTC', 'https://homecare.carenation.co.kr/'],
+      ['뉴스룸 소개문 · 2024-09-04', 'https://www.carenation.kr/news/pr-20240904-01/']
+    ],
+    screenshot: null,
+    updatedAt: '2026-11-19',
+    facts: [
+      ['운영사', '케어네이션. LTC 페이지 하단은 대표 김견원·서대건, 사업자 212-86-05451, 서울 강남구 테헤란로8길 37 한동빌딩 5층. 조선비즈는 대표이사 김견원'],
+      ['매칭 출시', '조선비즈 입력 2026-11-18. 방문요양 서비스를 정식 출시했다고 밝혔다. 보호자가 센터를 고르면 요양보호사가 지원하고, 센터가 참여와 최종 배치를 결정. 계약은 수급자·센터·요양보호사가 맺고, 전자계약은 앱에서 작성·서명. 케어메이트 앱에서 간병 공고와 방문요양 공고를 함께 본다. 특정 센터를 직접 추천·배정하지 않는다고 회사가 설명'],
+      ['추가 지원금', '같은 기사: 일반 방문요양 요양보호사에게 센터 시급 14,200원 이상(주휴수당 포함, 별도 기재)에 더해 시간당 1,000원, 그래서 시간당 15,200원 이상. 1인 월 최대 10만 원. 기간과 조건은 회사 정책에 따라 바뀔 수 있다. 가족요양은 제외'],
+      ['LTC 기능', '공식 페이지: 일정·청구·급여, 세무·재무회계. 설치 없이 PC·스마트폰·태블릿. 직원 입·퇴사·연차·건강검진, 수급자 등급·욕구사정 서식. 공단 계획·청구 일정 조회. 일정이 바뀌면 수가·본인부담금·급여를 자동 계산한다고 적는다. 재무회계는 전문 인력과 서식 지원'],
+      ['요금', '조선비즈는 회사가 전하기를, 이용료는 매칭 건수가 아니라 관리 인원 규모 정액이고 방문요양센터에 90일 체험을 한다고 적는다. LTC 페이지 FAQ는 센터 규모와 기능에 따라 상담 때 안내하고, 상담·시연은 무료라고 적는다. 90일과 정액은 FAQ에 없다. 수급자 50명 금액은 없다'],
+      ['회원 수', '회사가 2026년 11월 기준 보호자와 케어메이트를 합산한 누적 회원이 100만 명을 넘어섰다고 밝혔다. 회사 발표. 유료 센터 수가 아니다'],
+      ['2024 베타', '뉴스룸 페이지 소개문(주소 pr-20240904-01, 본문에 2024-09-04): 재가요양기관 관리시스템 베타를 냈고, 자회사 어르신세상이 6개월 시범 뒤 정식 출시할 예정이었다. 정적 페이지에는 이 소개문만 있고 기사 본문 전체는 열리지 않았다. 2026-11-18 출시와 같은 일정으로 단정하지 않음'],
+      ['대상', '기사와 LTC 페이지는 방문요양·재가 센터다. 요양원(시설급여)을 하지 않는다고 적은 문장은 이 출처에서 확인하지 못함'],
+      ['AI', '공개한 기사·LTC 페이지·뉴스룸 소개문에서 AI 기능은 확인되지 않음'],
+      ['고객수', '100만 명은 회사 발표의 누적 회원. 센터 고객 수는 미확인'],
+      ['출시일', '방문요양 매칭 정식 출시 보도일은 2026-11-18. LTC 첫 출시일은 2024년 베타 소개와 구분'],
+      ['직영 기관 운영', '확인 필요. 기사는 기존 방문요양센터와 협력한다고 적는다'],
+      ['기능 확인일', '2026-11-19 · 조선비즈 2026-11-18, LTC 페이지, 뉴스룸 소개문']
+    ],
+    note: '보호자·요양보호사·방문요양센터를 잇고, 센터 업무는 LTC에서 다룬다고 소개한다. 분석(공급사 주장 아님): 강점은 수급자와 인력이 들어오는 채널을 센터 운영 프로그램에 붙인 구조다. 더비다는 시설 기록·평가·청구의 깊이와 AI 문서화로 구분할 수 있다. 재가로 넓히면 매칭·채용이 겹칠 수 있다. 인원 정액과 90일 체험은 가격 정책을 볼 때 참고하되, 50인 금액은 없다. 요양원을 하지 않는다는 문장과 AI 기능은 공개 자료에서 확인되지 않았다.'
+  }
+});
+Object.assign(price50, {
+  carenation: {
+    m: '50인 공개 요금 미확인 · 관리 인원 정액은 회사 설명',
+    o: '조선비즈: 회사가 90일 체험을 한다고 밝혔다. LTC FAQ: 상담·시연은 무료, 요금은 센터 규모와 기능에 따라 상담. 90일은 FAQ에 없음',
+    u: '방문요양센터 대상. 수급자 50명 월 요금과 부가세는 없다. 시간당 1,000원·월 10만 원은 요양보호사 추가 지원금이지 센터 이용료가 아님',
+    b: '기사 속 회사 설명과 FAQ를 구분. 50인 월정액으로 환산하지 않음',
+    v: '기사·공식 FAQ 확인 · 50인 금액 미공개',
+    s: 'https://homecare.carenation.co.kr/',
+    links: [['조선비즈 · 2026-11-18', 'https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/']],
+    checked: '2026-11-19'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -1571,7 +1616,8 @@ const institutionResearch = {
   dolbomi: [['unknown'], '제품 페이지는 장애인 거주시설·어린이집·노인요양시설을 함께 적는다. 이름 있는 계약은 양주 장애인 거주시설 미리내공동체뿐이다. 요양원 도입 실적이 없어 요양시설 유형으로 넣지 않는다.', [['돌봄이','https://agentworks.co.kr/care.html']]],
   soonseeme: [['homecare'], '2026-11-12 기사는 방문요양센터 전용 관리 시스템이라고 적는다. 요양원·주야간은 그 기사와 공식 플랫폼 소개에 없어 넣지 않는다.', [['비욘드포스트 · 2026-11-12','https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'], ['순시미 플랫폼','https://anl.kr/platform']]],
   nhisltc: [['facility','daycare','homecare','visiting'], '2026-11-17 확대 대상은 노인요양시설·공동생활가정이다. 아시아경제는 그 전에 가정방문·주야간으로 넓혔고, 복지용구는 뺀다고 적는다. 연합뉴스는 2022년 시범을 적지 않는다.', [['아시아경제 · 2026-11-17','https://www.asiae.co.kr/article/2026111710272947099'], ['연합뉴스 · 2026-11-17','https://www.yna.co.kr/view/AKR20261117060600530']]],
-  bighug: [['facility','hospital'], '제품 페이지와 2026-02-05 기사는 요양원·요양병원용이라고 적는다. 공단 급여 유형별 지원 범위는 확인하지 못했다.', [['빅허그','https://farmingstar.co.kr/ai-app']]]
+  bighug: [['facility','hospital'], '제품 페이지와 2026-02-05 기사는 요양원·요양병원용이라고 적는다. 공단 급여 유형별 지원 범위는 확인하지 못했다.', [['빅허그','https://farmingstar.co.kr/ai-app']]],
+  carenation: [['homecare'], '조선비즈와 LTC 페이지는 방문요양·재가 센터다. 요양원을 하지 않는다고 적은 문장은 없다. 방문목욕은 일정 화면 예시에 있어 별도 급여 유형으로 넣지 않는다.', [['케어네이션 LTC','https://homecare.carenation.co.kr/'], ['조선비즈 · 2026-11-18','https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -1588,5 +1634,6 @@ for (const key of ['bokdori', 'dolbom', 'caring']) d[key].institutionEvidence.ch
 for (const key of ['carebridge', 'dolbomi']) d[key].institutionEvidence.checked = '2026-11-12';
 for (const key of ['soonseeme', 'caring']) d[key].institutionEvidence.checked = '2026-11-13';
 for (const key of ['nhisltc', 'bighug']) d[key].institutionEvidence.checked = '2026-11-18';
+d.carenation.institutionEvidence.checked = '2026-11-19';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;

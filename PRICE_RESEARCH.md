@@ -95,6 +95,7 @@ CleanCheck의 국내 원화 가격은 한국어 페이지와 브라우저에서 
 | 순시미 파트너스 | [플랫폼](https://anl.kr/platform), [비욘드포스트](https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30) (2026-11-12) | 2026-11-13 확인. 50인 월 요금 없음 |
 | 급여제공관리 전산 | [아시아경제](https://www.asiae.co.kr/article/2026111710272947099), [연합뉴스](https://www.yna.co.kr/view/AKR20261117060600530) (2026-11-17) | 이용료 없음. 50인 월 요금이 아님 |
 | 빅허그 | [제품](https://farmingstar.co.kr/ai-app), [헬스중앙](https://jhealthmedia.joins.com/news/articleView.html?idxno=31905) (2026-02-05) | 2026-11-18 확인. 50인 월 요금 없음 |
+| 케어네이션 LTC | [LTC](https://homecare.carenation.co.kr/), [조선비즈](https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/) (2026-11-18) | 50인 금액 없음. 정액·90일 체험은 기사 속 회사 설명. FAQ는 상담 견적 |
 
 ## 재검증 방법
 
