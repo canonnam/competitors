@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-18",
+  "updated": "2026-11-19",
   "ideas": [
     {
       "id": "guardian-info-table",
@@ -36,6 +36,100 @@
           "source": "서울신문",
           "date": "2026-11-18",
           "url": "https://www.seoul.co.kr/news/society/health-welfare/2026/11/18/20261118010008",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "kimchi-guardian-party",
+      "updated": "2026-11-19",
+      "title": "김장·수육 파티",
+      "summary": "어르신이 직접 김치를 담그고 수육을 나눈 뒤 이웃에게 전하거나, 보호자를 초청해 함께 나누는 김장 행사 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "청주시노인종합복지관, 어르신과 함께하는 사랑의 김장 나눔행사 진행",
+          "source": "청주일보",
+          "date": "2026-11-18",
+          "url": "http://www.cj-ilbo.com/news/articleView.html?idxno=1187495",
+          "verified": "ok"
+        },
+        {
+          "title": "간호전문한결요양원 특별 프로그램 지원 자원봉사자 모집",
+          "source": "러뷰",
+          "date": "2026-11-11",
+          "url": "https://www.lovu.co.kr/detail.html?id=1365_3537887",
+          "verified": "ok"
+        },
+        {
+          "title": "동행재활요양병원 김장데이 봉사자 모집",
+          "source": "러뷰",
+          "date": "2026-11-11",
+          "url": "https://www.lovu.co.kr/detail.html?id=1365_3546294",
+          "verified": "ok"
+        },
+        {
+          "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
+          "source": "동양일보",
+          "date": "2026-11-10",
+          "url": "https://www.dynews.co.kr/news/articleView.html?idxno=873438",
+          "verified": "ok"
+        },
+        {
+          "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
+          "source": "에이타임즈",
+          "date": "2026-11-10",
+          "url": "http://m.atimes.kr/news/articleView.html?idxno=89951",
+          "verified": "ok"
+        },
+        {
+          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
+          "source": "케어런츠",
+          "date": "2026-11-02",
+          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "semiannual-guardian-meeting",
+      "updated": "2026-11-19",
+      "title": "하반기 보호자회의",
+      "summary": "반기에 보호자를 초청해 사업 결과와 다음 해 계획, 비용 안내를 하고 질문을 받는 회의를 여는 아이디어",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "2026년 하반기 보호자회의 개최안내",
+          "source": "효자의집",
+          "date": "2026-11-18",
+          "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1278",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "winter-safety-share",
+      "updated": "2026-11-19",
+      "title": "동절기 점검 안내",
+      "summary": "화재·난방·낙상·감염병·비상연락망 점검 항목과 고친 점을 보호자에게 알리는 아이디어. 이번 기사는 구청이 동절기 합동 점검을 한다고 밝힌 계획이다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "고양시 일산서구, 2026년 동절기 노인장기요양기관 안전점검 실시",
+          "source": "뉴스파이어",
+          "date": "2026-11-18",
+          "url": "https://www.newsfire.co.kr/news/articleView.html?idxno=2002238",
           "verified": "ok"
         }
       ],
@@ -355,54 +449,6 @@
           "source": "행복다인요양원",
           "date": "2026-11-11",
           "url": "http://www.happydain.kr/bbs/board.php?bo_table=notice&wr_id=1745",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-11"
-    },
-    {
-      "id": "kimchi-guardian-party",
-      "updated": "2026-11-17",
-      "title": "김장·수육 파티",
-      "summary": "시설 김장 뒤 보호자 초청 수육 나눔, 또는 어르신이 가능한 부분을 직접 하고 봉사자가 보조하는 김장 체험 아이디어",
-      "tags": [
-        "프로그램",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "간호전문한결요양원 특별 프로그램 지원 자원봉사자 모집",
-          "source": "러뷰",
-          "date": "2026-11-11",
-          "url": "https://www.lovu.co.kr/detail.html?id=1365_3537887",
-          "verified": "ok"
-        },
-        {
-          "title": "동행재활요양병원 김장데이 봉사자 모집",
-          "source": "러뷰",
-          "date": "2026-11-11",
-          "url": "https://www.lovu.co.kr/detail.html?id=1365_3546294",
-          "verified": "ok"
-        },
-        {
-          "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
-          "source": "동양일보",
-          "date": "2026-11-10",
-          "url": "https://www.dynews.co.kr/news/articleView.html?idxno=873438",
-          "verified": "ok"
-        },
-        {
-          "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
-          "source": "에이타임즈",
-          "date": "2026-11-10",
-          "url": "http://m.atimes.kr/news/articleView.html?idxno=89951",
-          "verified": "ok"
-        },
-        {
-          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
-          "source": "케어런츠",
-          "date": "2026-11-02",
-          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
           "verified": "ok"
         }
       ],
