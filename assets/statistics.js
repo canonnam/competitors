@@ -43,7 +43,7 @@
     if (doc.format === 'viewer') return `뷰어 ${item.viewerPage}쪽 · 본문 ${item.printedPage}쪽 ${item.figure}`;
     if (doc.format === 'article') return '기사 인용 · 보건복지부 국회 제출자료';
     if (doc.format === 'journal') return `${publisher(doc)} · ${item.figure}`;
-    return `PDF ${item.pdfPage}페이지 / ${doc.pdfPages} · ${publisher(doc)}`;
+    return `본문 ${item.printedPage}쪽 · PDF ${item.pdfPage}/${doc.pdfPages} · ${publisher(doc)}`;
   }
   function sourceLabel(doc, pdfLabel) {
     if (doc.format === 'viewer') return '국회도서관 원문 보기 ↗';
@@ -114,7 +114,7 @@
     $('capture-topic').textContent = `${item.topic} · ${period(doc,item)}`;
     $('capture-content').innerHTML = `${item.rows ? reportTable(item,doc) : `<figure class="dialog-figure"><img src="${item.image}" alt="${escape(item.alt)}" width="${item.capture[2]-item.capture[0]}" height="${item.capture[3]-item.capture[1]}"><figcaption>${doc.author}, 「${doc.title}」, ${publication(doc)} ${doc.published}, ${publisher(doc)}.<br>본문 ${item.printedPage}쪽 ${item.figure} · PDF ${item.pdfPage}페이지 / ${doc.pdfPages}. 제목·단위·주석을 포함한 원문 발췌.</figcaption></figure>`}
       <div class="dialog-copy"><p class="insight">${item.insight}</p><div class="application"><strong>현장에서 살펴볼 점 · 더비다의 활용 아이디어</strong>${item.action}</div><p class="caveat">${item.caveat}</p><p class="dialog-document">${doc.scope}</p>${doc.format === 'viewer' ? `<p class="dialog-document">${publisher(doc)} · ${publication(doc)}<br>${sourceLocation(item,doc)}<br>국회도서관에서 ‘원문보기’를 누른 뒤 뷰어 쪽수를 입력하세요.</p>` : ''}${relatedSource(doc)}</div>
-      <div class="dialog-actions">${external(sourceLink(item),sourceLabel(doc,'해당 페이지 원문 ↗'),'action-link primary')}${doc.downloadUrl ? `${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link')}${external(item.image,'캡처 크게 열기 ↗','action-link')}` : ''}${saveButton(item)}</div>`;
+      <div class="dialog-actions">${external(sourceLink(item),sourceLabel(doc,'해당 페이지 원문 ↗'),'action-link primary')}${doc.downloadUrl ? `${external(doc.downloadUrl,'원문 PDF 다운로드 ↗','action-link')}${item.image ? external(item.image,'캡처 크게 열기 ↗','action-link') : ''}` : ''}${saveButton(item)}</div>`;
     const dialog = $('capture-dialog');
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;

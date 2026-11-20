@@ -1,7 +1,31 @@
 {
-  "reviewedAt": "2026-11-18",
+  "reviewedAt": "2026-11-20",
   "scaleTo": 1800,
   "documents": [
+    {
+      "id": "integrated-care-plan-hearing-2026",
+      "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0073&list_no=1492604&seq=1",
+      "sourceUrl": "https://www.mohw.go.kr/board.es?act=view&bid=0073&list_no=1492604&mid=a60401000000",
+      "pdfPages": 49,
+      "sha256": "eed85b8f3b65f7552c55ee8c190b0395586062d7356174e2a57489a1f3ae0355",
+      "captures": []
+    },
+    {
+      "id": "adelaide-gp-2026",
+      "downloadUrl": "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/407F97D311DBB2A638AB0CAF4404D638/S1463423626101844a.pdf/div-class-title-general-practitioners-views-and-experiences-of-providing-services-in-adelaide-residential-aged-care-homes-div.pdf",
+      "sourceUrl": "https://www.cambridge.org/core/journals/primary-health-care-research-and-development/article/general-practitioners-views-and-experiences-of-providing-services-in-adelaide-residential-aged-care-homes/407F97D311DBB2A638AB0CAF4404D638",
+      "pdfPages": 9,
+      "sha256": "03646eedb1495bb7599aa5d53360a1a2c44dc3179896f915714970c3c0dd781b",
+      "captures": []
+    },
+    {
+      "id": "brookings-ltss-2026",
+      "downloadUrl": "https://www.brookings.edu/wp-content/uploads/2026/10/20261013_Costa-FontFrank_EuropeanLessonsfortheUS_a87630.pdf",
+      "sourceUrl": "https://www.brookings.edu/articles/pooling-risk-to-pay-for-long-term-services-and-supports/",
+      "pdfPages": 24,
+      "sha256": "c76ba2ad24c0da0fd7a145d4c322d2c96ecf54c75ae23b940b95c955a14eeb7d",
+      "captures": []
+    },
     {
       "id": "kdi-skilled-nursing-2026",
       "downloadUrl": "https://www.kdi.re.kr/file/download?atch_no=4S2XKRCMrV0cM31dY0uI7g%3D%3D",

@@ -33,6 +33,9 @@ assert.deepEqual(filterItems({documentId:'kdi-skilled-nursing-2026'}).map(x=>x.f
 assert.deepEqual(filterItems({view:'documents',query:'즉시형 장기요양연금'}).map(x=>x.id), ['kiri-care-annuity-2026']);
 assert.equal(filterItems({documentId:'kiri-care-annuity-2026'})[0].printedPage,17);
 assert.deepEqual(filterItems({query:'손위생 50명'}).map(x=>x.id), ['hand-hygiene-training-compliance']);
+assert.deepEqual(filterItems({query:'통합돌봄 78,677명'}).map(x => x.id), ['integrated-care-service-linkage-2026']);
+assert.deepEqual(filterItems({query:'애들레이드 12명'}).map(x => x.id), ['adelaide-gp-interviews-2026']);
+assert.deepEqual(filterItems({query:'Brookings InCARE'}).map(x => x.id), ['brookings-ltss-financing-comparison']);
 
 // Every displayed source and crop has reproducible provenance and valid dimensions.
 assert.equal(new Set(data.documents.map(x=>x.id)).size,data.documents.length);
@@ -67,7 +70,7 @@ for (const doc of data.documents) {
   for (const url of [doc.downloadUrl,doc.sourceUrl,doc.relatedUrl].filter(Boolean)) {
     const parsed = new URL(url);
     assert.equal(parsed.protocol,'https:');
-    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr','www.mohw.go.kr','www.kdi.re.kr','www.kiri.or.kr'].includes(parsed.hostname));
+    assert.ok(['www.kihasa.re.kr','repository.kihasa.re.kr','nabo.go.kr','sri.kostat.go.kr','www.data.go.kr','www.mohw.go.kr','www.kdi.re.kr','www.kiri.or.kr','www.cambridge.org','www.brookings.edu'].includes(parsed.hostname));
   }
   assert.ok(doc.year <= Number(doc.published.slice(0,4)));
 }
@@ -84,6 +87,11 @@ for (const item of data.bookmarks) {
       assert.equal(item.figure, '표 2');
       assert.match(item.rows[0][1], /80\.0%/);
       assert.match(item.rows[1][1], /12\.0%/);
+    } else if (doc.downloadUrl) {
+      const source = manifest.documents.find(x => x.id === doc.id);
+      assert.ok(Number.isInteger(item.pdfPage) && item.pdfPage >= 1 && item.pdfPage <= source.pdfPages);
+      assert.ok(Number.isInteger(item.printedPage) && item.printedPage > 0);
+      assert.equal(item.image, undefined);
     } else {
       assert.equal(doc.format,'article');
     }
