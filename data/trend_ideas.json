@@ -1,6 +1,26 @@
 {
-  "updated": "2026-11-19",
+  "updated": "2026-11-20",
   "ideas": [
+    {
+      "id": "staff-rights-education",
+      "updated": "2026-11-20",
+      "title": "종사자 인권교육",
+      "summary": "직원 노인인권 교육을 정기적으로 하고 보호자에게 알리는 아이디어. 인권위는 요양병원 종사자 교육의 제도화를 복지부에 권고했고, 이미 의무인 교육으로 쓰지 않는다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "인권위 '요양병원 종사자 인권교육해야…노인환자 보호 필요'",
+          "source": "연합뉴스",
+          "date": "2026-11-19",
+          "url": "https://www.yna.co.kr/view/AKR20261119052500004",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-19"
+    },
     {
       "id": "guardian-info-table",
       "updated": "2026-11-18",
@@ -130,6 +150,26 @@
           "source": "뉴스파이어",
           "date": "2026-11-18",
           "url": "https://www.newsfire.co.kr/news/articleView.html?idxno=2002238",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-18"
+    },
+    {
+      "id": "burnout-visit-class",
+      "updated": "2026-11-20",
+      "title": "찾아가는 소진 교육",
+      "summary": "전문 강사가 시설을 찾아가 스트레칭·근력운동과 직무 스트레스 진단을 하는 요양보호사 교육을 소식지에 알리는 아이디어",
+      "tags": [
+        "직원사기",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "진해구, 노인요양시설 요양보호사 대상 ‘찾아가는 소진예방 교육’ 실시",
+          "source": "뉴스경남",
+          "date": "2026-11-18",
+          "url": "https://www.newsgn.com/news/articleView.html?idxno=586461",
           "verified": "ok"
         }
       ],
@@ -336,6 +376,26 @@
           "source": "경상일보",
           "date": "2026-11-12",
           "url": "https://www.ksilbo.co.kr/news/articleView.html?idxno=1072374",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-12"
+    },
+    {
+      "id": "weekend-family-gathering",
+      "updated": "2026-11-20",
+      "title": "주말 가족모임",
+      "summary": "주말에 생활 어르신과 가족이 함께하는 모임을 미리 공지하고 참석을 부탁하는 아이디어",
+      "tags": [
+        "가족소통",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "11월 28일(토) 가족모임 행사 안내",
+          "source": "마음편한집",
+          "date": "2026-11-12",
+          "url": "http://www.mindmind.net/bbs/board.php?bo_table=sosik&wr_id=2495",
           "verified": "ok"
         }
       ],
@@ -569,6 +629,25 @@
           "source": "행복다인요양원",
           "date": "2026-11-06",
           "url": "http://www.happydain.kr/bbs/board.php?bo_table=notice&wr_id=1744",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-09"
+    },
+    {
+      "id": "promo-compliance-check",
+      "updated": "2026-11-20",
+      "title": "홍보 문구 점검",
+      "summary": "본인부담금 할인, 소개 사례, 근거 없는 최상급 표현, 사진 동의 여부를 홍보물 목록으로 점검하는 아이디어. 처분 기간과 벌칙 금액은 적지 않는다",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "장기요양기관 홍보, 해도 되는 것과 안 되는 것",
+          "source": "케어플로우",
+          "date": "2026-11-09",
+          "url": "https://xn--2o2b17vwvae7vgzh.com/news/2026-11-09-care-agency-promotion-rules",
           "verified": "ok"
         }
       ],
