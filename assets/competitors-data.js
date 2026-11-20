@@ -1563,6 +1563,53 @@ Object.assign(price50, {
   }
 });
 
+// 롱텀 코파일럿. 홈·변경 이력 확인 2026-11-20. 연락 이메일은 적지 않음.
+Object.assign(d, {
+  ltcopilot: {
+    n: '롱텀 코파일럿',
+    type: 'AI 업무보조 · 공단 조회',
+    src: '롱텀 코파일럿 공식 사이트 · 2026-11-20 확인',
+    url: 'https://longterm-copilot.co.kr/',
+    sources: [
+      ['롱텀 코파일럿', 'https://longterm-copilot.co.kr/'],
+      ['변경 이력', 'https://longterm-copilot.co.kr/changelog/']
+    ],
+    screenshot: null,
+    updatedAt: '2026-11-20',
+    facts: [
+      ['운영', '홈 하단에 법인명·대표·사업자번호는 없다. 연락 메일 주소는 적지 않음. 개인 프로젝트인지는 이 페이지로 확인하지 못함'],
+      ['형태', '방문요양·장기요양 행정용 데스크톱 앱. macOS 14+, Linux x86_64, Windows 10+/x64. CLI 명령 ltc와 MCP 서버. 베타. 홈 하단 버전은 v0.0.25.0'],
+      ['조회', '공단 인증서(signCert.der, signPri.key)로 장기요양정보시스템(NPBS)을 조회. 화면은 수급자·계약·청구·근태·직원·규정 6종. 호출은 로컬이고 외부 중계 서버를 거치지 않는다고 적는다. 조회는 로컬 SQLite 감사 로그. 주민번호·전화·계좌 마스킹 옵션'],
+      ['점검', '홈은 룰 9개. 예시 점검은 청구 누락, 계약 만료 임박, 재가 정기평가 자료. 인증서 만기·마감 알림'],
+      ['자연어', '홈은 MCP 도구 26개로 한국어 질의를 NPBS 호출로 바꾼다고 적는다. 등록 대상에 Claude Desktop, Claude Code, Cursor, Codex CLI. FAQ: 자연어 질의는 사용자가 고른 LLM 서버로 평문 전송될 수 있다. NPBS 호출 자체는 로컬'],
+      ['설치 경고', 'Windows는 코드서명을 하지 않았고, 첫 실행에 SmartScreen 경고가 날 수 있다고 홈과 FAQ가 적는다'],
+      ['HWP', 'FAQ: HWP 출력은 Standard 전용이고 베타 Lite에서는 꺼져 있으며, Standard 정식 때 RAG 좌표 매핑과 함께 켠다. 변경 이력 2026-04-30은 HWP/PDF와 105 서식을 Lite에 넣었다고 적는다. 두 문장이 다르다'],
+      ['버전 이력', '변경 이력 맨 위는 v0.0.15.3, 2026-05-20이고 내용은 검색 노출·페이지 문구다. 그 다음도 2026-05-20이다. 홈의 v0.0.25.0에 해당하는 항목은 이 이력에 없다. 2026-05-20 이후 제품 소식은 이력에서 확인하지 못함'],
+      ['회사 주장 · 무료', 'FAQ: Lite는 영구 무료. Standard·Pro 요금은 나중에 안내. 지금은 무료 사용에 제한이 없다. 베타 안내: 기간 중 전 기능 무료. 50인 월 요금은 없다'],
+      ['회사 주장 · 규모', '베타를 30~50개 센터 한정 초대제로 운영한다고 적는다. 전국 6,000여 센터, 월 30~60시간, 서식 105종, 수급자 1인 15~30분은 페이지 문구이고 조사 출처는 없다. 화면의 32명·청구 금액은 예시'],
+      ['대상', '방문요양 또는 장기요양 기관 담당자, NPBS 인증서 필요. 요양원을 빼는 문장은 없다. 예시 행에 주야간이 있다'],
+      ['없는 기능', '급여제공 기록 작성, 보호자 앱, 시설 ERP로 소개하지 않는다. 공단 위에 조회·점검·질의를 얹는 도구'],
+      ['고객수', '30~50은 모집 한도. 실제 사용 센터 수는 미확인'],
+      ['출시일', '변경 이력 첫 초안은 2026-04-23. 정식 출시일은 없음. 베타'],
+      ['직영 기관 운영', '확인 필요'],
+      ['기능 확인일', '2026-11-20 · 홈과 변경 이력']
+    ],
+    note: '공단 장기요양정보시스템 위에 얹는 재가 행정 코파일럿이다. 분석(공급사 주장 아님): 독립 ERP가 아니라 기록·급여제공 작성·보호자 앱이 없다. CLI 설치와 Windows SmartScreen 경고는 홈이 적어 진입이 어렵다. 자연어 질의가 외부 LLM으로 나갈 수 있다고 FAQ가 밝혀 개인정보 위험이 있다. NPBS 조회, 자연어 질의, 누락·마감 점검은 더비다 AI와 공단 급여제공관리 전산 연동을 설계할 때 참고할 수 있다. Lite 영구 무료와 30~50곳은 회사 문구다.'
+  }
+});
+Object.assign(price50, {
+  ltcopilot: {
+    m: 'Lite 영구 무료(페이지 문구) · 50인 요금 없음',
+    o: 'Standard·Pro 요금은 나중에 안내. 베타 중 전 기능 무료, 현재 무료 사용에 제한이 없다고도 적음',
+    u: '방문요양·장기요양 기관 담당자용 데스크톱 앱. 수급자 50명 월 요금이 아님',
+    b: 'FAQ의 Lite·Standard·Pro 문구. 50인 월정액으로 환산하지 않음',
+    v: '공식 FAQ 확인 · 유료 단가 미공개',
+    s: 'https://longterm-copilot.co.kr/',
+    links: [['변경 이력', 'https://longterm-copilot.co.kr/changelog/']],
+    checked: '2026-11-20'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -1617,7 +1664,8 @@ const institutionResearch = {
   soonseeme: [['homecare'], '2026-11-12 기사는 방문요양센터 전용 관리 시스템이라고 적는다. 요양원·주야간은 그 기사와 공식 플랫폼 소개에 없어 넣지 않는다.', [['비욘드포스트 · 2026-11-12','https://www.beyondpost.co.kr/view.php?ud=2026111117394551069aeda69934_30'], ['순시미 플랫폼','https://anl.kr/platform']]],
   nhisltc: [['facility','daycare','homecare','visiting'], '2026-11-17 확대 대상은 노인요양시설·공동생활가정이다. 아시아경제는 그 전에 가정방문·주야간으로 넓혔고, 복지용구는 뺀다고 적는다. 연합뉴스는 2022년 시범을 적지 않는다.', [['아시아경제 · 2026-11-17','https://www.asiae.co.kr/article/2026111710272947099'], ['연합뉴스 · 2026-11-17','https://www.yna.co.kr/view/AKR20261117060600530']]],
   bighug: [['facility','hospital'], '제품 페이지와 2026-02-05 기사는 요양원·요양병원용이라고 적는다. 공단 급여 유형별 지원 범위는 확인하지 못했다.', [['빅허그','https://farmingstar.co.kr/ai-app']]],
-  carenation: [['homecare'], '조선비즈와 LTC 페이지는 방문요양·재가 센터다. 요양원을 하지 않는다고 적은 문장은 없다. 방문목욕은 일정 화면 예시에 있어 별도 급여 유형으로 넣지 않는다.', [['케어네이션 LTC','https://homecare.carenation.co.kr/'], ['조선비즈 · 2026-11-18','https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/']]]
+  carenation: [['homecare'], '조선비즈와 LTC 페이지는 방문요양·재가 센터다. 요양원을 하지 않는다고 적은 문장은 없다. 방문목욕은 일정 화면 예시에 있어 별도 급여 유형으로 넣지 않는다.', [['케어네이션 LTC','https://homecare.carenation.co.kr/'], ['조선비즈 · 2026-11-18','https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/']]],
+  ltcopilot: [['homecare'], '홈은 방문요양 또는 장기요양 기관 담당자를 대상으로 적는다. 요양원 제외 문장은 없고, 예시 행에 주야간이 있어 주야간 전용 제품으로 넣지 않는다.', [['롱텀 코파일럿','https://longterm-copilot.co.kr/']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -1635,5 +1683,6 @@ for (const key of ['carebridge', 'dolbomi']) d[key].institutionEvidence.checked 
 for (const key of ['soonseeme', 'caring']) d[key].institutionEvidence.checked = '2026-11-13';
 for (const key of ['nhisltc', 'bighug']) d[key].institutionEvidence.checked = '2026-11-18';
 d.carenation.institutionEvidence.checked = '2026-11-19';
+d.ltcopilot.institutionEvidence.checked = '2026-11-20';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;
