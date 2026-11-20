@@ -37,3 +37,5 @@
 2026-11-18 수집에서는 더바른컨설팅 칼럼을 `guardian-info-table`로 새로 만들었고 96위·5위는 업체 주장으로만 적었습니다. 연합뉴스 급여제공관리 전산은 `monthly-home-letter`에 합쳤습니다. 서울신문 평균 3.6년 기사는 `long-stay-daily`로 새로 만들었고 방 꾸미기·추억 기록은 기사에 없어 넣지 않았습니다. 중부일보 시립요양원 본인증 반려는 `barrier-check-photos`로 새로 만들었고 민간 시설의 인증 의무로 쓰지 않았습니다.
 
 2026-11-19 수집에서는 효자의집 목록이 아니라 `wr_id=1278` 보호자회의를 `semiannual-guardian-meeting`으로 새로 만들었고 전화번호와 담당자 이름은 넣지 않았습니다. 뉴스파이어 동절기 점검은 `winter-safety-share`로 새로 만들었고 64개소는 카드 문장에 넣지 않았습니다. 청주일보 김장 나눔은 `kimchi-guardian-party`에 합쳤고 참여 인원은 넣지 않았습니다.
+
+2026-11-20 수집에서는 연합뉴스 인권위 권고를 `staff-rights-education`로, 뉴스경남 소진 교육을 `burnout-visit-class`로, 마음편한집 가족모임을 `weekend-family-gathering`로, 케어플로우 홍보 글을 `promo-compliance-check`로 새로 만들었습니다. 입원 비율·입원 일수, 처분 기간·벌칙 금액, 주소·전화는 카드 문장에 넣지 않았습니다. 케어플로우 주소는 같은 URL이 없어 넣었습니다.
