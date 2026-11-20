@@ -44,12 +44,12 @@ const sample = {updated: TODAY, items: [
 test('the stored notices keep both collection days without merging duplicates', () => {
   const rows = prepareItems(stored, TODAY);
   const byId = Object.fromEntries(rows.map(entry => [entry.id, entry]));
-  const added = ['kakdang-welldying-theater-2026', 'anyang-lifelong-donate', 'munhwabapsang-2026', 'handon-kimchi-2026', 'coad-autodoor'];
-  assert.equal(stored.updated, '2026-11-06');
-  assert.equal(stored.items.length, 12);
-  assert.equal(rows.length, 12);
-  assert.deepEqual(rows.map(entry => entry.id).slice(0, 5), added);
-  assert.deepEqual(rows.map(entry => entry.id).slice(5), [
+  const added = ['wooyang-kimchi-2026', 'kakdang-welldying-theater-2026', 'anyang-lifelong-donate', 'munhwabapsang-2026', 'handon-kimchi-2026', 'coad-autodoor'];
+  assert.equal(stored.updated, '2026-11-20');
+  assert.equal(stored.items.length, 13);
+  assert.equal(rows.length, 13);
+  assert.deepEqual(rows.map(entry => entry.id).slice(0, 6), added);
+  assert.deepEqual(rows.map(entry => entry.id).slice(6), [
     'happygiver-donghaeng-2026', 'anyang-city-choir', 'ggac-welfare-performance',
     'kepco-happy-share', 'anyang-volunteer-1365', 'anyang-foodbank', 'gf-sponsor-activity'
   ]);
@@ -58,7 +58,7 @@ test('the stored notices keep both collection days without merging duplicates', 
   assert.ok(['munhwabapsang-2026', 'handon-kimchi-2026', 'coad-autodoor'].every(id => byId[id].collectedDate === '2026-11-04' && !byId[id].closed));
   assert.equal(rows.filter(entry => entry.type === '무료공연·문화').length, 6);
   assert.equal(rows.filter(entry => entry.type === '재능기부').length, 3);
-  assert.equal(rows.filter(entry => entry.type === '후원품').length, 3);
+  assert.equal(rows.filter(entry => entry.type === '후원품').length, 4);
   assert.equal(rows.filter(entry => entry.deadline === null).length, 8);
   assert.equal(rows.some(entry => entry.id === 'bupyeong-handbell-yeowoo'), false);
   const expectedSites = {
@@ -73,7 +73,8 @@ test('the stored notices keep both collection days without merging duplicates', 
     'gf-sponsor-activity': ['전국'],
     'handon-kimchi-2026': ['전국'],
     'coad-autodoor': ['전국'],
-    'kakdang-welldying-theater-2026': ['전국']
+    'kakdang-welldying-theater-2026': ['전국'],
+    'wooyang-kimchi-2026': ['전국']
   };
   assert.deepEqual(Object.fromEntries(rows.map(entry => [entry.id, entry.sites])), expectedSites);
   assert.deepEqual(normalizeSites(['전국', '안양', '기타']), ['전국']);
@@ -97,9 +98,15 @@ test('the stored notices keep both collection days without merging duplicates', 
   assert.equal(byId['anyang-lifelong-donate'].deadline, null);
   assert.equal(scheduleText(byId['anyang-lifelong-donate']), '연 2회, 수시 신청');
   assert.equal(byId['anyang-lifelong-donate'].contact, '원문 미기재');
-  assert.equal(new Set(rows.map(entry => canonicalUrl(entry.url))).size, 12);
+  assert.equal(new Set(rows.map(entry => canonicalUrl(entry.url))).size, 13);
   assert.ok(rows.every(entry => safeHref(entry.url)));
-  assert.equal(homeMeta(stored, TODAY), '최근 수집 2026. 11. 06 · 12건');
+  assert.equal(homeMeta(stored, TODAY), '최근 수집 2026. 11. 20 · 13건');
+  assert.deepEqual(byId['wooyang-kimchi-2026'].sites, ['전국']);
+  assert.equal(byId['wooyang-kimchi-2026'].collectedDate, '2026-11-20');
+  assert.equal(byId['wooyang-kimchi-2026'].deadline, '2026-11-27');
+  assert.equal(byId['wooyang-kimchi-2026'].contact, '');
+  assert.equal(scheduleText(byId['wooyang-kimchi-2026']), '마감 2026-11-27 23:59, 선정 발표 2026-12-04, 배송 12월 2~3주(변동 가능) · D-24');
+  assert.match(copyBlocks([byId['wooyang-kimchi-2026']]), /^\[전국\] 2026년 우양재단 김장김치 공모사업 신청 안내\nhttps:\/\/www\.wooyang\.org\/News\/\?bmode=view&idx=175608461\n마감 2026-11-27 23:59$/);
   assert.deepEqual(byId['kakdang-welldying-theater-2026'].sites, ['전국']);
   assert.equal(byId['kakdang-welldying-theater-2026'].collectedDate, '2026-11-06');
   assert.equal(scheduleText(byId['kakdang-welldying-theater-2026']), '상시(원문에 마감일 미기재)');
