@@ -79,9 +79,9 @@ def validate(body):
         if not isinstance(message, str) or len(message) > 2000: raise IntakeError(400, '문의 내용은 2,000자 이내로 입력해 주세요.')
         clean['message'] = message.strip()
     if 'service' in data:
-        if kind == 'visit' or data['service'] != 'facility-dashboard':
+        if kind == 'visit' or data['service'] not in ('facility-dashboard', 'billing-check'):
             raise IntakeError(400, '신청 서비스를 확인해 주세요.')
-        clean['service'] = 'facility-dashboard'
+        clean['service'] = data['service']
         for key, allowed in (
             ('facilityType', ('요양원', '주야간보호', '방문요양', '기타 장기요양기관')),
             ('position', ('대표', '시설장', '실무 담당자', '기타')),

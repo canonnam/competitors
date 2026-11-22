@@ -97,6 +97,8 @@ def message_text(record):
     kind = {'visit': '방문상담', 'trial': '무료체험 신청', 'pricing': '비용 문의'}[record['kind']]
     if data.get('service') == 'facility-dashboard':
         kind = '대시보드 구축 신청' if record['kind'] == 'trial' else '대시보드 구축 상담'
+    elif data.get('service') == 'billing-check':
+        kind = '청구 사전점검 방문 데모' if record['kind'] == 'trial' else '청구 사전점검 상담'
     prefix = '[개발 사이트] ' if record['environment'] == 'dev' else ''
     received = datetime.fromisoformat(record['created']).astimezone(KST).strftime('%Y-%m-%d %H:%M')
     lines = [f'{prefix}더비다 새 상담신청', f'유형: {kind}', f'접수: {received} (한국 시간)']

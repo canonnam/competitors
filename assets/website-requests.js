@@ -56,9 +56,16 @@
     return n;
   };
   const applicant = (item) => item.data.guardianName || item.data.name;
-  const inquiryLabel = (item) => item.data.service === "facility-dashboard"
-    ? (item.kind === "trial" ? "대시보드 구축 신청" : "대시보드 구축 상담")
-    : kinds[item.kind];
+  const serviceNames = {
+    "facility-dashboard": "시설 맞춤 대시보드",
+    "billing-check": "청구 사전점검",
+  };
+  const serviceInquiryNames = {
+    "facility-dashboard": ["대시보드 구축 상담", "대시보드 구축 신청"],
+    "billing-check": ["청구 사전점검 상담", "청구 사전점검 방문 데모"],
+  };
+  const inquiryLabel = (item) =>
+    serviceInquiryNames[item.data.service]?.[Number(item.kind === "trial")] ?? kinds[item.kind];
   const dateText = (value) => dateFormatter.format(new Date(value));
   const timeText = (value) => timeFormatter.format(new Date(value));
   const statusBadge = (status) =>
@@ -248,7 +255,7 @@
     for (const [key, label] of Object.entries(fields))
       if (item.data[key]) {
         let value = item.data[key];
-        if (key === "service" && value === "facility-dashboard") value = "시설 맞춤 대시보드";
+        if (key === "service") value = serviceNames[value] ?? value;
         if (key === "branch") value = branches[value];
         if (key === "inquiryType")
           value =

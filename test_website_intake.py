@@ -137,6 +137,16 @@ class WebsiteIntakeTest(unittest.TestCase):
         self.assertEqual(self.submit(p)[0], 400)
         self.assertEqual(self.request('GET', intake.ADMIN)[2]['total'], 0)
 
+    def test_billing_check_demo_is_saved_to_existing_inbox(self):
+        p = self.payload('trial')
+        p['data'].update(service='billing-check', facilityType='요양원',
+                         position='시설장', message='가상 방문 데모 신청')
+        self.assertEqual(self.submit(p)[0], 201)
+        self.assertTrue(self.submit(p)[2]['duplicate'])
+        result = self.request('GET', intake.ADMIN+'?kind=trial&environment=dev')[2]
+        self.assertEqual(result['total'], 1)
+        self.assertEqual(result['cards'][0]['data']['service'], 'billing-check')
+
     def test_open_summary_is_production_only_and_contains_no_applicant_data(self):
         cookie = {}
         empty = self.request('GET', intake.ADMIN+'/summary', headers=cookie)[2]
