@@ -1,6 +1,92 @@
 {
-  "updated": "2026-11-20",
+  "updated": "2026-11-23",
   "ideas": [
+    {
+      "id": "bath-transfer-check",
+      "updated": "2026-11-23",
+      "title": "이동 더블체크",
+      "summary": "휠체어를 움직이기 전에 브레이크 상태를 둘이 확인하고, 리프트에서 내릴 때 옆에서 이동을 돕는 절차를 보호자에게 알리는 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "이동 목욕 중 휠체어 브레이크 확인이 문제 된 판결 보도",
+          "source": "연합뉴스",
+          "date": "2026-11-22",
+          "url": "https://www.yna.co.kr/view/AKR20261120144800065",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-22"
+    },
+    {
+      "id": "bath-privacy-rule",
+      "updated": "2026-11-23",
+      "title": "목욕 사생활 원칙",
+      "summary": "목욕 대기와 옷 갈아입기를 한 명씩, 가려서 하도록 원칙을 정해 보호자에게 알리는 아이디어",
+      "tags": [
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "목욕 대기 중 사생활이 문제 된 보도",
+          "source": "머니투데이",
+          "date": "2026-11-21",
+          "url": "https://www.mt.co.kr/society/2026/11/21/2026112111295091527",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-21"
+    },
+    {
+      "id": "care-case-share",
+      "updated": "2026-11-23",
+      "title": "돌봄 사례 공유회",
+      "summary": "어르신 돌봄 사례와 직원 처우 사례를 함께 공모하고 공유회에서 나누는 아이디어. 제주 보도는 20건 중 5건을 선정했다고 적었다",
+      "tags": [
+        "직원사기",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "“어르신도 종사자도 행복해야 좋은 돌봄”…제주 장기요양 현장 우수사례 한자리에",
+          "source": "뉴스N제주",
+          "date": "2026-11-21",
+          "url": "https://www.newsnjeju.com/news/articleView.html?idxno=305215",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-21"
+    },
+    {
+      "id": "nursing-dementia-explainer",
+      "updated": "2026-11-23",
+      "title": "간호·치매 기능 소개",
+      "summary": "개원 기념에 확인한 입소·종사자 수와 시범사업 참여를 구분해서 알리는 아이디어. 고성 기사는 입소 67명, 종사자 52명을 현재 인원으로 적었다. 24시간 간호와 치매전담실 공사는 계획이다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "고성군치매전문요양원 개원 3주년···운영 공백 딛고 전문 돌봄시설로 도약",
+          "source": "고성미래신문",
+          "date": "2026-11-20",
+          "url": "https://www.gofnews.com/news/articleView.html?idxno=34563",
+          "verified": "ok"
+        },
+        {
+          "title": "고성군치매전문요양원, 개원 3주년 맞아 전문간호·치매 돌봄 기능 강화",
+          "source": "신아일보",
+          "date": "2026-11-16",
+          "url": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5083805",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-20"
+    },
     {
       "id": "staff-rights-education",
       "updated": "2026-11-20",
@@ -243,26 +329,6 @@
           "source": "KMS",
           "date": "2026-11-16",
           "url": "http://www.kmsnews.co.kr/news/articleView.html?idxno=30789",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-16"
-    },
-    {
-      "id": "nursing-dementia-explainer",
-      "updated": "2026-11-17",
-      "title": "간호·치매 기능 소개",
-      "summary": "전문요양실 시범 선정과 12월 치매전담실 공사 계획을 보호자에게 구분해서 알리는 아이디어. 24시간 간호와 촉탁의 방문 확대는 시범 제도의 계획이다",
-      "tags": [
-        "홍보",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "고성군치매전문요양원, 개원 3주년 맞아 전문간호·치매 돌봄 기능 강화",
-          "source": "신아일보",
-          "date": "2026-11-16",
-          "url": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5083805",
           "verified": "ok"
         }
       ],
