@@ -39,3 +39,5 @@
 2026-11-19 수집에서는 효자의집 목록이 아니라 `wr_id=1278` 보호자회의를 `semiannual-guardian-meeting`으로 새로 만들었고 전화번호와 담당자 이름은 넣지 않았습니다. 뉴스파이어 동절기 점검은 `winter-safety-share`로 새로 만들었고 64개소는 카드 문장에 넣지 않았습니다. 청주일보 김장 나눔은 `kimchi-guardian-party`에 합쳤고 참여 인원은 넣지 않았습니다.
 
 2026-11-20 수집에서는 연합뉴스 인권위 권고를 `staff-rights-education`로, 뉴스경남 소진 교육을 `burnout-visit-class`로, 마음편한집 가족모임을 `weekend-family-gathering`로, 케어플로우 홍보 글을 `promo-compliance-check`로 새로 만들었습니다. 입원 비율·입원 일수, 처분 기간·벌칙 금액, 주소·전화는 카드 문장에 넣지 않았습니다. 케어플로우 주소는 같은 URL이 없어 넣었습니다.
+
+2026-11-23 수집에서는 연합뉴스 판결을 `bath-transfer-check`로, 머니투데이 보도를 `bath-privacy-rule`로 새로 만들었고 당사자·기관·형량과 현장 묘사는 넣지 않았습니다. 고성미래신문 개원 3주년은 `nursing-dementia-explainer`에 합쳤고 입소 67명·종사자 52명만 기사 수치로 적었습니다. 뉴스N제주 우수사례 공유회는 `care-case-share`로 새로 만들었고 선정 기관 이름은 넣지 않았습니다.
