@@ -41,3 +41,5 @@
 2026-11-20 수집에서는 연합뉴스 인권위 권고를 `staff-rights-education`로, 뉴스경남 소진 교육을 `burnout-visit-class`로, 마음편한집 가족모임을 `weekend-family-gathering`로, 케어플로우 홍보 글을 `promo-compliance-check`로 새로 만들었습니다. 입원 비율·입원 일수, 처분 기간·벌칙 금액, 주소·전화는 카드 문장에 넣지 않았습니다. 케어플로우 주소는 같은 URL이 없어 넣었습니다.
 
 2026-11-23 수집에서는 연합뉴스 판결을 `bath-transfer-check`로, 머니투데이 보도를 `bath-privacy-rule`로 새로 만들었고 당사자·기관·형량과 현장 묘사는 넣지 않았습니다. 고성미래신문 개원 3주년은 `nursing-dementia-explainer`에 합쳤고 입소 67명·종사자 52명만 기사 수치로 적었습니다. 뉴스N제주 우수사례 공유회는 `care-case-share`로 새로 만들었고 선정 기관 이름은 넣지 않았습니다.
+
+2026-11-24 수집에서는 뉴시스 명랑운동회를 `staff-award-healing`에 합쳤습니다. 같은 기사의 탈춤 체험은 요양 아이디어가 아니라 넣지 않았습니다. 머니투데이 AI·XR 협약은 `care-education-partnership`로, 뉴시스 점검 계획은 `rights-assurance-notice`로 새로 만들었습니다. 참석 인원·표창 인원·협약 기관 수·점검 대상 수는 카드 문장에 넣지 않았습니다. 기존 문구에서 ‘협약을 맞어’ 같은 오타는 찾지 못했습니다.
