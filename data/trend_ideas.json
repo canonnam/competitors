@@ -1,6 +1,73 @@
 {
-  "updated": "2026-11-23",
+  "updated": "2026-11-24",
   "ideas": [
+    {
+      "id": "staff-award-healing",
+      "updated": "2026-11-24",
+      "title": "표창과 힐링 교육",
+      "summary": "유공 종사자 표창과 팀 레크리에이션을 열고 사진을 소식지에 올리는 아이디어",
+      "tags": [
+        "직원사기",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "[고성소식]노인장기요양기관종사자 명랑운동회 등",
+          "source": "뉴시스",
+          "date": "2026-11-23",
+          "url": "https://www.newsis.com/view/NISX20261123_0003879331",
+          "verified": "ok"
+        },
+        {
+          "title": "성남시 노인요양기관 358곳 근무자 직무교육",
+          "source": "에이타임즈",
+          "date": "2026-11-11",
+          "url": "http://m.atimes.kr/news/articleView.html?idxno=89997",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-23"
+    },
+    {
+      "id": "care-education-partnership",
+      "updated": "2026-11-24",
+      "title": "돌봄교육 협약",
+      "summary": "대학과 교육 협약을 맺어 직원이 AI·XR 실무교육을 받고, 교육 협약 기관으로 알리는 아이디어",
+      "tags": [
+        "홍보",
+        "직원사기"
+      ],
+      "articles": [
+        {
+          "title": "건양사이버대, AI 돌봄교육 현장 확산…돌봄 인력 전문성 강화",
+          "source": "머니투데이",
+          "date": "2026-11-23",
+          "url": "https://www.mt.co.kr/policy/2026/11/23/2026112309540578537",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-23"
+    },
+    {
+      "id": "rights-assurance-notice",
+      "updated": "2026-11-24",
+      "title": "점검·교육 공개",
+      "summary": "CCTV 보관 기간, 외부 점검, 종사자 인권교육을 보호자에게 미리 알리는 아이디어. 이번 기사는 도가 보관 기간 연장과 불시점검 정례화를 복지부에 건의하겠다고 밝힌 계획이다",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "충남도, 요양시설 입소자 인권침해·생활환경 살핀다",
+          "source": "뉴시스",
+          "date": "2026-11-23",
+          "url": "https://www.newsis.com/view/NISX20261123_0003879667",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-23"
+    },
     {
       "id": "bath-transfer-check",
       "updated": "2026-11-23",
@@ -536,26 +603,6 @@
           "source": "데일리인천",
           "date": "2026-11-11",
           "url": "https://www.dailyincheon.com/news/36311",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-11"
-    },
-    {
-      "id": "staff-award-healing",
-      "updated": "2026-11-12",
-      "title": "표창과 힐링 교육",
-      "summary": "돌봄의 품격·노인인권 교육과 유공 종사자 표창, 힐링·소통 시간을 묶어 소식지에 알리는 아이디어",
-      "tags": [
-        "직원사기",
-        "프로그램"
-      ],
-      "articles": [
-        {
-          "title": "성남시 노인요양기관 358곳 근무자 직무교육",
-          "source": "에이타임즈",
-          "date": "2026-11-11",
-          "url": "http://m.atimes.kr/news/articleView.html?idxno=89997",
           "verified": "ok"
         }
       ],
