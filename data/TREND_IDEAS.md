@@ -43,3 +43,5 @@
 2026-11-23 수집에서는 연합뉴스 판결을 `bath-transfer-check`로, 머니투데이 보도를 `bath-privacy-rule`로 새로 만들었고 당사자·기관·형량과 현장 묘사는 넣지 않았습니다. 고성미래신문 개원 3주년은 `nursing-dementia-explainer`에 합쳤고 입소 67명·종사자 52명만 기사 수치로 적었습니다. 뉴스N제주 우수사례 공유회는 `care-case-share`로 새로 만들었고 선정 기관 이름은 넣지 않았습니다.
 
 2026-11-24 수집에서는 뉴시스 명랑운동회를 `staff-award-healing`에 합쳤습니다. 같은 기사의 탈춤 체험은 요양 아이디어가 아니라 넣지 않았습니다. 머니투데이 AI·XR 협약은 `care-education-partnership`로, 뉴시스 점검 계획은 `rights-assurance-notice`로 새로 만들었습니다. 참석 인원·표창 인원·협약 기관 수·점검 대상 수는 카드 문장에 넣지 않았습니다. 기존 문구에서 ‘협약을 맞어’ 같은 오타는 찾지 못했습니다.
+
+2026-11-25 수집에서는 아시아타임즈 저염 김치 체험을 `low-salt-kimchi-class`로 새로 만들었습니다. 연합뉴스 화재 대피는 `fire-evac-share`에, 더 데일리가드 동절기 점검은 `winter-safety-share`에 합쳤습니다. 투데이경제 감사 질의는 사례 묘사 없이 `staff-screening-share`로 새로 만들었습니다. 유튜브 `I0lfZcaftYM`은 `stay-vlog`로 넣었고 순위 사이트 주소는 쓰지 않았습니다.

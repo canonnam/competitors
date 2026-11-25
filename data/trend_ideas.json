@@ -1,6 +1,100 @@
 {
-  "updated": "2026-11-24",
+  "updated": "2026-11-25",
   "ideas": [
+    {
+      "id": "winter-safety-share",
+      "updated": "2026-11-25",
+      "title": "동절기 점검 안내",
+      "summary": "소방·전기·가스, 한파 대응, 감염·급식 위생, 대피 대책을 자체 점검표로 살피고 결과를 보호자에게 알리는 아이디어. 이번 기사는 구가 시설 자체 점검과 일부 현장 점검을 추진한다고 밝힌 계획이다",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "고양시 일산동구, 장기요양기관·노인주거복지시설 동절기 안전점검 추진",
+          "source": "더 데일리가드",
+          "date": "2026-11-24",
+          "url": "https://www.dailyguard.co.kr/news/articleView.html?idxno=348020",
+          "verified": "ok"
+        },
+        {
+          "title": "고양시 일산서구, 2026년 동절기 노인장기요양기관 안전점검 실시",
+          "source": "뉴스파이어",
+          "date": "2026-11-18",
+          "url": "https://www.newsfire.co.kr/news/articleView.html?idxno=2002238",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-24"
+    },
+    {
+      "id": "fire-evac-share",
+      "updated": "2026-11-25",
+      "title": "야간 대피 공개",
+      "summary": "야간 화재 대피 훈련 장면과 지점별 대피 동선을 보호자 공지·홈페이지에 공개하는 방식",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "상가 건물 화재로 요양원 입소자가 대피한 보도",
+          "source": "연합뉴스",
+          "date": "2026-11-24",
+          "url": "https://www.yna.co.kr/view/AKR20261124140700065",
+          "verified": "ok"
+        },
+        {
+          "title": "세종소방본부 도심형 요양원 야간 대피 점검",
+          "source": "뉴스핌",
+          "date": "2026-10-28",
+          "url": "https://newspim.com/news/view/20261028001442",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-24"
+    },
+    {
+      "id": "low-salt-kimchi-class",
+      "updated": "2026-11-25",
+      "title": "저염 김치 체험",
+      "summary": "어르신이 직접 저염 토마토 김치를 담그며 나트륨을 알아보고, 손의 소근육을 움직이고, 김장 추억을 나누는 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "[24일 인천 옹진군] 요양원 어르신 대상 저염 식생활 체험 지원 등",
+          "source": "아시아타임즈",
+          "date": "2026-11-24",
+          "url": "https://www.asiatime.co.kr/article/20261124500273",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-24"
+    },
+    {
+      "id": "staff-screening-share",
+      "updated": "2026-11-25",
+      "title": "직원 검증 공개",
+      "summary": "종사자 성범죄 경력 조회와 인권·성인지 교육 이수 현황을 정기적으로 보호자에게 알리는 아이디어",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "장기요양 종사자 경력 조회와 인권교육 관리를 물은 감사 질의",
+          "source": "투데이경제",
+          "date": "2026-11-24",
+          "url": "https://www.tookyung.com/news/articleView.html?idxno=758989",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-24"
+    },
     {
       "id": "staff-award-healing",
       "updated": "2026-11-24",
@@ -63,6 +157,25 @@
           "source": "뉴시스",
           "date": "2026-11-23",
           "url": "https://www.newsis.com/view/NISX20261123_0003879667",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-23"
+    },
+    {
+      "id": "stay-vlog",
+      "updated": "2026-11-25",
+      "title": "일상 영상",
+      "summary": "요양원에서 지낸 일상을 영상으로 남겨 알리는 아이디어",
+      "tags": [
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "요양원에서 두 달을 지내며 느낀 모든 것들",
+          "source": "손자투어",
+          "date": "2026-11-23",
+          "url": "https://www.youtube.com/watch?v=I0lfZcaftYM",
           "verified": "ok"
         }
       ],
@@ -283,26 +396,6 @@
           "source": "효자의집",
           "date": "2026-11-18",
           "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1278",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-18"
-    },
-    {
-      "id": "winter-safety-share",
-      "updated": "2026-11-19",
-      "title": "동절기 점검 안내",
-      "summary": "화재·난방·낙상·감염병·비상연락망 점검 항목과 고친 점을 보호자에게 알리는 아이디어. 이번 기사는 구청이 동절기 합동 점검을 한다고 밝힌 계획이다",
-      "tags": [
-        "홍보",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "고양시 일산서구, 2026년 동절기 노인장기요양기관 안전점검 실시",
-          "source": "뉴스파이어",
-          "date": "2026-11-18",
-          "url": "https://www.newsfire.co.kr/news/articleView.html?idxno=2002238",
           "verified": "ok"
         }
       ],
@@ -1168,26 +1261,6 @@
           "source": "요양뉴스",
           "date": "2026-10-28",
           "url": "https://www.yoyangnews.co.kr/news/articleView.html?idxno=24440",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-10-28"
-    },
-    {
-      "id": "fire-evac-share",
-      "updated": "2026-11-03",
-      "title": "야간 대피 공개",
-      "summary": "야간 화재 대피 훈련 장면과 지점별 대피 동선을 보호자 공지·홈페이지에 공개하는 방식",
-      "tags": [
-        "가족소통",
-        "홍보"
-      ],
-      "articles": [
-        {
-          "title": "세종소방본부 도심형 요양원 야간 대피 점검",
-          "source": "뉴스핌",
-          "date": "2026-10-28",
-          "url": "https://newspim.com/news/view/20261028001442",
           "verified": "ok"
         }
       ],
