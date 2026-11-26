@@ -8,7 +8,7 @@
     assist: {name:'업무보조·교육', keys:['planner','well','aicareplus','careaigpt','koreacareai','aidosa','junctionmed','carelogue','navi','dolbom','carebridge','dolbomi','ltcopilot']},
     monitor: {name:'안부·안전 돌봄', keys:['hyodol','happy','skt','lguplus','namuhx']},
     care: {name:'돌봄 운영·매칭', keys:['caring','caredoc']},
-    safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank','wellcare']}
+    safety: {name:'시설 낙상·이상감지', keys:['cleverus','inzinious','spacebank','wellcare','helloon']}
   };
   const roleOf = Object.fromEntries(Object.entries(roles).flatMap(([role, group]) => group.keys.map(key => [key, role])));
   const $ = id => document.getElementById(id);

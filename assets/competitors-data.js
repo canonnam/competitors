@@ -509,6 +509,13 @@ d.easy.facts.push(
   ['기능 확인일', '2026-10-15 · 주간보호 ERP 공식 소개 기준. 기존 가격 확인일 2026-09-08과 구분']
 );
 d.easy.note += ' 주간보호 ERP는 서류 작성 보조에서 상태 변화 기반 계획서 생성·평가 누락 점검으로 AI 적용 범위를 넓힌다. AI 결의서·희망이음 자동 등록은 공식 안내의 2026년 10월 출시 예정 기능으로, 실제 출시 공지·제공 범위는 후속 확인이 필요하다.';
+d.easy.sources.push(['디지털타임스 · 2026-11-18', 'https://www.dt.co.kr/article/12095875']);
+d.easy.facts.push(
+  ['한노협 교육', '디지털타임스 입력 2026-11-18 10:51. 한노협과 주야간보호 순회 교육. 진주·사천 다음으로 11월 12일 광주 5·18민주화운동교육관에서 전남·광주 관계자 80여 명'],
+  ['회사 설명 · 소개 기능', '교육에서 소개했다고 기사가 전한다. 연간 중요업무 점검 캘린더, 사례관리 대상자 추천 AI, 욕구사정 AI 추천, 급여제공계획서 종합의견 생성 AI, 모바일 요양기록 음성기록. 종합의견이 초안에 도움이 된다는 말은 강연자 평가'],
+  ['동작', '미확인. 기사는 교육 소개이지 제품 화면을 열어 동작까지 확인한 기록이 아니다. 공식 주간보호 페이지의 기존 AI와 같은 기능인지도 이 기사에 없다']
+);
+d.easy.note += ' 2026-11-18 기사의 AI 다섯 가지는 교육 소개다. 분석(공급사 주장 아님): 사례관리 추천, 욕구사정 참고, 계획서 종합의견, 음성 기록, 연간 점검 캘린더는 더비다의 평가·기록 보조와 겹쳐 볼 수 있다. 동작은 확인되지 않았다.';
 d.carehaja = {
   n: '케어하자',
   type: 'ERP · 요양시설 AI 음성 기록·기관평가',
@@ -827,7 +834,7 @@ Object.assign(price50, {
 // Date this analysis record changed, independent of launch, article and price dates.
 Object.entries({
   cura:'2026-10-09', careaigpt:'2026-10-12', koreacareai:'2026-10-12',
-  easy:'2026-10-15', carehaja:'2026-10-15', caring:'2026-11-23', angel:'2026-11-06', carefor:'2026-11-06', ecm:'2026-10-29'
+  easy:'2026-11-26', carehaja:'2026-10-15', caring:'2026-11-26', angel:'2026-11-06', carefor:'2026-11-26', ecm:'2026-10-29'
 }).forEach(([key,date]) => { d[key].updatedAt = date; });
 d.ecm.sources = [['EcM 공식 소개·요금 · 2026-10-29', 'https://ecm.or.kr/main/intro']];
 Object.assign(d.caring, {
@@ -884,6 +891,10 @@ d.caring.facts.push(
   ["AX 외부 판매", "아시아경제 2026-11-13에는 AX나 인텔리전스를 외부에 판매하지 않는다는 문장이 없다. 미확인"]
 );
 d.caring.note += " 2026-11-19 개인정보 유출 공지는 지디넷·실버투데이·헬스앤마켓이 전한다. 피해 규모는 비공개다. 공지 원문 주소는 2026-11-23에 열리지 않았다. 분석(공급사 주장 아님): 요양 데이터는 건강정보라 보안이 ERP를 고르는 기준이 될 수 있다. 더비다 후보로는 역할별 접근 권한, 내부 조회 도구 통제, 조회 감사 로그, 자유 메모의 민감정보 탐지·마스킹, 이상 조회 알림이 있다. 사내 데이터를 AI에 연결할수록 공격 표면이 넓어질 수 있다.";
+d.caring.sources.push(["땅집고 · 2026-11-26", "https://www.chosun.com/economy/realty/allthatsenior/2026/11/26/MMZDEMRQMFSDAZJVGY3DGM3DGQ/"]);
+d.caring.facts.push(
+  ["땅집고 후속", "2026-11-26 기사. 화면 본문은 렌더되지 않았고, 같은 페이지의 기사 데이터로 읽었다. 9월 4일 침입 흔적을 발견한 뒤 11월 17일 확인까지 74일이라고 기사가 적는다. 초기 대응이 부실하고 공지를 미뤘다는 평은 언론 평가다. 관계자 발언: 공격자가 기존 계정으로 날짜를 다르게 조회한 것으로 확인됐다. 새로 만든 계정만 조사했다는 다음 문장은 기사 추정이다. 피해 규모는 여전히 비공개. 기사는 자택 출입 비밀번호라고 적고, 앞선 기사는 출입 비밀번호라고만 했다"]
+);
 d.carefor.sources = [["케어포 공식 사이트", "https://www.carefor.co.kr/"], ["FAQ 목록 · 게시일 2026-10-18 확인", "https://carefor.co.kr/cs/list_faq.php"], ["처방전 AI분석등록 매뉴얼 안내", "https://carefor.co.kr/cs/view_faq.php?calmgno=46913"]];
 d.carefor.facts.find(([label]) => label === '핵심 기능')[1] += ', 처방전 AI분석등록 매뉴얼 공개';
 d.carefor.facts.push(
@@ -916,6 +927,21 @@ d.carefor.sources.push(
   ['글로벌이코노믹 · 같은 MOU · 2026-11-06', 'https://www.g-enews.com/article/Distribution/2026/11/202611060837599943a96f092d0c_1']
 );
 d.carefor.note += ' 2026-11-05 나무엑스 협약은 ERP 교체가 아니다. 분석(공급사 주장 아님): 케어포를 쓰는 시설이 기록 ERP와 안전·순찰 AI를 한 묶음으로 기대할 수 있다. 더비다는 운영·기록 SaaS 구분을 유지하고, 로봇·센서 연동과 API 파트너를 검토할 사항으로 둔다.';
+d.carefor.sources.push(
+  ['시설 개선 공지 · 2026-11-24', 'https://www.carefor.co.kr/cs/view_notice.php?calmgno=47000'],
+  ['방문 개선 공지 · 2026-11-24', 'https://www.carefor.co.kr/cs/view_notice.php?calmgno=47002']
+);
+d.carefor.facts.push(
+  ['2026-11-24 개선', '시설 공지 calmgno=47000은 14가지, 방문 공지 calmgno=47002는 13가지. 둘 다 목록 날짜 2026.11.24, 적용은 2026년 11월 24일 오후 5시. 주야간 공지는 이 두 주소에 없다'],
+  ['일일 현황판', '시설·방문 공통. 로그인하면 첫 화면이 일일 현황판. 인정기간·급여제공계획·표준약관 만료와 공단 인정정보 변경 안내는 로그인 팝업 대신 알림센터'],
+  ['직원 등록', '시설·방문 공통. 신규 등록은 직원 기본 정보만 받고, 근무시간과 4대보험은 등록 뒤에 넣는다. 방문 공지는 4대보험을 뒤에 넣는다고 적고 근무시간 문장은 시설 공지에 있다'],
+  ['AI 처방전 PDF', '시설 공지만. 수급자 처방전 등록에서 사진 외에 PDF를 올리고 분석을 누르면 AI가 투약품목을 분석한다. PDF는 미리보기가 없다. 방문 공지에는 이 항목이 없다'],
+  ['욕구사정 안내', '시설·방문 공통. 조사사유가 신규인 첫 욕구사정은 판단근거의 [AI 선택항목 기반] 버튼이 보이지 않고, 면담·관찰·처방전 기준 안내가 나온다. 가족 및 환경상태와 자원이용 욕구는 면담 안내만. 버튼이 새로 생겼다는 문장은 없고, 신규가 아닐 때의 동작은 이 공지에 없다'],
+  ['해지 후 조회', '시설·방문 공통. 계약 해지 뒤 자료조회는 직종이 시설장 또는 대표자인 사람만 신청한다. 로그인할 때 시설장·대표자 휴대폰 인증을 거친다'],
+  ['방문 메뉴', '방문 공지만. 8-8.장기근속장려금대상자는 월 근무시간과 충족·미달을 보여주고 금액은 없다. 요양보호사·간호사·간호조무사·치과위생사는 월 60시간 이상을 충족으로 본다. 1-1-1.대기 수급자 관리가 새로 생겼다'],
+  ['위생·건강기록', '시설 공지만. 위생점검일지는 2026년 12월 1일부터 15개 항목 위생관리점검표이고, 11월 30일까지는 이전 양식이다. 간호일지 건강관리기록은 필수나 규정 항목이 아니라 2026년 12월 31일 삭제 예정이다. 방문 공지에는 없다']
+);
+d.carefor.note += ' 분석(공급사 주장 아님): 로그인 첫 화면과 만료 알림을 한곳으로 모은 점, 해지 뒤 조회를 시설장·대표자 인증으로 좁힌 점은 더비다 현황판·알림·권한과 견줄 수 있다. PDF 처방전 분석은 시설 공지에만 있다.';
 
 // 방문요양 ERP and care-record patent notice, checked 2026-10-27.
 // 케어로그 is not 시니어앤라이프의 AI 디지털케어로그.
@@ -1625,6 +1651,43 @@ Object.assign(price50, {
   }
 });
 
+Object.assign(d, {
+  helloon: {
+    n: '헬로온 케어스테이션',
+    type: '스마트워치 · 시설 상태 알림',
+    src: '전자신문 · 2026-11-25 발행',
+    url: 'https://www.etnews.com/20261123000515',
+    sources: [['전자신문 · 2026-11-25', 'https://www.etnews.com/20261123000515']],
+    screenshot: null,
+    updatedAt: '2026-11-26',
+    facts: [
+      ['운영', '트리플스퀘어. 기사에 대표 엄영상, 2024년 설립. 기자 메일은 적지 않음'],
+      ['형태', '스마트워치 헬로온을 요양시설과 시니어 레지던스로 넓힌 시설용 화면이 케어스테이션. 심박수·걸음 수·위치·활동을 한 화면에서 보고, 위험 신호가 있으면 알림. 판단과 대응은 시설 종사자. 질환 진단이나 의료 판단을 대신하지 않는다고 기사가 적는다'],
+      ['전송', '개인용은 워치와 스마트폰. 케어스테이션은 시설 와이파이로 입주자 스마트폰 없이 보낸다. 통신 음영과 누락을 줄이는 수집 인프라는 개발 중'],
+      ['회사 주장 · 실증', '요양시설 2곳에서 약 8개월, 고령자 200여 명을 실증해 야간 모니터링과 기록에 적용했다고 기사가 회사 설명을 전한다. 대응 시간이나 기록 감소 폭의 숫자는 없다고 기사가 적는다'],
+      ['AI', '개인별 패턴으로 이상 징후를 찾는 AI는 준비 중. 2026년 하반기 시설용 수집 인프라와 AI 사전학습, 2027년 현장 실증과 위험도 높은 입주자 우선 알림, 2028년 공인 성능 검증과 AI 리포트 실증 뒤 본격화는 회사 계획. 출시된 기능이 아니다'],
+      ['투자', '한림대학교기술지주 후속 투자. 금액은 없다. KB유니콘클럽 6기 참여. 6기는 22.5대 1로 10곳을 뽑았다고 기사가 적는다. 그 프로그램의 투자 유치 완료로 쓰지 않음'],
+      ['없는 기능', '낙상 감지, ERP, 청구, 급여 기능은 이 기사에 없다'],
+      ['고객수', '200여 명은 실증 대상. 유료 시설 수는 미확인'],
+      ['출시일', '케어스테이션 영업을 진행 중이라고 기사가 전한다. 정식 출시일은 없다. AI 이상 징후는 2027년 실증 계획'],
+      ['직영 기관 운영', '확인 필요'],
+      ['기능 확인일', '2026-11-26 · 전자신문']
+    ],
+    note: '요양시설·시니어 레지던스용 스마트워치 모니터링이다. 8개월·200여 명과 AI 일정은 회사 설명이다. 분석(공급사 주장 아님): ERP가 아니라 상태 알림 애드온이라 연동 파트너 후보로 볼 수 있다. 낙상 감지는 기사에 없고, AI 이상 징후는 출시 전이다.'
+  }
+});
+Object.assign(price50, {
+  helloon: {
+    m: '50인 요금 없음',
+    o: '시설 규모별 워치 등록·관리자 화면은 기사에 있고 단가는 없다',
+    u: '요양시설·시니어 레지던스 모니터링. 수급자 50명 월 요금이 아님',
+    b: '공개 단가가 없어 50인 월 요금을 계산하지 않음',
+    v: '전자신문 확인 · 요금 미공개',
+    s: 'https://www.etnews.com/20261123000515',
+    checked: '2026-11-26'
+  }
+});
+
 const functionShots={ecm:['ecm.png','EcM Web 업무관리 화면'],angel:['angel.png','CMS 자동이체 기능 소개 화면'],planner:['planner.png','AI 급여제공계획서 작성 화면'],maeum:['maeum.png','마음손ERP 대시보드 화면'],yoyangsys:['yoyangsys.png','요양시스 서비스 기능 화면'],hyodol:['hyodol.png','효돌 기관용 모니터링 시스템 화면'],happy:['happy.png','행복커넥트 관리자 관제 시스템 화면'],skt:['skt.jpg','누구 오팔 이용 통계 기능 화면'],caredoc:['caredoc.png','SHOS 경영 관리 기능 화면']};
 
 Object.entries(d).forEach(([key,value])=>{if(value.screenshot!==null)value.screenshot=`/assets/screenshots/${key}.png`;value.price50=price50[key];value.facts.push(['가격',value.price50.m+' · '+value.price50.u]);if(functionShots[key]){value.functionShot=`/assets/function-screens/${functionShots[key][0]}`;value.functionShotTitle=functionShots[key][1];value.functionShotSource=value.url}});
@@ -1680,7 +1743,8 @@ const institutionResearch = {
   nhisltc: [['facility','daycare','homecare','visiting'], '2026-11-17 확대 대상은 노인요양시설·공동생활가정이다. 아시아경제는 그 전에 가정방문·주야간으로 넓혔고, 복지용구는 뺀다고 적는다. 연합뉴스는 2022년 시범을 적지 않는다.', [['아시아경제 · 2026-11-17','https://www.asiae.co.kr/article/2026111710272947099'], ['연합뉴스 · 2026-11-17','https://www.yna.co.kr/view/AKR20261117060600530']]],
   bighug: [['facility','hospital'], '제품 페이지와 2026-02-05 기사는 요양원·요양병원용이라고 적는다. 공단 급여 유형별 지원 범위는 확인하지 못했다.', [['빅허그','https://farmingstar.co.kr/ai-app']]],
   carenation: [['homecare'], '조선비즈와 LTC 페이지는 방문요양·재가 센터다. 요양원을 하지 않는다고 적은 문장은 없다. 방문목욕은 일정 화면 예시에 있어 별도 급여 유형으로 넣지 않는다.', [['케어네이션 LTC','https://homecare.carenation.co.kr/'], ['조선비즈 · 2026-11-18','https://biz.chosun.com/industry/business_info/2026/11/18/SOKXSJ5YZBEXLML73CK5WQDXL4/']]],
-  ltcopilot: [['homecare'], '홈은 방문요양 또는 장기요양 기관 담당자를 대상으로 적는다. 요양원 제외 문장은 없고, 예시 행에 주야간이 있어 주야간 전용 제품으로 넣지 않는다.', [['롱텀 코파일럿','https://longterm-copilot.co.kr/']]]
+  ltcopilot: [['homecare'], '홈은 방문요양 또는 장기요양 기관 담당자를 대상으로 적는다. 요양원 제외 문장은 없고, 예시 행에 주야간이 있어 주야간 전용 제품으로 넣지 않는다.', [['롱텀 코파일럿','https://longterm-copilot.co.kr/']]],
+  helloon: [['facility','housing'], '전자신문은 요양시설과 시니어 레지던스다. 요양병원·낙상 감지는 기사에 없다.', [['전자신문 · 2026-11-25','https://www.etnews.com/20261123000515']]]
 };
 Object.entries(d).forEach(([key, item]) => {
   const [institutions, note, sources] = institutionResearch[key];
@@ -1699,6 +1763,9 @@ for (const key of ['soonseeme', 'caring']) d[key].institutionEvidence.checked = 
 for (const key of ['nhisltc', 'bighug']) d[key].institutionEvidence.checked = '2026-11-18';
 d.carenation.institutionEvidence.checked = '2026-11-19';
 d.ltcopilot.institutionEvidence.checked = '2026-11-20';
-d.caring.institutionEvidence.checked = '2026-11-23';
+d.caring.institutionEvidence.checked = '2026-11-26';
+d.carefor.institutionEvidence.checked = '2026-11-26';
+d.easy.institutionEvidence.checked = '2026-11-26';
+d.helloon.institutionEvidence.checked = '2026-11-26';
 window.competitorInstitutionTypes = institutionTypes;
 window.competitorData = d;

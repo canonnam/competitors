@@ -38,6 +38,7 @@ ALIASES = {"easy": ["이지케어", "이지엠소프트"], "carefor": ["케어�
            "bighug": ["빅허그", "Big Hug", "파밍스타"],
            "carenation": ["케어네이션", "케어네이션 LTC", "CareNation"],
            "ltcopilot": ["롱텀 코파일럿", "Longterm Copilot"],
+           "helloon": ["헬로온", "케어스테이션", "트리플스퀘어"],
            "bokdori": ["복도리", "복케어", "복도리 케어", "복도리 센스", "텀브샤인"],
            "dolbom": ["슬기로운 돌봄생활", "돌봄생활", "티에프네트웍스", "TF네트웍스", "TFNetworks"],
            "carebridge": ["돌봄다리", "돌봄테크"],
