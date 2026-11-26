@@ -1,7 +1,15 @@
 {
-  "reviewedAt": "2026-11-20",
+  "reviewedAt": "2026-11-26",
   "scaleTo": 1800,
   "documents": [
+    {
+      "id": "social-services-survey-2025-release",
+      "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0027&list_no=1492656&seq=2",
+      "sourceUrl": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1492656",
+      "pdfPages": 11,
+      "sha256": "b01aaee8f12d0c1da4a2864ae16ebfd6e20f7d517f48a07bac0967bd3f865566",
+      "captures": []
+    },
     {
       "id": "integrated-care-plan-hearing-2026",
       "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0073&list_no=1492604&seq=1",
