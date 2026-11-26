@@ -44,4 +44,6 @@
 
 2026-11-24 수집에서는 뉴시스 명랑운동회를 `staff-award-healing`에 합쳤습니다. 같은 기사의 탈춤 체험은 요양 아이디어가 아니라 넣지 않았습니다. 머니투데이 AI·XR 협약은 `care-education-partnership`로, 뉴시스 점검 계획은 `rights-assurance-notice`로 새로 만들었습니다. 참석 인원·표창 인원·협약 기관 수·점검 대상 수는 카드 문장에 넣지 않았습니다. 기존 문구에서 ‘협약을 맞어’ 같은 오타는 찾지 못했습니다.
 
-2026-11-25 수집에서는 아시아타임즈 저염 김치 체험을 `low-salt-kimchi-class`로 새로 만들었습니다. 연합뉴스 화재 대피는 `fire-evac-share`에, 더 데일리가드 동절기 점검은 `winter-safety-share`에 합쳤습니다. 투데이경제 감사 질의는 사례 묘사 없이 `staff-screening-share`로 새로 만들었습니다. 유튜브 `I0lfZcaftYM`은 `stay-vlog`로 넣었고 순위 사이트 주소는 쓰지 않았습니다.
+2026-11-25 수집에서는 아시아타임즈 저염 김치 체험을 `low-salt-kimchi-class`로 새로 만들었습니다. 연합뉴스 화재 대피는 `fire-evac-share`에, 더 데일리가드 동절기 점검을 `winter-safety-share`에 합쳤습니다. 투데이경제 감사 질의는 사례 묘사 없이 `staff-screening-share`로 새로 만들었습니다. 유튜브 `I0lfZcaftYM`은 `stay-vlog`로 넣었고 순위 사이트 주소는 쓰지 않았습니다.
+
+2026-11-26 수집에서는 파이낸셜뉴스 범죄경력 점검을 `staff-screening-share`에, 서울일보 겨울 안전관리를 `winter-safety-share`에, 매일신문 김장 일손을 `kimchi-guardian-party`에 합쳤습니다. 연합뉴스 급식 사진은 캡션만 있어 넣지 않았습니다. 기관 수, 인원, 포기 수는 카드 문장에 넣지 않았습니다.
