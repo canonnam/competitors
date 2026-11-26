@@ -1,16 +1,23 @@
 {
-  "updated": "2026-11-25",
+  "updated": "2026-11-26",
   "ideas": [
     {
       "id": "winter-safety-share",
-      "updated": "2026-11-25",
+      "updated": "2026-11-26",
       "title": "동절기 점검 안내",
-      "summary": "소방·전기·가스, 한파 대응, 감염·급식 위생, 대피 대책을 자체 점검표로 살피고 결과를 보호자에게 알리는 아이디어. 이번 기사는 구가 시설 자체 점검과 일부 현장 점검을 추진한다고 밝힌 계획이다",
+      "summary": "소방·전기·가스·난방, 한파·산불, 감염·급식 위생, 비상연락망과 거동 불편 어르신 대피 지원을 점검하고 결과를 보호자에게 알리는 아이디어. 이번 기사는 시가 겨울철 점검 중이며 경미한 사항은 현장에서 고치도록 한다고 밝혔다",
       "tags": [
         "홍보",
         "가족소통"
       ],
       "articles": [
+        {
+          "title": "남원, 노인복지시설 겨울철 안전관리 강화",
+          "source": "서울일보",
+          "date": "2026-11-25",
+          "url": "http://www.seoulilbo.com/news/articleView.html?idxno=867445",
+          "verified": "ok"
+        },
         {
           "title": "고양시 일산동구, 장기요양기관·노인주거복지시설 동절기 안전점검 추진",
           "source": "더 데일리가드",
@@ -26,7 +33,96 @@
           "verified": "ok"
         }
       ],
-      "last_date": "2026-11-24"
+      "last_date": "2026-11-25"
+    },
+    {
+      "id": "staff-screening-share",
+      "updated": "2026-11-26",
+      "title": "직원 검증 공개",
+      "summary": "종사자 성범죄 경력 조회, 인권·성인지 교육 이수, 노인·장애인 학대 관련 취업제한명령 해당 여부를 보호자에게 알리는 아이디어. 취업제한 점검은 법원 명령을 받은 사람의 근무 여부를 범죄경력 조회로 확인한다는 기사 내용이다",
+      "tags": [
+        "가족소통",
+        "홍보"
+      ],
+      "articles": [
+        {
+          "title": "서귀포시, 장기요양기관 69곳 종사자 1690명 범죄경력 점검",
+          "source": "파이낸셜뉴스",
+          "date": "2026-11-25",
+          "url": "https://www.fnnews.com/news/202611251550037041",
+          "verified": "ok"
+        },
+        {
+          "title": "장기요양 종사자 경력 조회와 인권교육 관리를 물은 감사 질의",
+          "source": "투데이경제",
+          "date": "2026-11-24",
+          "url": "https://www.tookyung.com/news/articleView.html?idxno=758989",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-25"
+    },
+    {
+      "id": "kimchi-guardian-party",
+      "updated": "2026-11-26",
+      "title": "김장·수육 파티",
+      "summary": "어르신이 직접 김치를 담그고 수육을 나누거나, 사회봉사 국민공모제를 신청해 김장 일손을 받는 행사 아이디어",
+      "tags": [
+        "프로그램",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "사회봉사 국민공모제로 요양원 김장 일손을 지원한 보도",
+          "source": "매일신문",
+          "date": "2026-11-25",
+          "url": "https://www.imaeil.com/page/view/2026112416414823115",
+          "verified": "ok"
+        },
+        {
+          "title": "청주시노인종합복지관, 어르신과 함께하는 사랑의 김장 나눔행사 진행",
+          "source": "청주일보",
+          "date": "2026-11-18",
+          "url": "http://www.cj-ilbo.com/news/articleView.html?idxno=1187495",
+          "verified": "ok"
+        },
+        {
+          "title": "간호전문한결요양원 특별 프로그램 지원 자원봉사자 모집",
+          "source": "러뷰",
+          "date": "2026-11-11",
+          "url": "https://www.lovu.co.kr/detail.html?id=1365_3537887",
+          "verified": "ok"
+        },
+        {
+          "title": "동행재활요양병원 김장데이 봉사자 모집",
+          "source": "러뷰",
+          "date": "2026-11-11",
+          "url": "https://www.lovu.co.kr/detail.html?id=1365_3546294",
+          "verified": "ok"
+        },
+        {
+          "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
+          "source": "동양일보",
+          "date": "2026-11-10",
+          "url": "https://www.dynews.co.kr/news/articleView.html?idxno=873438",
+          "verified": "ok"
+        },
+        {
+          "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
+          "source": "에이타임즈",
+          "date": "2026-11-10",
+          "url": "http://m.atimes.kr/news/articleView.html?idxno=89951",
+          "verified": "ok"
+        },
+        {
+          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
+          "source": "케어런츠",
+          "date": "2026-11-02",
+          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-25"
     },
     {
       "id": "fire-evac-share",
@@ -70,26 +166,6 @@
           "source": "아시아타임즈",
           "date": "2026-11-24",
           "url": "https://www.asiatime.co.kr/article/20261124500273",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-24"
-    },
-    {
-      "id": "staff-screening-share",
-      "updated": "2026-11-25",
-      "title": "직원 검증 공개",
-      "summary": "종사자 성범죄 경력 조회와 인권·성인지 교육 이수 현황을 정기적으로 보호자에게 알리는 아이디어",
-      "tags": [
-        "가족소통",
-        "홍보"
-      ],
-      "articles": [
-        {
-          "title": "장기요양 종사자 경력 조회와 인권교육 관리를 물은 감사 질의",
-          "source": "투데이경제",
-          "date": "2026-11-24",
-          "url": "https://www.tookyung.com/news/articleView.html?idxno=758989",
           "verified": "ok"
         }
       ],
@@ -322,61 +398,6 @@
           "source": "서울신문",
           "date": "2026-11-18",
           "url": "https://www.seoul.co.kr/news/society/health-welfare/2026/11/18/20261118010008",
-          "verified": "ok"
-        }
-      ],
-      "last_date": "2026-11-18"
-    },
-    {
-      "id": "kimchi-guardian-party",
-      "updated": "2026-11-19",
-      "title": "김장·수육 파티",
-      "summary": "어르신이 직접 김치를 담그고 수육을 나눈 뒤 이웃에게 전하거나, 보호자를 초청해 함께 나누는 김장 행사 아이디어",
-      "tags": [
-        "프로그램",
-        "가족소통"
-      ],
-      "articles": [
-        {
-          "title": "청주시노인종합복지관, 어르신과 함께하는 사랑의 김장 나눔행사 진행",
-          "source": "청주일보",
-          "date": "2026-11-18",
-          "url": "http://www.cj-ilbo.com/news/articleView.html?idxno=1187495",
-          "verified": "ok"
-        },
-        {
-          "title": "간호전문한결요양원 특별 프로그램 지원 자원봉사자 모집",
-          "source": "러뷰",
-          "date": "2026-11-11",
-          "url": "https://www.lovu.co.kr/detail.html?id=1365_3537887",
-          "verified": "ok"
-        },
-        {
-          "title": "동행재활요양병원 김장데이 봉사자 모집",
-          "source": "러뷰",
-          "date": "2026-11-11",
-          "url": "https://www.lovu.co.kr/detail.html?id=1365_3546294",
-          "verified": "ok"
-        },
-        {
-          "title": "청주보호관찰소, 시온요양원 김장 350포기 일손 지원",
-          "source": "동양일보",
-          "date": "2026-11-10",
-          "url": "https://www.dynews.co.kr/news/articleView.html?idxno=873438",
-          "verified": "ok"
-        },
-        {
-          "title": "영동보호관찰소, 지역 어르신 위한 따뜻한 김장봉사",
-          "source": "에이타임즈",
-          "date": "2026-11-10",
-          "url": "http://m.atimes.kr/news/articleView.html?idxno=89951",
-          "verified": "ok"
-        },
-        {
-          "title": "슬슬 김장 얘기가 나오기 시작했네요...",
-          "source": "케어런츠",
-          "date": "2026-11-02",
-          "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
           "verified": "ok"
         }
       ],
