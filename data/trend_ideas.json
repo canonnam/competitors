@@ -1,6 +1,83 @@
 {
-  "updated": "2026-11-26",
+  "updated": "2026-11-27",
   "ideas": [
+    {
+      "id": "staff-thanks-gathering",
+      "updated": "2026-11-27",
+      "title": "종사자 한마당",
+      "summary": "돌봄 종사자를 초청해 표창과 우수 사례 발표, 영화 관람으로 고마움을 전하는 행사 아이디어",
+      "tags": [
+        "직원사기",
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "강서구, 어르신 돌봄 종사자 ‘어울림 한마당’",
+          "source": "문화일보",
+          "date": "2026-11-26",
+          "url": "https://www.munhwa.com/article/11634188",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-26"
+    },
+    {
+      "id": "visiting-leatherball",
+      "updated": "2026-11-27",
+      "title": "찾아가는 체육",
+      "summary": "지역 장애인체육회가 시설을 찾아와 레더볼 던지기를 하는 생활체육 아이디어",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "양평군장애인체육회와 함께하는 찾아가는 생활체육서비스",
+          "source": "창인요양원",
+          "date": "2026-11-26",
+          "url": "http://changinwon.or.kr/bbs/board.php?bo_table=m25&wr_id=754",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-26"
+    },
+    {
+      "id": "hairpin-board",
+      "updated": "2026-11-27",
+      "title": "머리핀 작품",
+      "summary": "색 머리핀을 둥근 판에 꽂아 작품을 만드는 인지·집중력 활동 아이디어",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "1126(목) 창의력인지 - 끈길 찾기",
+          "source": "초지요양원",
+          "date": "2026-11-26",
+          "url": "https://www.choji.kr/entry/1126%EB%AA%A9-%EC%B0%BD%EC%9D%98%EB%A0%A5%EC%9D%B8%EC%A7%80-%EB%81%88%EA%B8%B8-%EC%B0%BE%EA%B8%B0",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-26"
+    },
+    {
+      "id": "cheese-tteokbokki",
+      "updated": "2026-11-27",
+      "title": "치즈떡볶이",
+      "summary": "어르신이 함께 치즈떡볶이를 만드는 요리 활동 아이디어",
+      "tags": [
+        "프로그램"
+      ],
+      "articles": [
+        {
+          "title": "11월 요리활동 - 치즈떡볶이 만들기",
+          "source": "창인요양원",
+          "date": "2026-11-26",
+          "url": "http://changinwon.or.kr/bbs/board.php?bo_table=m25&wr_id=753",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-26"
+    },
     {
       "id": "winter-safety-share",
       "updated": "2026-11-26",
@@ -119,6 +196,26 @@
           "source": "케어런츠",
           "date": "2026-11-02",
           "url": "https://carents.co.kr/freeBoardView?freeboard_id=2478",
+          "verified": "ok"
+        }
+      ],
+      "last_date": "2026-11-25"
+    },
+    {
+      "id": "committee-minutes",
+      "updated": "2026-11-27",
+      "title": "운영위 결과",
+      "summary": "분기 운영위원회 회의록을 홈페이지에 올려 운영을 보여주는 아이디어",
+      "tags": [
+        "홍보",
+        "가족소통"
+      ],
+      "articles": [
+        {
+          "title": "2026년 4분기 운영위원회 개최결과 안내",
+          "source": "효자의집",
+          "date": "2026-11-25",
+          "url": "http://www.hoseowelfare.co.kr/bbs/board.php?bo_table=hyo_noti&wr_id=1280",
           "verified": "ok"
         }
       ],
