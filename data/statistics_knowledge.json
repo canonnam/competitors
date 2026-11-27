@@ -1,5 +1,5 @@
 {
-  "sourceHash": "3ce36f15725fb635137c3d399a929f7d2d8675c57e5e62d73ef8304e62663c9c",
+  "sourceHash": "c0bc176a9586a8814f002c8cfeeeae470f931c277d2bf17b5c232b121033afcf",
   "reviewedAt": "2026-11-27",
   "portalUrl": "https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html",
   "topics": [
@@ -12,6 +12,26 @@
     "디지털 돌봄"
   ],
   "documents": [
+    {
+      "id": "end-of-life-citizen-panel-2026",
+      "title": "의료혁신 시민패널의 생애 말 의료·돌봄 공론화",
+      "author": "의료혁신 시민패널 운영위원회",
+      "publisher": "보건복지부 · 의료혁신추진단",
+      "publication": "제12차 의료혁신위원회 안건 · 하반기 소통 결과 보고",
+      "published": "2026.11.26",
+      "survey": "제2차 의료혁신 시민패널 공론화",
+      "periodLabel": "2026년 10~11월 세 차례 설문",
+      "year": 2026,
+      "pages": "관련 본문 19–28쪽",
+      "pdfPages": 69,
+      "topics": [
+        "돌봄·품질"
+      ],
+      "summary": "시민패널이 생애 말 의료와 돌봄을 주제로 학습과 토론을 진행하고 연명의료 결정 시점과 삶의 마지막 시기를 보내고 싶은 장소 등을 응답했습니다.",
+      "scope": "숙의 과정을 마치고 3회 설문에 모두 참여한 시민패널 294명의 응답입니다. 모집단 성별·연령·권역 분포에 맞춘 가중치를 적용했습니다. 조사 개요는 본문 21쪽(PDF 25쪽)에 있습니다.",
+      "sourceUrl": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1492671",
+      "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0027&list_no=1492671&seq=4"
+    },
     {
       "id": "social-services-survey-2025-release",
       "title": "2025년 사회서비스 실태조사 결과",
@@ -347,6 +367,68 @@
     }
   ],
   "bookmarks": [
+    {
+      "id": "citizen-panel-end-of-life-timing-2026",
+      "documentId": "end-of-life-citizen-panel-2026",
+      "topic": "돌봄·품질",
+      "title": "연명의료 유보·중단 시점에 대한 시민패널 응답",
+      "metric": "84.0%",
+      "metricLabel": "토론 직후 ‘말기부터’를 선택한 비율",
+      "periodLabel": "2026년 10월 1~12일 · 11월 7일 · 11월 8일",
+      "figure": "연명의료를 유보·중단할 수 있는 시점",
+      "printedPage": 23,
+      "pdfPage": 27,
+      "rows": [
+        [
+          "기초조사 · 자가학습 전",
+          "54.5%"
+        ],
+        [
+          "사전조사 · 자가학습 후, 토론 전",
+          "61.7%"
+        ],
+        [
+          "사후조사 · 토론 직후",
+          "84.0%"
+        ]
+      ],
+      "insight": "같은 시민패널 294명의 세 차례 조사에서 연명의료 유보·중단 시점을 ‘말기부터’로 앞당기자는 응답이 54.5%에서 84.0%로 달라졌습니다.",
+      "action": "생애 말 돌봄 상담 안내를 정리할 때 환자의 뜻을 확인할 질문과 의료진에게 연결할 문의를 각각 준비하는 데 참고할 수 있습니다.",
+      "caveat": "선정된 시민패널의 가중 응답입니다. 이 표는 공론화 의견을 다룹니다. 개인의 의료 결정과 법적 적용 시점은 공식 절차를 확인해야 합니다."
+    },
+    {
+      "id": "citizen-panel-end-of-life-place-2026",
+      "documentId": "end-of-life-citizen-panel-2026",
+      "topic": "돌봄·품질",
+      "title": "삶의 마지막 시기를 지내고 싶은 곳",
+      "metric": "52.1% · 30.7%",
+      "metricLabel": "토론 직후 집과 호스피스 병동의 응답 비율",
+      "periodLabel": "2026년 11월 7일 토론 전 · 11월 8일 토론 직후",
+      "figure": "삶의 마지막 시기를 지내고 싶은 곳",
+      "printedPage": 27,
+      "pdfPage": 31,
+      "rows": [
+        [
+          "집",
+          "65.4% → 52.1%"
+        ],
+        [
+          "호스피스 병동",
+          "16.0% → 30.7%"
+        ],
+        [
+          "요양병원",
+          "4.6% → 6.2%"
+        ],
+        [
+          "요양원 등 요양시설",
+          "5.0% → 3.7%"
+        ]
+      ],
+      "insight": "시민패널 294명의 조사에서 토론 후에도 집을 고른 비율이 가장 높았습니다. 호스피스 병동 응답은 토론 전 16.0%에서 토론 후 30.7%로 높아졌습니다.",
+      "action": "생애 말 돌봄 상담에서 어르신이 희망하는 장소를 확인하고, 가능한 의료·돌봄 연계는 상황에 따라 관계 기관에 문의하도록 안내할 수 있습니다.",
+      "caveat": "선정된 시민패널의 가중 응답이며 희망 장소를 물은 조사입니다. 실제 이용, 임종 장소, 특정 요양시설의 수요는 이 표로 확인할 수 없습니다."
+    },
     {
       "id": "social-service-provider-access-2025",
       "documentId": "social-services-survey-2025-release",

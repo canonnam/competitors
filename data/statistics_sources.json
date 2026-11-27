@@ -3,6 +3,14 @@
   "scaleTo": 1800,
   "documents": [
     {
+      "id": "end-of-life-citizen-panel-2026",
+      "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0027&list_no=1492671&seq=4",
+      "sourceUrl": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1492671",
+      "pdfPages": 69,
+      "sha256": "5413bed8b3293c04fc8bcb65f1f42e119d956f7e2d11034740fc8a00961b9efc",
+      "captures": []
+    },
+    {
       "id": "social-services-survey-2025-release",
       "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0027&list_no=1492656&seq=2",
       "sourceUrl": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1492656",
