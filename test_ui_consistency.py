@@ -44,7 +44,8 @@ class UIConsistencyTest(unittest.TestCase):
                 for stylesheet in ('/assets/site.css', '/assets/navigation.css', FOUNDATION):
                     self.assertEqual(page.stylesheets.count(stylesheet), 1, stylesheet)
                 self.assertEqual(page.stylesheets[-1], FOUNDATION)
-                self.assertEqual(page.scripts.count('/assets/navigation.js'), 1)
+                navigation_scripts = ['/assets/news-badge.js', '/assets/support-resources.js', '/assets/navigation.js']
+                self.assertEqual([src for src in page.scripts if src in navigation_scripts], navigation_scripts)
                 self.assertEqual(page.shared_headers, 1)
                 self.assertEqual(page.main_regions, 1)
                 for stylesheet in page.stylesheets:
