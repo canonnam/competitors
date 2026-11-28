@@ -1,7 +1,15 @@
 {
-  "reviewedAt": "2026-11-27",
+  "reviewedAt": "2026-11-28",
   "scaleTo": 1800,
   "documents": [
+    {
+      "id": "family-care-ltc-2026",
+      "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=35228",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/search/view?seq=77803&volume=77797",
+      "pdfPages": 15,
+      "sha256": "b1909e4220968269875811035e00d00128a17443cd7e911f9aa62912b1a6b457",
+      "captures": []
+    },
     {
       "id": "end-of-life-citizen-panel-2026",
       "downloadUrl": "https://www.mohw.go.kr/boardDownload.es?bid=0027&list_no=1492671&seq=4",

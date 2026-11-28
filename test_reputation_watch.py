@@ -151,6 +151,20 @@ class ReputationTests(unittest.TestCase):
         self.assertEqual(report['updated_at'],NOW.isoformat())
         self.assertNotIn('private error',json.dumps(report))
 
+    def test_source_validation_failure_logs_only_known_reason_codes(self):
+        def failure(source, now, stop=None):
+            if source == self.sources[0]:
+                raise ValueError('Web results not present in returned page')
+            raise ValueError('private error details')
+
+        with self.assertLogs(r.LOG, level='WARNING') as logs:
+            self.sync(collector=failure)
+
+        self.assertIn('reason=web_results_missing', logs.output[0])
+        self.assertIn('reason=validation_error', logs.output[1])
+        self.assertNotIn('private error details', '\n'.join(logs.output))
+        self.assertFalse(r.report(self.path, NOW)['sync']['complete'])
+
     def test_classifier_failure_does_not_mean_no_negative_information(self):
         def failure(items):raise TimeoutError('private-key-like-detail')
         self.sync(classifier=failure)

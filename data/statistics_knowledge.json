@@ -1,6 +1,6 @@
 {
-  "sourceHash": "c0bc176a9586a8814f002c8cfeeeae470f931c277d2bf17b5c232b121033afcf",
-  "reviewedAt": "2026-11-27",
+  "sourceHash": "74f28c7e7fe0a8dc49c5f5c12f7dd5c315afc2deb3f0dcd597c0628c7435f61e",
+  "reviewedAt": "2026-11-28",
   "portalUrl": "https://www.kihasa.re.kr/dataportal/kor/databank/DatabankList.html",
   "topics": [
     "기관평가",
@@ -12,6 +12,27 @@
     "디지털 돌봄"
   ],
   "documents": [
+    {
+      "id": "family-care-ltc-2026",
+      "title": "장기요양급여 이용자 가족의 돌봄 실태와 정책 욕구",
+      "author": "김세진",
+      "publisher": "한국보건사회연구원",
+      "publication": "보건복지포럼 361호 · DOI 10.23062/2026.11.3",
+      "published": "2026.11",
+      "survey": "2025년 장기요양실태조사 가족 자료 분석",
+      "periodLabel": "2025년 장기요양실태조사",
+      "year": 2025,
+      "pages": "21–34",
+      "pdfPages": 15,
+      "topics": [
+        "돌봄·품질",
+        "입소·수요"
+      ],
+      "summary": "장기요양급여를 이용하는 가족이 느끼는 돌봄 부담과 시설 입소 결정 사유, 건강 호전 시 집으로 모실 의향을 분석했습니다.",
+      "scope": "2025년 장기요양실태조사 가족 3,000명의 자료에 가중치를 적용했습니다. 시설급여 이용자 가족 분석은 549명, 집으로 모시기 어려운 이유는 건강이 호전되어도 집으로 모시지 않겠다고 응답한 455명을 대상으로 했습니다. 표본 구성은 본문 23쪽(PDF 4쪽)에 있습니다.",
+      "sourceUrl": "https://www.kihasa.re.kr/publish/regular/hsw/search/view?seq=77803&volume=77797",
+      "downloadUrl": "https://www.kihasa.re.kr/api/kihasa/file/download?seq=35228"
+    },
     {
       "id": "end-of-life-citizen-panel-2026",
       "title": "의료혁신 시민패널의 생애 말 의료·돌봄 공론화",
@@ -367,6 +388,64 @@
     }
   ],
   "bookmarks": [
+    {
+      "id": "family-care-burden-2025",
+      "documentId": "family-care-ltc-2026",
+      "topic": "돌봄·품질",
+      "title": "장기요양급여 이용자 가족이 느낀 돌봄 부담",
+      "metric": "51.6%",
+      "metricLabel": "돌봄 전반에 부담을 느꼈다고 답한 비율",
+      "periodLabel": "2025년 장기요양실태조사",
+      "figure": "표 3 · 가족의 부담 인식",
+      "printedPage": 25,
+      "pdfPage": 6,
+      "rows": [
+        [
+          "전체 가족",
+          "51.6%"
+        ],
+        [
+          "재가급여 이용자 가족",
+          "54.0%"
+        ],
+        [
+          "시설급여 이용자 가족",
+          "40.6%"
+        ]
+      ],
+      "insight": "급여 이용자 가족 3,000명의 가중 응답에서 돌봄 전반을 부담스럽다고 답한 비율은 51.6%였습니다. 재가급여 이용자 가족은 54.0%, 시설급여 이용자 가족은 40.6%였습니다.",
+      "action": "보호자 상담에서는 직접 돌보는 시간, 병원 동행, 비용 등 가족이 어려워하는 일을 각각 물어볼 수 있습니다.",
+      "caveat": "이 책갈피의 비율은 돌봄 전반에 관한 응답입니다. 같은 표의 본인부담금 부담 항목은 본인부담금 면제자를 제외한 2,419명으로 집계합니다."
+    },
+    {
+      "id": "family-return-intent-2025",
+      "documentId": "family-care-ltc-2026",
+      "topic": "입소·수요",
+      "title": "건강이 호전되면 시설에서 집으로 모실 의향",
+      "metric": "17.1%",
+      "metricLabel": "집으로 모실 의향을 보인 시설급여 이용자 가족의 비율",
+      "periodLabel": "2025년 장기요양실태조사",
+      "figure": "표 10 · 시설 입소와 건강 호전 시 재가복귀 의향",
+      "printedPage": 30,
+      "pdfPage": 11,
+      "rows": [
+        [
+          "건강이 호전되면 집으로 모실 의향 · 549명 대상",
+          "17.1%"
+        ],
+        [
+          "계속 돌봐줄 사람이 없음 · 집으로 모시지 않겠다는 455명 대상",
+          "79.6%"
+        ],
+        [
+          "주기적 의료·건강관리 어려움 · 같은 455명 대상",
+          "9.4%"
+        ]
+      ],
+      "insight": "시설급여 이용자 가족 549명 중 17.1%가 건강이 호전되면 집으로 모실 의향이 있다고 답했습니다. 집으로 모시지 않겠다는 응답자 455명 가운데 79.6%는 계속 돌봐줄 사람이 없다고 답했습니다.",
+      "action": "집으로 모시는 방안을 상담할 때 가족이 맡을 수 있는 돌봄 시간과 방문 돌봄·의료 지원을 받을 수 있는지 함께 확인할 수 있습니다.",
+      "caveat": "두 문항의 응답 집단이 다릅니다. 재가복귀 의향은 건강 호전을 가정한 응답으로, 실제 퇴소나 재가복귀율을 측정한 수치와는 다릅니다."
+    },
     {
       "id": "citizen-panel-end-of-life-timing-2026",
       "documentId": "end-of-life-citizen-panel-2026",

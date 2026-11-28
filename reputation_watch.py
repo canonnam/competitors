@@ -253,6 +253,33 @@ def save_assessments(db, items, results, now):
             db.execute('UPDATE findings SET payload=? WHERE id=?', (json.dumps(finding, ensure_ascii=False), item['id']))
 
 
+SEARCH_VALIDATION_REASONS = {
+    'Search result layout changed': 'web_result_layout',
+    'Search page number is not verifiable': 'page_number_missing',
+    'Search returned a different page': 'page_number_mismatch',
+    'Place result layout changed or did not load': 'place_result_layout',
+    'Web results not present in returned page': 'web_results_missing',
+    'Unexpected search pagination': 'unexpected_pagination',
+    'Search provider did not return a successful page': 'provider_rejected',
+    'Missing search page evidence': 'provider_evidence_missing',
+    'Search page too large': 'page_too_large',
+}
+
+
+def source_failure_reason(exc):
+    if isinstance(exc, visibility.SearchAccessLimited):
+        return 'access_limited'
+    if isinstance(exc, urllib.error.HTTPError):
+        return f'http_{exc.code}'
+    if isinstance(exc, TimeoutError):
+        return 'timeout'
+    if isinstance(exc, urllib.error.URLError):
+        return 'connection_error'
+    if isinstance(exc, ValueError) and exc.args and isinstance(exc.args[0], str):
+        return SEARCH_VALIDATION_REASONS.get(exc.args[0], 'validation_error')
+    return 'unexpected_error'
+
+
 def sync(path, now=None, collector=fetch_source, classifier=classify, stop=None):
     live = now is None
     now = now or datetime.now(KST)
@@ -299,7 +326,8 @@ def sync(path, now=None, collector=fetch_source, classifier=classify, stop=None)
                         write_state(db, 'naver-cooldown', cooldown)
                         states['naver-cooldown'] = cooldown
                 states[source['id']] = attempt
-                LOG.warning('Reputation source unavailable: %s', source['id'])
+                LOG.warning('Reputation source unavailable: %s (reason=%s)',
+                            source['id'], source_failure_reason(exc))
         documents = current_documents(states, now)
         with connect(path) as db:
             known = {row[0] for row in db.execute('SELECT hash FROM assessments')}
